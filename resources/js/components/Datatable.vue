@@ -1,26 +1,11 @@
 <script setup lang="ts">
-import {
-    computed,
-    onBeforeUnmount,
-    ref,
-    watch,
-} from 'vue';
-
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import Button from 'primevue/button';
 import Column from 'primevue/column';
 import PrimeDataTable from 'primevue/datatable';
 import InputText from 'primevue/inputtext';
-
-import type {
-    DataTablePageEvent,
-    DataTableSortEvent,
-} from 'primevue/datatable';
-
-import type {
-    DataTableAction,
-    DataTableColumn,
-    DataTableRow,
-} from '@/types';
+import type { DataTableSortEvent } from 'primevue/datatable';
+import type { DataTableAction, DataTableColumn, DataTableRow } from '@/types';
 
 const props = withDefaults(
     defineProps<{
@@ -30,6 +15,7 @@ const props = withDefaults(
         dataKey?: string;
         title?: string;
         description?: string;
+        headerIcon?: string;
         loading?: boolean;
         searchable?: boolean;
         searchPlaceholder?: string;
@@ -49,7 +35,6 @@ const props = withDefaults(
         showActions?: boolean;
         actionsHeader?: string;
         actionsWidth?: string;
-
         /*
          * Server-side DataTable properties.
          */
@@ -59,28 +44,14 @@ const props = withDefaults(
     }>(),
     {
         actions: () => [
-            {
-                key: 'view',
-                label: 'View',
-                icon: 'pi pi-eye',
-                severity: 'info',
-            },
-            {
-                key: 'edit',
-                label: 'Edit',
-                icon: 'pi pi-pencil',
-                severity: 'warn',
-            },
-            {
-                key: 'delete',
-                label: 'Delete',
-                icon: 'pi pi-trash',
-                severity: 'danger',
-            },
+            { key: 'view', label: 'View', icon: 'pi pi-eye', severity: 'info' },
+            { key: 'edit', label: 'Edit', icon: 'pi pi-pencil', severity: 'warn' },
+            { key: 'delete', label: 'Delete', icon: 'pi pi-trash', severity: 'danger' },
         ],
         dataKey: 'id',
         title: '',
         description: '',
+        headerIcon: 'pi pi-table',
         loading: false,
         searchable: true,
         searchPlaceholder: 'Search...',
@@ -89,7 +60,7 @@ const props = withDefaults(
         emptyIcon: 'pi pi-inbox',
         paginator: true,
         rows: 10,
-        rowsPerPageOptions: () => [10, 25, 50, 100],
+        rowsPerPageOptions: () => [10, 20, 50, 100],
         scrollable: true,
         scrollHeight: 'flex',
         tableMinWidth: '1200px',
@@ -108,29 +79,13 @@ const props = withDefaults(
 
 const emit = defineEmits<{
     action: [action: string, row: DataTableRow];
-
     rowClick: [row: DataTableRow];
-
-    page: [
-        event: {
-            page: number;
-            rows: number;
-            first: number;
-        },
-    ];
-
-    sort: [
-        event: {
-            sortField: string;
-            sortOrder: number;
-        },
-    ];
-
+    page: [event: { page: number; rows: number; first: number }];
+    sort: [event: { sortField: string; sortOrder: number }];
     search: [value: string];
 }>();
 
 const search = ref('');
-
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
 /*
@@ -168,12 +123,35 @@ const filteredData = computed(() => {
     return props.data.filter((row) =>
         searchableFields.value.some((field) => {
             const value = getNestedValue(row, field);
-
-            return String(value ?? '')
-                .toLowerCase()
-                .includes(keyword);
+            return String(value ?? '').toLowerCase().includes(keyword);
         }),
     );
+});
+
+const currentPage = computed(() =>
+    props.rows > 0 ? Math.floor(props.first / props.rows) + 1 : 1,
+);
+
+const totalPages = computed(() =>
+    props.rows > 0 ? Math.max(1, Math.ceil(props.totalRecords / props.rows)) : 1,
+);
+
+const firstRecord = computed(() =>
+    props.totalRecords === 0 ? 0 : props.first + 1,
+);
+
+const lastRecord = computed(() =>
+    Math.min(props.first + props.rows, props.totalRecords),
+);
+
+const visiblePages = computed(() => {
+    const size = 5;
+    let start = Math.max(1, currentPage.value - 2);
+    const end = Math.min(totalPages.value, start + size - 1);
+
+    start = Math.max(1, end - size + 1);
+
+    return Array.from({ length: end - start + 1 }, (_, index) => start + index);
 });
 
 watch(search, (value) => {
@@ -202,16 +180,9 @@ onBeforeUnmount(() => {
 |--------------------------------------------------------------------------
 */
 
-function getNestedValue(
-    row: DataTableRow,
-    field: string,
-): unknown {
+function getNestedValue(row: DataTableRow, field: string): unknown {
     return field.split('.').reduce<unknown>((value, key) => {
-        if (
-            value !== null &&
-            typeof value === 'object' &&
-            key in value
-        ) {
+        if (value !== null && typeof value === 'object' && key in value) {
             return (value as Record<string, unknown>)[key];
         }
 
@@ -219,28 +190,18 @@ function getNestedValue(
     }, row);
 }
 
-function getCellValue(
-    row: DataTableRow,
-    column: DataTableColumn,
-): string | number {
+function getCellValue(row: DataTableRow, column: DataTableColumn): string | number {
     const value = getNestedValue(row, column.field);
 
     if (column.format) {
         return column.format(value, row);
     }
 
-    if (
-        value === null ||
-        value === undefined ||
-        value === ''
-    ) {
+    if (value === null || value === undefined || value === '') {
         return '—';
     }
 
-    if (
-        typeof value === 'string' ||
-        typeof value === 'number'
-    ) {
+    if (typeof value === 'string' || typeof value === 'number') {
         return value;
     }
 
@@ -253,24 +214,15 @@ function getCellValue(
 |--------------------------------------------------------------------------
 */
 
-function isActionVisible(
-    action: DataTableAction,
-    row: DataTableRow,
-): boolean {
+function isActionVisible(action: DataTableAction, row: DataTableRow): boolean {
     return action.visible?.(row) ?? true;
 }
 
-function isActionDisabled(
-    action: DataTableAction,
-    row: DataTableRow,
-): boolean {
+function isActionDisabled(action: DataTableAction, row: DataTableRow): boolean {
     return action.disabled?.(row) ?? false;
 }
 
-function handleAction(
-    action: DataTableAction,
-    row: DataTableRow,
-): void {
+function handleAction(action: DataTableAction, row: DataTableRow): void {
     emit('action', action.key, row);
 }
 
@@ -280,11 +232,35 @@ function handleAction(
 |--------------------------------------------------------------------------
 */
 
-function handlePage(event: DataTablePageEvent): void {
+function handlePage(event: { page: number; rows: number; first: number }): void {
     emit('page', {
         page: event.page,
         rows: event.rows,
         first: event.first,
+    });
+}
+
+function goToPage(pageNumber: number): void {
+    const page = Math.min(Math.max(pageNumber, 1), totalPages.value);
+
+    emit('page', {
+        page: page - 1,
+        rows: props.rows,
+        first: (page - 1) * props.rows,
+    });
+}
+
+function changeRows(event: Event): void {
+    const rows = Number((event.target as HTMLSelectElement).value);
+
+    if (!props.rowsPerPageOptions.includes(rows)) {
+        return;
+    }
+
+    emit('page', {
+        page: 0,
+        rows,
+        first: 0,
     });
 }
 
@@ -305,199 +281,244 @@ function handleSort(event: DataTableSortEvent): void {
 </script>
 
 <template>
-    <section
-        class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
-    >
+    <section class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <!-- TABLE HEADER -->
         <div
-            v-if="
-                title ||
-                description ||
-                searchable ||
-                $slots.header ||
-                $slots['header-actions']
-            "
+            v-if="title || description || searchable || $slots.header || $slots['header-actions']"
             class="flex flex-col gap-4 border-b border-slate-200 bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
         >
             <!-- TITLE -->
-            <div
-                v-if="title || description || $slots.header"
-                class="min-w-0"
-            >
-                <slot name="header">
-                    <h2
-                        v-if="title"
-                        class="text-lg font-bold text-[#21365A]"
+                <div
+                    v-if="title || description || $slots.header"
+                    class="flex min-w-0 items-center gap-3"
+                >
+                    <div
+                        v-if="headerIcon"
+                        class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-500 text-white"
                     >
-                        {{ title }}
-                    </h2>
+                        <i :class="[headerIcon, 'text-2xl']"></i>
+                    </div>
 
-                    <p
-                        v-if="description"
-                        class="mt-1 text-sm text-slate-500"
-                    >
-                        {{ description }}
-                    </p>
-                </slot>
-            </div>
+                    <div class="min-w-0">
+                        <slot name="header">
+                            <h2 v-if="title" class="text-lg font-bold text-[#21365A]">
+                                {{ title }}
+                            </h2>
+
+                            <p v-if="description" class="mt-1 text-sm text-slate-500">
+                                {{ description }}
+                            </p>
+                        </slot>
+                    </div>
+                </div>
 
             <!-- HEADER ACTIONS AND SEARCH -->
-            <div
-                class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center"
-            >
+            <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
                 <slot name="header-actions" />
 
-                <div
-                    v-if="searchable"
-                    class="relative w-full sm:w-72"
-                >
-                    <i
-                        class="pi pi-search absolute top-1/2 left-3 z-10 -translate-y-1/2 text-sm text-slate-400"
-                    />
+                    <div v-if="searchable" class="relative w-full sm:w-72">
+                        <i
+                            class="pi pi-search search-icon absolute top-1/2 left-3 z-10 -translate-y-1/2 text-sm text-slate-400"
+                        ></i>
 
-                    <InputText
-                        v-model="search"
-                        :placeholder="searchPlaceholder"
-                        class="h-10 w-full !rounded-lg !border-slate-300 !bg-white pl-9 text-sm !text-slate-900"
-                    />
-                </div>
+                        <InputText
+                            v-model="search"
+                            :placeholder="searchPlaceholder"
+                            class="search-input h-10 w-full !rounded-lg !border-slate-300 !bg-white !pr-10 text-sm !text-slate-900"
+                        />
+
+                        <button
+                            v-if="search"
+                            type="button"
+                            class="absolute top-1/2 right-3 z-10 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-700"
+                            aria-label="Clear search"
+                            title="Clear search"
+                            @click="search = ''"
+                        >
+                            <i class="pi pi-times text-sm"></i>
+                        </button>
+                    </div>
             </div>
         </div>
 
-        <!-- PRIMEVUE DATATABLE -->
-        <PrimeDataTable
-            :value="filteredData"
-            :loading="loading"
-            :data-key="dataKey"
-            :lazy="lazy"
-            :total-records="totalRecords"
-            :first="first"
-            :paginator="paginator"
-            :rows="rows"
-            :rows-per-page-options="rowsPerPageOptions"
-            :scrollable="scrollable"
-            :scroll-height="scrollHeight"
-            :striped-rows="stripedRows"
-            :show-gridlines="showGridlines"
-            :removable-sort="removableSort"
-            :resizable-columns="resizableColumns"
-            column-resize-mode="fit"
-            paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport"
-            current-page-report-template="Showing {first} to {last} of {totalRecords} records"
-            class="universal-datatable"
-            :table-style="{
-                minWidth: tableMinWidth,
-            }"
-            @page="handlePage"
-            @sort="handleSort"
-            @row-click="emit('rowClick', $event.data)"
-        >
-            <!-- DYNAMIC COLUMNS -->
-            <Column
-                v-for="column in columns"
-                :key="column.field"
-                :field="column.field"
-                :header="column.header"
-                :sortable="column.sortable"
-                :frozen="column.frozen"
-                :align-frozen="column.alignFrozen"
-                :class="column.class"
-                :header-class="column.headerClass"
-                :body-class="column.bodyClass"
+        <!-- SCROLLABLE TABLE REGION -->
+        <div class="min-h-0 flex-1">
+            <PrimeDataTable
+                :value="filteredData"
+                :loading="loading"
+                :data-key="dataKey"
+                :lazy="lazy"
+                :paginator="false"
+                :rows="rows"
+                :scrollable="scrollable"
+                :scroll-height="scrollHeight"
+                :striped-rows="stripedRows"
+                :show-gridlines="showGridlines"
+                :removable-sort="removableSort"
+                :resizable-columns="resizableColumns"
+                column-resize-mode="fit"
+                class="universal-datatable"
+                :table-style="{ minWidth: tableMinWidth }"
+                @page="handlePage"
+                @sort="handleSort"
+                @row-click="emit('rowClick', $event.data)"
             >
-                <template #body="{ data: row }">
-                    <slot
-                        :name="`cell-${column.field}`"
-                        :data="row"
-                        :value="getNestedValue(row, column.field)"
-                        :column="column"
-                    >
-                        {{ getCellValue(row, column) }}
-                    </slot>
-                </template>
-            </Column>
-
-            <!-- ACTIONS COLUMN -->
-            <Column
-                v-if="showActions"
-                :header="actionsHeader"
-                frozen
-                align-frozen="right"
-                :style="{
-                    minWidth: actionsWidth,
-                }"
-                header-class="text-center"
-                body-class="text-center"
-            >
-                <template #body="{ data: row }">
-                    <slot
-                        name="actions"
-                        :data="row"
-                        :actions="actions"
-                    >
-                        <div
-                            class="flex items-center justify-center gap-1"
+                <!-- DYNAMIC COLUMNS -->
+                <Column
+                    v-for="column in columns"
+                    :key="column.field"
+                    :field="column.field"
+                    :header="column.header"
+                    :sortable="column.sortable"
+                    :frozen="column.frozen"
+                    :align-frozen="column.alignFrozen"
+                    :class="column.class"
+                    :header-class="column.headerClass"
+                    :body-class="column.bodyClass"
+                >
+                    <template #body="{ data: row }">
+                        <slot
+                            :name="`cell-${column.field}`"
+                            :data="row"
+                            :value="getNestedValue(row, column.field)"
+                            :column="column"
                         >
-                            <template
-                                v-for="action in actions"
-                                :key="action.key"
-                            >
-                                <Button
-                                    v-if="isActionVisible(action, row)"
-                                    type="button"
-                                    :icon="action.icon"
-                                    :severity="
-                                        action.severity ?? 'secondary'
-                                    "
-                                    :disabled="
-                                        isActionDisabled(action, row)
-                                    "
-                                    text
-                                    rounded
-                                    :aria-label="action.label"
-                                    :title="action.label"
-                                    @click.stop="
-                                        handleAction(action, row)
-                                    "
-                                />
-                            </template>
+                            {{ getCellValue(row, column) }}
+                        </slot>
+                    </template>
+                </Column>
+
+                <!-- ACTIONS COLUMN -->
+                <Column
+                    v-if="showActions"
+                    :header="actionsHeader"
+                    frozen
+                    align-frozen="right"
+                    :style="{ minWidth: actionsWidth }"
+                    header-class="text-center"
+                    body-class="text-center"
+                >
+                    <template #body="{ data: row }">
+                        <slot name="actions" :data="row" :actions="actions">
+                            <div class="flex items-center justify-center gap-1">
+                                <template v-for="action in actions" :key="action.key">
+                                    <Button
+                                        v-if="isActionVisible(action, row)"
+                                        type="button"
+                                        :icon="action.icon"
+                                        :severity="action.severity ?? 'secondary'"
+                                        :disabled="isActionDisabled(action, row)"
+                                        text
+                                        rounded
+                                        :aria-label="action.label"
+                                        :title="action.label"
+                                        @click.stop="handleAction(action, row)"
+                                    />
+                                </template>
+                            </div>
+                        </slot>
+                    </template>
+                </Column>
+
+                <!-- EMPTY STATE -->
+                <template #empty>
+                    <slot name="empty">
+                        <div class="py-12 text-center">
+                            <i :class="[emptyIcon, 'text-4xl text-slate-300']" />
+                            <p class="mt-3 font-semibold text-slate-600">
+                                {{ emptyTitle }}
+                            </p>
+                            <p class="mt-1 text-sm text-slate-400">
+                                {{ emptyDescription }}
+                            </p>
                         </div>
                     </slot>
                 </template>
-            </Column>
 
-            <!-- EMPTY STATE -->
-            <template #empty>
-                <slot name="empty">
-                    <div class="py-12 text-center">
-                        <i
-                            :class="[
-                                emptyIcon,
-                                'text-4xl text-slate-300',
-                            ]"
-                        />
-
-                        <p class="mt-3 font-semibold text-slate-600">
-                            {{ emptyTitle }}
-                        </p>
-
-                        <p class="mt-1 text-sm text-slate-400">
-                            {{ emptyDescription }}
-                        </p>
+                <!-- LOADING STATE -->
+                <template #loading>
+                    <div class="flex items-center justify-center gap-3 py-12 text-slate-500">
+                        <i class="pi pi-spin pi-spinner text-xl" />
+                        <span>Loading records...</span>
                     </div>
-                </slot>
-            </template>
+                </template>
+            </PrimeDataTable>
+        </div>
 
-            <!-- LOADING STATE -->
-            <template #loading>
-                <div
-                    class="flex items-center justify-center gap-3 py-12 text-slate-500"
-                >
-                    <i class="pi pi-spin pi-spinner text-xl" />
-                    <span>Loading records...</span>
-                </div>
-            </template>
-        </PrimeDataTable>
+<!-- PAGINATOR (fixed sibling, always visible — not inside the scroll region) -->
+<div v-if="paginator" class="responsive-paginator">
+    <div class="responsive-paginator__summary">
+        Showing {{ firstRecord }} to {{ lastRecord }} of {{ totalRecords }} records
+    </div>
+
+    <div class="responsive-paginator__pagination">
+        <button
+            type="button"
+            class="responsive-paginator__button"
+            :disabled="currentPage === 1"
+            aria-label="First page"
+            @click="goToPage(1)"
+        >
+            <i class="pi pi-angle-double-left" />
+        </button>
+
+        <button
+            type="button"
+            class="responsive-paginator__button"
+            :disabled="currentPage === 1"
+            aria-label="Previous page"
+            @click="goToPage(currentPage - 1)"
+        >
+            <i class="pi pi-angle-left" />
+        </button>
+
+        <button
+            v-for="pageNumber in visiblePages"
+            :key="pageNumber"
+            type="button"
+            class="responsive-paginator__button"
+            :class="{ 'responsive-paginator__button--active': pageNumber === currentPage }"
+            @click="goToPage(pageNumber)"
+        >
+            {{ pageNumber }}
+        </button>
+
+        <button
+            type="button"
+            class="responsive-paginator__button"
+            :disabled="currentPage === totalPages"
+            aria-label="Next page"
+            @click="goToPage(currentPage + 1)"
+        >
+            <i class="pi pi-angle-right" />
+        </button>
+
+        <button
+            type="button"
+            class="responsive-paginator__button"
+            :disabled="currentPage === totalPages"
+            aria-label="Last page"
+            @click="goToPage(totalPages)"
+        >
+            <i class="pi pi-angle-double-right" />
+        </button>
+    </div>
+
+    <label class="responsive-paginator__rows">
+        <span>Rows</span>
+        <select
+            :value="rows"
+            class="responsive-paginator__select"
+            aria-label="Rows per page"
+            @change="changeRows"
+        >
+            <option v-for="option in rowsPerPageOptions" :key="option" :value="option">
+                {{ option }}
+            </option>
+        </select>
+    </label>
+</div>
+
     </section>
 </template>
 
@@ -505,7 +526,14 @@ function handleSort(event: DataTableSortEvent): void {
 :deep(.universal-datatable) {
     background: #ffffff;
     color: #334155;
-}
+    }
+    .search-icon {
+    pointer-events: none;
+    }
+
+    :deep(.search-input) {
+        padding-left: 2.25rem !important;
+    }
 
 :deep(.universal-datatable .p-datatable-thead > tr > th),
 :deep(.universal-datatable .p-datatable-header-cell) {
@@ -569,32 +597,105 @@ function handleSort(event: DataTableSortEvent): void {
     box-shadow: none;
 }
 
-:deep(.universal-datatable .p-paginator) {
-    gap: 0.25rem;
-    border-width: 1px 0 0;
-    border-style: solid;
-    border-color: #e2e8f0;
-    background: #ffffff !important;
+:deep(.universal-datatable .p-datatable-loading-overlay) {
+    background: rgb(255 255 255 / 80%) !important;
+}
+
+.responsive-paginator {
+    display: flex;
+    width: 100%;
+    min-height: 4rem;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border-top: 1px solid #e2e8f0;
+    background: #ffffff;
     padding: 0.75rem 1rem;
     color: #64748b;
 }
 
-:deep(.universal-datatable .p-paginator-page),
-:deep(.universal-datatable .p-paginator-first),
-:deep(.universal-datatable .p-paginator-prev),
-:deep(.universal-datatable .p-paginator-next),
-:deep(.universal-datatable .p-paginator-last) {
+.responsive-paginator__summary {
+    flex: 1 1 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.responsive-paginator__pagination {
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+}
+
+.responsive-paginator__rows {
+    display: flex;
+    flex: 1 1 0;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.responsive-paginator__select {
+    height: 2rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem;
+    background: #ffffff;
+    padding: 0 0.5rem;
+    color: #334155;
+}
+
+.responsive-paginator__button {
     min-width: 2rem;
     height: 2rem;
+    border: 1px solid #e2e8f0;
     border-radius: 0.5rem;
+    background: #ffffff;
+    color: #475569;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: 150ms ease;
 }
 
-:deep(.universal-datatable .p-paginator-page-selected) {
-    background: #377ec0 !important;
-    color: #ffffff !important;
+.responsive-paginator__button:hover:not(:disabled) {
+    border-color: #377ec0;
+    color: #377ec0;
 }
 
-:deep(.universal-datatable .p-datatable-loading-overlay) {
-    background: rgb(255 255 255 / 80%) !important;
+.responsive-paginator__button:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+}
+
+.responsive-paginator__button--active {
+    border-color: #377ec0;
+    background: #377ec0;
+    color: #ffffff;
+}
+
+@media (max-width: 640px) {
+    .responsive-paginator {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .responsive-paginator__summary {
+        order: 1;
+        text-align: center;
+    }
+
+    .responsive-paginator__pagination {
+        order: 2;
+    }
+
+    .responsive-paginator__rows {
+        order: 3;
+        justify-content: center;
+    }
 }
 </style>

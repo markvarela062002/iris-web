@@ -14,6 +14,7 @@ class DatatableService
      *
      * @param  array<string>  $searchableColumns
      * @param  array<string, string>  $sortableColumns
+     * @return array<string, mixed>
      */
     public function paginate(
         Builder $query,
@@ -25,10 +26,11 @@ class DatatableService
     ): array {
         $search = trim((string) $request->input('search', ''));
 
-        $perPage = min(
-            max((int) $request->input('per_page', 10), 1),
-            100,
-        );
+        $allowedPerPage = [10, 20, 50, 100];
+        $requestedPerPage = $request->integer('per_page', 10);
+        $perPage = in_array($requestedPerPage, $allowedPerPage, true)
+            ? $requestedPerPage
+            : 10;
 
         $requestedSortColumn = (string) $request->input(
             'sort_field',
@@ -46,32 +48,23 @@ class DatatableService
             $sortDirection = $defaultSortDirection;
         }
 
-        /*
-         * Convert the frontend field name into an actual database column.
-         * This prevents arbitrary column names from reaching orderBy().
-         */
         $sortColumn = $sortableColumns[$requestedSortColumn]
             ?? $sortableColumns[$defaultSortColumn]
             ?? $defaultSortColumn;
 
-        $this->applySearch(
-            $query,
-            $search,
-            $searchableColumns,
-        );
+        $this->applySearch($query, $search, $searchableColumns);
 
         $query->orderBy($sortColumn, $sortDirection);
 
-        $paginator = $query->paginate($perPage);
+        $paginator = $query->paginate(
+            perPage: $perPage,
+            page: max(1, $request->integer('page', 1)),
+        );
 
         return $this->formatResponse($paginator);
     }
 
-    /**
-     * Apply a global search across the allowed columns.
-     *
-     * @param  array<string>  $searchableColumns
-     */
+    /** @param array<string> $searchableColumns */
     private function applySearch(
         Builder $query,
         string $search,
@@ -87,33 +80,21 @@ class DatatableService
         ): void {
             foreach ($searchableColumns as $index => $column) {
                 if ($index === 0) {
-                    $searchQuery->where(
-                        $column,
-                        'like',
-                        "%{$search}%",
-                    );
-
+                    $searchQuery->where($column, 'like', "%{$search}%");
                     continue;
                 }
 
-                $searchQuery->orWhere(
-                    $column,
-                    'like',
-                    "%{$search}%",
-                );
+                $searchQuery->orWhere($column, 'like', "%{$search}%");
             }
         });
     }
 
-    /**
-     * Format the Laravel paginator for the Vue DataTable.
-     */
+    /** @return array<string, mixed> */
     private function formatResponse(
         LengthAwarePaginator $paginator,
     ): array {
         return [
             'data' => $paginator->items(),
-
             'meta' => [
                 'currentPage' => $paginator->currentPage(),
                 'lastPage' => $paginator->lastPage(),
@@ -122,28 +103,22 @@ class DatatableService
                 'from' => $paginator->firstItem(),
                 'to' => $paginator->lastItem(),
             ],
-
             'links' => [
                 'first' => $paginator->url(1),
-                'last' => $paginator->url(
-                    $paginator->lastPage(),
-                ),
+                'last' => $paginator->url($paginator->lastPage()),
                 'previous' => $paginator->previousPageUrl(),
                 'next' => $paginator->nextPageUrl(),
             ],
         ];
     }
 
-    /**
-     * Add a continuous row number to the current page.
-     */
+    /** Add a continuous row number to the current page. */
     public function addRowNumbers(
         array $response,
         string $key = 'index',
     ): array {
         $currentPage = (int) $response['meta']['currentPage'];
         $perPage = (int) $response['meta']['perPage'];
-
         $startingIndex = (($currentPage - 1) * $perPage) + 1;
 
         $response['data'] = Collection::make($response['data'])
@@ -152,9 +127,7 @@ class DatatableService
                 object|array $row,
                 int $position,
             ) use ($key, $startingIndex): array {
-                $rowData = is_object($row)
-                    ? (array) $row
-                    : $row;
+                $rowData = is_object($row) ? (array) $row : $row;
 
                 return [
                     $key => $startingIndex + $position,

@@ -3,24 +3,17 @@ import { Head, usePage } from '@inertiajs/vue3';
 import axios from 'axios';
 import Card from 'primevue/card';
 import PrimeTag from 'primevue/tag';
-import {
-    computed,
-    onBeforeUnmount,
-    onMounted,
-    ref,
-} from 'vue';
-
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import Datatable from '@/components/Datatable.vue';
 import { dashboard } from '@/routes';
-
 import type {
     DataTableAction,
     DataTableColumn,
     DataTableRow,
     SharedData,
 } from '@/types';
-
 defineOptions({
+    inheritAttrs: false,
     layout: {
         breadcrumbs: [
             {
@@ -30,7 +23,6 @@ defineOptions({
         ],
     },
 });
-
 type DashboardCard = {
     label: string;
     value: number;
@@ -40,10 +32,8 @@ type DashboardCard = {
     valueText: string;
     canCreateBatch?: boolean;
 };
-
 type StudentApiResponse = {
     data: DataTableRow[];
-
     meta: {
         currentPage: number;
         lastPage: number;
@@ -52,7 +42,6 @@ type StudentApiResponse = {
         from: number | null;
         to: number | null;
     };
-
     links: {
         first: string | null;
         last: string | null;
@@ -60,38 +49,26 @@ type StudentApiResponse = {
         next: string | null;
     };
 };
-
 type StudentPageEvent = {
     page: number;
     rows: number;
     first: number;
 };
-
 type StudentSortEvent = {
     sortField: string;
     sortOrder: number;
 };
-
-type DepartmentSeverity =
-    | 'success'
-    | 'info'
-    | 'secondary';
-
+type DepartmentSeverity = 'success' | 'info' | 'secondary';
 const page = usePage<SharedData>();
-
 const school = computed(() => page.props.school);
-
 const currentDate = ref('');
 const currentTime = ref('');
-
 let clockInterval: ReturnType<typeof setInterval> | null = null;
-
 /*
 |--------------------------------------------------------------------------
 | Dashboard Summary Cards
 |--------------------------------------------------------------------------
 */
-
 const dashboardCards: DashboardCard[] = [
     {
         label: 'Activity Updates - (VERIFICATION)',
@@ -162,13 +139,11 @@ const dashboardCards: DashboardCard[] = [
         canCreateBatch: true,
     },
 ];
-
 /*
 |--------------------------------------------------------------------------
 | Student Monitoring Columns
 |--------------------------------------------------------------------------
 */
-
 const studentColumns: DataTableColumn[] = [
     {
         field: 'fname',
@@ -200,13 +175,11 @@ const studentColumns: DataTableColumn[] = [
         class: 'min-w-[200px]',
     },
 ];
-
 /*
 |--------------------------------------------------------------------------
 | Student Monitoring Actions
 |--------------------------------------------------------------------------
 */
-
 const studentActions: DataTableAction[] = [
     {
         key: 'view',
@@ -215,13 +188,11 @@ const studentActions: DataTableAction[] = [
         severity: 'info',
     },
 ];
-
 /*
 |--------------------------------------------------------------------------
 | Student API State
 |--------------------------------------------------------------------------
 */
-
 const students = ref<DataTableRow[]>([]);
 const studentsLoading = ref(false);
 const studentsTotal = ref(0);
@@ -230,29 +201,22 @@ const studentsPerPage = ref(10);
 const studentsSearch = ref('');
 const studentsSortField = ref('last_update');
 const studentsSortDirection = ref<'asc' | 'desc'>('desc');
-
 let studentRequestController: AbortController | null = null;
-
 /*
 |--------------------------------------------------------------------------
 | Student API
 |--------------------------------------------------------------------------
 */
-
 async function loadStudents(pageNumber = 1): Promise<void> {
     studentRequestController?.abort();
-
     const controller = new AbortController();
-
     studentRequestController = controller;
     studentsLoading.value = true;
-
     try {
         const response = await axios.get<StudentApiResponse>(
             '/api/v1/dashboard/students',
             {
                 signal: controller.signal,
-
                 params: {
                     page: pageNumber,
                     per_page: studentsPerPage.value,
@@ -261,21 +225,17 @@ async function loadStudents(pageNumber = 1): Promise<void> {
                     sort_direction:
                         studentsSortDirection.value,
                 },
-
                 headers: {
                     Accept: 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
                 },
-
                 withCredentials: true,
             },
         );
-
         students.value = response.data.data;
         studentsTotal.value = response.data.meta.total;
         studentsPerPage.value =
             response.data.meta.perPage;
-
         studentsFirst.value =
             (response.data.meta.currentPage - 1) *
             response.data.meta.perPage;
@@ -289,19 +249,15 @@ async function loadStudents(pageNumber = 1): Promise<void> {
         ) {
             return;
         }
-
         students.value = [];
         studentsTotal.value = 0;
-
         if (axios.isAxiosError(error)) {
             console.error(
                 'Unable to load students:',
                 error.response?.data ?? error.message,
             );
-
             return;
         }
-
         console.error('Unable to load students:', error);
     } finally {
         if (studentRequestController === controller) {
@@ -309,49 +265,37 @@ async function loadStudents(pageNumber = 1): Promise<void> {
         }
     }
 }
-
 function handleStudentPage(event: StudentPageEvent): void {
     studentsPerPage.value = event.rows;
     studentsFirst.value = event.first;
-
     void loadStudents(event.page + 1);
 }
-
 function handleStudentSort(event: StudentSortEvent): void {
     studentsSortField.value =
         event.sortField || 'last_update';
-
     studentsSortDirection.value =
         event.sortOrder === -1 ? 'desc' : 'asc';
-
     studentsFirst.value = 0;
-
     void loadStudents(1);
 }
-
 function handleStudentSearch(value: string): void {
     studentsSearch.value = value;
     studentsFirst.value = 0;
-
     void loadStudents(1);
 }
-
 /*
 |--------------------------------------------------------------------------
 | Clock
 |--------------------------------------------------------------------------
 */
-
 function updatePhilippineTime(): void {
     const now = new Date();
-
     currentDate.value = new Intl.DateTimeFormat('en-PH', {
         timeZone: 'Asia/Manila',
         month: 'long',
         day: 'numeric',
         year: 'numeric',
     }).format(now);
-
     currentTime.value = new Intl.DateTimeFormat('en-PH', {
         timeZone: 'Asia/Manila',
         hour: '2-digit',
@@ -360,30 +304,24 @@ function updatePhilippineTime(): void {
         hour12: true,
     }).format(now);
 }
-
 onMounted(() => {
     updatePhilippineTime();
     void loadStudents();
-
     clockInterval = setInterval(() => {
         updatePhilippineTime();
     }, 1000);
 });
-
 onBeforeUnmount(() => {
     if (clockInterval) {
         clearInterval(clockInterval);
     }
-
     studentRequestController?.abort();
 });
-
 /*
 |--------------------------------------------------------------------------
 | Student Helpers
 |--------------------------------------------------------------------------
 */
-
 function getStudentFullName(student: DataTableRow): string {
     return [
         student.fname,
@@ -400,33 +338,25 @@ function getStudentFullName(student: DataTableRow): string {
         .join(' ')
         .toUpperCase();
 }
-
 function getStudentInitials(student: DataTableRow): string {
     const firstName = String(student.fname ?? '').trim();
     const lastName = String(student.lname ?? '').trim();
-
     const initials =
         `${firstName.charAt(0)}${lastName.charAt(0)}`;
-
     return initials.toUpperCase() || 'ST';
 }
-
 function getStudentAvatar(gender: unknown): string | null {
     const normalizedGender = String(gender ?? '')
         .trim()
         .toUpperCase();
-
     if (normalizedGender === 'MALE') {
         return '/images/male-cadet.png';
     }
-
     if (normalizedGender === 'FEMALE') {
         return '/images/female-cadet.png';
     }
-
     return null;
 }
-
 function getDepartmentSeverity(
     department: unknown,
 ): DepartmentSeverity {
@@ -434,68 +364,50 @@ function getDepartmentSeverity(
         .trim()
         .charAt(0)
         .toUpperCase();
-
     if (firstLetter === 'D') {
         return 'success';
     }
-
     if (firstLetter === 'E') {
         return 'info';
     }
-
     return 'secondary';
 }
-
 function getDepartmentIcon(department: unknown): string {
     const firstLetter = String(department ?? '')
         .trim()
         .charAt(0)
         .toUpperCase();
-
     if (firstLetter === 'D') {
         return 'pi pi-compass';
     }
-
     if (firstLetter === 'E') {
         return 'pi pi-cog';
     }
-
     return 'pi pi-building';
 }
-
 function getDepartmentLabel(department: unknown): string {
     const value = String(department ?? '').trim();
-
     if (!value) {
         return 'No Department';
     }
-
     return value.toUpperCase();
 }
-
 function getSystemIdLabel(systemId: unknown): string {
     const value = String(systemId ?? '').trim();
-
     return value || 'No System ID';
 }
-
 function formatLastUpdate(value: unknown): string {
     if (!value) {
         return '—';
     }
-
     const rawValue = String(value);
-
     const normalizedValue = rawValue.includes('T')
         ? rawValue
         : rawValue.replace(' ', 'T');
-
     const date = new Date(normalizedValue);
-
     if (Number.isNaN(date.getTime())) {
         return rawValue;
     }
-
     return new Intl.DateTimeFormat('en-PH', {
         timeZone: 'Asia/Manila',
         month: 'short',
@@ -506,7 +418,6 @@ function formatLastUpdate(value: unknown): string {
         hour12: true,
     }).format(date);
 }
-
 function handleStudentAction(
     action: string,
     student: DataTableRow,
@@ -516,12 +427,10 @@ function handleStudentAction(
     }
 }
 </script>
-
 <template>
     <Head title="Dashboard" />
-
     <div
-        class="flex h-full flex-1 flex-col gap-4 bg-[#F8FAFC] p-4 lg:p-5"
+        class="flex h-full min-h-0 flex-1 flex-col gap-4 overflow-y-auto bg-[#F8FAFC] p-4 lg:p-5"
     >
         <!-- SCHOOL HERO SECTION -->
         <section
@@ -530,19 +439,15 @@ function handleStudentAction(
             <div
                 class="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#377EC0]/[0.07] via-white to-[#377EC0]/[0.04]"
             />
-
             <div
                 class="pointer-events-none absolute -top-28 -right-24 h-72 w-72 rounded-full bg-[#377EC0]/[0.08]"
             />
-
             <div
                 class="pointer-events-none absolute right-32 -bottom-28 h-56 w-56 rounded-full border-[28px] border-[#377EC0]/[0.04]"
             />
-
             <div
                 class="pointer-events-none absolute top-5 left-[43%] h-20 w-20 rounded-full border border-[#377EC0]/10"
             />
-
             <div
                 class="relative z-10 flex min-h-[165px] flex-col justify-between gap-6 px-6 py-5 md:flex-row md:items-center lg:px-8 lg:py-6"
             >
@@ -557,20 +462,17 @@ function handleStudentAction(
                             class="h-full w-full object-contain"
                         />
                     </div>
-
                     <div class="min-w-0">
                         <h1
                             class="text-2xl leading-tight font-bold tracking-tight text-[#21365A] sm:text-3xl lg:text-4xl"
                         >
                             {{ school.name }}
                         </h1>
-
                         <p
                             class="mt-2 text-sm font-medium text-slate-500 sm:text-base"
                         >
                             IRIS — Student Activity Monitoring System
                         </p>
-
                         <p
                             class="mt-1 hidden max-w-[650px] text-sm leading-6 text-slate-400 lg:block"
                         >
@@ -579,7 +481,6 @@ function handleStudentAction(
                         </p>
                     </div>
                 </div>
-
                 <!-- DATE AND TIME -->
                 <div
                     class="flex min-w-[290px] shrink-0 items-center gap-4 rounded-2xl border border-slate-200 bg-white/95 px-5 py-3.5 shadow-sm backdrop-blur"
@@ -591,18 +492,15 @@ function handleStudentAction(
                             class="pi pi-calendar text-lg text-[#377EC0]"
                         />
                     </div>
-
                     <div class="flex-1 text-right">
                         <div class="text-sm font-medium text-slate-500">
                             {{ currentDate }}
                         </div>
-
                         <div
                             class="mt-0.5 whitespace-nowrap font-mono text-2xl font-bold tracking-tight text-slate-900 lg:text-[28px]"
                         >
                             {{ currentTime }}
                         </div>
-
                         <div
                             class="mt-0.5 text-[10px] font-semibold tracking-[0.15em] text-slate-400 uppercase"
                         >
@@ -612,7 +510,6 @@ function handleStudentAction(
                 </div>
             </div>
         </section>
-
         <!-- DASHBOARD CARDS -->
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <Card
@@ -637,7 +534,6 @@ function handleStudentAction(
                                     ]"
                                 />
                             </div>
-
                             <button
                                 type="button"
                                 class="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
@@ -646,12 +542,10 @@ function handleStudentAction(
                                 <i class="pi pi-ellipsis-v text-xs" />
                             </button>
                         </div>
-
                         <div class="mt-3">
                             <p class="text-sm font-medium text-slate-500">
                                 {{ item.label }}
                             </p>
-
                             <h2
                                 :class="[
                                     'mt-0.5 text-[34px] leading-none font-bold tracking-tight',
@@ -661,7 +555,6 @@ function handleStudentAction(
                                 {{ item.value }}
                             </h2>
                         </div>
-
                         <div
                             class="mt-4 flex items-end justify-between gap-3"
                         >
@@ -675,7 +568,6 @@ function handleStudentAction(
                                     <i class="pi pi-eye text-xs" />
                                     View details
                                 </button>
-
                                 <button
                                     v-if="item.canCreateBatch"
                                     type="button"
@@ -685,7 +577,6 @@ function handleStudentAction(
                                     Create Batch Examinees
                                 </button>
                             </div>
-
                             <div
                                 class="flex h-8 shrink-0 items-end gap-1 opacity-40"
                             >
@@ -704,11 +595,11 @@ function handleStudentAction(
                 </template>
             </Card>
         </div>
-
         <!-- STUDENT MONITORING TABLE -->
         <Datatable
             title="Student Monitoring"
             description="Student records ordered by their latest update."
+            header-icon="pi pi-users"
             search-placeholder="Search students..."
             empty-title="No students found"
             empty-description="No matching student records were found."
@@ -723,7 +614,7 @@ function handleStudentAction(
             :total-records="studentsTotal"
             :first="studentsFirst"
             :rows="studentsPerPage"
-            :rows-per-page-options="[10, 25, 50, 100]"
+            :rows-per-page-options="[10, 20, 50, 100]"
             @page="handleStudentPage"
             @sort="handleStudentSort"
             @search="handleStudentSearch"
@@ -745,12 +636,10 @@ function handleStudentAction(
                             :alt="getStudentFullName(data)"
                             class="h-full w-full object-cover"
                         />
-
                         <span v-else>
                             {{ getStudentInitials(data) }}
                         </span>
                     </div>
-
                     <!-- DETAILS -->
                     <div class="min-w-0">
                         <p
@@ -758,18 +647,16 @@ function handleStudentAction(
                         >
                             {{ getStudentFullName(data) || '—' }}
                         </p>
-
                         <div
                             class="mt-1 flex flex-wrap items-center gap-1.5"
                         >
                             <!-- DEPARTMENT TAG -->
-                           <PrimeTag
+                            <PrimeTag
                                 :value="getDepartmentLabel(data.dept)"
                                 :severity="getDepartmentSeverity(data.dept)"
                                 :icon="getDepartmentIcon(data.dept)"
                                 class="!px-2 !py-0.5 !text-[15px] !font-semibold"
                             />
-
                             <!-- SYSTEM ID TAG -->
                             <PrimeTag
                                 :value="
@@ -785,14 +672,12 @@ function handleStudentAction(
                     </div>
                 </div>
             </template>
-
             <!-- SCHOOL ID -->
             <template #cell-school_id_no="{ value }">
                 <span class="font-medium text-slate-700">
                     {{ value || '—' }}
                 </span>
             </template>
-
             <!-- CCI YEAR -->
             <template #cell-batch_no="{ value }">
                 <span
@@ -801,7 +686,6 @@ function handleStudentAction(
                     {{ value || '—' }}
                 </span>
             </template>
-
             <!-- LAST UPDATE -->
             <template #cell-last_update="{ value }">
                 <span class="whitespace-nowrap text-sm text-slate-500">
