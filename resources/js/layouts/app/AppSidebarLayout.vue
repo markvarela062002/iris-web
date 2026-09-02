@@ -1,0 +1,42 @@
+<script setup lang="ts">
+import AppContent from '@/components/AppContent.vue';
+import AppFooter from '@/components/AppFooter.vue';
+import AppShell from '@/components/AppShell.vue';
+import AppSidebar from '@/components/AppSidebar.vue';
+import AppSidebarHeader from '@/components/AppSidebarHeader.vue';
+import { Toaster } from '@/components/ui/sonner';
+
+import type { BreadcrumbItem } from '@/types';
+
+type Props = {
+    breadcrumbs?: BreadcrumbItem[];
+};
+
+withDefaults(defineProps<Props>(), {
+    breadcrumbs: () => [],
+});
+</script>
+
+<template>
+    <AppShell variant="sidebar">
+        <AppSidebar />
+
+        <AppContent
+            variant="sidebar"
+            class="flex min-h-svh min-w-0 flex-col overflow-x-clip"
+        >
+            <!-- HEADER -->
+            <AppSidebarHeader :breadcrumbs="breadcrumbs" />
+
+            <!-- PAGE CONTENT -->
+            <main class="flex min-h-0 flex-1 flex-col">
+                <slot />
+            </main>
+
+            <!-- FOOTER -->
+            <AppFooter />
+        </AppContent>
+
+        <Toaster />
+    </AppShell>
+</template>
