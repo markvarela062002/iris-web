@@ -143,6 +143,251 @@ return [
         ],
 
         /*
+         * IGCFI school connection.
+         */
+        'igcfi' => [
+            'driver' => 'mysql',
+            'url' => env('IGCFI_DB_URL'),
+            'host' => env(
+                'IGCFI_DB_HOST',
+                '127.0.0.1',
+            ),
+            'port' => env(
+                'IGCFI_DB_PORT',
+                '3306',
+            ),
+            'database' => env(
+                'IGCFI_DB_DATABASE',
+            ),
+            'username' => env(
+                'IGCFI_DB_USERNAME',
+            ),
+            'password' => env(
+                'IGCFI_DB_PASSWORD',
+                '',
+            ),
+            'unix_socket' => env(
+                'IGCFI_DB_SOCKET',
+                '',
+            ),
+            'charset' => env(
+                'IGCFI_DB_CHARSET',
+                'utf8mb4',
+            ),
+            'collation' => env(
+                'IGCFI_DB_COLLATION',
+                'utf8mb4_unicode_ci',
+            ),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql')
+                ? array_filter([
+                    Mysql::ATTR_SSL_CA => env(
+                        'IGCFI_MYSQL_ATTR_SSL_CA',
+                    ),
+                ])
+                : [],
+        ],
+
+        /*
+         * MCL school connection.
+         */
+        'mcl' => [
+            'driver' => 'mysql',
+            'url' => env('MCL_DB_URL'),
+            'host' => env(
+                'MCL_DB_HOST',
+                '127.0.0.1',
+            ),
+            'port' => env(
+                'MCL_DB_PORT',
+                '3306',
+            ),
+            'database' => env(
+                'MCL_DB_DATABASE',
+            ),
+            'username' => env(
+                'MCL_DB_USERNAME',
+            ),
+            'password' => env(
+                'MCL_DB_PASSWORD',
+                '',
+            ),
+            'unix_socket' => env(
+                'MCL_DB_SOCKET',
+                '',
+            ),
+            'charset' => env(
+                'MCL_DB_CHARSET',
+                'utf8mb4',
+            ),
+            'collation' => env(
+                'MCL_DB_COLLATION',
+                'utf8mb4_unicode_ci',
+            ),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql')
+                ? array_filter([
+                    Mysql::ATTR_SSL_CA => env(
+                        'MCL_MYSQL_ATTR_SSL_CA',
+                    ),
+                ])
+                : [],
+        ],
+
+        /*
+         * MCI school connection.
+         */
+        'mci' => [
+            'driver' => 'mysql',
+            'url' => env('MCI_DB_URL'),
+            'host' => env(
+                'MCI_DB_HOST',
+                '127.0.0.1',
+            ),
+            'port' => env(
+                'MCI_DB_PORT',
+                '3306',
+            ),
+            'database' => env(
+                'MCI_DB_DATABASE',
+            ),
+            'username' => env(
+                'MCI_DB_USERNAME',
+            ),
+            'password' => env(
+                'MCI_DB_PASSWORD',
+                '',
+            ),
+            'unix_socket' => env(
+                'MCI_DB_SOCKET',
+                '',
+            ),
+            'charset' => env(
+                'MCI_DB_CHARSET',
+                'utf8mb4',
+            ),
+            'collation' => env(
+                'MCI_DB_COLLATION',
+                'utf8mb4_unicode_ci',
+            ),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql')
+                ? array_filter([
+                    Mysql::ATTR_SSL_CA => env(
+                        'MCI_MYSQL_ATTR_SSL_CA',
+                    ),
+                ])
+                : [],
+        ],
+
+        /*
+         * UPH school connection.
+         */
+        'uph' => [
+            'driver' => 'mysql',
+            'url' => env('UPH_DB_URL'),
+            'host' => env(
+                'UPH_DB_HOST',
+                '127.0.0.1',
+            ),
+            'port' => env(
+                'UPH_DB_PORT',
+                '3306',
+            ),
+            'database' => env(
+                'UPH_DB_DATABASE',
+            ),
+            'username' => env(
+                'UPH_DB_USERNAME',
+            ),
+            'password' => env(
+                'UPH_DB_PASSWORD',
+                '',
+            ),
+            'unix_socket' => env(
+                'UPH_DB_SOCKET',
+                '',
+            ),
+            'charset' => env(
+                'UPH_DB_CHARSET',
+                'utf8mb4',
+            ),
+            'collation' => env(
+                'UPH_DB_COLLATION',
+                'utf8mb4_unicode_ci',
+            ),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql')
+                ? array_filter([
+                    Mysql::ATTR_SSL_CA => env(
+                        'UPH_MYSQL_ATTR_SSL_CA',
+                    ),
+                ])
+                : [],
+        ],
+
+        /*
+         * UPHSD school connection.
+         */
+        'uphsd' => [
+            'driver' => 'mysql',
+            'url' => env('UPHSD_DB_URL'),
+            'host' => env(
+                'UPHSD_DB_HOST',
+                '127.0.0.1',
+            ),
+            'port' => env(
+                'UPHSD_DB_PORT',
+                '3306',
+            ),
+            'database' => env(
+                'UPHSD_DB_DATABASE',
+            ),
+            'username' => env(
+                'UPHSD_DB_USERNAME',
+            ),
+            'password' => env(
+                'UPHSD_DB_PASSWORD',
+                '',
+            ),
+            'unix_socket' => env(
+                'UPHSD_DB_SOCKET',
+                '',
+            ),
+            'charset' => env(
+                'UPHSD_DB_CHARSET',
+                'utf8mb4',
+            ),
+            'collation' => env(
+                'UPHSD_DB_COLLATION',
+                'utf8mb4_unicode_ci',
+            ),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql')
+                ? array_filter([
+                    Mysql::ATTR_SSL_CA => env(
+                        'UPHSD_MYSQL_ATTR_SSL_CA',
+                    ),
+                ])
+                : [],
+        ],
+
+        /*
          * Optional standard MariaDB connection.
          */
         'mariadb' => [

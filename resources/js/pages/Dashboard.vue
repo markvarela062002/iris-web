@@ -169,11 +169,68 @@ const studentColumns: DataTableColumn[] = [
         class: 'min-w-[130px] text-center',
     },
     {
+        field: 'company',
+        header: 'Company',
+        sortable: false,
+        searchable: true,
+        class: 'min-w-[170px]',
+    },
+    {
+        field: 'vessel_type',
+        header: 'Vessel Type',
+        sortable: false,
+        searchable: true,
+        class: 'min-w-[170px]',
+    },
+    {
+        field: 'total_activities',
+        header: 'Activities',
+        sortable: false,
+        searchable: true,
+        class: 'min-w-[130px] text-center',
+    },
+    {
+        field: 'total_file_upload',
+        header: 'File',
+        sortable: false,
+        searchable: true,
+        class: 'min-w-[130px] text-center',
+    },
+    {
+        field: 'total_daily_journal',
+        header: 'Journals',
+        sortable: false,
+        searchable: true,
+        class: 'min-w-[130px] text-center',
+    },
+    {
+        field: 'total_task',
+        header: 'Tasks',
+        sortable: false,
+        searchable: true,
+        class: 'min-w-[130px] text-center',
+    },
+    {
+        field: 'task_completed',
+        header: 'Tasks Completed',
+        sortable: false,
+        searchable: true,
+        class: 'min-w-[130px] text-center',
+    },
+    {
+        field: 'task_percentage',
+        header: 'Task %',
+        sortable: false,
+        searchable: true,
+        class: 'min-w-[130px] text-center',
+    },
+    {
         field: 'last_update',
         header: 'Last Update',
         sortable: true,
         class: 'min-w-[200px]',
     },
+
 ];
 /*
 |--------------------------------------------------------------------------
@@ -388,7 +445,7 @@ function getDepartmentIcon(department: unknown): string {
 function getDepartmentLabel(department: unknown): string {
     const value = String(department ?? '').trim();
     if (!value) {
-        return 'No Department';
+        return '—';
     }
     return value.toUpperCase();
 }
@@ -684,6 +741,52 @@ function handleStudentAction(
                     class="inline-flex rounded-md bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700"
                 >
                     {{ value || '—' }}
+                </span>
+            </template>
+            <template #cell-company="{ value }">
+                <span class="font-medium text-slate-700">
+                    {{ value || '—' }}
+                </span>
+            </template>
+            <template #cell-vessel_type="{ value }">
+                <span class="font-medium text-slate-700">
+                    {{ value || '—' }}
+                </span>
+            </template>
+            <template #cell-total_activities="{ value }">
+                <span
+                    class="inline-flex rounded-md bg-orange-50 px-2.5 py-1 text-xs font-semibold text-orange-700"
+                >
+                    {{ value || '—' }}
+                </span>
+            </template>
+            <template #cell-total_file_upload="{ value }">
+                <span
+                    class="inline-flex rounded-md bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700"
+                >
+                    {{ value || '—' }}
+                </span>
+            </template>
+            <template #cell-total_daily_journal="{ value }">
+                <span
+                    class="inline-flex rounded-md bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700"
+                >
+                    {{ value || '—' }}
+                </span>
+            </template>
+            <template #cell-total_task="{ value }">
+                <span class="font-medium text-slate-700">
+                    {{ value || '—' }}
+                </span>
+            </template>
+            <template #cell-task_completed="{ value }">
+                <span class="font-medium text-slate-700">
+                    {{ value || '—' }}
+                </span>
+            </template>
+            <template #cell-task_percentage="{ value }">
+                <span class="font-medium text-slate-700">
+                    {{ value || '—' }}%
                 </span>
             </template>
             <!-- LAST UPDATE -->
