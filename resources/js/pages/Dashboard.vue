@@ -48,13 +48,9 @@ type StudentApiResponse = {
      */
 
     activity_verification_total?: number;
-
     documents_upload_total?: number;
-
     otg_updates_total?: number;
-
     daily_journals_total?: number;
-
     theoretical_enrolled_total?: number;
 
     theoretical_not_enrolled_total?: number;
@@ -107,11 +103,8 @@ type StudentSortEvent = {
 type DepartmentSeverity = 'success' | 'info' | 'secondary';
 
 const page = usePage<SharedData>();
-
 const school = computed(() => page.props.school);
-
 const currentDate = ref('');
-
 const currentTime = ref('');
 
 let clockInterval: ReturnType<typeof setInterval> | null = null;
@@ -802,9 +795,7 @@ function handleStudentAction(
 <template>
     <Head title="Dashboard" />
 
-    <div
-        class="flex h-full min-h-0 flex-1 flex-col gap-4 overflow-y-auto bg-[#F8FAFC] p-4 lg:p-5"
-    >
+    <div class="flex h-full min-h-0 flex-1 flex-col gap-4 overflow-y-auto bg-[#F8FAFC] p-4 lg:p-5">
         <!-- SCHOOL HERO SECTION -->
 
         <section
