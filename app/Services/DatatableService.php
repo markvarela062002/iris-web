@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -14,6 +15,16 @@ class DatatableService
      *
      * @param  array<string>  $searchableColumns
      * @param  array<string, string>  $sortableColumns
+     * @param  array<string>  $selectColumns  Explicit columns to select.
+     *         Leave empty to select all columns (previous default behavior).
+     * @param  bool  $simplePaginate  When true, skips the COUNT(*) query
+     *         (no total/lastPage in the response). Use for tables where the
+     *         UI only needs prev/next, not a page count — this is usually
+     *         the single biggest speed win on large tables.
+     * @param  string  $searchMode  'contains' (default, original behavior,
+     *         "%term%") or 'starts_with' ("term%"), which can use a normal
+     *         B-tree index and is much faster on large tables when the UX
+     *         allows prefix search instead of substring search.
      * @return array<string, mixed>
      */
     public function paginate(
@@ -23,7 +34,14 @@ class DatatableService
         array $sortableColumns = [],
         string $defaultSortColumn = 'id',
         string $defaultSortDirection = 'asc',
+        array $selectColumns = [],
+        bool $simplePaginate = false,
+        string $searchMode = 'contains',
     ): array {
+        if ($selectColumns !== []) {
+            $query->select($selectColumns);
+        }
+
         $search = trim((string) $request->input('search', ''));
 
         $allowedPerPage = [10, 20, 50, 100];
@@ -52,14 +70,15 @@ class DatatableService
             ?? $sortableColumns[$defaultSortColumn]
             ?? $defaultSortColumn;
 
-        $this->applySearch($query, $search, $searchableColumns);
+        $this->applySearch($query, $search, $searchableColumns, $searchMode);
 
         $query->orderBy($sortColumn, $sortDirection);
 
-        $paginator = $query->paginate(
-            perPage: $perPage,
-            page: max(1, $request->integer('page', 1)),
-        );
+        $page = max(1, $request->integer('page', 1));
+
+        $paginator = $simplePaginate
+            ? $query->simplePaginate(perPage: $perPage, page: $page)
+            : $query->paginate(perPage: $perPage, page: $page);
 
         return $this->formatResponse($paginator);
     }
@@ -69,46 +88,63 @@ class DatatableService
         Builder $query,
         string $search,
         array $searchableColumns,
+        string $searchMode,
     ): void {
         if ($search === '' || $searchableColumns === []) {
             return;
         }
 
+        $pattern = $searchMode === 'starts_with'
+            ? "{$search}%"
+            : "%{$search}%";
+
         $query->where(function (Builder $searchQuery) use (
-            $search,
+            $pattern,
             $searchableColumns,
         ): void {
             foreach ($searchableColumns as $index => $column) {
                 if ($index === 0) {
-                    $searchQuery->where($column, 'like', "%{$search}%");
+                    $searchQuery->where($column, 'like', $pattern);
                     continue;
                 }
 
-                $searchQuery->orWhere($column, 'like', "%{$search}%");
+                $searchQuery->orWhere($column, 'like', $pattern);
             }
         });
     }
 
     /** @return array<string, mixed> */
     private function formatResponse(
-        LengthAwarePaginator $paginator,
+        LengthAwarePaginator|Paginator $paginator,
     ): array {
+        $meta = [
+            'currentPage' => $paginator->currentPage(),
+            'perPage' => $paginator->perPage(),
+        ];
+
+        $links = [
+            'previous' => $paginator->previousPageUrl(),
+            'next' => $paginator->nextPageUrl(),
+        ];
+
+        // Only LengthAwarePaginator (paginate()) knows the total row count
+        // and last page — simplePaginate() intentionally skips the COUNT(*)
+        // query needed to compute these, which is where the speed gain
+        // comes from.
+        if ($paginator instanceof LengthAwarePaginator) {
+            $meta['lastPage'] = $paginator->lastPage();
+            $meta['total'] = $paginator->total();
+            $meta['from'] = $paginator->firstItem();
+            $meta['to'] = $paginator->lastItem();
+
+            $links['first'] = $paginator->url(1);
+            $links['last'] = $paginator->url($paginator->lastPage());
+        }
+
         return [
             'data' => $paginator->items(),
-            'meta' => [
-                'currentPage' => $paginator->currentPage(),
-                'lastPage' => $paginator->lastPage(),
-                'perPage' => $paginator->perPage(),
-                'total' => $paginator->total(),
-                'from' => $paginator->firstItem(),
-                'to' => $paginator->lastItem(),
-            ],
-            'links' => [
-                'first' => $paginator->url(1),
-                'last' => $paginator->url($paginator->lastPage()),
-                'previous' => $paginator->previousPageUrl(),
-                'next' => $paginator->nextPageUrl(),
-            ],
+            'meta' => $meta,
+            'links' => $links,
         ];
     }
 

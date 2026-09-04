@@ -127,50 +127,6 @@ return [
             'connection' => 'mci',
         ],
 
-        'UPH' => [
-            'code' => strtoupper(
-                trim(
-                    (string) env(
-                        'UPH_DB_CODE',
-                        'UPH',
-                    ),
-                ),
-            ),
 
-            'name' => env(
-                'UPH_SCHOOL_NAME',
-                'UNIVERSITY OF PERPETUAL HELP SYSTEM JONELTA',
-            ),
-
-            'logo' => env(
-                'UPH_SCHOOL_LOGO',
-                '/images/uph.png',
-            ),
-
-            'connection' => 'uph',
-        ],
-
-        'UPHSD' => [
-            'code' => strtoupper(
-                trim(
-                    (string) env(
-                        'UPHSD_DB_CODE',
-                        'UPHSD',
-                    ),
-                ),
-            ),
-
-            'name' => env(
-                'UPHSD_SCHOOL_NAME',
-                'UNIVERSITY OF PERPETUAL HELP SYSTEM DALTA',
-            ),
-
-            'logo' => env(
-                'UPHSD_SCHOOL_LOGO',
-                '/images/uphsd.png',
-            ),
-
-            'connection' => 'uphsd',
-        ],
     ],
 ];
