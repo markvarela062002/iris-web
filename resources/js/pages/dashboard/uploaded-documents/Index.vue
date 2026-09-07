@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import {
-    Head,
-    router,
-} from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import axios from 'axios';
 import Avatar from 'primevue/avatar';
 import Button from 'primevue/button';
@@ -10,12 +7,7 @@ import Dialog from 'primevue/dialog';
 import Message from 'primevue/message';
 import PrimeTag from 'primevue/tag';
 import Textarea from 'primevue/textarea';
-import {
-    computed,
-    onBeforeUnmount,
-    onMounted,
-    ref,
-} from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
 import Datatable from '@/components/Datatable.vue';
 import { dashboard } from '@/routes';
@@ -36,14 +28,14 @@ defineOptions({
                 href: dashboard(),
             },
             {
-                title: 'Activity Verification',
-                href: '/dashboard/activity-updates',
+                title: 'Documents Verification',
+                href: '/dashboard/uploaded-documents',
             },
         ],
     },
 });
 
-type ActivityApiResponse = {
+type DocumentApiResponse = {
     data: DataTableRow[];
 
     meta: {
@@ -74,7 +66,7 @@ type DataTableSortEvent = {
     sortOrder: number;
 };
 
-const activities = ref<DataTableRow[]>([]);
+const documents = ref<DataTableRow[]>([]);
 const loading = ref(false);
 const actionLoading = ref(false);
 
@@ -83,15 +75,12 @@ const first = ref(0);
 const perPage = ref(10);
 const search = ref('');
 
-const sortField = ref('last_update');
+const sortField = ref('date_uploaded');
+const sortDirection = ref<'asc' | 'desc'>('desc');
 
-const sortDirection = ref<'asc' | 'desc'>(
-    'desc',
-);
+const selectedDocument = ref<DataTableRow | null>(null);
 
-const selectedActivity =
-    ref<DataTableRow | null>(null);
-
+const filesDialogVisible = ref(false);
 const verifyDialogVisible = ref(false);
 const reviseDialogVisible = ref(false);
 
@@ -101,8 +90,7 @@ const reviseError = ref('');
 const successMessage = ref('');
 const errorMessage = ref('');
 
-let requestController: AbortController | null =
-    null;
+let requestController: AbortController | null = null;
 
 /*
 |--------------------------------------------------------------------------
@@ -121,25 +109,25 @@ const columns: DataTableColumn[] = [
         class: 'w-[360px] min-w-[360px]',
     },
     {
-        field: 'desc_activity',
-        header: 'Activity',
+        field: 'file_desc',
+        header: 'File Description',
         sortable: true,
         searchable: true,
-        class: 'w-[320px] min-w-[320px] whitespace-normal',
+        class: 'w-[300px] min-w-[300px] whitespace-normal',
     },
     {
-        field: 'start_date',
-        header: 'Activity Period',
+        field: 'desc_requirement',
+        header: 'Requirement Type',
         sortable: true,
         searchable: true,
-        class: 'w-[260px] min-w-[260px]',
+        class: 'w-[300px] min-w-[300px] whitespace-normal',
     },
     {
-        field: 'last_update',
-        header: 'Date Submitted',
+        field: 'date_uploaded',
+        header: 'Date Uploaded',
         sortable: true,
         searchable: true,
-        class: 'w-[210px] min-w-[210px]',
+        class: 'w-[220px] min-w-[220px]',
     },
 ];
 
@@ -151,14 +139,17 @@ const columns: DataTableColumn[] = [
 
 const actions: DataTableAction[] = [
     {
-        key: 'view-file',
-        label: 'View uploaded PDF',
+        key: 'view-files',
+        label: 'View uploaded files',
         icon: 'pi pi-file-pdf',
         severity: 'danger',
+        visible: (row: DataTableRow) => {
+            return getUploadedFiles(row).length > 0;
+        },
     },
     {
         key: 'verify',
-        label: 'Verify activity',
+        label: 'Verify document',
         icon: 'pi pi-check-circle',
         severity: 'success',
     },
@@ -171,30 +162,32 @@ const actions: DataTableAction[] = [
 ];
 
 const currentPage = computed(() => {
-    return Math.floor(
-        first.value / perPage.value,
-    ) + 1;
+    return Math.floor(first.value / perPage.value) + 1;
 });
 
 const selectedStudentName = computed(() => {
-    if (!selectedActivity.value) {
+    if (!selectedDocument.value) {
         return '';
     }
 
-    return getStudentFullName(
-        selectedActivity.value,
-    );
+    return getStudentFullName(selectedDocument.value);
+});
+
+const selectedFiles = computed(() => {
+    if (!selectedDocument.value) {
+        return [];
+    }
+
+    return getUploadedFiles(selectedDocument.value);
 });
 
 /*
 |--------------------------------------------------------------------------
-| Load activities
+| Load documents
 |--------------------------------------------------------------------------
 */
 
-async function loadActivities(
-    pageNumber = 1,
-): Promise<void> {
+async function loadDocuments(pageNumber = 1): Promise<void> {
     requestController?.abort();
 
     const controller = new AbortController();
@@ -204,38 +197,31 @@ async function loadActivities(
     errorMessage.value = '';
 
     try {
-        const response =
-            await axios.get<ActivityApiResponse>(
-                '/api/v1/dashboard/datatable/activity-updates',
-                {
-                    signal: controller.signal,
+        const response = await axios.get<DocumentApiResponse>(
+            '/api/v1/dashboard/datatable/uploaded-documents',
+            {
+                signal: controller.signal,
 
-                    params: {
-                        page: pageNumber,
-                        per_page: perPage.value,
-                        search: search.value,
-                        sort_field: sortField.value,
-                        sort_direction:
-                            sortDirection.value,
-                    },
-
-                    headers: {
-                        Accept: 'application/json',
-                        'X-Requested-With':
-                            'XMLHttpRequest',
-                    },
-
-                    withCredentials: true,
+                params: {
+                    page: pageNumber,
+                    per_page: perPage.value,
+                    search: search.value,
+                    sort_field: sortField.value,
+                    sort_direction: sortDirection.value,
                 },
-            );
 
-        activities.value = response.data.data;
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
 
-        totalRecords.value =
-            response.data.meta.total;
+                withCredentials: true,
+            },
+        );
 
-        perPage.value =
-            response.data.meta.perPage;
+        documents.value = response.data.data;
+        totalRecords.value = response.data.meta.total;
+        perPage.value = response.data.meta.perPage;
 
         first.value =
             (response.data.meta.currentPage - 1) *
@@ -243,28 +229,22 @@ async function loadActivities(
     } catch (error: unknown) {
         if (
             axios.isCancel(error) ||
-            (axios.isAxiosError(error) &&
-                error.code === 'ERR_CANCELED')
+            (axios.isAxiosError(error) && error.code === 'ERR_CANCELED')
         ) {
             return;
         }
 
-        activities.value = [];
+        documents.value = [];
         totalRecords.value = 0;
 
         errorMessage.value = getErrorMessage(
             error,
-            'Unable to load activity updates.',
+            'Unable to load uploaded documents.',
         );
 
-        console.error(
-            'Unable to load activity updates:',
-            error,
-        );
+        console.error('Unable to load uploaded documents:', error);
     } finally {
-        if (
-            requestController === controller
-        ) {
+        if (requestController === controller) {
             loading.value = false;
         }
     }
@@ -276,36 +256,37 @@ async function loadActivities(
 |--------------------------------------------------------------------------
 */
 
-function handlePage(
-    event: DataTablePageEvent,
-): void {
+function handlePage(event: DataTablePageEvent): void {
     perPage.value = event.rows;
     first.value = event.first;
 
-    void loadActivities(event.page + 1);
+    void loadDocuments(event.page + 1);
 }
 
-function handleSort(
-    event: DataTableSortEvent,
-): void {
-    sortField.value =
-        event.sortField || 'last_update';
-
-    sortDirection.value =
-        event.sortOrder === -1
-            ? 'desc'
-            : 'asc';
+function handleSort(event: DataTableSortEvent): void {
+    sortField.value = event.sortField || 'date_uploaded';
+    sortDirection.value = event.sortOrder === -1 ? 'desc' : 'asc';
 
     first.value = 0;
 
-    void loadActivities(1);
+    void loadDocuments(1);
 }
 
 function handleSearch(value: string): void {
     search.value = value;
     first.value = 0;
 
-    void loadActivities(1);
+    void loadDocuments(1);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Navigation
+|--------------------------------------------------------------------------
+*/
+
+function navigateToDashboard(): void {
+    router.visit('/dashboard');
 }
 
 /*
@@ -316,18 +297,17 @@ function handleSearch(value: string): void {
 
 function handleAction(
     action: string,
-    activity: DataTableRow,
+    document: DataTableRow,
 ): void {
     successMessage.value = '';
     errorMessage.value = '';
+    selectedDocument.value = document;
 
-    if (action === 'view-file') {
-        openUploadedFile(activity);
+    if (action === 'view-files') {
+        openUploadedFiles(document);
 
         return;
     }
-
-    selectedActivity.value = activity;
 
     if (action === 'verify') {
         verifyDialogVisible.value = true;
@@ -342,34 +322,39 @@ function handleAction(
     }
 }
 
-function openUploadedFile(
-    activity: DataTableRow,
-): void {
-    const filename = String(
-        activity.filename ?? '',
-    ).trim();
+function openUploadedFiles(document: DataTableRow): void {
+    const files = getUploadedFiles(document);
 
-    if (!filename) {
-        errorMessage.value =
-            'This activity does not have an uploaded file.';
+    if (files.length === 0) {
+        selectedDocument.value = null;
+        errorMessage.value = 'This record does not have an uploaded file.';
 
         return;
     }
 
-    window.open(
-        getUploadedFileUrl(filename),
-        '_blank',
-        'noopener,noreferrer',
-    );
+    if (files.length === 1) {
+        window.open(
+            getUploadedFileUrl(files[0]),
+            '_blank',
+            'noopener,noreferrer',
+        );
+
+        selectedDocument.value = null;
+
+        return;
+    }
+
+    filesDialogVisible.value = true;
 }
 
-function navigateToDashboard(): void {
-    router.visit('/dashboard');
+function closeFilesDialog(): void {
+    filesDialogVisible.value = false;
+    selectedDocument.value = null;
 }
 
 /*
 |--------------------------------------------------------------------------
-| Verify activity
+| Verify document
 |--------------------------------------------------------------------------
 */
 
@@ -379,15 +364,14 @@ function closeVerifyDialog(): void {
     }
 
     verifyDialogVisible.value = false;
-    selectedActivity.value = null;
+    selectedDocument.value = null;
 }
 
-async function verifyActivity(): Promise<void> {
-    const activityId = getSelectedActivityId();
+async function verifyDocument(): Promise<void> {
+    const documentId = getSelectedDocumentId();
 
-    if (!activityId) {
-        errorMessage.value =
-            'The selected activity ID is missing.';
+    if (!documentId) {
+        errorMessage.value = 'The selected document ID is missing.';
 
         return;
     }
@@ -399,15 +383,14 @@ async function verifyActivity(): Promise<void> {
         const response = await axios.patch<{
             message: string;
         }>(
-            `/api/v1/dashboard/activity-updates/${encodeURIComponent(
-                activityId,
+            `/api/v1/dashboard/uploaded-documents/${encodeURIComponent(
+                documentId,
             )}/verify`,
             {},
             {
                 headers: {
                     Accept: 'application/json',
-                    'X-Requested-With':
-                        'XMLHttpRequest',
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
 
                 withCredentials: true,
@@ -415,17 +398,16 @@ async function verifyActivity(): Promise<void> {
         );
 
         successMessage.value =
-            response.data.message ||
-            'The activity has been validated.';
+            response.data.message || 'The file has been validated.';
 
         verifyDialogVisible.value = false;
-        selectedActivity.value = null;
+        selectedDocument.value = null;
 
         await reloadCurrentPage();
     } catch (error: unknown) {
         errorMessage.value = getErrorMessage(
             error,
-            'Failed to validate the activity.',
+            'Failed to validate the file.',
         );
     } finally {
         actionLoading.value = false;
@@ -434,7 +416,7 @@ async function verifyActivity(): Promise<void> {
 
 /*
 |--------------------------------------------------------------------------
-| Revise activity
+| Revise document
 |--------------------------------------------------------------------------
 */
 
@@ -446,24 +428,22 @@ function closeReviseDialog(): void {
     reviseDialogVisible.value = false;
     reviseRemarks.value = '';
     reviseError.value = '';
-    selectedActivity.value = null;
+    selectedDocument.value = null;
 }
 
-async function reviseActivity(): Promise<void> {
+async function reviseDocument(): Promise<void> {
     reviseError.value = '';
 
     if (reviseRemarks.value.trim() === '') {
-        reviseError.value =
-            'Reason for revision is required.';
+        reviseError.value = 'Reason for revision is required.';
 
         return;
     }
 
-    const activityId = getSelectedActivityId();
+    const documentId = getSelectedDocumentId();
 
-    if (!activityId) {
-        reviseError.value =
-            'The selected activity ID is missing.';
+    if (!documentId) {
+        reviseError.value = 'The selected document ID is missing.';
 
         return;
     }
@@ -475,18 +455,16 @@ async function reviseActivity(): Promise<void> {
         const response = await axios.patch<{
             message: string;
         }>(
-            `/api/v1/dashboard/activity-updates/${encodeURIComponent(
-                activityId,
+            `/api/v1/dashboard/uploaded-documents/${encodeURIComponent(
+                documentId,
             )}/revise`,
             {
-                revise_remarks:
-                    reviseRemarks.value.trim(),
+                revise_remarks: reviseRemarks.value.trim(),
             },
             {
                 headers: {
                     Accept: 'application/json',
-                    'X-Requested-With':
-                        'XMLHttpRequest',
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
 
                 withCredentials: true,
@@ -495,26 +473,25 @@ async function reviseActivity(): Promise<void> {
 
         successMessage.value =
             response.data.message ||
-            'The activity has been saved.';
+            'The submitted record has been saved.';
 
         reviseDialogVisible.value = false;
         reviseRemarks.value = '';
         reviseError.value = '';
-        selectedActivity.value = null;
+        selectedDocument.value = null;
 
         await reloadCurrentPage();
     } catch (error: unknown) {
-        const validationMessage =
-            getValidationMessage(
-                error,
-                'revise_remarks',
-            );
+        const validationMessage = getValidationMessage(
+            error,
+            'revise_remarks',
+        );
 
         reviseError.value =
             validationMessage ??
             getErrorMessage(
                 error,
-                'Failed to save the activity.',
+                'Failed to save the record.',
             );
     } finally {
         actionLoading.value = false;
@@ -522,15 +499,13 @@ async function reviseActivity(): Promise<void> {
 }
 
 async function reloadCurrentPage(): Promise<void> {
-    await loadActivities(currentPage.value);
+    await loadDocuments(currentPage.value);
 
     if (
-        activities.value.length === 0 &&
+        documents.value.length === 0 &&
         currentPage.value > 1
     ) {
-        await loadActivities(
-            currentPage.value - 1,
-        );
+        await loadDocuments(currentPage.value - 1);
     }
 }
 
@@ -540,26 +515,17 @@ async function reloadCurrentPage(): Promise<void> {
 |--------------------------------------------------------------------------
 */
 
-function getStudentFullName(
-    activity: DataTableRow,
-): string {
-    const lastName = String(
-        activity.lname ?? '',
-    ).trim();
+function getStudentFullName(document: DataTableRow): string {
+    const lastName = String(document.lname ?? '').trim();
 
     const otherNames = [
-        activity.fname,
-        activity.mname,
+        document.fname,
+        document.mname,
     ]
         .filter((name) => {
-            return (
-                typeof name === 'string' &&
-                name.trim() !== ''
-            );
+            return typeof name === 'string' && name.trim() !== '';
         })
-        .map((name) => {
-            return String(name).trim();
-        })
+        .map((name) => String(name).trim())
         .join(' ');
 
     if (lastName && otherNames) {
@@ -569,29 +535,17 @@ function getStudentFullName(
     return (lastName || otherNames).toUpperCase();
 }
 
-function getStudentInitials(
-    activity: DataTableRow,
-): string {
-    const firstName = String(
-        activity.fname ?? '',
-    ).trim();
+function getStudentInitials(document: DataTableRow): string {
+    const firstName = String(document.fname ?? '').trim();
+    const lastName = String(document.lname ?? '').trim();
 
-    const lastName = String(
-        activity.lname ?? '',
-    ).trim();
-
-    const initials =
-        `${firstName.charAt(0)}${lastName.charAt(0)}`;
+    const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`;
 
     return initials.toUpperCase() || 'ST';
 }
 
-function getStudentAvatar(
-    gender: unknown,
-): string | null {
-    const normalizedGender = String(
-        gender ?? '',
-    )
+function getStudentAvatar(gender: unknown): string | null {
+    const normalizedGender = String(gender ?? '')
         .trim()
         .toUpperCase();
 
@@ -612,79 +566,79 @@ function getStudentAvatar(
     return null;
 }
 
-function getSchoolIdLabel(
-    value: unknown,
-): string {
-    const schoolId = String(
-        value ?? '',
-    ).trim();
+function getSystemIdLabel(value: unknown): string {
+    const systemId = String(value ?? '').trim();
+
+    return systemId || 'No System ID';
+}
+
+function getSchoolIdLabel(value: unknown): string {
+    const schoolId = String(value ?? '').trim();
 
     return schoolId || 'No School ID';
 }
 
 /*
 |--------------------------------------------------------------------------
-| File and date helpers
+| File helpers
 |--------------------------------------------------------------------------
 */
 
-function getUploadedFileUrl(
-    filename: unknown,
-): string {
-    const normalizedFilename = String(
-        filename ?? '',
-    )
-        .trim()
+function getUploadedFiles(document: DataTableRow): string[] {
+    return String(document.filenames ?? '')
+        .split('|||FILE|||')
+        .map((filename) => filename.trim())
+        .filter(Boolean);
+}
+
+function getUploadedFileUrl(filename: string): string {
+    const normalizedFilename = filename
         .split('/')
         .filter(Boolean)
         .map(encodeURIComponent)
         .join('/');
 
-    return `/person_task/${normalizedFilename}`;
+    return `/docs/${normalizedFilename}`;
 }
 
-function formatDate(
-    value: unknown,
-    includeTime = false,
+/*
+|--------------------------------------------------------------------------
+| Date helpers
+|--------------------------------------------------------------------------
+*/
+
+function formatUploadedDate(
+    dateValue: unknown,
+    timeValue: unknown,
 ): string {
-    if (
-        !value ||
-        value === '1970-01-01' ||
-        value === '1970-01-01 00:00:00'
-    ) {
+    const date = String(dateValue ?? '').trim();
+    const time = String(timeValue ?? '').trim();
+
+    if (!date || date === '1970-01-01') {
         return '—';
     }
 
-    const rawValue = String(value);
+    const combinedValue = time
+        ? `${date} ${time}`
+        : date;
 
-    const normalizedValue =
-        rawValue.includes('T')
-            ? rawValue
-            : rawValue.replace(' ', 'T');
+    const normalizedValue = combinedValue.replace(' ', 'T');
 
-    const date = new Date(normalizedValue);
+    const parsedDate = new Date(normalizedValue);
 
-    if (Number.isNaN(date.getTime())) {
-        return rawValue;
+    if (Number.isNaN(parsedDate.getTime())) {
+        return combinedValue;
     }
 
-    return new Intl.DateTimeFormat(
-        'en-PH',
-        {
-            timeZone: 'Asia/Manila',
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-
-            ...(includeTime
-                ? {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      hour12: false,
-                  }
-                : {}),
-        },
-    ).format(date);
+    return new Intl.DateTimeFormat('en-PH', {
+        timeZone: 'Asia/Manila',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: time ? '2-digit' : undefined,
+        minute: time ? '2-digit' : undefined,
+        hour12: true,
+    }).format(parsedDate);
 }
 
 /*
@@ -693,10 +647,8 @@ function formatDate(
 |--------------------------------------------------------------------------
 */
 
-function getSelectedActivityId(): string {
-    return String(
-        selectedActivity.value?.id ?? '',
-    ).trim();
+function getSelectedDocumentId(): string {
+    return String(selectedDocument.value?.id ?? '').trim();
 }
 
 function getErrorMessage(
@@ -707,12 +659,11 @@ function getErrorMessage(
         return fallback;
     }
 
-    const responseData =
-        error.response?.data as
-            | {
-                  message?: string;
-              }
-            | undefined;
+    const responseData = error.response?.data as
+        | {
+              message?: string;
+          }
+        | undefined;
 
     return responseData?.message || fallback;
 }
@@ -725,20 +676,13 @@ function getValidationMessage(
         return null;
     }
 
-    const responseData =
-        error.response?.data as
-            | {
-                  errors?: Record<
-                      string,
-                      string[]
-                  >;
-              }
-            | undefined;
+    const responseData = error.response?.data as
+        | {
+              errors?: Record<string, string[]>;
+          }
+        | undefined;
 
-    return (
-        responseData?.errors?.[field]?.[0] ??
-        null
-    );
+    return responseData?.errors?.[field]?.[0] ?? null;
 }
 
 /*
@@ -748,7 +692,7 @@ function getValidationMessage(
 */
 
 onMounted(() => {
-    void loadActivities(1);
+    void loadDocuments(1);
 });
 
 onBeforeUnmount(() => {
@@ -757,11 +701,13 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <Head title="Activity Verification" />
+    <Head title="Documents Verification" />
 
     <div
         class="flex h-full min-h-0 flex-1 flex-col gap-4 overflow-y-auto bg-[#F8FAFC] p-4 lg:p-5"
     >
+        <!-- SUCCESS MESSAGE -->
+
         <Message
             v-if="successMessage"
             severity="success"
@@ -770,6 +716,8 @@ onBeforeUnmount(() => {
         >
             {{ successMessage }}
         </Message>
+
+        <!-- ERROR MESSAGE -->
 
         <Message
             v-if="errorMessage"
@@ -780,19 +728,22 @@ onBeforeUnmount(() => {
             {{ errorMessage }}
         </Message>
 
+        <!-- DOCUMENTS DATATABLE -->
+
         <Datatable
-            title="Activity Verification"
-            description="Review, verify, or return submitted student activities for revision."
-            header-icon="pi pi-check-circle"
-            search-placeholder="Search activity updates..."
-            empty-title="No activity updates found"
-            empty-description="There are no activities waiting for verification."
-            empty-icon="pi pi-check-circle"
-            table-min-width="1100px"
+            title="Documents Verification"
+            description="Review, verify, or return uploaded student documents for revision."
+            header-icon="pi pi-file-check"
+            search-placeholder="Search uploaded documents..."
+            empty-title="No documents to verify"
+            empty-description="There are no uploaded documents waiting for verification."
+            empty-icon="pi pi-file-check"
+            table-min-width="1250px"
+            actions-width="170px"
             data-key="id"
             lazy
             :loading="loading"
-            :data="activities"
+            :data="documents"
             :columns="columns"
             :actions="actions"
             :total-records="totalRecords"
@@ -812,7 +763,7 @@ onBeforeUnmount(() => {
                     label="Dashboard"
                     icon="pi pi-arrow-left"
                     severity="secondary"
-                    outlined
+                    variant="outlined"
                     size="small"
                     @click="navigateToDashboard"
                 />
@@ -825,13 +776,10 @@ onBeforeUnmount(() => {
                     <Avatar
                         v-if="getStudentAvatar(data.gender)"
                         :image="
-                            getStudentAvatar(
-                                data.gender,
-                            ) ?? undefined
+                            getStudentAvatar(data.gender) ??
+                            undefined
                         "
-                        :aria-label="
-                            getStudentFullName(data)
-                        "
+                        :aria-label="getStudentFullName(data)"
                         shape="circle"
                         size="large"
                         class="shrink-0"
@@ -839,9 +787,7 @@ onBeforeUnmount(() => {
 
                     <Avatar
                         v-else
-                        :label="
-                            getStudentInitials(data)
-                        "
+                        :label="getStudentInitials(data)"
                         shape="circle"
                         size="large"
                         class="shrink-0 !bg-[#377EC0]/10 !text-xs !font-bold !text-[#377EC0]"
@@ -852,15 +798,25 @@ onBeforeUnmount(() => {
                             class="truncate font-semibold text-slate-700"
                         >
                             {{
-                                getStudentFullName(
-                                    data,
-                                ) || '—'
+                                getStudentFullName(data) ||
+                                '—'
                             }}
                         </p>
 
                         <div
                             class="mt-1 flex flex-wrap items-center gap-1.5"
                         >
+                            <PrimeTag
+                                :value="
+                                    getSystemIdLabel(
+                                        data.code_person,
+                                    )
+                                "
+                                severity="secondary"
+                                icon="pi pi-id-card"
+                                class="!px-2 !py-0.5 !text-xs !font-semibold"
+                            />
+
                             <PrimeTag
                                 :value="
                                     getSchoolIdLabel(
@@ -876,14 +832,14 @@ onBeforeUnmount(() => {
                 </div>
             </template>
 
-            <!-- ACTIVITY -->
+            <!-- FILE DESCRIPTION -->
 
-            <template #cell-desc_activity="{ value }">
+            <template #cell-file_desc="{ value }">
                 <div
-                    class="flex min-w-0 items-start gap-2 whitespace-normal"
+                    class="flex min-w-0 items-start gap-2"
                 >
                     <i
-                        class="pi pi-list-check mt-0.5 shrink-0 text-green-500"
+                        class="pi pi-file mt-0.5 shrink-0 text-[#377EC0]"
                     ></i>
 
                     <span
@@ -894,55 +850,27 @@ onBeforeUnmount(() => {
                 </div>
             </template>
 
-            <!-- ACTIVITY PERIOD -->
+            <!-- REQUIREMENT TYPE -->
 
-            <template #cell-start_date="{ data }">
-                <div class="space-y-2">
-                    <div
-                        class="flex items-center gap-2"
+            <template #cell-desc_requirement="{ value }">
+                <div
+                    class="flex min-w-0 items-start gap-2"
+                >
+                    <i
+                        class="pi pi-list-check mt-0.5 shrink-0 text-emerald-500"
+                    ></i>
+
+                    <span
+                        class="min-w-0 font-medium break-words whitespace-normal text-slate-700"
                     >
-                        <PrimeTag
-                            value="Started"
-                            severity="success"
-                            class="w-16 !justify-center !px-2 !py-1 !text-xs !font-semibold"
-                        />
-
-                        <span
-                            class="whitespace-nowrap text-sm font-medium text-slate-600"
-                        >
-                            {{
-                                formatDate(
-                                    data.start_date,
-                                )
-                            }}
-                        </span>
-                    </div>
-
-                    <div
-                        class="flex items-center gap-2"
-                    >
-                        <PrimeTag
-                            value="Ended"
-                            severity="danger"
-                            class="w-16 !justify-center !px-2 !py-1 !text-xs !font-semibold"
-                        />
-
-                        <span
-                            class="whitespace-nowrap text-sm font-medium text-slate-600"
-                        >
-                            {{
-                                formatDate(
-                                    data.end_date,
-                                )
-                            }}
-                        </span>
-                    </div>
+                        {{ value || '—' }}
+                    </span>
                 </div>
             </template>
 
-            <!-- DATE SUBMITTED -->
+            <!-- DATE UPLOADED -->
 
-            <template #cell-last_update="{ value }">
+            <template #cell-date_uploaded="{ data }">
                 <div class="flex items-center gap-2">
                     <i
                         class="pi pi-clock text-lg text-yellow-500"
@@ -952,15 +880,61 @@ onBeforeUnmount(() => {
                         class="whitespace-nowrap text-sm font-medium text-slate-600"
                     >
                         {{
-                            formatDate(
-                                value,
-                                true,
+                            formatUploadedDate(
+                                data.date_uploaded,
+                                data.time_uploaded,
                             )
                         }}
                     </span>
                 </div>
             </template>
         </Datatable>
+
+        <!-- MULTIPLE FILES DIALOG -->
+
+        <Dialog
+            v-model:visible="filesDialogVisible"
+            modal
+            header="Uploaded Files"
+            class="w-[min(92vw,560px)]"
+            @hide="closeFilesDialog"
+        >
+            <div class="space-y-3">
+                <Button
+                    v-for="(filename, index) in selectedFiles"
+                    :key="`${filename}-${index}`"
+                    as="a"
+                    :href="getUploadedFileUrl(filename)"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    severity="danger"
+                    variant="outlined"
+                    class="!flex !w-full !justify-start !gap-3 !rounded-xl !p-3"
+                >
+                    <i
+                        class="pi pi-file-pdf text-lg"
+                    ></i>
+
+                    <span class="min-w-0 text-left">
+                        <span
+                            class="block text-xs font-semibold"
+                        >
+                            Document {{ index + 1 }}
+                        </span>
+
+                        <span
+                            class="block truncate font-semibold"
+                        >
+                            {{ filename }}
+                        </span>
+                    </span>
+
+                    <i
+                        class="pi pi-external-link ml-auto"
+                    ></i>
+                </Button>
+            </div>
+        </Dialog>
 
         <!-- VERIFY DIALOG -->
 
@@ -977,16 +951,16 @@ onBeforeUnmount(() => {
                     severity="info"
                     :closable="false"
                 >
-                    By marking the submitted information
-                    and documents from the student as
-                    <strong>verified</strong>, I confirm
-                    their accuracy, truthfulness, and
-                    authenticity based solely on the
-                    information available to me.
+                    By marking the submitted information and
+                    documents from the student as
+                    <strong>verified</strong>, I confirm their
+                    accuracy, truthfulness, and authenticity
+                    based solely on the information available
+                    to me.
                 </Message>
 
                 <div
-                    v-if="selectedActivity"
+                    v-if="selectedDocument"
                     class="rounded-xl border border-slate-200 p-4"
                 >
                     <p
@@ -1004,14 +978,14 @@ onBeforeUnmount(() => {
                     <p
                         class="mt-3 text-xs font-semibold text-slate-400 uppercase"
                     >
-                        Activity
+                        Document
                     </p>
 
                     <p
                         class="mt-1 text-sm text-slate-600"
                     >
                         {{
-                            selectedActivity.desc_activity ||
+                            selectedDocument.file_desc ||
                             '—'
                         }}
                     </p>
@@ -1024,7 +998,7 @@ onBeforeUnmount(() => {
                     label="Cancel"
                     icon="pi pi-times"
                     severity="secondary"
-                    outlined
+                    variant="outlined"
                     :disabled="actionLoading"
                     @click="closeVerifyDialog"
                 />
@@ -1036,7 +1010,7 @@ onBeforeUnmount(() => {
                     severity="success"
                     :loading="actionLoading"
                     :disabled="actionLoading"
-                    @click="verifyActivity"
+                    @click="verifyDocument"
                 />
             </template>
         </Dialog>
@@ -1053,7 +1027,7 @@ onBeforeUnmount(() => {
         >
             <div class="space-y-4">
                 <div
-                    v-if="selectedActivity"
+                    v-if="selectedDocument"
                     class="rounded-xl border border-slate-200 bg-slate-50 p-4"
                 >
                     <p
@@ -1071,14 +1045,14 @@ onBeforeUnmount(() => {
                     <p
                         class="mt-3 text-xs font-semibold text-slate-400 uppercase"
                     >
-                        Activity
+                        Document
                     </p>
 
                     <p
                         class="mt-1 text-sm text-slate-600"
                     >
                         {{
-                            selectedActivity.desc_activity ||
+                            selectedDocument.file_desc ||
                             '—'
                         }}
                     </p>
@@ -1102,7 +1076,7 @@ onBeforeUnmount(() => {
                         rows="5"
                         auto-resize
                         fluid
-                        placeholder="Enter the reason this activity must be revised..."
+                        placeholder="Enter the reason this document must be revised..."
                         :invalid="Boolean(reviseError)"
                         :disabled="actionLoading"
                         @input="reviseError = ''"
@@ -1126,7 +1100,7 @@ onBeforeUnmount(() => {
                     label="Cancel"
                     icon="pi pi-times"
                     severity="secondary"
-                    outlined
+                    variant="outlined"
                     :disabled="actionLoading"
                     @click="closeReviseDialog"
                 />
@@ -1138,7 +1112,7 @@ onBeforeUnmount(() => {
                     severity="warn"
                     :loading="actionLoading"
                     :disabled="actionLoading"
-                    @click="reviseActivity"
+                    @click="reviseDocument"
                 />
             </template>
         </Dialog>

@@ -276,28 +276,6 @@ const mainNavItems: NavItem[] = [
             },
         ],
     },
-    {
-        title: 'Files',
-        href: '#',
-        icon: FileText,
-        items: [
-            {
-                title: 'Cities',
-                href: '/files/cities',
-                icon: MapPin,
-            },
-            {
-                title: 'Provinces',
-                href: '/files/provinces',
-                icon: MapPin,
-            },
-            {
-                title: 'Countries',
-                href: '/files/countries',
-                icon: Globe,
-            },
-        ],
-    },
 ];
 </script>
 
