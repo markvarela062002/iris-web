@@ -7,7 +7,12 @@ import Dialog from 'primevue/dialog';
 import Message from 'primevue/message';
 import PrimeTag from 'primevue/tag';
 import Textarea from 'primevue/textarea';
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import {
+    computed,
+    onBeforeUnmount,
+    onMounted,
+    ref,
+} from 'vue';
 
 import Datatable from '@/components/Datatable.vue';
 import { dashboard } from '@/routes';
@@ -34,6 +39,12 @@ defineOptions({
         ],
     },
 });
+
+type UploadedFile = {
+    name: string;
+    label: string;
+    url: string;
+};
 
 type DocumentApiResponse = {
     data: DataTableRow[];
@@ -67,6 +78,7 @@ type DataTableSortEvent = {
 };
 
 const documents = ref<DataTableRow[]>([]);
+
 const loading = ref(false);
 const actionLoading = ref(false);
 
@@ -76,9 +88,12 @@ const perPage = ref(10);
 const search = ref('');
 
 const sortField = ref('date_uploaded');
-const sortDirection = ref<'asc' | 'desc'>('desc');
+const sortDirection = ref<'asc' | 'desc'>(
+    'desc',
+);
 
-const selectedDocument = ref<DataTableRow | null>(null);
+const selectedDocument =
+    ref<DataTableRow | null>(null);
 
 const filesDialogVisible = ref(false);
 const verifyDialogVisible = ref(false);
@@ -90,11 +105,13 @@ const reviseError = ref('');
 const successMessage = ref('');
 const errorMessage = ref('');
 
-let requestController: AbortController | null = null;
+let requestController:
+    | AbortController
+    | null = null;
 
 /*
 |--------------------------------------------------------------------------
-| Datatable columns
+| DataTable columns
 |--------------------------------------------------------------------------
 */
 
@@ -102,7 +119,7 @@ const columns: DataTableColumn[] = [
     {
         field: 'fname',
         header: 'Student Information',
-        sortable: true,
+        sortable: false,
         searchable: true,
         frozen: true,
         alignFrozen: 'left',
@@ -111,14 +128,14 @@ const columns: DataTableColumn[] = [
     {
         field: 'file_desc',
         header: 'File Description',
-        sortable: true,
+        sortable: false,
         searchable: true,
         class: 'w-[300px] min-w-[300px] whitespace-normal',
     },
     {
         field: 'desc_requirement',
         header: 'Requirement Type',
-        sortable: true,
+        sortable: false,
         searchable: true,
         class: 'w-[300px] min-w-[300px] whitespace-normal',
     },
@@ -126,25 +143,44 @@ const columns: DataTableColumn[] = [
         field: 'date_uploaded',
         header: 'Date Uploaded',
         sortable: true,
-        searchable: true,
+        searchable: false,
         class: 'w-[220px] min-w-[220px]',
     },
 ];
 
 /*
 |--------------------------------------------------------------------------
-| Datatable actions
+| DataTable actions
 |--------------------------------------------------------------------------
 */
 
 const actions: DataTableAction[] = [
     {
         key: 'view-files',
-        label: 'View uploaded files',
-        icon: 'pi pi-file-pdf',
+        label: 'View or download files',
+        icon: 'pi pi-download',
         severity: 'danger',
-        visible: (row: DataTableRow) => {
-            return getUploadedFiles(row).length > 0;
+
+        visible: (
+            row: DataTableRow,
+        ): boolean => {
+            return (
+                getUploadedFiles(row).length > 0
+            );
+        },
+    },
+    {
+        key: 'no-files',
+        label: 'No uploaded files',
+        icon: 'pi pi-download',
+        severity: 'secondary',
+
+        visible: (
+            row: DataTableRow,
+        ): boolean => {
+            return (
+                getUploadedFiles(row).length === 0
+            );
         },
     },
     {
@@ -162,7 +198,11 @@ const actions: DataTableAction[] = [
 ];
 
 const currentPage = computed(() => {
-    return Math.floor(first.value / perPage.value) + 1;
+    return (
+        Math.floor(
+            first.value / perPage.value,
+        ) + 1
+    );
 });
 
 const selectedStudentName = computed(() => {
@@ -170,15 +210,21 @@ const selectedStudentName = computed(() => {
         return '';
     }
 
-    return getStudentFullName(selectedDocument.value);
+    return getStudentFullName(
+        selectedDocument.value,
+    );
 });
 
-const selectedFiles = computed(() => {
+const selectedFiles = computed<
+    UploadedFile[]
+>(() => {
     if (!selectedDocument.value) {
         return [];
     }
 
-    return getUploadedFiles(selectedDocument.value);
+    return getUploadedFiles(
+        selectedDocument.value,
+    );
 });
 
 /*
@@ -187,49 +233,79 @@ const selectedFiles = computed(() => {
 |--------------------------------------------------------------------------
 */
 
-async function loadDocuments(pageNumber = 1): Promise<void> {
+async function loadDocuments(
+    pageNumber = 1,
+): Promise<void> {
     requestController?.abort();
 
-    const controller = new AbortController();
+    const controller =
+        new AbortController();
 
     requestController = controller;
     loading.value = true;
     errorMessage.value = '';
 
     try {
-        const response = await axios.get<DocumentApiResponse>(
-            '/api/v1/dashboard/datatable/uploaded-documents',
-            {
-                signal: controller.signal,
+        const response =
+            await axios.get<DocumentApiResponse>(
+                '/api/v1/dashboard/datatable/uploaded-documents',
+                {
+                    signal:
+                        controller.signal,
 
-                params: {
-                    page: pageNumber,
-                    per_page: perPage.value,
-                    search: search.value,
-                    sort_field: sortField.value,
-                    sort_direction: sortDirection.value,
+                    params: {
+                        page: pageNumber,
+
+                        per_page:
+                            perPage.value,
+
+                        search:
+                            search.value,
+
+                        sort_field:
+                            sortField.value,
+
+                        sort_direction:
+                            sortDirection.value,
+                    },
+
+                    headers: {
+                        Accept:
+                            'application/json',
+
+                        'X-Requested-With':
+                            'XMLHttpRequest',
+                    },
+
+                    withCredentials: true,
                 },
+            );
 
-                headers: {
-                    Accept: 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
+        documents.value =
+            response.data.data;
 
-                withCredentials: true,
-            },
-        );
+        totalRecords.value =
+            response.data.meta.total;
 
-        documents.value = response.data.data;
-        totalRecords.value = response.data.meta.total;
-        perPage.value = response.data.meta.perPage;
+        perPage.value =
+            response.data.meta.perPage;
 
         first.value =
-            (response.data.meta.currentPage - 1) *
+            (
+                response.data.meta
+                    .currentPage - 1
+            ) *
             response.data.meta.perPage;
     } catch (error: unknown) {
         if (
             axios.isCancel(error) ||
-            (axios.isAxiosError(error) && error.code === 'ERR_CANCELED')
+            (
+                axios.isAxiosError(
+                    error,
+                ) &&
+                error.code ===
+                    'ERR_CANCELED'
+            )
         ) {
             return;
         }
@@ -237,14 +313,21 @@ async function loadDocuments(pageNumber = 1): Promise<void> {
         documents.value = [];
         totalRecords.value = 0;
 
-        errorMessage.value = getErrorMessage(
-            error,
-            'Unable to load uploaded documents.',
-        );
+        errorMessage.value =
+            getErrorMessage(
+                error,
+                'Unable to load uploaded documents.',
+            );
 
-        console.error('Unable to load uploaded documents:', error);
+        console.error(
+            'Unable to load uploaded documents:',
+            error,
+        );
     } finally {
-        if (requestController === controller) {
+        if (
+            requestController ===
+            controller
+        ) {
             loading.value = false;
         }
     }
@@ -252,27 +335,41 @@ async function loadDocuments(pageNumber = 1): Promise<void> {
 
 /*
 |--------------------------------------------------------------------------
-| Datatable events
+| DataTable events
 |--------------------------------------------------------------------------
 */
 
-function handlePage(event: DataTablePageEvent): void {
+function handlePage(
+    event: DataTablePageEvent,
+): void {
     perPage.value = event.rows;
     first.value = event.first;
 
-    void loadDocuments(event.page + 1);
+    void loadDocuments(
+        event.page + 1,
+    );
 }
 
-function handleSort(event: DataTableSortEvent): void {
-    sortField.value = event.sortField || 'date_uploaded';
-    sortDirection.value = event.sortOrder === -1 ? 'desc' : 'asc';
+function handleSort(
+    event: DataTableSortEvent,
+): void {
+    sortField.value =
+        event.sortField ||
+        'date_uploaded';
+
+    sortDirection.value =
+        event.sortOrder === -1
+            ? 'desc'
+            : 'asc';
 
     first.value = 0;
 
     void loadDocuments(1);
 }
 
-function handleSearch(value: string): void {
+function handleSearch(
+    value: string,
+): void {
     search.value = value;
     first.value = 0;
 
@@ -301,7 +398,17 @@ function handleAction(
 ): void {
     successMessage.value = '';
     errorMessage.value = '';
-    selectedDocument.value = document;
+
+    /*
+     * The secondary action remains visible so the
+     * user knows no uploaded file is available.
+     */
+    if (action === 'no-files') {
+        return;
+    }
+
+    selectedDocument.value =
+        document;
 
     if (action === 'view-files') {
         openUploadedFiles(document);
@@ -310,7 +417,8 @@ function handleAction(
     }
 
     if (action === 'verify') {
-        verifyDialogVisible.value = true;
+        verifyDialogVisible.value =
+            true;
 
         return;
     }
@@ -318,23 +426,30 @@ function handleAction(
     if (action === 'revise') {
         reviseRemarks.value = '';
         reviseError.value = '';
-        reviseDialogVisible.value = true;
+
+        reviseDialogVisible.value =
+            true;
     }
 }
 
-function openUploadedFiles(document: DataTableRow): void {
-    const files = getUploadedFiles(document);
+function openUploadedFiles(
+    document: DataTableRow,
+): void {
+    const files =
+        getUploadedFiles(document);
 
     if (files.length === 0) {
         selectedDocument.value = null;
-        errorMessage.value = 'This record does not have an uploaded file.';
+
+        errorMessage.value =
+            'This record does not have an uploaded file.';
 
         return;
     }
 
     if (files.length === 1) {
         window.open(
-            getUploadedFileUrl(files[0]),
+            files[0].url,
             '_blank',
             'noopener,noreferrer',
         );
@@ -368,10 +483,12 @@ function closeVerifyDialog(): void {
 }
 
 async function verifyDocument(): Promise<void> {
-    const documentId = getSelectedDocumentId();
+    const documentId =
+        getSelectedDocumentId();
 
     if (!documentId) {
-        errorMessage.value = 'The selected document ID is missing.';
+        errorMessage.value =
+            'The selected document ID is missing.';
 
         return;
     }
@@ -380,35 +497,43 @@ async function verifyDocument(): Promise<void> {
     errorMessage.value = '';
 
     try {
-        const response = await axios.patch<{
-            message: string;
-        }>(
-            `/api/v1/dashboard/uploaded-documents/${encodeURIComponent(
-                documentId,
-            )}/verify`,
-            {},
-            {
-                headers: {
-                    Accept: 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
+        const response =
+            await axios.patch<{
+                message: string;
+            }>(
+                `/api/v1/dashboard/uploaded-documents/${encodeURIComponent(
+                    documentId,
+                )}/verify`,
+                {},
+                {
+                    headers: {
+                        Accept:
+                            'application/json',
 
-                withCredentials: true,
-            },
-        );
+                        'X-Requested-With':
+                            'XMLHttpRequest',
+                    },
+
+                    withCredentials: true,
+                },
+            );
 
         successMessage.value =
-            response.data.message || 'The file has been validated.';
+            response.data.message ||
+            'The file has been validated.';
 
-        verifyDialogVisible.value = false;
+        verifyDialogVisible.value =
+            false;
+
         selectedDocument.value = null;
 
         await reloadCurrentPage();
     } catch (error: unknown) {
-        errorMessage.value = getErrorMessage(
-            error,
-            'Failed to validate the file.',
-        );
+        errorMessage.value =
+            getErrorMessage(
+                error,
+                'Failed to validate the file.',
+            );
     } finally {
         actionLoading.value = false;
     }
@@ -434,16 +559,21 @@ function closeReviseDialog(): void {
 async function reviseDocument(): Promise<void> {
     reviseError.value = '';
 
-    if (reviseRemarks.value.trim() === '') {
-        reviseError.value = 'Reason for revision is required.';
+    if (
+        reviseRemarks.value.trim() === ''
+    ) {
+        reviseError.value =
+            'Reason for revision is required.';
 
         return;
     }
 
-    const documentId = getSelectedDocumentId();
+    const documentId =
+        getSelectedDocumentId();
 
     if (!documentId) {
-        reviseError.value = 'The selected document ID is missing.';
+        reviseError.value =
+            'The selected document ID is missing.';
 
         return;
     }
@@ -452,40 +582,48 @@ async function reviseDocument(): Promise<void> {
     errorMessage.value = '';
 
     try {
-        const response = await axios.patch<{
-            message: string;
-        }>(
-            `/api/v1/dashboard/uploaded-documents/${encodeURIComponent(
-                documentId,
-            )}/revise`,
-            {
-                revise_remarks: reviseRemarks.value.trim(),
-            },
-            {
-                headers: {
-                    Accept: 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
+        const response =
+            await axios.patch<{
+                message: string;
+            }>(
+                `/api/v1/dashboard/uploaded-documents/${encodeURIComponent(
+                    documentId,
+                )}/revise`,
+                {
+                    revise_remarks:
+                        reviseRemarks.value.trim(),
                 },
+                {
+                    headers: {
+                        Accept:
+                            'application/json',
 
-                withCredentials: true,
-            },
-        );
+                        'X-Requested-With':
+                            'XMLHttpRequest',
+                    },
+
+                    withCredentials: true,
+                },
+            );
 
         successMessage.value =
             response.data.message ||
             'The submitted record has been saved.';
 
-        reviseDialogVisible.value = false;
+        reviseDialogVisible.value =
+            false;
+
         reviseRemarks.value = '';
         reviseError.value = '';
         selectedDocument.value = null;
 
         await reloadCurrentPage();
     } catch (error: unknown) {
-        const validationMessage = getValidationMessage(
-            error,
-            'revise_remarks',
-        );
+        const validationMessage =
+            getValidationMessage(
+                error,
+                'revise_remarks',
+            );
 
         reviseError.value =
             validationMessage ??
@@ -499,13 +637,17 @@ async function reviseDocument(): Promise<void> {
 }
 
 async function reloadCurrentPage(): Promise<void> {
-    await loadDocuments(currentPage.value);
+    await loadDocuments(
+        currentPage.value,
+    );
 
     if (
         documents.value.length === 0 &&
         currentPage.value > 1
     ) {
-        await loadDocuments(currentPage.value - 1);
+        await loadDocuments(
+            currentPage.value - 1,
+        );
     }
 }
 
@@ -515,37 +657,63 @@ async function reloadCurrentPage(): Promise<void> {
 |--------------------------------------------------------------------------
 */
 
-function getStudentFullName(document: DataTableRow): string {
-    const lastName = String(document.lname ?? '').trim();
+function getStudentFullName(
+    document: DataTableRow,
+): string {
+    const lastName = String(
+        document.lname ?? '',
+    ).trim();
 
     const otherNames = [
         document.fname,
         document.mname,
     ]
         .filter((name) => {
-            return typeof name === 'string' && name.trim() !== '';
+            return (
+                typeof name === 'string' &&
+                name.trim() !== ''
+            );
         })
-        .map((name) => String(name).trim())
+        .map((name) => {
+            return String(name).trim();
+        })
         .join(' ');
 
     if (lastName && otherNames) {
         return `${lastName}, ${otherNames}`.toUpperCase();
     }
 
-    return (lastName || otherNames).toUpperCase();
+    return (
+        lastName || otherNames
+    ).toUpperCase();
 }
 
-function getStudentInitials(document: DataTableRow): string {
-    const firstName = String(document.fname ?? '').trim();
-    const lastName = String(document.lname ?? '').trim();
+function getStudentInitials(
+    document: DataTableRow,
+): string {
+    const firstName = String(
+        document.fname ?? '',
+    ).trim();
 
-    const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`;
+    const lastName = String(
+        document.lname ?? '',
+    ).trim();
 
-    return initials.toUpperCase() || 'ST';
+    const initials =
+        `${firstName.charAt(0)}${lastName.charAt(0)}`;
+
+    return (
+        initials.toUpperCase() ||
+        'ST'
+    );
 }
 
-function getStudentAvatar(gender: unknown): string | null {
-    const normalizedGender = String(gender ?? '')
+function getStudentAvatar(
+    gender: unknown,
+): string | null {
+    const normalizedGender = String(
+        gender ?? '',
+    )
         .trim()
         .toUpperCase();
 
@@ -566,14 +734,22 @@ function getStudentAvatar(gender: unknown): string | null {
     return null;
 }
 
-function getSystemIdLabel(value: unknown): string {
-    const systemId = String(value ?? '').trim();
+function getSystemIdLabel(
+    value: unknown,
+): string {
+    const systemId = String(
+        value ?? '',
+    ).trim();
 
     return systemId || 'No System ID';
 }
 
-function getSchoolIdLabel(value: unknown): string {
-    const schoolId = String(value ?? '').trim();
+function getSchoolIdLabel(
+    value: unknown,
+): string {
+    const schoolId = String(
+        value ?? '',
+    ).trim();
 
     return schoolId || 'No School ID';
 }
@@ -584,21 +760,108 @@ function getSchoolIdLabel(value: unknown): string {
 |--------------------------------------------------------------------------
 */
 
-function getUploadedFiles(document: DataTableRow): string[] {
-    return String(document.filenames ?? '')
-        .split('|||FILE|||')
-        .map((filename) => filename.trim())
-        .filter(Boolean);
+function getUploadedFiles(
+    document: DataTableRow,
+): UploadedFile[] {
+    if (!Array.isArray(document.files)) {
+        return [];
+    }
+
+    return document.files.flatMap(
+        (candidate): UploadedFile[] => {
+            if (
+                candidate === null ||
+                typeof candidate !==
+                    'object'
+            ) {
+                return [];
+            }
+
+            const file =
+                candidate as Record<
+                    string,
+                    unknown
+                >;
+
+            const name = String(
+                file.name ?? '',
+            ).trim();
+
+            const url = String(
+                file.url ?? '',
+            ).trim();
+
+            const label = String(
+                file.label ??
+                    'View or download file',
+            ).trim();
+
+            if (
+                name === '' ||
+                url === ''
+            ) {
+                return [];
+            }
+
+            return [
+                {
+                    name,
+                    url,
+                    label,
+                },
+            ];
+        },
+    );
 }
 
-function getUploadedFileUrl(filename: string): string {
-    const normalizedFilename = filename
-        .split('/')
-        .filter(Boolean)
-        .map(encodeURIComponent)
-        .join('/');
+function getUploadedFileIcon(
+    filename: string,
+): string {
+    const extension =
+        filename
+            .split('.')
+            .pop()
+            ?.trim()
+            .toLowerCase() ?? '';
 
-    return `/docs/${normalizedFilename}`;
+    if (extension === 'pdf') {
+        return 'pi pi-file-pdf';
+    }
+
+    if (
+        extension === 'doc' ||
+        extension === 'docx'
+    ) {
+        return 'pi pi-file-word';
+    }
+
+    if (
+        extension === 'xls' ||
+        extension === 'xlsx' ||
+        extension === 'csv'
+    ) {
+        return 'pi pi-file-excel';
+    }
+
+    if (
+        extension === 'jpg' ||
+        extension === 'jpeg' ||
+        extension === 'png' ||
+        extension === 'gif' ||
+        extension === 'webp'
+    ) {
+        return 'pi pi-image';
+    }
+
+    if (
+        extension === 'zip' ||
+        extension === 'rar' ||
+        extension === '7z'
+    ) {
+        return 'pi pi-box';
+    }
+
+    return 'pi pi-file';
 }
 
 /*
@@ -611,10 +874,18 @@ function formatUploadedDate(
     dateValue: unknown,
     timeValue: unknown,
 ): string {
-    const date = String(dateValue ?? '').trim();
-    const time = String(timeValue ?? '').trim();
+    const date = String(
+        dateValue ?? '',
+    ).trim();
 
-    if (!date || date === '1970-01-01') {
+    const time = String(
+        timeValue ?? '',
+    ).trim();
+
+    if (
+        !date ||
+        date === '1970-01-01'
+    ) {
         return '—';
     }
 
@@ -622,23 +893,44 @@ function formatUploadedDate(
         ? `${date} ${time}`
         : date;
 
-    const normalizedValue = combinedValue.replace(' ', 'T');
+    const normalizedValue =
+        combinedValue.replace(
+            ' ',
+            'T',
+        );
 
-    const parsedDate = new Date(normalizedValue);
+    const parsedDate =
+        new Date(normalizedValue);
 
-    if (Number.isNaN(parsedDate.getTime())) {
+    if (
+        Number.isNaN(
+            parsedDate.getTime(),
+        )
+    ) {
         return combinedValue;
     }
 
-    return new Intl.DateTimeFormat('en-PH', {
-        timeZone: 'Asia/Manila',
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: time ? '2-digit' : undefined,
-        minute: time ? '2-digit' : undefined,
-        hour12: true,
-    }).format(parsedDate);
+    return new Intl.DateTimeFormat(
+        'en-PH',
+        {
+            timeZone:
+                'Asia/Manila',
+
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+
+            hour: time
+                ? '2-digit'
+                : undefined,
+
+            minute: time
+                ? '2-digit'
+                : undefined,
+
+            hour12: true,
+        },
+    ).format(parsedDate);
 }
 
 /*
@@ -648,7 +940,9 @@ function formatUploadedDate(
 */
 
 function getSelectedDocumentId(): string {
-    return String(selectedDocument.value?.id ?? '').trim();
+    return String(
+        selectedDocument.value?.id ?? '',
+    ).trim();
 }
 
 function getErrorMessage(
@@ -659,13 +953,17 @@ function getErrorMessage(
         return fallback;
     }
 
-    const responseData = error.response?.data as
-        | {
-              message?: string;
-          }
-        | undefined;
+    const responseData =
+        error.response?.data as
+            | {
+                  message?: string;
+              }
+            | undefined;
 
-    return responseData?.message || fallback;
+    return (
+        responseData?.message ||
+        fallback
+    );
 }
 
 function getValidationMessage(
@@ -676,13 +974,21 @@ function getValidationMessage(
         return null;
     }
 
-    const responseData = error.response?.data as
-        | {
-              errors?: Record<string, string[]>;
-          }
-        | undefined;
+    const responseData =
+        error.response?.data as
+            | {
+                  errors?: Record<
+                      string,
+                      string[]
+                  >;
+              }
+            | undefined;
 
-    return responseData?.errors?.[field]?.[0] ?? null;
+    return (
+        responseData
+            ?.errors?.[field]?.[0] ??
+        null
+    );
 }
 
 /*
@@ -749,7 +1055,12 @@ onBeforeUnmount(() => {
             :total-records="totalRecords"
             :first="first"
             :rows="perPage"
-            :rows-per-page-options="[10, 20, 50, 100]"
+            :rows-per-page-options="[
+                10,
+                20,
+                50,
+                100,
+            ]"
             @page="handlePage"
             @sort="handleSort"
             @search="handleSearch"
@@ -760,10 +1071,9 @@ onBeforeUnmount(() => {
             <template #header-actions>
                 <Button
                     type="button"
-                    label="Dashboard"
-                    icon="pi pi-arrow-left"
-                    severity="secondary"
-                    variant="outlined"
+                    label="Document Upload List"
+                    icon="pi pi-list-check"
+                    severity="info"
                     size="small"
                     @click="navigateToDashboard"
                 />
@@ -772,14 +1082,25 @@ onBeforeUnmount(() => {
             <!-- STUDENT INFORMATION -->
 
             <template #cell-fname="{ data }">
-                <div class="flex items-center gap-3">
+                <div
+                    class="flex items-center gap-3"
+                >
                     <Avatar
-                        v-if="getStudentAvatar(data.gender)"
-                        :image="
-                            getStudentAvatar(data.gender) ??
-                            undefined
+                        v-if="
+                            getStudentAvatar(
+                                data.gender,
+                            )
                         "
-                        :aria-label="getStudentFullName(data)"
+                        :image="
+                            getStudentAvatar(
+                                data.gender,
+                            ) ?? undefined
+                        "
+                        :aria-label="
+                            getStudentFullName(
+                                data,
+                            )
+                        "
                         shape="circle"
                         size="large"
                         class="shrink-0"
@@ -787,7 +1108,11 @@ onBeforeUnmount(() => {
 
                     <Avatar
                         v-else
-                        :label="getStudentInitials(data)"
+                        :label="
+                            getStudentInitials(
+                                data,
+                            )
+                        "
                         shape="circle"
                         size="large"
                         class="shrink-0 !bg-[#377EC0]/10 !text-xs !font-bold !text-[#377EC0]"
@@ -798,8 +1123,9 @@ onBeforeUnmount(() => {
                             class="truncate font-semibold text-slate-700"
                         >
                             {{
-                                getStudentFullName(data) ||
-                                '—'
+                                getStudentFullName(
+                                    data,
+                                ) || '—'
                             }}
                         </p>
 
@@ -834,7 +1160,9 @@ onBeforeUnmount(() => {
 
             <!-- FILE DESCRIPTION -->
 
-            <template #cell-file_desc="{ value }">
+            <template
+                #cell-file_desc="{ value }"
+            >
                 <div
                     class="flex min-w-0 items-start gap-2"
                 >
@@ -852,7 +1180,11 @@ onBeforeUnmount(() => {
 
             <!-- REQUIREMENT TYPE -->
 
-            <template #cell-desc_requirement="{ value }">
+            <template
+                #cell-desc_requirement="{
+                    value,
+                }"
+            >
                 <div
                     class="flex min-w-0 items-start gap-2"
                 >
@@ -870,8 +1202,12 @@ onBeforeUnmount(() => {
 
             <!-- DATE UPLOADED -->
 
-            <template #cell-date_uploaded="{ data }">
-                <div class="flex items-center gap-2">
+            <template
+                #cell-date_uploaded="{ data }"
+            >
+                <div
+                    class="flex items-center gap-2"
+                >
                     <i
                         class="pi pi-clock text-lg text-yellow-500"
                     ></i>
@@ -893,7 +1229,9 @@ onBeforeUnmount(() => {
         <!-- MULTIPLE FILES DIALOG -->
 
         <Dialog
-            v-model:visible="filesDialogVisible"
+            v-model:visible="
+                filesDialogVisible
+            "
             modal
             header="Uploaded Files"
             class="w-[min(92vw,560px)]"
@@ -901,10 +1239,15 @@ onBeforeUnmount(() => {
         >
             <div class="space-y-3">
                 <Button
-                    v-for="(filename, index) in selectedFiles"
-                    :key="`${filename}-${index}`"
+                    v-for="(
+                        file,
+                        index
+                    ) in selectedFiles"
+                    :key="
+                        `${file.name}-${index}`
+                    "
                     as="a"
-                    :href="getUploadedFileUrl(filename)"
+                    :href="file.url"
                     target="_blank"
                     rel="noopener noreferrer"
                     severity="danger"
@@ -912,25 +1255,33 @@ onBeforeUnmount(() => {
                     class="!flex !w-full !justify-start !gap-3 !rounded-xl !p-3"
                 >
                     <i
-                        class="pi pi-file-pdf text-lg"
+                        :class="[
+                            getUploadedFileIcon(
+                                file.name,
+                            ),
+                            'shrink-0 text-lg',
+                        ]"
                     ></i>
 
-                    <span class="min-w-0 text-left">
+                    <span
+                        class="min-w-0 text-left"
+                    >
                         <span
                             class="block text-xs font-semibold"
                         >
-                            Document {{ index + 1 }}
+                            Document
+                            {{ index + 1 }}
                         </span>
 
                         <span
                             class="block truncate font-semibold"
                         >
-                            {{ filename }}
+                            {{ file.name }}
                         </span>
                     </span>
 
                     <i
-                        class="pi pi-external-link ml-auto"
+                        class="pi pi-external-link ml-auto shrink-0"
                     ></i>
                 </Button>
             </div>
@@ -939,11 +1290,15 @@ onBeforeUnmount(() => {
         <!-- VERIFY DIALOG -->
 
         <Dialog
-            v-model:visible="verifyDialogVisible"
+            v-model:visible="
+                verifyDialogVisible
+            "
             modal
             header="Notice of Verification"
             :closable="!actionLoading"
-            :dismissable-mask="!actionLoading"
+            :dismissable-mask="
+                !actionLoading
+            "
             class="w-[min(92vw,560px)]"
         >
             <div class="space-y-4">
@@ -951,12 +1306,14 @@ onBeforeUnmount(() => {
                     severity="info"
                     :closable="false"
                 >
-                    By marking the submitted information and
-                    documents from the student as
-                    <strong>verified</strong>, I confirm their
-                    accuracy, truthfulness, and authenticity
-                    based solely on the information available
-                    to me.
+                    By marking the submitted
+                    information and documents from
+                    the student as
+                    <strong>verified</strong>, I
+                    confirm their accuracy,
+                    truthfulness, and authenticity
+                    based solely on the information
+                    available to me.
                 </Message>
 
                 <div
@@ -972,7 +1329,10 @@ onBeforeUnmount(() => {
                     <p
                         class="mt-1 font-semibold text-slate-700"
                     >
-                        {{ selectedStudentName || '—' }}
+                        {{
+                            selectedStudentName ||
+                            '—'
+                        }}
                     </p>
 
                     <p
@@ -1018,11 +1378,15 @@ onBeforeUnmount(() => {
         <!-- REVISION DIALOG -->
 
         <Dialog
-            v-model:visible="reviseDialogVisible"
+            v-model:visible="
+                reviseDialogVisible
+            "
             modal
             header="Revision Details"
             :closable="!actionLoading"
-            :dismissable-mask="!actionLoading"
+            :dismissable-mask="
+                !actionLoading
+            "
             class="w-[min(92vw,560px)]"
         >
             <div class="space-y-4">
@@ -1039,7 +1403,10 @@ onBeforeUnmount(() => {
                     <p
                         class="mt-1 font-semibold text-slate-700"
                     >
-                        {{ selectedStudentName || '—' }}
+                        {{
+                            selectedStudentName ||
+                            '—'
+                        }}
                     </p>
 
                     <p
@@ -1065,7 +1432,9 @@ onBeforeUnmount(() => {
                     >
                         Reason for revision
 
-                        <span class="text-red-500">
+                        <span
+                            class="text-red-500"
+                        >
                             *
                         </span>
                     </label>
@@ -1077,9 +1446,17 @@ onBeforeUnmount(() => {
                         auto-resize
                         fluid
                         placeholder="Enter the reason this document must be revised..."
-                        :invalid="Boolean(reviseError)"
-                        :disabled="actionLoading"
-                        @input="reviseError = ''"
+                        :invalid="
+                            Boolean(
+                                reviseError,
+                            )
+                        "
+                        :disabled="
+                            actionLoading
+                        "
+                        @input="
+                            reviseError = ''
+                        "
                     />
 
                     <Message

@@ -42,7 +42,21 @@ return [
 
             'files' => [
                 /*
-                 * Uploaded documents and journal evidence.
+                 * Uploaded documents from file_upload_d.
+                 *
+                 * Legacy public directory:
+                 * /docs
+                 */
+                'documents_url' => env(
+                    'DEMO_DOCUMENT_FILE_URL',
+                    '',
+                ),
+
+                /*
+                 * Journal uploads.
+                 *
+                 * Legacy public directory:
+                 * /uploads
                  */
                 'uploads_url' => env(
                     'DEMO_JOURNAL_UPLOAD_URL',
@@ -50,7 +64,10 @@ return [
                 ),
 
                 /*
-                 * Activity attachments.
+                 * Activity files and journal objective evidence.
+                 *
+                 * Legacy public directory:
+                 * /person_task
                  */
                 'activity_url' => env(
                     'DEMO_ACTIVITY_FILE_URL',
@@ -59,6 +76,9 @@ return [
 
                 /*
                  * Student electronic signatures.
+                 *
+                 * Legacy public directory:
+                 * /images
                  */
                 'signature_url' => env(
                     'DEMO_JOURNAL_ESIG_URL',
@@ -96,6 +116,11 @@ return [
             'connection' => 'exact',
 
             'files' => [
+                'documents_url' => env(
+                    'EXACT_DOCUMENT_FILE_URL',
+                    '',
+                ),
+
                 'uploads_url' => env(
                     'EXACT_JOURNAL_UPLOAD_URL',
                     '',
@@ -142,6 +167,11 @@ return [
             'connection' => 'igcfi',
 
             'files' => [
+                'documents_url' => env(
+                    'IGCFI_DOCUMENT_FILE_URL',
+                    '',
+                ),
+
                 'uploads_url' => env(
                     'IGCFI_JOURNAL_UPLOAD_URL',
                     '',
@@ -188,6 +218,11 @@ return [
             'connection' => 'mcl',
 
             'files' => [
+                'documents_url' => env(
+                    'MCL_DOCUMENT_FILE_URL',
+                    '',
+                ),
+
                 'uploads_url' => env(
                     'MCL_JOURNAL_UPLOAD_URL',
                     '',
@@ -234,6 +269,11 @@ return [
             'connection' => 'mci',
 
             'files' => [
+                'documents_url' => env(
+                    'MCI_DOCUMENT_FILE_URL',
+                    '',
+                ),
+
                 'uploads_url' => env(
                     'MCI_JOURNAL_UPLOAD_URL',
                     '',
