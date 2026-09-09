@@ -243,8 +243,8 @@ const studentActions: DataTableAction[] = [
     {
         key: 'print-otg',
         label: 'Print OTG',
-        icon: 'pi pi-file-pdf',
-        severity: 'danger',
+        icon: 'pi pi-download',
+        severity: 'info',
     },
 ];
 
