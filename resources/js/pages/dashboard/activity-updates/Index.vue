@@ -171,7 +171,7 @@ const actions: DataTableAction[] = [
         key: 'no-pdf',
         label: 'No PDF',
         icon: 'pi pi-download',
-        severity: 'info',
+        severity: 'secondary',
         visible: (row) => {
             return !hasUploadedFile(row);
         },
@@ -391,8 +391,8 @@ function openUploadedFile(
     );
 }
 
-function navigateToDashboard(): void {
-    router.visit('/dashboard');
+function navigateToActivityList(): void {
+    router.visit('/monitoring/activity-updates');
 }
 
 /*
@@ -827,7 +827,7 @@ onBeforeUnmount(() => {
                     severity="info"
                     
                     size="small"
-                    @click="navigateToDashboard"
+                    @click="navigateToActivityList"
                 />
             </template>
 

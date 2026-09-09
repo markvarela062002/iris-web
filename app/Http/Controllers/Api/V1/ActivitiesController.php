@@ -166,7 +166,6 @@ class ActivitiesController extends Controller
          * Generate a direct public HTTPS URL for every
          * activity attachment.
          *
-         * This matches the legacy application behavior.
          * The browser requests the public file directly,
          * so Laravel does not need to proxy it through FTP.
          */
@@ -182,8 +181,8 @@ class ActivitiesController extends Controller
                         : (array) $row;
 
                     /*
-                     * Remove any accidental directory
-                     * components stored in the database.
+                     * Remove accidental directory components
+                     * stored in the database.
                      */
                     $filename = basename(
                         str_replace(
@@ -220,6 +219,307 @@ class ActivitiesController extends Controller
         return response()->json(
             $result,
         );
+    }
+
+    /**
+     * Return activity records for the
+     * Monitoring > Activity Updates page.
+     */
+    public function updates(
+        Request $request,
+    ): JsonResponse {
+        $db = $this->resolveSchoolConnection(
+            $request,
+        );
+
+        if ($db instanceof JsonResponse) {
+            return $db;
+        }
+
+        /*
+         * Resolve the school selected during login.
+         *
+         * Monitoring uses the same public activity-file
+         * configuration as Activity Verification.
+         */
+        $schoolCode = strtoupper(
+            trim(
+                (string) $request
+                    ->session()
+                    ->get('school_code', ''),
+            ),
+        );
+
+        $activityFileBaseUrl = rtrim(
+            trim(
+                (string) config(
+                    "schools.schools.{$schoolCode}.files.activity_url",
+                    '',
+                ),
+            ),
+            '/',
+        );
+
+        $query = $db
+            ->table('person_activity')
+            ->leftJoin(
+                'person',
+                'person_activity.person_id',
+                '=',
+                'person.id',
+            )
+            ->leftJoin(
+                'activity',
+                'person_activity.activity_id',
+                '=',
+                'activity.id',
+            )
+            ->select([
+                'person_activity.id',
+                'person_activity.person_id',
+                'person_activity.activity_id',
+                'person_activity.filename',
+                'person_activity.start_date',
+                'person_activity.end_date',
+                'person_activity.last_update',
+                'person_activity.sto_validated',
+                'person_activity.for_app',
+                'person_activity.revise_remarks',
+
+                'person.code_person',
+                'person.school_id_no',
+                'person.fname',
+                'person.mname',
+                'person.lname',
+                'person.gender',
+
+                'activity.desc_activity',
+            ]);
+
+        /*
+         * Legacy filter:
+         * start_date >= selected From date
+         */
+        if ($request->filled('start_date_from')) {
+            $query->where(
+                'person_activity.start_date',
+                '>=',
+                (string) $request->input(
+                    'start_date_from',
+                ),
+            );
+        }
+
+        /*
+         * Legacy filter:
+         * start_date <= selected To date
+         */
+        if ($request->filled('start_date_to')) {
+            $query->where(
+                'person_activity.start_date',
+                '<=',
+                (string) $request->input(
+                    'start_date_to',
+                ),
+            );
+        }
+
+        /*
+         * Legacy Activity dropdown.
+         */
+        if ($request->filled('activity_id')) {
+            $query->where(
+                'person_activity.activity_id',
+                (string) $request->input(
+                    'activity_id',
+                ),
+            );
+        }
+
+        /*
+         * The legacy page labels code_person
+         * as School ID No.
+         */
+        if ($request->filled('school_id')) {
+            $schoolId = trim(
+                (string) $request->input(
+                    'school_id',
+                ),
+            );
+
+            $query->where(
+                'person.code_person',
+                'like',
+                "%{$schoolId}%",
+            );
+        }
+
+        /*
+         * Legacy Student Name search:
+         * fname OR mname OR lname.
+         */
+        if ($request->filled('student_name')) {
+            $studentName = trim(
+                (string) $request->input(
+                    'student_name',
+                ),
+            );
+
+            $query->where(
+                function ($studentQuery) use (
+                    $studentName,
+                ): void {
+                    $studentQuery
+                        ->where(
+                            'person.fname',
+                            'like',
+                            "%{$studentName}%",
+                        )
+                        ->orWhere(
+                            'person.mname',
+                            'like',
+                            "%{$studentName}%",
+                        )
+                        ->orWhere(
+                            'person.lname',
+                            'like',
+                            "%{$studentName}%",
+                        );
+                },
+            );
+        }
+
+        $result = $this->datatableService->paginate(
+            query: $query,
+            request: $request,
+            searchableColumns: [
+                'person.code_person',
+                'person.school_id_no',
+                'person.fname',
+                'person.mname',
+                'person.lname',
+                'activity.desc_activity',
+                'person_activity.filename',
+                'person_activity.start_date',
+                'person_activity.end_date',
+                'person_activity.last_update',
+                'person_activity.revise_remarks',
+            ],
+            sortableColumns: [
+                'last_update' =>
+                    'person_activity.last_update',
+
+                'code_person' =>
+                    'person.code_person',
+
+                'fname' =>
+                    'person.fname',
+
+                'lname' =>
+                    'person.lname',
+
+                'desc_activity' =>
+                    'activity.desc_activity',
+
+                'start_date' =>
+                    'person_activity.start_date',
+
+                'end_date' =>
+                    'person_activity.end_date',
+
+                'sto_validated' =>
+                    'person_activity.sto_validated',
+            ],
+            defaultSortColumn: 'last_update',
+            defaultSortDirection: 'desc',
+        );
+
+        $result =
+            $this->datatableService->addRowNumbers(
+                response: $result,
+                key: 'index',
+            );
+
+        /*
+         * Use the same attachment-response structure
+         * as the senior's Activity Verification endpoint.
+         */
+        $result['data'] = collect(
+            $result['data'] ?? [],
+        )
+            ->map(
+                function ($row) use (
+                    $activityFileBaseUrl,
+                ): array {
+                    $record = is_object($row)
+                        ? get_object_vars($row)
+                        : (array) $row;
+
+                    $filename = basename(
+                        str_replace(
+                            '\\',
+                            '/',
+                            trim(
+                                (string) (
+                                    $record['filename']
+                                    ?? ''
+                                ),
+                            ),
+                        ),
+                    );
+
+                    $record['filename'] =
+                        $filename;
+
+                    $record['file_url'] =
+                        $filename !== '' &&
+                        $activityFileBaseUrl !== ''
+                            ? $activityFileBaseUrl.
+                                '/'.
+                                rawurlencode(
+                                    $filename,
+                                )
+                            : null;
+
+                    return $record;
+                },
+            )
+            ->values()
+            ->all();
+
+        return response()->json(
+            $result,
+        );
+    }
+
+    /**
+     * Return activity options for the Monitoring filter.
+     */
+    public function activityOptions(
+        Request $request,
+    ): JsonResponse {
+        $db = $this->resolveSchoolConnection(
+            $request,
+        );
+
+        if ($db instanceof JsonResponse) {
+            return $db;
+        }
+
+        $activities = $db
+            ->table('activity')
+            ->select([
+                'id',
+                'desc_activity',
+            ])
+            ->orderBy(
+                'desc_activity',
+            )
+            ->get();
+
+        return response()->json([
+            'data' => $activities,
+        ]);
     }
 
     /**
