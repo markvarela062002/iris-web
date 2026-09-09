@@ -97,35 +97,39 @@ const columns: DataTableColumn[] = [
         header: 'Student Information',
         sortable: true,
         searchable: true,
-        class: 'min-w-[320px]',
+        frozen: true,
+        alignFrozen: 'left',
+        class: 'w-[320px] min-w-[320px]',
     },
     {
         field: 'date_journal',
         header: 'Journal Details',
         sortable: true,
         searchable: false,
-        class: 'min-w-[230px]',
+        class: 'w-[230px] min-w-[230px]',
     },
     {
         field: 'port_depart',
         header: 'Voyage',
         sortable: false,
         searchable: true,
-        class: 'min-w-[250px]',
+        class: 'w-[250px] min-w-[250px]',
     },
     {
         field: 'duty_hours',
         header: 'Watchkeeping Hours',
         sortable: false,
         searchable: false,
-        class: 'min-w-[180px]',
+        class: 'w-[180px] min-w-[180px]',
     },
     {
         field: 'status',
         header: 'Status',
         sortable: true,
         searchable: false,
-        class: 'min-w-[140px] text-center',
+        class: 'w-[140px] min-w-[140px] text-center',
+        headerClass: '!text-center',
+        bodyClass: '!text-center',
     },
 ];
 
@@ -1036,16 +1040,17 @@ onBeforeUnmount(() => {
             @search="handleSearch"
             @action="handleAction"
         >
-            <template #header-actions>
-                <Button
-                    type="button"
-                    label="Dashboard"
-                    icon="pi pi-arrow-left"
-                    severity="secondary"
-                    variant="outlined"
-                    @click="goToDashboard"
-                />
-            </template>
+        <!-- <template #header-actions>
+            <Button
+                type="button"
+                label="Dashboard"
+                icon="pi pi-arrow-left"
+                severity="secondary"
+                variant="outlined"
+                size="small"
+                @click="goToDashboard"
+            />
+        </template> -->
 
             <!-- Student information -->
 
@@ -1109,7 +1114,7 @@ onBeforeUnmount(() => {
                                 icon="pi pi-building"
                                 rounded
                                 severity="info"
-                                class="!px-2 !py-0.5 !text-[15px] !font-semibold "
+                                class="!px-2 !py-0.5 !text-xs !font-semibold"
                             />
 
                             <PrimeTag
@@ -1130,7 +1135,7 @@ onBeforeUnmount(() => {
                                     )
                                 "
                                 rounded
-                                class="!px-2 !py-0.5 !text-[15px] !font-semibold"
+                                class="!px-2 !py-0.5 !text-xs !font-semibold"
                             />
                         </div>
                     </div>

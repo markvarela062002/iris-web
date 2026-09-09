@@ -6,9 +6,13 @@ use App\Http\Controllers\Api\V1\DocumentsController;
 use App\Http\Controllers\Api\V1\JournalsController;
 use App\Http\Controllers\Api\V1\OtgController;
 use App\Http\Controllers\Api\V1\OtgPrintController;
+use App\Http\Controllers\Api\V1\RemoteFileController;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/login')->name('home');
+Route::redirect(
+    '/',
+    '/login',
+)->name('home');
 
 Route::middleware(['auth'])->group(function (): void {
     /*
@@ -37,9 +41,6 @@ Route::middleware(['auth'])->group(function (): void {
         'dashboard/otg-updates/Index',
     )->name('dashboard.otg-updates');
 
-    /*
-     * Daily Journals page.
-     */
     Route::inertia(
         '/dashboard/daily-journals',
         'dashboard/daily-journals/Index',
@@ -47,7 +48,7 @@ Route::middleware(['auth'])->group(function (): void {
 
     /*
     |--------------------------------------------------------------------------
-    | Dashboard datatables
+    | Dashboard DataTables
     |--------------------------------------------------------------------------
     */
 
@@ -57,7 +58,9 @@ Route::middleware(['auth'])->group(function (): void {
             DashboardController::class,
             'students',
         ],
-    )->name('api.v1.dashboard.datatable.students');
+    )->name(
+        'api.v1.dashboard.datatable.students',
+    );
 
     Route::get(
         '/api/v1/dashboard/datatable/activity-updates',
@@ -65,7 +68,9 @@ Route::middleware(['auth'])->group(function (): void {
             ActivitiesController::class,
             'index',
         ],
-    )->name('api.v1.dashboard.datatable.activity-updates');
+    )->name(
+        'api.v1.dashboard.datatable.activity-updates',
+    );
 
     Route::get(
         '/api/v1/dashboard/datatable/uploaded-documents',
@@ -73,7 +78,9 @@ Route::middleware(['auth'])->group(function (): void {
             DocumentsController::class,
             'index',
         ],
-    )->name('api.v1.dashboard.datatable.uploaded-documents');
+    )->name(
+        'api.v1.dashboard.datatable.uploaded-documents',
+    );
 
     Route::get(
         '/api/v1/dashboard/datatable/otg-updates',
@@ -81,50 +88,113 @@ Route::middleware(['auth'])->group(function (): void {
             OtgController::class,
             'index',
         ],
-    )->name('api.v1.dashboard.datatable.otg-updates');
+    )->name(
+        'api.v1.dashboard.datatable.otg-updates',
+    );
 
-    /*
-     * Daily Journals DataTable.
-     */
     Route::get(
         '/api/v1/dashboard/datatable/daily-journals',
         [
             JournalsController::class,
             'index',
         ],
-    )->name('api.v1.dashboard.datatable.daily-journals');
+    )->name(
+        'api.v1.dashboard.datatable.daily-journals',
+    );
 
     /*
     |--------------------------------------------------------------------------
-    | Daily Journal supporting routes
+    | Remote FTP Files
     |--------------------------------------------------------------------------
+    |
+    | These routes stream files from the school FTP account selected
+    | during login. FTP credentials remain on the Laravel backend.
+    |
     */
 
     /*
-     * Student search for the PrimeVue AutoComplete.
+     * Documents and journal evidence stored in the uploads folder.
      */
+    Route::get(
+        '/dashboard/files/uploads/{filename}',
+        [
+            RemoteFileController::class,
+            'upload',
+        ],
+    )
+        ->where(
+            'filename',
+            '[^/]+',
+        )
+        ->name(
+            'dashboard.files.upload',
+        );
+
+    /*
+     * Activity evidence and files stored in person_task.
+     */
+    Route::get(
+        '/dashboard/files/person-task/{filename}',
+        [
+            RemoteFileController::class,
+            'personTask',
+        ],
+    )
+        ->where(
+            'filename',
+            '[^/]+',
+        )
+        ->name(
+            'dashboard.files.person-task',
+        );
+
+    /*
+     * Student electronic signatures stored in images.
+     */
+    Route::get(
+        '/dashboard/files/signatures/{filename}',
+        [
+            RemoteFileController::class,
+            'signature',
+        ],
+    )
+        ->where(
+            'filename',
+            '[^/]+',
+        )
+        ->name(
+            'dashboard.files.signature',
+        );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Daily Journal Supporting Routes
+    |--------------------------------------------------------------------------
+    */
+
     Route::get(
         '/api/v1/dashboard/daily-journals/students',
         [
             JournalsController::class,
             'students',
         ],
-    )->name('api.v1.dashboard.daily-journals.students');
+    )->name(
+        'api.v1.dashboard.daily-journals.students',
+    );
 
-    /*
-     * Generate and display a student's Daily Journals PDF.
-     */
     Route::get(
         '/dashboard/daily-journals/print',
         [
             JournalsController::class,
             'download',
         ],
-    )->name('dashboard.daily-journals.print');
+    )->name(
+        'dashboard.daily-journals.print',
+    );
 
     /*
     |--------------------------------------------------------------------------
-    | Activity actions
+    | Activity Actions
     |--------------------------------------------------------------------------
     */
 
@@ -134,7 +204,9 @@ Route::middleware(['auth'])->group(function (): void {
             ActivitiesController::class,
             'verify',
         ],
-    )->name('api.v1.dashboard.activity-updates.verify');
+    )->name(
+        'api.v1.dashboard.activity-updates.verify',
+    );
 
     Route::patch(
         '/api/v1/dashboard/activity-updates/{activityId}/revise',
@@ -142,11 +214,13 @@ Route::middleware(['auth'])->group(function (): void {
             ActivitiesController::class,
             'revise',
         ],
-    )->name('api.v1.dashboard.activity-updates.revise');
+    )->name(
+        'api.v1.dashboard.activity-updates.revise',
+    );
 
     /*
     |--------------------------------------------------------------------------
-    | Uploaded-document actions
+    | Uploaded-Document Actions
     |--------------------------------------------------------------------------
     */
 
@@ -156,7 +230,9 @@ Route::middleware(['auth'])->group(function (): void {
             DocumentsController::class,
             'verify',
         ],
-    )->name('api.v1.dashboard.uploaded-documents.verify');
+    )->name(
+        'api.v1.dashboard.uploaded-documents.verify',
+    );
 
     Route::patch(
         '/api/v1/dashboard/uploaded-documents/{fileUploadId}/revise',
@@ -164,11 +240,13 @@ Route::middleware(['auth'])->group(function (): void {
             DocumentsController::class,
             'revise',
         ],
-    )->name('api.v1.dashboard.uploaded-documents.revise');
+    )->name(
+        'api.v1.dashboard.uploaded-documents.revise',
+    );
 
     /*
     |--------------------------------------------------------------------------
-    | Student OTG printing
+    | Student OTG Printing
     |--------------------------------------------------------------------------
     */
 

@@ -29,32 +29,40 @@ const props = withDefaults(
         data: DataTableRow[];
         columns: DataTableColumn[];
         actions?: DataTableAction[];
+
         dataKey?: string;
         title?: string;
         description?: string;
         headerIcon?: string;
+
         loading?: boolean;
+
         searchable?: boolean;
         searchPlaceholder?: string;
+
         emptyTitle?: string;
         emptyDescription?: string;
         emptyIcon?: string;
+
         paginator?: boolean;
         rows?: number;
         rowsPerPageOptions?: number[];
+
         scrollable?: boolean;
         scrollHeight?: string;
         tableMinWidth?: string;
+
         stripedRows?: boolean;
         showGridlines?: boolean;
         removableSort?: boolean;
         resizableColumns?: boolean;
+
         showActions?: boolean;
         actionsHeader?: string;
         actionsWidth?: string;
 
         /*
-         * Server-side datatable properties.
+         * Server-side DataTable properties.
          */
         lazy?: boolean;
         totalRecords?: number;
@@ -86,12 +94,16 @@ const props = withDefaults(
         title: '',
         description: '',
         headerIcon: 'pi pi-table',
+
         loading: false,
+
         searchable: true,
         searchPlaceholder: 'Search...',
+
         emptyTitle: 'No records found',
         emptyDescription: 'Records will appear here.',
         emptyIcon: 'pi pi-inbox',
+
         paginator: true,
         rows: 10,
         rowsPerPageOptions: () => [
@@ -100,16 +112,20 @@ const props = withDefaults(
             50,
             100,
         ],
+
         scrollable: true,
         scrollHeight: 'flex',
         tableMinWidth: '1200px',
+
         stripedRows: false,
         showGridlines: false,
         removableSort: true,
         resizableColumns: true,
+
         showActions: true,
         actionsHeader: 'Actions',
         actionsWidth: '170px',
+
         lazy: false,
         totalRecords: 0,
         first: 0,
@@ -119,10 +135,6 @@ const props = withDefaults(
 const emit = defineEmits<{
     action: [
         action: string,
-        row: DataTableRow,
-    ];
-
-    rowClick: [
         row: DataTableRow,
     ];
 
@@ -159,18 +171,15 @@ let searchTimeout:
 */
 
 const searchableFields = computed(() => {
-    const explicitlySearchable =
-        props.columns
-            .filter((column) => {
-                return column.searchable;
-            })
-            .map((column) => {
-                return column.field;
-            });
+    const explicitlySearchable = props.columns
+        .filter((column) => {
+            return column.searchable;
+        })
+        .map((column) => {
+            return column.field;
+        });
 
-    if (
-        explicitlySearchable.length > 0
-    ) {
+    if (explicitlySearchable.length > 0) {
         return explicitlySearchable;
     }
 
@@ -234,6 +243,9 @@ const effectiveTotalRecords = computed(() => {
 });
 
 watch(search, (value) => {
+    /*
+     * Reset client-side pagination after searching.
+     */
     if (!props.lazy) {
         if (props.first !== 0) {
             emit('page', {
@@ -261,14 +273,16 @@ function clearSearch(): void {
 
 /*
 |--------------------------------------------------------------------------
-| Paginator values
+| Pagination
 |--------------------------------------------------------------------------
 */
 
 const firstRecord = computed(() => {
-    return effectiveTotalRecords.value === 0
-        ? 0
-        : props.first + 1;
+    if (effectiveTotalRecords.value === 0) {
+        return 0;
+    }
+
+    return props.first + 1;
 });
 
 const lastRecord = computed(() => {
@@ -295,9 +309,7 @@ function changeRows(
 ): void {
     if (
         value === null ||
-        !props.rowsPerPageOptions.includes(
-            value,
-        )
+        !props.rowsPerPageOptions.includes(value)
     ) {
         return;
     }
@@ -325,8 +337,7 @@ function getNestedValue(
             (value, key) => {
                 if (
                     value !== null &&
-                    typeof value ===
-                        'object' &&
+                    typeof value === 'object' &&
                     key in value
                 ) {
                     return (
@@ -410,7 +421,7 @@ function handleAction(
 
 /*
 |--------------------------------------------------------------------------
-| Sort
+| Sorting
 |--------------------------------------------------------------------------
 */
 
@@ -421,9 +432,7 @@ function handleSort(
      * PrimeVue permits sortField to be a callback.
      * Laravel requires a string column name.
      */
-    if (
-        typeof event.sortField !== 'string'
-    ) {
+    if (typeof event.sortField !== 'string') {
         return;
     }
 
@@ -473,16 +482,16 @@ onBeforeUnmount(() => {
                     description ||
                     $slots.header
                 "
-                class="flex min-w-0 items-center gap-3"
+                class="flex min-w-0 items-center gap-4"
             >
                 <div
                     v-if="headerIcon"
-                    class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-blue-500 text-white shadow-md"
+                    class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-blue-500 shadow-md shadow-blue-500/20"
                 >
                     <i
                         :class="[
                             headerIcon,
-                            'text-xl font-bold text-white',
+                            '!text-[2rem] !font-bold !leading-none !text-white',
                         ]"
                     ></i>
                 </div>
@@ -491,14 +500,14 @@ onBeforeUnmount(() => {
                     <slot name="header">
                         <h2
                             v-if="title"
-                            class="text-lg font-bold text-[#21365A]"
+                            class="truncate !text-xl !font-bold !leading-tight !text-[#21365A]"
                         >
                             {{ title }}
                         </h2>
 
                         <p
                             v-if="description"
-                            class="mt-1 text-sm text-slate-500"
+                            class="mt-1 !text-sm !leading-relaxed !text-slate-500"
                         >
                             {{ description }}
                         </p>
@@ -524,9 +533,7 @@ onBeforeUnmount(() => {
 
                         <InputText
                             v-model="search"
-                            :placeholder="
-                                searchPlaceholder
-                            "
+                            :placeholder="searchPlaceholder"
                             class="h-10 w-full !rounded-lg !border-slate-300 !bg-white !pr-10 !text-sm !text-slate-900"
                         />
                     </IconField>
@@ -534,6 +541,7 @@ onBeforeUnmount(() => {
                     <Button
                         v-if="search"
                         type="button"
+                        icon="pi pi-times"
                         icon-only
                         rounded
                         variant="text"
@@ -542,11 +550,7 @@ onBeforeUnmount(() => {
                         title="Clear search"
                         class="!absolute !top-1/2 !right-1 !size-8 !-translate-y-1/2 !p-0"
                         @click="clearSearch"
-                    >
-                        <i
-                            class="pi pi-times text-sm"
-                        ></i>
-                    </Button>
+                    />
                 </div>
             </div>
         </div>
@@ -564,27 +568,19 @@ onBeforeUnmount(() => {
                 :scrollable="scrollable"
                 :scroll-height="scrollHeight"
                 :striped-rows="stripedRows"
-                :show-gridlines="
-                    showGridlines
-                "
-                :removable-sort="
-                    removableSort
-                "
-                :resizable-columns="
-                    resizableColumns
-                "
+                :show-gridlines="showGridlines"
+                :removable-sort="removableSort"
+                :resizable-columns="resizableColumns"
                 column-resize-mode="fit"
-                class="universal-datatable"
+                class="universal-datatable
+                       [&_.p-datatable-tbody>tr]:cursor-default
+                       [&_.p-datatable-tbody>tr>td]:transition-colors
+                       [&_.p-datatable-tbody>tr>td]:duration-150
+                       [&_.p-datatable-tbody>tr:hover>td]:!bg-blue-50"
                 :table-style="{
                     minWidth: tableMinWidth,
                 }"
                 @sort="handleSort"
-                @row-click="
-                    emit(
-                        'rowClick',
-                        $event.data,
-                    )
-                "
             >
                 <!-- DYNAMIC COLUMNS -->
 
@@ -593,9 +589,7 @@ onBeforeUnmount(() => {
                     :key="column.field"
                     :field="column.field"
                     :header="column.header"
-                    :sortable="
-                        column.sortable
-                    "
+                    :sortable="column.sortable"
                     :frozen="column.frozen"
                     :align-frozen="
                         column.alignFrozen
@@ -643,8 +637,7 @@ onBeforeUnmount(() => {
                     frozen
                     align-frozen="right"
                     :style="{
-                        minWidth:
-                            actionsWidth,
+                        minWidth: actionsWidth,
                     }"
                     header-class="!text-center"
                     body-class="!text-center"
@@ -662,9 +655,7 @@ onBeforeUnmount(() => {
                             >
                                 <template
                                     v-for="action in actions"
-                                    :key="
-                                        action.key
-                                    "
+                                    :key="action.key"
                                 >
                                     <Button
                                         v-if="
@@ -674,6 +665,7 @@ onBeforeUnmount(() => {
                                             )
                                         "
                                         type="button"
+                                        :icon="action.icon"
                                         icon-only
                                         rounded
                                         raised
@@ -693,21 +685,14 @@ onBeforeUnmount(() => {
                                         :title="
                                             action.label
                                         "
-                                        class="!size-11 !shrink-0 !p-0"
+                                        class="!size-10 !min-h-10 !min-w-10 !shrink-0 !p-0 [&_.p-button-icon]:!m-0 [&_.p-button-icon]:!text-base [&_.p-button-icon]:!font-bold"
                                         @click.stop="
                                             handleAction(
                                                 action,
                                                 row,
                                             )
                                         "
-                                    >
-                                        <i
-                                            :class="[
-                                                action.icon,
-                                                'text-lg font-bold text-white',
-                                            ]"
-                                        ></i>
-                                    </Button>
+                                    />
                                 </template>
                             </div>
                         </slot>
@@ -718,9 +703,7 @@ onBeforeUnmount(() => {
 
                 <template #empty>
                     <slot name="empty">
-                        <div
-                            class="py-12 text-center"
-                        >
+                        <div class="py-12 text-center">
                             <i
                                 :class="[
                                     emptyIcon,
@@ -807,7 +790,9 @@ onBeforeUnmount(() => {
                 </label>
 
                 <Select
-                    :input-id="`${dataKey}-rows`"
+                    :input-id="
+                        `${dataKey}-rows`
+                    "
                     :model-value="rows"
                     :options="
                         rowsPerPageOptions

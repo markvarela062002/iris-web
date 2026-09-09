@@ -130,25 +130,25 @@ const columns: DataTableColumn[] = [
     {
         field: 'fname',
         header: 'Student Information',
-        sortable: true,
+        sortable: false,
         searchable: true,
         frozen: true,
         alignFrozen: 'left',
-        class: 'w-[390px] min-w-[390px]',
+        class: 'w-[360px] min-w-[360px]',
     },
     {
         field: 'ref_no',
         header: 'Task',
-        sortable: true,
+        sortable: false,
         searchable: true,
-        class: 'w-[560px] min-w-[560px] whitespace-normal',
+        class: 'w-[530px] min-w-[530px] whitespace-normal',
     },
     {
         field: 'completed',
         header: 'Date Completed',
         sortable: true,
-        searchable: true,
-        class: 'w-[220px] min-w-[220px]',
+        searchable: false,
+        class: 'w-[210px] min-w-[210px]',
     },
 ];
 

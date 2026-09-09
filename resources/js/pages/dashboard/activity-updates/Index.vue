@@ -114,7 +114,7 @@ const columns: DataTableColumn[] = [
     {
         field: 'fname',
         header: 'Student Information',
-        sortable: true,
+        sortable: false,
         searchable: true,
         frozen: true,
         alignFrozen: 'left',
@@ -123,22 +123,22 @@ const columns: DataTableColumn[] = [
     {
         field: 'desc_activity',
         header: 'Activity',
-        sortable: true,
-        searchable: true,
+        sortable: false,
+        searchable: false,
         class: 'w-[320px] min-w-[320px] whitespace-normal',
     },
     {
         field: 'start_date',
         header: 'Activity Period',
-        sortable: true,
-        searchable: true,
+        sortable: false,
+        searchable: false,
         class: 'w-[260px] min-w-[260px]',
     },
     {
         field: 'last_update',
         header: 'Date Submitted',
         sortable: true,
-        searchable: true,
+        searchable: false,
         class: 'w-[210px] min-w-[210px]',
     },
 ];
@@ -148,6 +148,14 @@ const columns: DataTableColumn[] = [
 | Datatable actions
 |--------------------------------------------------------------------------
 */
+const hasUploadedFile = (
+    row: DataTableRow,
+): boolean => {
+    return (
+        typeof row.file_url === 'string' &&
+        row.file_url.trim() !== ''
+    );
+};
 
 const actions: DataTableAction[] = [
     {
@@ -155,6 +163,18 @@ const actions: DataTableAction[] = [
         label: 'View uploaded PDF',
         icon: 'pi pi-file-pdf',
         severity: 'danger',
+        visible: (row) => {
+            return hasUploadedFile(row);
+        },
+    },
+    {
+        key: 'no-pdf',
+        label: 'No PDF',
+        icon: 'pi pi-file-pdf',
+        severity: 'secondary',
+        visible: (row) => {
+            return !hasUploadedFile(row);
+        },
     },
     {
         key: 'verify',
@@ -321,6 +341,14 @@ function handleAction(
     successMessage.value = '';
     errorMessage.value = '';
 
+    /*
+     * Keep the secondary PDF icon visible, but do
+     * nothing when the activity has no PDF.
+     */
+    if (action === 'no-pdf') {
+        return;
+    }
+
     if (action === 'view-file') {
         openUploadedFile(activity);
 
@@ -345,11 +373,11 @@ function handleAction(
 function openUploadedFile(
     activity: DataTableRow,
 ): void {
-    const filename = String(
-        activity.filename ?? '',
+    const fileUrl = String(
+        activity.file_url ?? '',
     ).trim();
 
-    if (!filename) {
+    if (!fileUrl) {
         errorMessage.value =
             'This activity does not have an uploaded file.';
 
@@ -357,7 +385,7 @@ function openUploadedFile(
     }
 
     window.open(
-        getUploadedFileUrl(filename),
+        fileUrl,
         '_blank',
         'noopener,noreferrer',
     );
@@ -628,21 +656,6 @@ function getSchoolIdLabel(
 |--------------------------------------------------------------------------
 */
 
-function getUploadedFileUrl(
-    filename: unknown,
-): string {
-    const normalizedFilename = String(
-        filename ?? '',
-    )
-        .trim()
-        .split('/')
-        .filter(Boolean)
-        .map(encodeURIComponent)
-        .join('/');
-
-    return `/person_task/${normalizedFilename}`;
-}
-
 function formatDate(
     value: unknown,
     includeTime = false,
@@ -809,10 +822,10 @@ onBeforeUnmount(() => {
             <template #header-actions>
                 <Button
                     type="button"
-                    label="Dashboard"
-                    icon="pi pi-arrow-left"
-                    severity="secondary"
-                    outlined
+                    label="Activity Update List"
+                    icon="pi pi-list-check"
+                    severity="info"
+                    
                     size="small"
                     @click="navigateToDashboard"
                 />
@@ -868,7 +881,7 @@ onBeforeUnmount(() => {
                                     )
                                 "
                                 severity="info"
-                                icon="pi pi-building"
+                                icon="pi pi-id-card"
                                 class="!px-2 !py-0.5 !text-xs !font-semibold"
                             />
                         </div>

@@ -12,6 +12,12 @@ return [
     */
 
     'schools' => [
+        /*
+        |--------------------------------------------------------------------------
+        | DEMO
+        |--------------------------------------------------------------------------
+        */
+
         'DEMO' => [
             'code' => strtoupper(
                 trim(
@@ -29,11 +35,43 @@ return [
 
             'logo' => env(
                 'DEMO_SCHOOL_LOGO',
-                '/images/mci.png',
+                '/images/iris.png',
             ),
 
             'connection' => 'demo',
+
+            'files' => [
+                /*
+                 * Uploaded documents and journal evidence.
+                 */
+                'uploads_url' => env(
+                    'DEMO_JOURNAL_UPLOAD_URL',
+                    '',
+                ),
+
+                /*
+                 * Activity attachments.
+                 */
+                'activity_url' => env(
+                    'DEMO_ACTIVITY_FILE_URL',
+                    '',
+                ),
+
+                /*
+                 * Student electronic signatures.
+                 */
+                'signature_url' => env(
+                    'DEMO_JOURNAL_ESIG_URL',
+                    '',
+                ),
+            ],
         ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | EXACT
+        |--------------------------------------------------------------------------
+        */
 
         'EXACT' => [
             'code' => strtoupper(
@@ -56,7 +94,30 @@ return [
             ),
 
             'connection' => 'exact',
+
+            'files' => [
+                'uploads_url' => env(
+                    'EXACT_JOURNAL_UPLOAD_URL',
+                    '',
+                ),
+
+                'activity_url' => env(
+                    'EXACT_ACTIVITY_FILE_URL',
+                    '',
+                ),
+
+                'signature_url' => env(
+                    'EXACT_JOURNAL_ESIG_URL',
+                    '',
+                ),
+            ],
         ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | IGCFI
+        |--------------------------------------------------------------------------
+        */
 
         'IGCFI' => [
             'code' => strtoupper(
@@ -79,7 +140,30 @@ return [
             ),
 
             'connection' => 'igcfi',
+
+            'files' => [
+                'uploads_url' => env(
+                    'IGCFI_JOURNAL_UPLOAD_URL',
+                    '',
+                ),
+
+                'activity_url' => env(
+                    'IGCFI_ACTIVITY_FILE_URL',
+                    '',
+                ),
+
+                'signature_url' => env(
+                    'IGCFI_JOURNAL_ESIG_URL',
+                    '',
+                ),
+            ],
         ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | MCL
+        |--------------------------------------------------------------------------
+        */
 
         'MCL' => [
             'code' => strtoupper(
@@ -102,7 +186,30 @@ return [
             ),
 
             'connection' => 'mcl',
+
+            'files' => [
+                'uploads_url' => env(
+                    'MCL_JOURNAL_UPLOAD_URL',
+                    '',
+                ),
+
+                'activity_url' => env(
+                    'MCL_ACTIVITY_FILE_URL',
+                    '',
+                ),
+
+                'signature_url' => env(
+                    'MCL_JOURNAL_ESIG_URL',
+                    '',
+                ),
+            ],
         ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | MCI
+        |--------------------------------------------------------------------------
+        */
 
         'MCI' => [
             'code' => strtoupper(
@@ -125,8 +232,23 @@ return [
             ),
 
             'connection' => 'mci',
+
+            'files' => [
+                'uploads_url' => env(
+                    'MCI_JOURNAL_UPLOAD_URL',
+                    '',
+                ),
+
+                'activity_url' => env(
+                    'MCI_ACTIVITY_FILE_URL',
+                    '',
+                ),
+
+                'signature_url' => env(
+                    'MCI_JOURNAL_ESIG_URL',
+                    '',
+                ),
+            ],
         ],
-
-
     ],
 ];

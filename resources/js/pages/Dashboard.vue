@@ -129,7 +129,7 @@ const dashboardCards = computed<DashboardCard[]>(() => [
     {
         label: 'OTG Updates (Current Month)',
         value: dashboardTotals.value.otgUpdates,
-        icon: 'pi pi-book',
+        icon: 'pi pi-bookmark',
         cardBg: '!bg-red-500',
         buttonTextClass: '!text-red-500',
         href: '/dashboard/otg-updates',
@@ -137,7 +137,7 @@ const dashboardCards = computed<DashboardCard[]>(() => [
     {
         label: 'Daily Journals (Current Month)',
         value: dashboardTotals.value.dailyJournals,
-        icon: 'pi pi-calendar',
+        icon: 'pi pi-book',
         cardBg: '!bg-blue-500',
         buttonTextClass: '!text-blue-500',
         href: '/dashboard/daily-journals',
@@ -936,7 +936,7 @@ function handleStudentAction(
                                         data.school_id_no,
                                     )
                                 "
-                                severity="secondary"
+                                severity="info"
                                 icon="pi pi-id-card"
                                 rounded
                                 class="!px-2 !py-0.5 !text-sm !font-semibold"
@@ -949,7 +949,7 @@ function handleStudentAction(
                                             'No CCI Year',
                                     )
                                 "
-                                severity="info"
+                                severity="secondary"
                                 icon="pi pi-calendar"
                                 rounded
                                 class="!px-2 !py-0.5 !text-sm !font-semibold"
@@ -1002,7 +1002,7 @@ function handleStudentAction(
                     <Tag
                         :value="String(getNumber(value))"
                         severity="warn"
-                        icon="pi pi-list-check"
+                        icon="pi pi-bolt"
                         rounded
                         class="!px-3 !py-1 !text-sm !font-bold"
                     />
@@ -1014,7 +1014,7 @@ function handleStudentAction(
                     <Tag
                         :value="String(getNumber(value))"
                         severity="success"
-                        icon="pi pi-file"
+                        icon="pi pi-file-arrow-up"
                         rounded
                         class="!px-3 !py-1 !text-sm !font-bold"
                     />

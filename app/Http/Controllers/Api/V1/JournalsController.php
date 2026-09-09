@@ -24,9 +24,31 @@ class JournalsController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        [$connection] = $this->resolveSchoolConnection($request);
+[
+    $connection,
+    $school,
+] = $this->resolveSchoolConnection(
+    $request,
+);
 
-        $database = DB::connection($connection);
+$database = DB::connection(
+    $connection,
+);
+
+/*
+ * Journal objective evidence is stored in the same
+ * public person_task directory as activity files.
+ */
+$evidenceBaseUrl = rtrim(
+    trim(
+        (string) data_get(
+            $school,
+            'files.activity_url',
+            '',
+        ),
+    ),
+    '/',
+);
 
         $validated = $request->validate([
             'date_from' => [
@@ -148,12 +170,17 @@ class JournalsController extends Controller
             ->paginate($perPage)
             ->withQueryString();
 
-        $records = collect($paginator->items())
-            ->map(
-                fn (object $journal): array =>
-                    $this->transformJournal($journal),
-            )
-            ->values();
+$records = collect(
+    $paginator->items(),
+)
+    ->map(
+        fn (object $journal): array =>
+            $this->transformJournal(
+                journal: $journal,
+                evidenceBaseUrl: $evidenceBaseUrl,
+            ),
+    )
+    ->values();
 
         return response()->json([
             'data' => $records,
@@ -726,119 +753,152 @@ class JournalsController extends Controller
         }
     }
 
-    /**
-     * Convert a journal row into the DataTable response.
-     *
-     * @return array<string, mixed>
-     */
-    private function transformJournal(
-        object $journal,
-    ): array {
-        $fileName = trim((string) (
-            $journal->file_name ?? ''
-        ));
-
-        $googleDriveId = trim((string) (
-            $journal->gdrive_link ?? ''
-        ));
-
-        $evidenceUrl = null;
-
-        if (
-            $fileName !== ''
-            && $googleDriveId !== ''
-        ) {
-            $evidenceUrl = Str::startsWith(
-                $googleDriveId,
-                [
-                    'http://',
-                    'https://',
-                ],
-            )
-                ? $googleDriveId
-                : 'https://drive.google.com/file/d/'.
-                    rawurlencode($googleDriveId).
-                    '/view';
-        } elseif ($fileName !== '') {
-            $evidenceUrl =
-                '/person_task/'.
-                rawurlencode(
-                    basename($fileName),
-                );
-        }
-
-        $isValidated = $this->isValidated(
-            $journal->esig_file ?? null,
-        );
-
-        return [
-            'id' =>
-                (string) $journal->id,
-
-            'person_id' =>
-                (string) $journal->person_id,
-
-            'date_journal' =>
-                $journal->date_journal,
-
-            'school_id_no' =>
-                $journal->school_id_no,
-
-            'fname' =>
-                $journal->fname,
-
-            'mname' =>
-                $journal->mname,
-
-            'lname' =>
-                $journal->lname,
-
-            'gender' =>
-                $journal->gender,
-
-            'department' =>
-                $journal->dept,
-
-            'student_name' =>
-                $this->studentName($journal),
-
-            'vessel_name' =>
-                $journal->vessel_name,
-
-            'journal_time' =>
-                $journal->journal_time,
-
-            'journal_time_to' =>
-                $journal->journal_time_to,
-
-            'duty_hours' =>
-                $this->calculateDutyHours(
-                    $journal->date_journal,
-                    $journal->journal_time,
-                    $journal->journal_time_to,
+/**
+ * Convert a journal row into the DataTable response.
+ *
+ * @return array<string, mixed>
+ */
+private function transformJournal(
+    object $journal,
+    string $evidenceBaseUrl,
+): array {
+    $fileName = basename(
+        str_replace(
+            '\\',
+            '/',
+            trim(
+                (string) (
+                    $journal->file_name ?? ''
                 ),
+            ),
+        ),
+    );
 
-            'port_depart' =>
-                $journal->port_depart,
+    $googleDriveId = trim(
+        (string) (
+            $journal->gdrive_link ?? ''
+        ),
+    );
 
-            'port_dest' =>
-                $journal->port_dest,
+    $evidenceUrl = null;
+    $evidenceSource = null;
 
-            'file_name' =>
-                $fileName,
+    /*
+     * Preserve the legacy Google Drive behavior.
+     */
+    if (
+        $fileName !== '' &&
+        $googleDriveId !== ''
+    ) {
+        $evidenceUrl = Str::startsWith(
+            $googleDriveId,
+            [
+                'http://',
+                'https://',
+            ],
+        )
+            ? $googleDriveId
+            : 'https://drive.google.com/file/d/'.
+                rawurlencode($googleDriveId).
+                '/view';
 
-            'evidence_url' =>
-                $evidenceUrl,
+        $evidenceSource = 'google-drive';
+    } elseif (
+        $fileName !== '' &&
+        $evidenceBaseUrl !== ''
+    ) {
+        /*
+         * Generate the selected school's public
+         * person_task URL.
+         */
+        $evidenceUrl =
+            $evidenceBaseUrl.
+            '/'.
+            rawurlencode($fileName);
 
-            'status' =>
-                $isValidated
-                    ? 'Validated'
-                    : 'Pending',
-
-            'validated' =>
-                $isValidated,
-        ];
+        $evidenceSource = 'school-server';
     }
+
+    $isValidated = $this->isValidated(
+        $journal->esig_file ?? null,
+    );
+
+    return [
+        'id' =>
+            (string) $journal->id,
+
+        'person_id' =>
+            (string) $journal->person_id,
+
+        'date_journal' =>
+            $journal->date_journal,
+
+        'school_id_no' =>
+            $journal->school_id_no,
+
+        'fname' =>
+            $journal->fname,
+
+        'mname' =>
+            $journal->mname,
+
+        'lname' =>
+            $journal->lname,
+
+        'gender' =>
+            $journal->gender,
+
+        'department' =>
+            $journal->dept,
+
+        'student_name' =>
+            $this->studentName(
+                $journal,
+            ),
+
+        'vessel_name' =>
+            $journal->vessel_name,
+
+        'journal_time' =>
+            $journal->journal_time,
+
+        'journal_time_to' =>
+            $journal->journal_time_to,
+
+        'duty_hours' =>
+            $this->calculateDutyHours(
+                $journal->date_journal,
+                $journal->journal_time,
+                $journal->journal_time_to,
+            ),
+
+        'port_depart' =>
+            $journal->port_depart,
+
+        'port_dest' =>
+            $journal->port_dest,
+
+        'file_name' =>
+            $fileName,
+
+        /*
+         * Complete public or Google Drive URL.
+         */
+        'evidence_url' =>
+            $evidenceUrl,
+
+        'evidence_source' =>
+            $evidenceSource,
+
+        'status' =>
+            $isValidated
+                ? 'Validated'
+                : 'Pending',
+
+        'validated' =>
+            $isValidated,
+    ];
+}
 
     /**
      * Build a student's display name.
