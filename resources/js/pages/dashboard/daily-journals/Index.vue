@@ -137,8 +137,8 @@ const actions: DataTableAction[] = [
     {
         key: 'view-evidence',
         label: 'View Evidence',
-        icon: 'pi pi-file-pdf',
-        severity: 'danger',
+        icon: 'pi pi-download',
+        severity: 'info',
 
         visible: (row) => {
             return (

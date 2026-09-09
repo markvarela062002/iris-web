@@ -159,7 +159,7 @@ const actions: DataTableAction[] = [
         key: 'view-files',
         label: 'View or download files',
         icon: 'pi pi-download',
-        severity: 'danger',
+        severity: 'info',
 
         visible: (
             row: DataTableRow,

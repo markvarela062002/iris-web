@@ -161,8 +161,8 @@ const actions: DataTableAction[] = [
     {
         key: 'view-file',
         label: 'View uploaded PDF',
-        icon: 'pi pi-file-pdf',
-        severity: 'danger',
+        icon: 'pi pi-download',
+        severity: 'info',
         visible: (row) => {
             return hasUploadedFile(row);
         },
@@ -170,7 +170,7 @@ const actions: DataTableAction[] = [
     {
         key: 'no-pdf',
         label: 'No PDF',
-        icon: 'pi pi-file-pdf',
+        icon: 'pi pi-download',
         severity: 'secondary',
         visible: (row) => {
             return !hasUploadedFile(row);
