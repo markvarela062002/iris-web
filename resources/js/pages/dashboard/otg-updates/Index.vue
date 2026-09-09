@@ -668,9 +668,8 @@ onBeforeUnmount(() => {
                     <Button
                         type="button"
                         label="Individual Cadet OTG"
-                        icon="pi pi-users"
-                        severity="secondary"
-                        variant="outlined"
+                        icon="pi pi-list-check"
+                        severity="info"
                         size="small"
                         @click="navigateToDashboard"
                     />
