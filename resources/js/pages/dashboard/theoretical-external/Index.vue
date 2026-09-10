@@ -81,39 +81,39 @@ const columns: DataTableColumn[] = [
         sortable: false,
         searchable: true,
         frozen: true,
-        class: 'w-[310px] min-w-[310px]',
+        class: 'min-w-[280px]',
     },
     {
         field: 'exam_details',
         header: 'Exam Details',
         sortable: false,
         searchable: false,
-        class: 'w-[360px] min-w-[360px]',
+        class: 'min-w-[320px]',
     },
     {
         field: 'proctor_name',
         header: 'Proctor',
         sortable: false,
         searchable: true,
-        class: 'w-[210px] min-w-[210px]',
+        class: 'min-w-[210px]',
     },
     {
         field: 'score',
         header: 'Score',
         sortable: true,
         searchable: false,
-        class: 'w-[140px] min-w-[140px] text-center',
-        headerClass: '!text-center',
-        bodyClass: '!text-center',
+        class: 'min-w-[100px]',
+        headerClass: '!text-left',
+        bodyClass: '!text-left',
     },
     {
         field: 'done',
         header: 'Status',
         sortable: true,
         searchable: false,
-        class: 'w-[130px] min-w-[130px] text-center',
-        headerClass: '!text-center',
-        bodyClass: '!text-center',
+        class: 'min-w-[110px]',
+        headerClass: '!text-left',
+        bodyClass: '!text-left',
     },
 ];
 
@@ -146,6 +146,7 @@ const actions: DataTableAction[] = [
         key: 'certificate-unavailable',
         label: 'No Certificate Available',
         icon: 'pi pi-download',
+        severity: 'secondary',
         visible: (row) =>
             row.is_completed !== true,
         disabled: () => true,
@@ -162,6 +163,7 @@ const actions: DataTableAction[] = [
         key: 'answers-unavailable',
         label: 'No Answers Available',
         icon: 'pi pi-eye',
+        severity: 'secondary',
         visible: (row) =>
             row.is_completed !== true,
         disabled: () => true,
@@ -870,7 +872,7 @@ onMounted(() => {
             search-placeholder="Search external assessments..."
             empty-title="No external assessments found"
             empty-description="No external assessments match the selected filters."
-            table-min-width="1250px"
+            table-min-width="1200px"
             data-key="id"
             lazy
             :loading="loading"
@@ -889,7 +891,7 @@ onMounted(() => {
                 100,
             ]"
             actions-header="Actions"
-            actions-width="190px"
+            actions-width="170px"
             @page="handlePage"
             @sort="handleSort"
             @search="handleSearch"

@@ -94,39 +94,39 @@ const columns: DataTableColumn[] = [
         sortable: false,
         searchable: true,
         frozen: true,
-        class: 'w-[330px] min-w-[330px]',
+        class: 'min-w-[290px]',
     },
     {
         field: 'exam_details',
         header: 'Exam Details',
         sortable: false,
         searchable: false,
-        class: 'w-[360px] min-w-[360px]',
+        class: 'min-w-[320px]',
     },
     {
         field: 'proctor_name',
         header: 'Proctor',
         sortable: false,
         searchable: true,
-        class: 'w-[210px] min-w-[210px]',
+        class: 'min-w-[210px]',
     },
     {
         field: 'score',
         header: 'Score',
         sortable: true,
         searchable: false,
-        class: 'w-[140px] min-w-[140px] text-center',
-        headerClass: '!text-center',
-        bodyClass: '!text-center',
+        class: 'min-w-[100px]',
+        headerClass: '!text-left',
+        bodyClass: '!text-left',
     },
     {
         field: 'done',
         header: 'Status',
         sortable: true,
         searchable: false,
-        class: 'w-[130px] min-w-[130px] text-center',
-        headerClass: '!text-center',
-        bodyClass: '!text-center',
+        class: 'min-w-[110px]',
+        headerClass: '!text-left',
+        bodyClass: '!text-left',
     },
 ];
 
@@ -1022,7 +1022,7 @@ onMounted(() => {
             search-placeholder="Search assessments..."
             empty-title="No assessments found"
             empty-description="No enrolled assessments match the selected filters."
-            table-min-width="1250px"
+            table-min-width="1200px"
             data-key="id"
             lazy
             :loading="loading"
@@ -1041,7 +1041,7 @@ onMounted(() => {
                 100,
             ]"
             actions-header="Actions"
-            actions-width="190px"
+            actions-width="170px"
             @page="handlePage"
             @sort="handleSort"
             @search="handleSearch"

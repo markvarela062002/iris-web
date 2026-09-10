@@ -99,41 +99,44 @@ const columns: DataTableColumn[] = [
         searchable: true,
         frozen: true,
         alignFrozen: 'left',
-        class: 'w-[320px] min-w-[320px]',
+        class: 'min-w-[300px]',
     },
     {
         field: 'date_journal',
         header: 'Journal Details',
         sortable: true,
         searchable: false,
-        class: 'w-[230px] min-w-[230px]',
+        class: 'min-w-[210px]',
     },
     {
         field: 'port_depart',
         header: 'Voyage',
         sortable: false,
         searchable: true,
-        class: 'w-[250px] min-w-[250px]',
+        class: 'min-w-[220px]',
     },
     {
         field: 'duty_hours',
         header: 'Watchkeeping Hours',
         sortable: false,
         searchable: false,
-        class: 'w-[180px] min-w-[180px]',
+        class: 'min-w-[150px]',
     },
     {
         field: 'status',
         header: 'Status',
         sortable: true,
         searchable: false,
-        class: 'w-[140px] min-w-[140px] text-center',
-        headerClass: '!text-center',
-        bodyClass: '!text-center',
+        class: 'min-w-[110px]',
+        headerClass: '!text-left',
+        bodyClass: '!text-left',
     },
 ];
 
 const actions: DataTableAction[] = [
+    /*
+     * Evidence is available.
+     */
     {
         key: 'view-evidence',
         label: 'View Evidence',
@@ -143,6 +146,24 @@ const actions: DataTableAction[] = [
             typeof row.evidence_url === 'string' &&
             row.evidence_url.trim() !== '',
     },
+
+    /*
+     * Evidence is unavailable.
+     */
+    {
+        key: 'evidence-unavailable',
+        label: 'No Evidence Available',
+        icon: 'pi pi-download',
+        severity: 'secondary',
+        visible: (row) =>
+            typeof row.evidence_url !== 'string' ||
+            row.evidence_url.trim() === '',
+        disabled: () => true,
+    },
+
+    /*
+     * Edit is always available.
+     */
     {
         key: 'edit',
         label: 'Edit Journal',
@@ -751,9 +772,7 @@ function handleAction(
     action: string,
     journal: DataTableRow,
 ): void {
-    if (action === 'edit') {
-        router.visit('/dashboard');
-
+    if (action === 'evidence-unavailable') {
         return;
     }
 
@@ -771,6 +790,16 @@ function handleAction(
             '_blank',
             'noopener,noreferrer',
         );
+
+        return;
+    }
+
+    if (action === 'edit') {
+        /*
+         * Temporary destination until the journal
+         * editing page is implemented.
+         */
+        router.visit('/dashboard');
     }
 }
 
@@ -1020,7 +1049,7 @@ onBeforeUnmount(() => {
     search-placeholder="Search journals..."
     empty-title="No journals found"
     empty-description="No daily journals match the selected filters."
-    table-min-width="1250px"
+    table-min-width="1150px"
     data-key="id"
     lazy
     :loading="loading"
@@ -1032,7 +1061,7 @@ onBeforeUnmount(() => {
     :rows="rows"
     :rows-per-page-options="[10, 20, 50, 100]"
     actions-header="Actions"
-    actions-width="150px"
+    actions-width="120px"
     @page="handlePage"
     @sort="handleSort"
     @search="handleSearch"
