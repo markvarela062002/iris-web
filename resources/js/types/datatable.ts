@@ -27,6 +27,7 @@ export type DataTableAction = {
         | 'info'
         | 'warn'
         | 'danger'
+        | 'help'
         | 'contrast';
     visible?: (row: DataTableRow) => boolean;
     disabled?: (row: DataTableRow) => boolean;

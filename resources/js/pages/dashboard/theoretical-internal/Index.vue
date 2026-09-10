@@ -1,17 +1,24 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
+import axios from 'axios';
+import AutoComplete from 'primevue/autocomplete';
+import Avatar from 'primevue/avatar';
+import Button from 'primevue/button';
+import Card from 'primevue/card';
+import DatePicker from 'primevue/datepicker';
+import Dialog from 'primevue/dialog';
+import InputText from 'primevue/inputtext';
+import Message from 'primevue/message';
+import Select from 'primevue/select';
 import PrimeTag from 'primevue/tag';
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
-type ActivityUpdate = {
-    id: number;
-    studentName: string;
-    schoolId: string;
-    department: string;
-    activity: string;
-    submittedAt: string;
-    status: 'Pending' | 'Verified' | 'Rejected';
-};
+import Datatable from '@/components/Datatable.vue';
+import type {
+    DataTableAction,
+    DataTableColumn,
+    DataTableRow,
+} from '@/types';
 
 defineOptions({
     inheritAttrs: false,
@@ -23,386 +30,1494 @@ defineOptions({
                 href: '/dashboard',
             },
             {
-                title: 'Activity Updates',
-                href: '/dashboard/activity-updates',
+                title: 'Theoretical Internal',
+                href: '/dashboard/theoretical-internal',
             },
         ],
     },
 });
 
-const search = ref('');
-const statusFilter = ref('All');
+type Option = {
+    id: string;
+    label: string;
+};
+
+type StudentOption = {
+    id: string;
+    student_name: string;
+    school_id_no?: string | null;
+    code_person?: string | null;
+    fname?: string | null;
+    mname?: string | null;
+    lname?: string | null;
+    gender?: string | null;
+    dept?: string | null;
+};
+
+type AnswerRow = {
+    index: number;
+    question: string;
+    answer: string | null;
+    correct_answer: string | null;
+    is_correct: boolean;
+};
+
+type PageEvent = {
+    first: number;
+    rows: number;
+    page?: number;
+};
+
+type SortEvent = {
+    sortField?: string;
+    sortOrder?: number;
+};
+
+type TagSeverity =
+    | 'success'
+    | 'info'
+    | 'warn'
+    | 'danger'
+    | 'secondary'
+    | 'contrast';
 
 /*
 |--------------------------------------------------------------------------
-| Sample Activity Update Data
+| DataTable configuration
 |--------------------------------------------------------------------------
-|
-| Replace this with data from your API once the backend endpoint is ready.
-|
 */
 
-const activities = ref<ActivityUpdate[]>([
+const columns: DataTableColumn[] = [
     {
-        id: 1,
-        studentName: 'JUAN MIGUEL DELA CRUZ',
-        schoolId: '2026-0001',
-        department: 'Deck',
-        activity: 'Navigation Watchkeeping',
-        submittedAt: 'September 4, 2026 8:30 AM',
-        status: 'Pending',
+        field: 'student_name',
+        header: 'Student Information',
+        sortable: false,
+        searchable: true,
+        frozen: true,
+        class: 'w-[330px] min-w-[330px]',
     },
     {
-        id: 2,
-        studentName: 'MARIA ANGELA SANTOS',
-        schoolId: '2026-0002',
-        department: 'Engine',
-        activity: 'Engine Room Familiarization',
-        submittedAt: 'September 4, 2026 9:15 AM',
-        status: 'Verified',
+        field: 'exam_details',
+        header: 'Exam Details',
+        sortable: false,
+        searchable: false,
+        class: 'w-[360px] min-w-[360px]',
     },
     {
-        id: 3,
-        studentName: 'CARLO REYES',
-        schoolId: '2026-0003',
-        department: 'Deck',
-        activity: 'Mooring Operations',
-        submittedAt: 'September 4, 2026 10:05 AM',
-        status: 'Pending',
+        field: 'proctor_name',
+        header: 'Proctor',
+        sortable: false,
+        searchable: true,
+        class: 'w-[210px] min-w-[210px]',
     },
     {
-        id: 4,
-        studentName: 'ANNA MAE GARCIA',
-        schoolId: '2026-0004',
-        department: 'Engine',
-        activity: 'Safety Equipment Inspection',
-        submittedAt: 'September 3, 2026 3:45 PM',
-        status: 'Rejected',
+        field: 'score',
+        header: 'Score',
+        sortable: true,
+        searchable: false,
+        class: 'w-[140px] min-w-[140px] text-center',
+        headerClass: '!text-center',
+        bodyClass: '!text-center',
     },
     {
-        id: 5,
-        studentName: 'MARK JOSEPH RAMOS',
-        schoolId: '2026-0005',
-        department: 'Deck',
-        activity: 'Cargo Handling Procedures',
-        submittedAt: 'September 3, 2026 1:20 PM',
-        status: 'Verified',
+        field: 'done',
+        header: 'Status',
+        sortable: true,
+        searchable: false,
+        class: 'w-[130px] min-w-[130px] text-center',
+        headerClass: '!text-center',
+        bodyClass: '!text-center',
     },
-]);
+];
 
-const filteredActivities = computed(() => {
-    const keyword = search.value.trim().toLowerCase();
+const actions: DataTableAction[] = [
+    /*
+     * Certificate available.
+     */
+    {
+        key: 'certificate',
+        label: 'Download Certificate',
+        icon: 'pi pi-download',
+        severity: 'info',
+        visible: (row) =>
+            row.is_completed === true,
+    },
 
-    return activities.value.filter((activity) => {
-        const matchesStatus =
-            statusFilter.value === 'All' ||
-            activity.status === statusFilter.value;
+    /*
+     * Certificate unavailable fallback.
+     *
+     * No severity means PrimeVue's default primary severity.
+     */
+    {
+        key: 'certificate-unavailable',
+        label: 'No Certificate Available',
+        icon: 'pi pi-download',
+        visible: (row) =>
+            row.is_completed !== true,
+        disabled: () => true,
+    },
 
-        const matchesSearch =
-            keyword === '' ||
-            activity.studentName.toLowerCase().includes(keyword) ||
-            activity.schoolId.toLowerCase().includes(keyword) ||
-            activity.department.toLowerCase().includes(keyword) ||
-            activity.activity.toLowerCase().includes(keyword);
+    /*
+     * Answers available.
+     */
+    {
+        key: 'answers',
+        label: 'View Answers',
+        icon: 'pi pi-eye',
+        severity: 'danger',
+        visible: (row) =>
+            row.is_completed === true,
+    },
 
-        return matchesStatus && matchesSearch;
-    });
+    /*
+     * Answers unavailable fallback.
+     *
+     * No severity means PrimeVue's default primary severity.
+     */
+    {
+        key: 'answers-unavailable',
+        label: 'No Answers Available',
+        icon: 'pi pi-eye',
+        visible: (row) =>
+            row.is_completed !== true,
+        disabled: () => true,
+    },
+
+    /*
+     * Edit is always available.
+     */
+    {
+        key: 'edit',
+        label: 'Edit Assessment',
+        icon: 'pi pi-pencil',
+        severity: 'warn',
+    },
+];
+
+/*
+|--------------------------------------------------------------------------
+| Table state
+|--------------------------------------------------------------------------
+*/
+
+const assessments = ref<DataTableRow[]>([]);
+const loading = ref(false);
+const totalRecords = ref(0);
+const first = ref(0);
+const rows = ref(10);
+const search = ref('');
+const sortField = ref('started');
+const sortDirection =
+    ref<'asc' | 'desc'>('desc');
+
+/*
+|--------------------------------------------------------------------------
+| Filter state
+|--------------------------------------------------------------------------
+*/
+
+const courses = ref<Option[]>([]);
+const sessions = ref<Option[]>([]);
+const studentSuggestions =
+    ref<StudentOption[]>([]);
+
+const selectedCourse =
+    ref<Option | null>(null);
+
+const selectedSession =
+    ref<Option | null>(null);
+
+const selectedStudent =
+    ref<StudentOption | null>(null);
+
+const schoolId = ref('');
+const dateRange = ref<Date[] | null>(null);
+
+/*
+|--------------------------------------------------------------------------
+| Dialog state
+|--------------------------------------------------------------------------
+*/
+
+const detailsVisible = ref(false);
+const loadingDetails = ref(false);
+
+const selectedAssessment =
+    ref<Record<string, unknown> | null>(
+        null,
+    );
+
+const answers = ref<AnswerRow[]>([]);
+const pageError = ref('');
+
+/*
+|--------------------------------------------------------------------------
+| Computed properties
+|--------------------------------------------------------------------------
+*/
+
+const hasFilters = computed(() => {
+    return Boolean(
+        selectedCourse.value ||
+        selectedSession.value ||
+        selectedStudent.value ||
+        schoolId.value.trim() ||
+        dateRange.value?.length ||
+        search.value.trim(),
+    );
 });
 
-const pendingCount = computed(() => {
-    return activities.value.filter((item) => item.status === 'Pending').length;
-});
+/*
+|--------------------------------------------------------------------------
+| Formatting helpers
+|--------------------------------------------------------------------------
+*/
 
-const verifiedCount = computed(() => {
-    return activities.value.filter((item) => item.status === 'Verified').length;
-});
+function formatLocalDate(
+    value: Date,
+): string {
+    const year = value.getFullYear();
 
-const rejectedCount = computed(() => {
-    return activities.value.filter((item) => item.status === 'Rejected').length;
-});
+    const month = String(
+        value.getMonth() + 1,
+    ).padStart(2, '0');
 
-function getStatusSeverity(
-    status: ActivityUpdate['status'],
-): 'warn' | 'success' | 'danger' {
-    if (status === 'Verified') {
+    const day = String(
+        value.getDate(),
+    ).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+}
+
+function formatDateTime(
+    value: unknown,
+): string {
+    const raw = String(
+        value ?? '',
+    ).trim();
+
+    if (
+        !raw ||
+        raw.startsWith('1970-01-01') ||
+        raw.startsWith('0000-00-00')
+    ) {
+        return 'Not taken';
+    }
+
+    const date = new Date(
+        raw.replace(' ', 'T'),
+    );
+
+    if (Number.isNaN(date.getTime())) {
+        return raw;
+    }
+
+    return new Intl.DateTimeFormat(
+        'en-US',
+        {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+        },
+    ).format(date);
+}
+
+function uppercaseValue(
+    value: unknown,
+    fallback = 'N/A',
+): string {
+    const normalized = String(
+        value ?? '',
+    ).trim();
+
+    return normalized
+        ? normalized.toUpperCase()
+        : fallback;
+}
+
+function getInitials(
+    row: DataTableRow | StudentOption,
+): string {
+    const firstName = String(
+        row.fname ?? '',
+    ).trim();
+
+    const lastName = String(
+        row.lname ?? '',
+    ).trim();
+
+    const initials =
+        `${firstName.charAt(0)}${lastName.charAt(0)}`
+            .toUpperCase();
+
+    return initials || 'NA';
+}
+
+function getAvatarImage(
+    row: DataTableRow | StudentOption,
+): string | undefined {
+    const gender = String(
+        row.gender ?? '',
+    )
+        .trim()
+        .toUpperCase();
+
+    if (
+        gender === 'M' ||
+        gender === 'MALE'
+    ) {
+        return '/images/male-cadet.png';
+    }
+
+    if (
+        gender === 'F' ||
+        gender === 'FEMALE'
+    ) {
+        return '/images/female-cadet.png';
+    }
+
+    return undefined;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Department helpers
+|--------------------------------------------------------------------------
+*/
+
+function normalizeDepartment(
+    department: unknown,
+): string {
+    return String(
+        department ?? '',
+    )
+        .trim()
+        .toUpperCase();
+}
+
+function getDepartmentSeverity(
+    department: unknown,
+): TagSeverity {
+    const value = normalizeDepartment(
+        department,
+    );
+
+    if (value === 'DECK') {
         return 'success';
     }
 
-    if (status === 'Rejected') {
-        return 'danger';
+    if (value === 'ENGINE') {
+        return 'info';
     }
 
-    return 'warn';
+    return 'secondary';
 }
 
-function verifyActivity(activity: ActivityUpdate): void {
-    activity.status = 'Verified';
+function getDepartmentIcon(
+    department: unknown,
+): string {
+    const value = normalizeDepartment(
+        department,
+    );
+
+    if (value === 'DECK') {
+        return 'pi pi-compass';
+    }
+
+    if (value === 'ENGINE') {
+        return 'pi pi-cog';
+    }
+
+    return 'pi pi-building';
 }
 
-function rejectActivity(activity: ActivityUpdate): void {
-    activity.status = 'Rejected';
+/*
+|--------------------------------------------------------------------------
+| Exam type helpers
+|--------------------------------------------------------------------------
+*/
+
+function normalizeExamType(
+    examType: unknown,
+): string {
+    return String(
+        examType ?? '',
+    )
+        .trim()
+        .toUpperCase();
 }
+
+function getExamTypeSeverity(
+    examType: unknown,
+): TagSeverity {
+    const value = normalizeExamType(
+        examType,
+    );
+
+    if (value === 'NEW') {
+        return 'success';
+    }
+
+    if (value === 'RESIT') {
+        return 'info';
+    }
+
+    return 'secondary';
+}
+
+function getExamTypeIcon(
+    examType: unknown,
+): string {
+    const value = normalizeExamType(
+        examType,
+    );
+
+    if (value === 'NEW') {
+        return 'pi pi-check-circle';
+    }
+
+    if (value === 'RESIT') {
+        return 'pi pi-refresh';
+    }
+
+    return 'pi pi-question-circle';
+}
+
+/*
+|--------------------------------------------------------------------------
+| Request helpers
+|--------------------------------------------------------------------------
+*/
+
+function buildParameters(
+    page: number,
+): Record<string, unknown> {
+    const parameters: Record<
+        string,
+        unknown
+    > = {
+        page,
+        per_page: rows.value,
+        search: search.value,
+        sort_field: sortField.value,
+        sort_direction:
+            sortDirection.value,
+    };
+
+    if (selectedCourse.value) {
+        parameters.course_id =
+            selectedCourse.value.id;
+    }
+
+    if (selectedSession.value) {
+        parameters.session_id =
+            selectedSession.value.id;
+    }
+
+    if (selectedStudent.value) {
+        parameters.person_id =
+            selectedStudent.value.id;
+    }
+
+    if (schoolId.value.trim()) {
+        parameters.school_id_no =
+            schoolId.value.trim();
+    }
+
+    if (dateRange.value?.[0]) {
+        parameters.date_from =
+            formatLocalDate(
+                dateRange.value[0],
+            );
+    }
+
+    if (dateRange.value?.[1]) {
+        parameters.date_to =
+            formatLocalDate(
+                dateRange.value[1],
+            );
+    }
+
+    return parameters;
+}
+
+/*
+|--------------------------------------------------------------------------
+| API requests
+|--------------------------------------------------------------------------
+*/
+
+async function loadAssessments(
+    page = 1,
+): Promise<void> {
+    loading.value = true;
+    pageError.value = '';
+
+    try {
+        const response = await axios.get(
+            '/api/v1/dashboard/datatable/theoretical-assessments',
+            {
+                params: buildParameters(
+                    page,
+                ),
+                withCredentials: true,
+            },
+        );
+
+        assessments.value =
+            response.data.data ?? [];
+
+        totalRecords.value =
+            response.data.meta?.total ?? 0;
+
+        const currentPage =
+            response.data.meta?.currentPage ??
+            page;
+
+        const currentPerPage =
+            response.data.meta?.perPage ??
+            rows.value;
+
+        rows.value = currentPerPage;
+
+        first.value =
+            (currentPage - 1) *
+            currentPerPage;
+    } catch (error: unknown) {
+        assessments.value = [];
+        totalRecords.value = 0;
+
+        if (axios.isAxiosError(error)) {
+            pageError.value =
+                error.response?.data
+                    ?.message ??
+                'Unable to load theoretical assessments.';
+        } else {
+            pageError.value =
+                'Unable to load theoretical assessments.';
+        }
+    } finally {
+        loading.value = false;
+    }
+}
+
+async function loadOptions(): Promise<void> {
+    try {
+        const response = await axios.get(
+            '/api/v1/dashboard/theoretical-assessments/options',
+            {
+                withCredentials: true,
+            },
+        );
+
+        courses.value =
+            response.data.courses ?? [];
+
+        sessions.value =
+            response.data.sessions ?? [];
+    } catch (error: unknown) {
+        if (axios.isAxiosError(error)) {
+            pageError.value =
+                error.response?.data
+                    ?.message ??
+                'Unable to load assessment filters.';
+        } else {
+            pageError.value =
+                'Unable to load assessment filters.';
+        }
+    }
+}
+
+async function searchStudents(
+    event: {
+        query: string;
+    },
+): Promise<void> {
+    const query = event.query.trim();
+
+    if (query.length < 2) {
+        studentSuggestions.value = [];
+
+        return;
+    }
+
+    try {
+        const response = await axios.get(
+            '/api/v1/dashboard/theoretical-assessments/students',
+            {
+                params: {
+                    search: query,
+                },
+                withCredentials: true,
+            },
+        );
+
+        studentSuggestions.value =
+            response.data.data ?? [];
+    } catch {
+        studentSuggestions.value = [];
+    }
+}
+
+async function viewAnswers(
+    assessment: DataTableRow,
+): Promise<void> {
+    detailsVisible.value = true;
+    loadingDetails.value = true;
+    selectedAssessment.value = null;
+    answers.value = [];
+    pageError.value = '';
+
+    try {
+        const response = await axios.get(
+            `/api/v1/dashboard/theoretical-assessments/${assessment.id}`,
+            {
+                withCredentials: true,
+            },
+        );
+
+        selectedAssessment.value =
+            response.data.assessment;
+
+        answers.value =
+            response.data.answers ?? [];
+    } catch (error: unknown) {
+        detailsVisible.value = false;
+
+        if (axios.isAxiosError(error)) {
+            pageError.value =
+                error.response?.data
+                    ?.message ??
+                'Unable to load assessment answers.';
+        } else {
+            pageError.value =
+                'Unable to load assessment answers.';
+        }
+    } finally {
+        loadingDetails.value = false;
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| Filter actions
+|--------------------------------------------------------------------------
+*/
+
+function applyFilters(): void {
+    first.value = 0;
+
+    void loadAssessments(1);
+}
+
+function clearFilters(): void {
+    selectedCourse.value = null;
+    selectedSession.value = null;
+    selectedStudent.value = null;
+    schoolId.value = '';
+    dateRange.value = null;
+    search.value = '';
+    first.value = 0;
+    pageError.value = '';
+
+    void loadAssessments(1);
+}
+
+function handleStudentSelect(): void {
+    if (!selectedStudent.value) {
+        return;
+    }
+
+    schoolId.value = String(
+        selectedStudent.value
+            .school_id_no ?? '',
+    );
+
+    first.value = 0;
+}
+
+/*
+|--------------------------------------------------------------------------
+| DataTable events
+|--------------------------------------------------------------------------
+*/
+
+function handlePage(
+    event: PageEvent,
+): void {
+    rows.value = event.rows;
+    first.value = event.first;
+
+    const page =
+        Math.floor(
+            event.first /
+                event.rows,
+        ) + 1;
+
+    void loadAssessments(page);
+}
+
+function handleSort(
+    event: SortEvent,
+): void {
+    if (
+        typeof event.sortField ===
+        'string'
+    ) {
+        sortField.value =
+            event.sortField;
+    }
+
+    sortDirection.value =
+        event.sortOrder === -1
+            ? 'desc'
+            : 'asc';
+
+    first.value = 0;
+
+    void loadAssessments(1);
+}
+
+function handleSearch(
+    value: string,
+): void {
+    search.value = value;
+    first.value = 0;
+
+    void loadAssessments(1);
+}
+
+function handleAction(
+    action: string,
+    assessment: DataTableRow,
+): void {
+    /*
+     * Ignore fallback actions even if an event
+     * is triggered programmatically.
+     */
+    if (
+        action ===
+            'certificate-unavailable' ||
+        action ===
+            'answers-unavailable'
+    ) {
+        return;
+    }
+
+    if (action === 'certificate') {
+        if (
+            assessment.is_completed !==
+            true
+        ) {
+            return;
+        }
+
+        window.open(
+            `/dashboard/theoretical-assessments/${assessment.id}/certificate`,
+            '_blank',
+            'noopener,noreferrer',
+        );
+
+        return;
+    }
+
+    if (action === 'answers') {
+        if (
+            assessment.is_completed !==
+            true
+        ) {
+            return;
+        }
+
+        void viewAnswers(assessment);
+
+        return;
+    }
+
+    if (action === 'edit') {
+        router.visit('/dashboard');
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| Lifecycle
+|--------------------------------------------------------------------------
+*/
+
+onMounted(() => {
+    void Promise.all([
+        loadOptions(),
+        loadAssessments(),
+    ]);
+});
 </script>
 
 <template>
-    <Head title="Activity Updates" />
+    <Head
+        title="Theoretical Assessments - Internal (Enrolled)"
+    />
 
     <div
-        class="flex h-full min-h-0 flex-1 flex-col gap-5 overflow-y-auto bg-[#F8FAFC] p-4 lg:p-5"
+        class="flex min-h-0 flex-1 flex-col gap-4 p-4"
     >
-        <!-- PAGE HEADER -->
-
-        <section
-            class="rounded-2xl border border-[#377EC0]/15 bg-white p-5 shadow-sm"
+        <!-- FILTERS -->
+        <Card
+            class="rounded-2xl border border-slate-200 shadow-sm"
         >
-            <div
-                class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
-            >
-                <div class="flex items-center gap-4">
-                    <div
-                        class="flex h-14 w-14 items-center justify-center rounded-xl bg-orange-500 text-white"
-                    >
-                        <i class="pi pi-bell text-2xl"></i>
-                    </div>
-
-                    <div>
-                        <h1 class="text-2xl font-bold text-[#21365A]">
-                            Activity Updates
-                        </h1>
-
-                        <p class="mt-1 text-sm text-slate-500">
-                            Review and verify submitted student activities.
-                        </p>
-                    </div>
-                </div>
-
-                <Link
-                    href="/dashboard"
-                    class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-600 transition hover:border-[#377EC0] hover:text-[#377EC0]"
+            <template #content>
+                <div
+                    class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6"
                 >
-                    <i class="pi pi-arrow-left"></i>
-                    Back to Dashboard
-                </Link>
-            </div>
-        </section>
+                    <!-- EXAM PACKAGE -->
+                    <div>
+                        <label
+                            class="mb-2 block text-sm font-semibold text-slate-700"
+                        >
+                            Exam Package
+                        </label>
 
-        <!-- SUMMARY CARDS -->
-
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <div
-                class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-            >
-                <p class="text-sm font-semibold text-slate-500">
-                    Total Submissions
-                </p>
-
-                <p class="mt-2 text-3xl font-bold text-[#21365A]">
-                    {{ activities.length }}
-                </p>
-            </div>
-
-            <div
-                class="rounded-2xl border border-orange-200 bg-orange-50 p-5"
-            >
-                <p class="text-sm font-semibold text-orange-600">Pending</p>
-
-                <p class="mt-2 text-3xl font-bold text-orange-600">
-                    {{ pendingCount }}
-                </p>
-            </div>
-
-            <div
-                class="rounded-2xl border border-emerald-200 bg-emerald-50 p-5"
-            >
-                <p class="text-sm font-semibold text-emerald-600">Verified</p>
-
-                <p class="mt-2 text-3xl font-bold text-emerald-600">
-                    {{ verifiedCount }}
-                </p>
-            </div>
-
-            <div class="rounded-2xl border border-red-200 bg-red-50 p-5">
-                <p class="text-sm font-semibold text-red-600">Rejected</p>
-
-                <p class="mt-2 text-3xl font-bold text-red-600">
-                    {{ rejectedCount }}
-                </p>
-            </div>
-        </div>
-
-        <!-- ACTIVITY TABLE -->
-
-        <section
-            class="min-h-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
-        >
-            <div
-                class="flex flex-col gap-4 border-b border-slate-200 p-5 lg:flex-row lg:items-center lg:justify-between"
-            >
-                <div>
-                    <h2 class="text-lg font-bold text-[#21365A]">
-                        Activity Verification
-                    </h2>
-
-                    <p class="mt-1 text-sm text-slate-500">
-                        Showing {{ filteredActivities.length }} activity
-                        submissions.
-                    </p>
-                </div>
-
-                <div class="flex flex-col gap-2 sm:flex-row">
-                    <div class="relative">
-                        <i
-                            class="pi pi-search absolute top-1/2 left-3 -translate-y-1/2 text-sm text-slate-400"
-                        ></i>
-
-                        <input
-                            v-model="search"
-                            type="text"
-                            placeholder="Search activities..."
-                            class="h-11 w-full rounded-xl border border-slate-300 bg-white pr-4 pl-10 text-sm text-slate-700 outline-none transition focus:border-[#377EC0] focus:ring-2 focus:ring-[#377EC0]/15 sm:w-72"
+                        <Select
+                            v-model="selectedCourse"
+                            :options="courses"
+                            option-label="label"
+                            placeholder="All packages"
+                            show-clear
+                            class="w-full"
                         />
                     </div>
 
-                    <select
-                        v-model="statusFilter"
-                        class="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-600 outline-none transition focus:border-[#377EC0] focus:ring-2 focus:ring-[#377EC0]/15"
-                    >
-                        <option value="All">All statuses</option>
-                        <option value="Pending">Pending</option>
-                        <option value="Verified">Verified</option>
-                        <option value="Rejected">Rejected</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full min-w-[1050px] border-collapse">
-                    <thead>
-                        <tr class="bg-slate-50 text-left">
-                            <th
-                                class="px-5 py-4 text-xs font-bold tracking-wide text-slate-500 uppercase"
-                            >
-                                Student
-                            </th>
-
-                            <th
-                                class="px-5 py-4 text-xs font-bold tracking-wide text-slate-500 uppercase"
-                            >
-                                Department
-                            </th>
-
-                            <th
-                                class="px-5 py-4 text-xs font-bold tracking-wide text-slate-500 uppercase"
-                            >
-                                Activity
-                            </th>
-
-                            <th
-                                class="px-5 py-4 text-xs font-bold tracking-wide text-slate-500 uppercase"
-                            >
-                                Submitted
-                            </th>
-
-                            <th
-                                class="px-5 py-4 text-xs font-bold tracking-wide text-slate-500 uppercase"
-                            >
-                                Status
-                            </th>
-
-                            <th
-                                class="px-5 py-4 text-center text-xs font-bold tracking-wide text-slate-500 uppercase"
-                            >
-                                Actions
-                            </th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        <tr
-                            v-for="activity in filteredActivities"
-                            :key="activity.id"
-                            class="border-t border-slate-100 transition hover:bg-slate-50"
+                    <!-- EXAM SESSION -->
+                    <div>
+                        <label
+                            class="mb-2 block text-sm font-semibold text-slate-700"
                         >
-                            <td class="px-5 py-4">
-                                <p class="font-semibold text-slate-700">
-                                    {{ activity.studentName }}
-                                </p>
+                            Exam Session
+                        </label>
 
-                                <p class="mt-1 text-xs text-slate-400">
-                                    {{ activity.schoolId }}
-                                </p>
-                            </td>
+                        <Select
+                            v-model="selectedSession"
+                            :options="sessions"
+                            option-label="label"
+                            placeholder="All sessions"
+                            show-clear
+                            class="w-full"
+                        />
+                    </div>
 
-                            <td class="px-5 py-4 text-sm text-slate-600">
-                                {{ activity.department }}
-                            </td>
+                    <!-- STUDENT -->
+                    <div>
+                        <label
+                            class="mb-2 block text-sm font-semibold text-slate-700"
+                        >
+                            Student
+                        </label>
 
-                            <td class="px-5 py-4">
-                                <p class="font-medium text-slate-700">
-                                    {{ activity.activity }}
-                                </p>
-                            </td>
+                        <AutoComplete
+                            v-model="selectedStudent"
+                            :suggestions="
+                                studentSuggestions
+                            "
+                            option-label="student_name"
+                            placeholder="Search student..."
+                            dropdown
+                            force-selection
+                            class="w-full"
+                            input-class="w-full"
+                            @complete="
+                                searchStudents
+                            "
+                            @option-select="
+                                handleStudentSelect
+                            "
+                        />
+                    </div>
 
-                            <td class="px-5 py-4 text-sm text-slate-500">
-                                {{ activity.submittedAt }}
-                            </td>
+                    <!-- SCHOOL ID -->
+                    <div>
+                        <label
+                            class="mb-2 block text-sm font-semibold text-slate-700"
+                        >
+                            School ID No.
+                        </label>
 
-                            <td class="px-5 py-4">
-                                <PrimeTag
-                                    :value="activity.status"
-                                    :severity="
-                                        getStatusSeverity(activity.status)
-                                    "
-                                />
-                            </td>
+                        <InputText
+                            v-model="schoolId"
+                            placeholder="Enter school ID..."
+                            class="w-full"
+                            @keyup.enter="
+                                applyFilters
+                            "
+                        />
+                    </div>
 
-                            <td class="px-5 py-4">
-                                <div class="flex justify-center gap-2">
-                                    <button
-                                        type="button"
-                                        class="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-emerald-500 px-3 text-xs font-semibold text-white transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
-                                        :disabled="
-                                            activity.status === 'Verified'
-                                        "
-                                        @click="verifyActivity(activity)"
-                                    >
-                                        <i class="pi pi-check"></i>
-                                        Verify
-                                    </button>
+                    <!-- DATE RANGE -->
+                    <div>
+                        <label
+                            class="mb-2 block text-sm font-semibold text-slate-700"
+                        >
+                            Date Range
+                        </label>
 
-                                    <button
-                                        type="button"
-                                        class="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-red-500 px-3 text-xs font-semibold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
-                                        :disabled="
-                                            activity.status === 'Rejected'
-                                        "
-                                        @click="rejectActivity(activity)"
-                                    >
-                                        <i class="pi pi-times"></i>
-                                        Reject
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
+                        <DatePicker
+                            v-model="dateRange"
+                            selection-mode="range"
+                            date-format="M d, yy"
+                            placeholder="Select date range"
+                            show-icon
+                            fluid
+                        />
+                    </div>
 
-                        <tr v-if="filteredActivities.length === 0">
-                            <td colspan="6" class="px-5 py-16 text-center">
-                                <i
-                                    class="pi pi-inbox text-4xl text-slate-300"
-                                ></i>
+                    <!-- FILTER BUTTONS -->
+                    <div
+                        class="flex items-end gap-2"
+                    >
+                        <Button
+                            type="button"
+                            label="Search"
+                            icon="pi pi-search"
+                            severity="info"
+                            @click="
+                                applyFilters
+                            "
+                        />
 
-                                <p class="mt-3 font-semibold text-slate-600">
-                                    No activity updates found
-                                </p>
+                        <Button
+                            type="button"
+                            label="Clear"
+                            icon="pi pi-filter-slash"
+                            severity="secondary"
+                            variant="outlined"
+                            :disabled="!hasFilters"
+                            @click="
+                                clearFilters
+                            "
+                        />
+                    </div>
+                </div>
 
-                                <p class="mt-1 text-sm text-slate-400">
-                                    Try changing the search or status filter.
-                                </p>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                <Message
+                    v-if="pageError"
+                    severity="error"
+                    closable
+                    class="mt-4"
+                    @close="
+                        pageError = ''
+                    "
+                >
+                    {{ pageError }}
+                </Message>
+            </template>
+        </Card>
+
+        <!-- DATATABLE -->
+        <Datatable
+            title="Theoretical Assessments - Internal (Enrolled)"
+            description="Review enrolled students, examination results, answers, and certificates."
+            header-icon="pi pi-clipboard"
+            search-placeholder="Search assessments..."
+            empty-title="No assessments found"
+            empty-description="No enrolled assessments match the selected filters."
+            table-min-width="1250px"
+            data-key="id"
+            lazy
+            :loading="loading"
+            :data="assessments"
+            :columns="columns"
+            :actions="actions"
+            :total-records="
+                totalRecords
+            "
+            :first="first"
+            :rows="rows"
+            :rows-per-page-options="[
+                10,
+                20,
+                50,
+                100,
+            ]"
+            actions-header="Actions"
+            actions-width="190px"
+            @page="handlePage"
+            @sort="handleSort"
+            @search="handleSearch"
+            @action="handleAction"
+        >
+            <!-- STUDENT INFORMATION -->
+            <template
+                #cell-student_name="{
+                    data,
+                }"
+            >
+                <div
+                    class="flex items-center gap-3"
+                >
+                    <Avatar
+                        v-if="
+                            getAvatarImage(
+                                data,
+                            )
+                        "
+                        :image="
+                            getAvatarImage(
+                                data,
+                            )
+                        "
+                        :aria-label="
+                            uppercaseValue(
+                                data.student_name,
+                                'Student',
+                            )
+                        "
+                        shape="circle"
+                        size="large"
+                        class="shrink-0"
+                    />
+
+                    <Avatar
+                        v-else
+                        :label="
+                            getInitials(
+                                data,
+                            )
+                        "
+                        :aria-label="
+                            uppercaseValue(
+                                data.student_name,
+                                'Student',
+                            )
+                        "
+                        shape="circle"
+                        size="large"
+                        class="shrink-0 bg-blue-50 text-blue-600"
+                    />
+
+                    <div class="min-w-0">
+                        <p
+                            class="truncate font-semibold uppercase text-slate-700"
+                        >
+                            {{
+                                uppercaseValue(
+                                    data.student_name,
+                                    'NO STUDENT NAME',
+                                )
+                            }}
+                        </p>
+
+                        <div
+                            class="mt-1 flex flex-nowrap items-center gap-1.5"
+                        >
+                            <PrimeTag
+                                :value="
+                                    data.school_id_no ||
+                                    'No School ID'
+                                "
+                                icon="pi pi-id-card"
+                                severity="info"
+                                rounded
+                                class="shrink-0 !whitespace-nowrap !px-2 !py-0.5 !text-xs !font-semibold"
+                            />
+
+                            <PrimeTag
+                                v-if="
+                                    data.dept
+                                "
+                                :value="
+                                    normalizeDepartment(
+                                        data.dept,
+                                    )
+                                "
+                                :icon="
+                                    getDepartmentIcon(
+                                        data.dept,
+                                    )
+                                "
+                                :severity="
+                                    getDepartmentSeverity(
+                                        data.dept,
+                                    )
+                                "
+                                rounded
+                                class="shrink-0 !whitespace-nowrap !px-2 !py-0.5 !text-xs !font-semibold"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <!-- MERGED EXAM DETAILS -->
+            <template
+                #cell-exam_details="{
+                    data,
+                }"
+            >
+                <div
+                    class="min-w-0 space-y-2"
+                >
+                    <!-- PACKAGE -->
+                    <div
+                        class="flex items-start gap-2"
+                    >
+                        <i
+                            class="pi pi-graduation-cap mt-0.5 shrink-0 text-blue-500"
+                        ></i>
+
+                        <p
+                            class="line-clamp-2 font-semibold text-slate-700"
+                        >
+                            {{
+                                data.name_course ||
+                                'No exam package'
+                            }}
+                        </p>
+                    </div>
+
+                    <!-- SESSION AND TYPE -->
+                    <div
+                        class="flex flex-wrap items-center gap-1.5"
+                    >
+                        <PrimeTag
+                            :value="
+                                data.session_code ||
+                                'No Session'
+                            "
+                            icon="pi pi-calendar"
+                            severity="secondary"
+                            rounded
+                            class="!whitespace-nowrap !px-2 !py-0.5 !text-xs !font-semibold"
+                        />
+
+                        <PrimeTag
+                            :value="
+                                normalizeExamType(
+                                    data.exam_type,
+                                ) ||
+                                'NO TYPE'
+                            "
+                            :icon="
+                                getExamTypeIcon(
+                                    data.exam_type,
+                                )
+                            "
+                            :severity="
+                                getExamTypeSeverity(
+                                    data.exam_type,
+                                )
+                            "
+                            rounded
+                            class="!whitespace-nowrap !px-2 !py-0.5 !text-xs !font-semibold"
+                        />
+                    </div>
+
+                    <!-- DATE TAKEN -->
+                    <p
+                        class="flex items-center gap-1.5 text-sm text-slate-500"
+                    >
+                        <i
+                            class="pi pi-clock shrink-0 text-amber-500"
+                        ></i>
+
+                        <span>
+                            {{
+                                formatDateTime(
+                                    data.started,
+                                )
+                            }}
+                        </span>
+                    </p>
+                </div>
+            </template>
+
+            <!-- PROCTOR -->
+            <template
+                #cell-proctor_name="{
+                    data,
+                }"
+            >
+                <div
+                    class="flex items-center gap-2"
+                >
+                    <i
+                        class="pi pi-user shrink-0 text-violet-500"
+                    ></i>
+
+                    <span
+                        class="font-semibold uppercase text-slate-700"
+                    >
+                        {{
+                            uppercaseValue(
+                                data.proctor_name,
+                                'NO PROCTOR',
+                            )
+                        }}
+                    </span>
+                </div>
+            </template>
+
+            <!-- SCORE -->
+            <template
+                #cell-score="{ data }"
+            >
+                <div class="text-center">
+                    <p
+                        class="font-semibold text-slate-700"
+                    >
+                        {{
+                            data.score || 0
+                        }}/{{
+                            data.total_items ||
+                            0
+                        }}
+                    </p>
+
+                    <PrimeTag
+                        :value="`${data.score_percentage || 0}%`"
+                        :severity="
+                            Number(
+                                data.score_percentage,
+                            ) >= 70
+                                ? 'success'
+                                : 'danger'
+                        "
+                        rounded
+                        class="mt-1 !px-2 !py-0.5 !text-xs !font-semibold"
+                    />
+                </div>
+            </template>
+
+            <!-- STATUS -->
+            <template
+                #cell-done="{ data }"
+            >
+                <PrimeTag
+                    :value="
+                        data.is_completed
+                            ? 'Done'
+                            : 'Pending'
+                    "
+                    :icon="
+                        data.is_completed
+                            ? 'pi pi-check-circle'
+                            : 'pi pi-clock'
+                    "
+                    :severity="
+                        data.is_completed
+                            ? 'success'
+                            : 'warn'
+                    "
+                    rounded
+                    class="!px-2 !py-0.5 !text-xs !font-semibold"
+                />
+            </template>
+        </Datatable>
+
+        <!-- ANSWERS DIALOG -->
+        <Dialog
+            v-model:visible="
+                detailsVisible
+            "
+            modal
+            maximizable
+            header="Assessment Answers"
+            class="w-[95vw] max-w-6xl"
+        >
+            <div
+                v-if="loadingDetails"
+                class="flex min-h-48 items-center justify-center"
+            >
+                <i
+                    class="pi pi-spin pi-spinner text-3xl text-blue-500"
+                ></i>
             </div>
-        </section>
+
+            <template v-else>
+                <div
+                    v-if="
+                        selectedAssessment
+                    "
+                    class="mb-4 grid gap-3 rounded-xl bg-slate-50 p-4 md:grid-cols-2"
+                >
+                    <p>
+                        <strong>
+                            Student:
+                        </strong>
+
+                        {{
+                            uppercaseValue(
+                                selectedAssessment.student_name,
+                            )
+                        }}
+                    </p>
+
+                    <p>
+                        <strong>
+                            School ID:
+                        </strong>
+
+                        {{
+                            selectedAssessment.school_id_no ||
+                            'N/A'
+                        }}
+                    </p>
+
+                    <p>
+                        <strong>
+                            Exam:
+                        </strong>
+
+                        {{
+                            selectedAssessment.name_course ||
+                            'N/A'
+                        }}
+                    </p>
+
+                    <p>
+                        <strong>
+                            Exam Type:
+                        </strong>
+
+                        {{
+                            normalizeExamType(
+                                selectedAssessment.exam_type,
+                            ) ||
+                            'N/A'
+                        }}
+                    </p>
+
+                    <p>
+                        <strong>
+                            Date Taken:
+                        </strong>
+
+                        {{
+                            formatDateTime(
+                                selectedAssessment.started,
+                            )
+                        }}
+                    </p>
+
+                    <p>
+                        <strong>
+                            Score:
+                        </strong>
+
+                        {{
+                            selectedAssessment.score ||
+                            0
+                        }}/{{
+                            selectedAssessment.total_items ||
+                            0
+                        }}
+                    </p>
+                </div>
+
+                <div
+                    class="overflow-x-auto"
+                >
+                    <table
+                        class="w-full border-collapse text-sm"
+                    >
+                        <thead>
+                            <tr
+                                class="bg-slate-100 text-left text-slate-700"
+                            >
+                                <th
+                                    class="w-14 border border-slate-200 p-3 text-center"
+                                >
+                                    #
+                                </th>
+
+                                <th
+                                    class="border border-slate-200 p-3"
+                                >
+                                    Question
+                                </th>
+
+                                <th
+                                    class="w-52 border border-slate-200 p-3"
+                                >
+                                    Answer
+                                </th>
+
+                                <th
+                                    class="w-52 border border-slate-200 p-3"
+                                >
+                                    Correct Answer
+                                </th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <tr
+                                v-for="
+                                    answer in answers
+                                "
+                                :key="
+                                    answer.index
+                                "
+                            >
+                                <td
+                                    class="border border-slate-200 p-3 text-center"
+                                >
+                                    {{
+                                        answer.index
+                                    }}
+                                </td>
+
+                                <td
+                                    class="border border-slate-200 p-3"
+                                >
+                                    {{
+                                        answer.question
+                                    }}
+                                </td>
+
+                                <td
+                                    class="border border-slate-200 p-3 font-semibold"
+                                    :class="
+                                        answer.is_correct
+                                            ? 'text-green-600'
+                                            : 'text-red-600'
+                                    "
+                                >
+                                    {{
+                                        answer.answer ||
+                                        'No answer'
+                                    }}
+                                </td>
+
+                                <td
+                                    class="border border-slate-200 p-3 font-semibold text-green-600"
+                                >
+                                    {{
+                                        answer.correct_answer ||
+                                        'N/A'
+                                    }}
+                                </td>
+                            </tr>
+
+                            <tr
+                                v-if="
+                                    answers.length ===
+                                    0
+                                "
+                            >
+                                <td
+                                    colspan="4"
+                                    class="border border-slate-200 p-8 text-center text-slate-500"
+                                >
+                                    No answers are
+                                    available.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </template>
+        </Dialog>
     </div>
 </template>

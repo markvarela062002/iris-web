@@ -1132,16 +1132,6 @@ onBeforeUnmount(() => {
                         <div
                             class="mt-1 flex flex-wrap items-center gap-1.5"
                         >
-                            <PrimeTag
-                                :value="
-                                    getSystemIdLabel(
-                                        data.code_person,
-                                    )
-                                "
-                                severity="secondary"
-                                icon="pi pi-id-card"
-                                class="!px-2 !py-0.5 !text-xs !font-semibold"
-                            />
 
                             <PrimeTag
                                 :value="
@@ -1150,7 +1140,7 @@ onBeforeUnmount(() => {
                                     )
                                 "
                                 severity="info"
-                                icon="pi pi-building"
+                                icon="pi pi-id-card"
                                 class="!px-2 !py-0.5 !text-xs !font-semibold"
                             />
                         </div>

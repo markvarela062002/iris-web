@@ -139,13 +139,15 @@ const actions: DataTableAction[] = [
         label: 'View Evidence',
         icon: 'pi pi-download',
         severity: 'info',
-
-        visible: (row) => {
-            return (
-                typeof row.evidence_url === 'string' &&
-                row.evidence_url.trim() !== ''
-            );
-        },
+        visible: (row) =>
+            typeof row.evidence_url === 'string' &&
+            row.evidence_url.trim() !== '',
+    },
+    {
+        key: 'edit',
+        label: 'Edit Journal',
+        icon: 'pi pi-pencil',
+        severity: 'warn',
     },
 ];
 
@@ -749,25 +751,27 @@ function handleAction(
     action: string,
     journal: DataTableRow,
 ): void {
-    if (
-        action !== 'view-evidence'
-    ) {
+    if (action === 'edit') {
+        router.visit('/dashboard');
+
         return;
     }
 
-    const evidenceUrl = String(
-        journal.evidence_url ?? '',
-    ).trim();
+    if (action === 'view-evidence') {
+        const evidenceUrl = String(
+            journal.evidence_url ?? '',
+        ).trim();
 
-    if (!evidenceUrl) {
-        return;
+        if (!evidenceUrl) {
+            return;
+        }
+
+        window.open(
+            evidenceUrl,
+            '_blank',
+            'noopener,noreferrer',
+        );
     }
-
-    window.open(
-        evidenceUrl,
-        '_blank',
-        'noopener,noreferrer',
-    );
 }
 
 function goToDashboard(): void {
@@ -1009,37 +1013,31 @@ onBeforeUnmount(() => {
 
         <!-- DataTable -->
 
-        <Datatable
-            title="Daily Journals"
-            description="Review student watchkeeping journals and objective evidence."
-            header-icon="pi pi-book"
-            search-placeholder="Search journals..."
-            empty-title="No journals found"
-            empty-description="No daily journals matched the selected filters."
-            empty-icon="pi pi-book"
-            table-min-width="1250px"
-            data-key="id"
-            lazy
-            :loading="loading"
-            :data="journals"
-            :columns="columns"
-            :actions="actions"
-            :total-records="totalRecords"
-            :first="first"
-            :rows="rows"
-            :rows-per-page-options="[
-                10,
-                20,
-                50,
-                100,
-            ]"
-            actions-header="Actions"
-            actions-width="120px"
-            @page="handlePage"
-            @sort="handleSort"
-            @search="handleSearch"
-            @action="handleAction"
-        >
+<Datatable
+    title="Daily Journals"
+    description="Review student watchkeeping journals and objective evidence."
+    header-icon="pi pi-book"
+    search-placeholder="Search journals..."
+    empty-title="No journals found"
+    empty-description="No daily journals match the selected filters."
+    table-min-width="1250px"
+    data-key="id"
+    lazy
+    :loading="loading"
+    :data="journals"
+    :columns="columns"
+    :actions="actions"
+    :total-records="totalRecords"
+    :first="first"
+    :rows="rows"
+    :rows-per-page-options="[10, 20, 50, 100]"
+    actions-header="Actions"
+    actions-width="150px"
+    @page="handlePage"
+    @sort="handleSort"
+    @search="handleSearch"
+    @action="handleAction"
+>
         <!-- <template #header-actions>
             <Button
                 type="button"

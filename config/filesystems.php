@@ -19,6 +19,8 @@ $schools = [
     'igcfi' => 'IGCFI',
     'mcl' => 'MCL',
     'mci' => 'MCI',
+    'uph' => 'UPH',
+    'uphsd' => 'UPHSD',
 ];
 
 $schoolDisks = [];

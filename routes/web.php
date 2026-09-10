@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\V1\JournalsController;
 use App\Http\Controllers\Api\V1\OtgController;
 use App\Http\Controllers\Api\V1\OtgPrintController;
 use App\Http\Controllers\Api\V1\RemoteFileController;
+use App\Http\Controllers\Api\V1\TheoreticalAssessmentsController;
+use App\Http\Controllers\Api\V1\TheoreticalExternalAssessmentsController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect(
@@ -45,6 +47,19 @@ Route::middleware(['auth'])->group(function (): void {
         '/dashboard/daily-journals',
         'dashboard/daily-journals/Index',
     )->name('dashboard.daily-journals');
+
+    Route::inertia(
+    '/dashboard/theoretical-internal',
+    'dashboard/theoretical-internal/Index',
+)->name(
+    'dashboard.theoretical-internal',);
+
+    Route::inertia(
+    '/dashboard/theoretical-external',
+    'dashboard/theoretical-external/Index',
+)->name(
+    'dashboard.theoretical-external',
+);
 
     /*
     |--------------------------------------------------------------------------
@@ -259,6 +274,131 @@ Route::middleware(['auth'])->group(function (): void {
     )
         ->whereUuid('personId')
         ->name('students.otg.print');
+
+        /*
+|--------------------------------------------------------------------------
+| Theoretical Assessments - Internal (Enrolled)
+|--------------------------------------------------------------------------
+*/
+
+
+
+/*
+ * Server-side DataTable.
+ */
+Route::get(
+    '/api/v1/dashboard/datatable/theoretical-assessments',
+    [
+        TheoreticalAssessmentsController::class,
+        'index',
+    ],
+)->name(
+    'api.v1.dashboard.datatable.theoretical-assessments',
+);
+
+/*
+ * Exam Package and Exam Session filter options.
+ */
+Route::get(
+    '/api/v1/dashboard/theoretical-assessments/options',
+    [
+        TheoreticalAssessmentsController::class,
+        'options',
+    ],
+)->name(
+    'api.v1.dashboard.theoretical-assessments.options',
+);
+
+/*
+ * Student AutoComplete.
+ */
+Route::get(
+    '/api/v1/dashboard/theoretical-assessments/students',
+    [
+        TheoreticalAssessmentsController::class,
+        'students',
+    ],
+)->name(
+    'api.v1.dashboard.theoretical-assessments.students',
+);
+
+/*
+ * Assessment answers.
+ */
+Route::get(
+    '/api/v1/dashboard/theoretical-assessments/{assessmentId}',
+    [
+        TheoreticalAssessmentsController::class,
+        'show',
+    ],
+)->name(
+    'api.v1.dashboard.theoretical-assessments.show',
+);
+
+/*
+ * Completed assessment certificate.
+ */
+Route::get(
+    '/dashboard/theoretical-assessments/{assessmentId}/certificate',
+    [
+        TheoreticalAssessmentsController::class,
+        'certificate',
+    ],
+)->name(
+    'dashboard.theoretical-assessments.certificate',
+);
+
+/*
+ * External assessments server-side DataTable.
+ */
+Route::get(
+    '/api/v1/dashboard/datatable/theoretical-external',
+    [
+        TheoreticalExternalAssessmentsController::class,
+        'index',
+    ],
+)->name(
+    'api.v1.dashboard.datatable.theoretical-external',
+);
+
+/*
+ * External Exam Package and Exam Session options.
+ */
+Route::get(
+    '/api/v1/dashboard/theoretical-external/options',
+    [
+        TheoreticalExternalAssessmentsController::class,
+        'options',
+    ],
+)->name(
+    'api.v1.dashboard.theoretical-external.options',
+);
+
+/*
+ * External assessment answers.
+ */
+Route::get(
+    '/api/v1/dashboard/theoretical-external/{assessmentId}',
+    [
+        TheoreticalExternalAssessmentsController::class,
+        'show',
+    ],
+)->name(
+    'api.v1.dashboard.theoretical-external.show',
+);
+
+/*
+ * External completed-assessment certificate.
+ */
+Route::get(
+    '/dashboard/theoretical-external/{assessmentId}/certificate',
+    [
+        TheoreticalExternalAssessmentsController::class,
+        'certificate',
+    ],
+)->name(
+    'dashboard.theoretical-external.certificate',
+);
 });
 
 require __DIR__.'/settings.php';
