@@ -98,18 +98,21 @@ class ActivitiesController extends Controller
                 'person.gender',
 
                 'activity.desc_activity',
-            ])
-            ->where(
-                'person_activity.sto_validated',
-                '!=',
-                'Y',
-            )
-            ->where(
-                'person_activity.for_app',
-                '=',
-                'Y',
-            );
+            ]);
 
+            if (! $request->boolean('monitoring')) {
+                $query
+                    ->where(
+                        'person_activity.sto_validated',
+                        '!=',
+                        'Y',
+                    )
+                    ->where(
+                        'person_activity.for_app',
+                        '=',
+                        'Y',
+                    );
+            }
         $result = $this->datatableService->paginate(
             query: $query,
             request: $request,

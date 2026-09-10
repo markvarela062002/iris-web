@@ -118,7 +118,7 @@ const columns: DataTableColumn[] = [
     {
         field: 'fname',
         header: 'Student Information',
-        sortable: true,
+        sortable: false,
         searchable: true,
         frozen: true,
         alignFrozen: 'left',
@@ -127,15 +127,15 @@ const columns: DataTableColumn[] = [
     {
         field: 'desc_activity',
         header: 'Activity',
-        sortable: true,
-        searchable: true,
+        sortable: false,
+        searchable: false,
         class: 'w-[320px] min-w-[320px] whitespace-normal',
     },
     {
         field: 'start_date',
         header: 'Activity Period',
-        sortable: true,
-        searchable: true,
+        sortable: false,
+        searchable: false,
         class: 'w-[260px] min-w-[260px]',
     },
     {
@@ -149,7 +149,7 @@ const columns: DataTableColumn[] = [
         field: 'revise_remarks',
         header: 'Remarks',
         sortable: false,
-        searchable: true,
+        searchable: false,
         class: 'w-[260px] min-w-[260px]',
     },
 ];
@@ -172,7 +172,7 @@ const hasUploadedFile = (
 const actions: DataTableAction[] = [
     {
         key: 'view-file',
-        label: 'View uploaded file',
+        label: 'View or download file',
         icon: 'pi pi-download',
         severity: 'info',
         visible: (row) => {
@@ -181,7 +181,7 @@ const actions: DataTableAction[] = [
     },
     {
         key: 'no-pdf',
-        label: 'No file uploaded',
+        label: 'No uploaded file',
         icon: 'pi pi-download',
         severity: 'secondary',
         visible: (row) => {
@@ -502,6 +502,19 @@ function isVerified(
         .toUpperCase() === 'Y';
 }
 
+function hasRevisionRemarks(
+    activity: DataTableRow,
+): boolean {
+    const remarks = String(
+        activity.revise_remarks ?? '',
+    ).trim();
+
+    return (
+        remarks !== '' &&
+        remarks !== '-'
+    );
+}
+
 /*
 |--------------------------------------------------------------------------
 | Date helpers
@@ -670,7 +683,7 @@ onBeforeUnmount(() => {
                             <PrimeTag
                                 :value="
                                     getSchoolIdLabel(
-                                        data.code_person,
+                                        data.school_id_no,
                                     )
                                 "
                                 severity="info"
@@ -745,26 +758,31 @@ onBeforeUnmount(() => {
                     </div>
                 </div>
             </template>
-            <!-- VERIFIED -->
+            <!-- VERIFIED STATUS -->
             <template
                 #cell-sto_validated="{ data }"
             >
                 <PrimeTag
-                    :value="
-                        isVerified(data)
-                            ? 'Verified'
-                            : 'Pending'
+                    v-if="isVerified(data)"
+                    value="Verified"
+                    severity="success"
+                    icon="pi pi-check-circle"
+                />
+
+                <PrimeTag
+                    v-else-if="
+                        hasRevisionRemarks(data)
                     "
-                    :severity="
-                        isVerified(data)
-                            ? 'success'
-                            : 'warn'
-                    "
-                    :icon="
-                        isVerified(data)
-                            ? 'pi pi-check-circle'
-                            : 'pi pi-clock'
-                    "
+                    value="Revise"
+                    severity="danger"
+                    icon="pi pi-undo"
+                />
+
+                <PrimeTag
+                    v-else
+                    value="Pending"
+                    severity="warn"
+                    icon="pi pi-clock"
                 />
             </template>
             <!-- REMARKS -->
