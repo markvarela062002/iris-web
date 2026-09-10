@@ -626,78 +626,75 @@ onBeforeUnmount(() => {
                     </template>
                 </Column>
 
-                <!-- ACTIONS COLUMN -->
-
-                <Column
-                    v-if="
-                        showActions &&
-                        actions.length > 0
-                    "
-                    :header="actionsHeader"
-                    frozen
-                    align-frozen="right"
-                    :style="{
-                        minWidth: actionsWidth,
-                    }"
-                    header-class="!text-center"
-                    body-class="!text-center"
+               <!-- ACTIONS COLUMN -->
+<Column
+    v-if="
+        showActions &&
+        actions.length > 0
+    "
+    :header="actionsHeader"
+    frozen
+    align-frozen="right"
+    :style="{
+        minWidth: actionsWidth,
+    }"
+    header-class="!text-left"
+    body-class="!text-left"
+>
+    <template #body="{ data: row }">
+        <slot
+            name="actions"
+            :data="row"
+            :actions="actions"
+        >
+            <div
+                class="flex w-full items-center justify-start gap-2"
+            >
+                <template
+                    v-for="action in actions"
+                    :key="action.key"
                 >
-                    <template
-                        #body="{ data: row }"
-                    >
-                        <slot
-                            name="actions"
-                            :data="row"
-                            :actions="actions"
-                        >
-                            <div
-                                class="flex w-full items-center justify-center gap-2"
-                            >
-                                <template
-                                    v-for="action in actions"
-                                    :key="action.key"
-                                >
-                                    <Button
-                                        v-if="
-                                            isActionVisible(
-                                                action,
-                                                row,
-                                            )
-                                        "
-                                        type="button"
-                                        :icon="action.icon"
-                                        icon-only
-                                        rounded
-                                        raised
-                                        :severity="
-                                            action.severity ??
-                                            'secondary'
-                                        "
-                                        :disabled="
-                                            isActionDisabled(
-                                                action,
-                                                row,
-                                            )
-                                        "
-                                        :aria-label="
-                                            action.label
-                                        "
-                                        :title="
-                                            action.label
-                                        "
-                                        class="!size-10 !min-h-10 !min-w-10 !shrink-0 !p-0 [&_.p-button-icon]:!m-0 [&_.p-button-icon]:!text-base [&_.p-button-icon]:!font-bold"
-                                        @click.stop="
-                                            handleAction(
-                                                action,
-                                                row,
-                                            )
-                                        "
-                                    />
-                                </template>
-                            </div>
-                        </slot>
-                    </template>
-                </Column>
+                    <Button
+                        v-if="
+                            isActionVisible(
+                                action,
+                                row,
+                            )
+                        "
+                        type="button"
+                        :icon="action.icon"
+                        icon-only
+                        rounded
+                        raised
+                        :severity="
+                            action.severity ??
+                            undefined
+                        "
+                        :disabled="
+                            isActionDisabled(
+                                action,
+                                row,
+                            )
+                        "
+                        :aria-label="
+                            action.label
+                        "
+                        :title="
+                            action.label
+                        "
+                        class="!size-10 !min-h-10 !min-w-10 !shrink-0 !p-0"
+                        @click.stop="
+                            handleAction(
+                                action,
+                                row,
+                            )
+                        "
+                    />
+                </template>
+            </div>
+        </slot>
+    </template>
+</Column>
 
                 <!-- EMPTY STATE -->
 

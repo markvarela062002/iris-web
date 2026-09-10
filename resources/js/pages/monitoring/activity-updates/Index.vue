@@ -230,6 +230,7 @@ async function loadActivities(
                             sortField.value,
                         sort_direction:
                             sortDirection.value,
+                        monitoring: true,
                     },
 
                     headers: {

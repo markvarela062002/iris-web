@@ -123,28 +123,28 @@ const columns: DataTableColumn[] = [
         searchable: true,
         frozen: true,
         alignFrozen: 'left',
-        class: 'w-[360px] min-w-[360px]',
+        class: 'min-w-[320px]',
     },
     {
         field: 'file_desc',
         header: 'File Description',
         sortable: false,
         searchable: true,
-        class: 'w-[300px] min-w-[300px] whitespace-normal',
+        class: 'min-w-[260px] whitespace-normal',
     },
     {
         field: 'desc_requirement',
         header: 'Requirement Type',
         sortable: false,
         searchable: true,
-        class: 'w-[300px] min-w-[300px] whitespace-normal',
+        class: 'min-w-[260px] whitespace-normal',
     },
     {
         field: 'date_uploaded',
         header: 'Date Uploaded',
         sortable: true,
         searchable: false,
-        class: 'w-[220px] min-w-[220px]',
+        class: 'min-w-[180px]',
     },
 ];
 
@@ -155,9 +155,12 @@ const columns: DataTableColumn[] = [
 */
 
 const actions: DataTableAction[] = [
+    /*
+     * Uploaded files are available.
+     */
     {
         key: 'view-files',
-        label: 'View or download files',
+        label: 'View or Download Files',
         icon: 'pi pi-download',
         severity: 'info',
 
@@ -165,13 +168,18 @@ const actions: DataTableAction[] = [
             row: DataTableRow,
         ): boolean => {
             return (
-                getUploadedFiles(row).length > 0
+                getUploadedFiles(row).length >
+                0
             );
         },
     },
+
+    /*
+     * No uploaded files fallback.
+     */
     {
         key: 'no-files',
-        label: 'No uploaded files',
+        label: 'No Uploaded Files',
         icon: 'pi pi-download',
         severity: 'secondary',
 
@@ -179,19 +187,30 @@ const actions: DataTableAction[] = [
             row: DataTableRow,
         ): boolean => {
             return (
-                getUploadedFiles(row).length === 0
+                getUploadedFiles(row).length ===
+                0
             );
         },
+
+        disabled: (): boolean => true,
     },
+
+    /*
+     * Verify document.
+     */
     {
         key: 'verify',
-        label: 'Verify document',
+        label: 'Verify Document',
         icon: 'pi pi-check-circle',
         severity: 'success',
     },
+
+    /*
+     * Request revision.
+     */
     {
         key: 'revise',
-        label: 'Request revision',
+        label: 'Request Revision',
         icon: 'pi pi-undo',
         severity: 'warn',
     },
@@ -400,8 +419,8 @@ function handleAction(
     errorMessage.value = '';
 
     /*
-     * The secondary action remains visible so the
-     * user knows no uploaded file is available.
+     * Ignore the disabled missing-file
+     * fallback action.
      */
     if (action === 'no-files') {
         return;
@@ -411,6 +430,15 @@ function handleAction(
         document;
 
     if (action === 'view-files') {
+        if (
+            getUploadedFiles(document)
+                .length === 0
+        ) {
+            selectedDocument.value = null;
+
+            return;
+        }
+
         openUploadedFiles(document);
 
         return;
@@ -1037,35 +1065,31 @@ onBeforeUnmount(() => {
         <!-- DOCUMENTS DATATABLE -->
 
         <Datatable
-            title="Documents Verification"
-            description="Review, verify, or return uploaded student documents for revision."
-            header-icon="pi pi-file-check"
-            search-placeholder="Search uploaded documents..."
-            empty-title="No documents to verify"
-            empty-description="There are no uploaded documents waiting for verification."
-            empty-icon="pi pi-file-check"
-            table-min-width="1250px"
-            actions-width="170px"
-            data-key="id"
-            lazy
-            :loading="loading"
-            :data="documents"
-            :columns="columns"
-            :actions="actions"
-            :total-records="totalRecords"
-            :first="first"
-            :rows="perPage"
-            :rows-per-page-options="[
-                10,
-                20,
-                50,
-                100,
-            ]"
-            @page="handlePage"
-            @sort="handleSort"
-            @search="handleSearch"
-            @action="handleAction"
-        >
+    title="Documents Verification"
+    description="Review, verify, or return uploaded student documents for revision."
+    header-icon="pi pi-file-check"
+    search-placeholder="Search uploaded documents..."
+    empty-title="No documents to verify"
+    empty-description="There are no uploaded documents waiting for verification."
+    empty-icon="pi pi-file-check"
+    table-min-width="1200px"
+    actions-width="170px"
+    actions-header="Actions"
+    data-key="id"
+    lazy
+    :loading="loading"
+    :data="documents"
+    :columns="columns"
+    :actions="actions"
+    :total-records="totalRecords"
+    :first="first"
+    :rows="perPage"
+    :rows-per-page-options="[10, 20, 50, 100]"
+    @page="handlePage"
+    @sort="handleSort"
+    @search="handleSearch"
+    @action="handleAction"
+>
             <!-- HEADER ACTIONS -->
 
             <template #header-actions>
@@ -1130,30 +1154,20 @@ onBeforeUnmount(() => {
                         </p>
 
                         <div
-                            class="mt-1 flex flex-wrap items-center gap-1.5"
-                        >
-                            <PrimeTag
-                                :value="
-                                    getSystemIdLabel(
-                                        data.code_person,
-                                    )
-                                "
-                                severity="secondary"
-                                icon="pi pi-id-card"
-                                class="!px-2 !py-0.5 !text-xs !font-semibold"
-                            />
-
-                            <PrimeTag
-                                :value="
-                                    getSchoolIdLabel(
-                                        data.school_id_no,
-                                    )
-                                "
-                                severity="info"
-                                icon="pi pi-building"
-                                class="!px-2 !py-0.5 !text-xs !font-semibold"
-                            />
-                        </div>
+    class="mt-1 flex flex-nowrap items-center gap-1.5"
+>
+    <PrimeTag
+        :value="
+            getSchoolIdLabel(
+                data.school_id_no,
+            )
+        "
+        severity="info"
+        icon="pi pi-id-card"
+        rounded
+        class="shrink-0 !whitespace-nowrap !px-2 !py-0.5 !text-xs !font-semibold"
+    />
+</div>
                     </div>
                 </div>
             </template>

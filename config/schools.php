@@ -290,5 +290,101 @@ return [
                 ),
             ],
         ],
+
+ /*
+        |--------------------------------------------------------------------------
+        | UPH
+        |--------------------------------------------------------------------------
+        */
+
+        'UPH' => [
+            'code' => strtoupper(
+                trim(
+                    (string) env(
+                        'UPH_DB_CODE',
+                        'UPH',
+                    ),
+                ),
+            ),
+
+            'name' => env(
+                'UPH_SCHOOL_NAME',
+                'UNIVERSITY OF PERPETUAL HELP SYSTEM JONELTA',
+            ),
+
+            'logo' => env(
+                'UPH_SCHOOL_LOGO',
+                '/images/uph.png',
+            ),
+
+            'connection' => 'uph',
+
+            'files' => [
+                'documents_url' => env(
+                    'UPH_DOCUMENT_FILE_URL',
+                    '',
+                ),
+
+                'uploads_url' => env(
+                    'UPH_JOURNAL_UPLOAD_URL',
+                    '',
+                ),
+
+                'activity_url' => env(
+                    'UPH_ACTIVITY_FILE_URL',
+                    '',
+                ),
+
+                'signature_url' => env(
+                    'UPH_JOURNAL_ESIG_URL',
+                    '',
+                ),
+            ],
+        ],
+
+'UPHSD' => [
+            'code' => strtoupper(
+                trim(
+                    (string) env(
+                        'UPHSD_DB_CODE',
+                        'UPHSD',
+                    ),
+                ),
+            ),
+
+            'name' => env(
+                'UPHSD_SCHOOL_NAME',
+                'UNIVERSITY OF PERPETUAL HELP SYSTEM DALTA',
+            ),
+
+            'logo' => env(
+                'UPHSD_SCHOOL_LOGO',
+                '/images/uphsd.png',
+            ),
+
+            'connection' => 'uphsd',
+
+            'files' => [
+                'documents_url' => env(
+                    'UPHSD_DOCUMENT_FILE_URL',
+                    '',
+                ),
+
+                'uploads_url' => env(
+                    'UPHSD_JOURNAL_UPLOAD_URL',
+                    '',
+                ),
+
+                'activity_url' => env(
+                    'UPHSD_ACTIVITY_FILE_URL',
+                    '',
+                ),
+
+                'signature_url' => env(
+                    'UPHSD_JOURNAL_ESIG_URL',
+                    '',
+                ),
+            ],
+        ],
     ],
 ];

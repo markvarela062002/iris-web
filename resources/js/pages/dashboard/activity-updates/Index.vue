@@ -118,36 +118,31 @@ const columns: DataTableColumn[] = [
         searchable: true,
         frozen: true,
         alignFrozen: 'left',
-        class: 'w-[360px] min-w-[360px]',
+        class: 'min-w-[320px]',
     },
     {
         field: 'desc_activity',
         header: 'Activity',
         sortable: false,
         searchable: false,
-        class: 'w-[320px] min-w-[320px] whitespace-normal',
+        class: 'min-w-[280px] whitespace-normal',
     },
     {
         field: 'start_date',
         header: 'Activity Period',
         sortable: false,
         searchable: false,
-        class: 'w-[260px] min-w-[260px]',
+        class: 'min-w-[240px]',
     },
     {
         field: 'last_update',
         header: 'Date Submitted',
         sortable: true,
         searchable: false,
-        class: 'w-[210px] min-w-[210px]',
+        class: 'min-w-[190px]',
     },
 ];
 
-/*
-|--------------------------------------------------------------------------
-| Datatable actions
-|--------------------------------------------------------------------------
-*/
 const hasUploadedFile = (
     row: DataTableRow,
 ): boolean => {
@@ -160,21 +155,33 @@ const hasUploadedFile = (
 const actions: DataTableAction[] = [
     {
         key: 'view-file',
-        label: 'View uploaded PDF',
+        label: 'View or download file',
         icon: 'pi pi-download',
         severity: 'info',
-        visible: (row) => {
+
+        visible: (
+            row: DataTableRow,
+        ): boolean => {
             return hasUploadedFile(row);
         },
     },
     {
-        key: 'no-pdf',
-        label: 'No PDF',
+        key: 'no-file',
+        label: 'No uploaded file',
         icon: 'pi pi-download',
         severity: 'secondary',
+<<<<<<< HEAD
         visible: (row) => {
+=======
+
+        visible: (
+            row: DataTableRow,
+        ): boolean => {
+>>>>>>> main
             return !hasUploadedFile(row);
         },
+
+        disabled: (): boolean => true,
     },
     {
         key: 'verify',
@@ -341,15 +348,15 @@ function handleAction(
     successMessage.value = '';
     errorMessage.value = '';
 
-    /*
-     * Keep the secondary PDF icon visible, but do
-     * nothing when the activity has no PDF.
-     */
-    if (action === 'no-pdf') {
+    if (action === 'no-file') {
         return;
     }
 
     if (action === 'view-file') {
+        if (!hasUploadedFile(activity)) {
+            return;
+        }
+
         openUploadedFile(activity);
 
         return;
@@ -794,29 +801,31 @@ onBeforeUnmount(() => {
         </Message>
 
         <Datatable
-            title="Activity Verification"
-            description="Review, verify, or return submitted student activities for revision."
-            header-icon="pi pi-check-circle"
-            search-placeholder="Search activity updates..."
-            empty-title="No activity updates found"
-            empty-description="There are no activities waiting for verification."
-            empty-icon="pi pi-check-circle"
-            table-min-width="1100px"
-            data-key="id"
-            lazy
-            :loading="loading"
-            :data="activities"
-            :columns="columns"
-            :actions="actions"
-            :total-records="totalRecords"
-            :first="first"
-            :rows="perPage"
-            :rows-per-page-options="[10, 20, 50, 100]"
-            @page="handlePage"
-            @sort="handleSort"
-            @search="handleSearch"
-            @action="handleAction"
-        >
+    title="Activity Verification"
+    description="Review, verify, or return submitted student activities for revision."
+    header-icon="pi pi-check-circle"
+    search-placeholder="Search activity updates..."
+    empty-title="No activity updates found"
+    empty-description="There are no activities waiting for verification."
+    empty-icon="pi pi-check-circle"
+    table-min-width="1200px"
+    actions-header="Actions"
+    actions-width="170px"
+    data-key="id"
+    lazy
+    :loading="loading"
+    :data="activities"
+    :columns="columns"
+    :actions="actions"
+    :total-records="totalRecords"
+    :first="first"
+    :rows="perPage"
+    :rows-per-page-options="[10, 20, 50, 100]"
+    @page="handlePage"
+    @sort="handleSort"
+    @search="handleSearch"
+    @action="handleAction"
+>
             <!-- HEADER ACTIONS -->
 
             <template #header-actions>
