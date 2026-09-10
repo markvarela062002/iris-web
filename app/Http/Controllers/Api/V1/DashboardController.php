@@ -191,13 +191,13 @@ class DashboardController extends Controller
                         (
                             SELECT COUNT(*)
                             FROM person_assess_h
-                            WHERE done = ?
+                            WHERE for_assess = ?
                         ) AS practical_enrolled_total,
 
                         (
                             SELECT COUNT(*)
                             FROM assess_h_ext
-                            WHERE done = ?
+                            WHERE for_assess = ?
                         ) AS practical_not_enrolled_total
                     SQL,
                 [
@@ -208,7 +208,7 @@ class DashboardController extends Controller
                     '',  // person_journal.esig_file != ''
                     'Y', // bs_person_exam.done
                     'Y', // bs_person_exam_ext.done
-                    'Y', // person_assess_h.done
+                    'Y', // person_assess_h.for_assess
                     'Y', // assess_h_ext.done
                 ],
             );
