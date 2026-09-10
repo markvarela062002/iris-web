@@ -170,14 +170,10 @@ const actions: DataTableAction[] = [
         label: 'No uploaded file',
         icon: 'pi pi-download',
         severity: 'secondary',
-<<<<<<< HEAD
-        visible: (row) => {
-=======
 
         visible: (
             row: DataTableRow,
         ): boolean => {
->>>>>>> main
             return !hasUploadedFile(row);
         },
 
@@ -398,8 +394,8 @@ function openUploadedFile(
     );
 }
 
-function navigateToActivityList(): void {
-    router.visit('/monitoring/activity-updates');
+function navigateToDashboard(): void {
+    router.visit('/dashboard');
 }
 
 /*
@@ -836,7 +832,7 @@ onBeforeUnmount(() => {
                     severity="info"
                     
                     size="small"
-                    @click="navigateToActivityList"
+                    @click="navigateToDashboard"
                 />
             </template>
 
