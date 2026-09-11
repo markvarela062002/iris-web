@@ -134,7 +134,7 @@ const mainNavItems: NavItem[] = [
                 title:
                     'Training Record Book (OTG)',
                 href:
-                    '/dashboard/otg-updates',
+                    '/monitoring/otg-updates',
                 icon: BookOpen,
             },
             {
