@@ -142,42 +142,61 @@ const dashboardCards = computed<DashboardCard[]>(() => [
         buttonTextClass: '!text-blue-500',
         href: '/dashboard/daily-journals',
     },
-    {
-        label: 'Theoretical Assessments (Enrolled)',
-        value: dashboardTotals.value.theoreticalEnrolled,
-        icon: 'pi pi-graduation-cap',
-        cardBg: '!bg-amber-500',
-        buttonTextClass: '!text-amber-500',
-        href: '/dashboard/theoretical-internal',
-        canCreateBatch: true,
-    },
-    {
-        label: 'Theoretical Assessments (External)',
-        value: dashboardTotals.value.theoreticalNotEnrolled,
-        icon: 'pi pi-question-circle',
-        cardBg: '!bg-yellow-500',
-        buttonTextClass: '!text-yellow-600',
-        href: '/dashboard/theoretical-external',
-        canCreateBatch: true,
-    },
-    {
-        label: 'Practical Assessments (Enrolled)',
-        value: dashboardTotals.value.practicalEnrolled,
-        icon: 'pi pi-clipboard',
-        cardBg: '!bg-violet-500',
-        buttonTextClass: '!text-violet-500',
-        href: '/dashboard/practical-internal',
-        canCreateBatch: true,
-    },
-    {
-        label: 'Practical Assessments (External)',
-        value: dashboardTotals.value.practicalNotEnrolled,
-        icon: 'pi pi-wrench',
-        cardBg: '!bg-purple-500',
-        buttonTextClass: '!text-purple-500',
-        href: '/dashboard/practical-external',
-        canCreateBatch: true,
-    },
+{
+    label: 'Theoretical Assessments (Enrolled)',
+    value: dashboardTotals.value.theoreticalEnrolled,
+    icon: 'pi pi-graduation-cap',
+    cardBg: '!bg-amber-500',
+    buttonTextClass: '!text-amber-500',
+    href: '/dashboard/theoretical-internal',
+    batchHref:
+        '/dashboard/theoretical-internal/batch',
+    canCreateBatch: true,
+},
+{
+    label: 'Theoretical Assessments (External)',
+    value:
+        dashboardTotals.value
+            .theoreticalNotEnrolled,
+    icon: 'pi pi-question-circle',
+    cardBg: '!bg-yellow-500',
+    buttonTextClass: '!text-yellow-600',
+    href: '/dashboard/theoretical-external',
+    batchHref:
+        '/dashboard/theoretical-external/batch',
+    canCreateBatch: true,
+},
+{
+    label: 'Practical Assessments (Enrolled)',
+    value:
+        dashboardTotals.value
+            .practicalEnrolled,
+    icon: 'pi pi-clipboard',
+    cardBg: '!bg-violet-500',
+    buttonTextClass:
+        '!text-violet-500',
+    href:
+        '/dashboard/practical-internal',
+    batchHref:
+        '/dashboard/practical-internal/batch',
+    canCreateBatch: true,
+},
+{
+    label:
+        'Practical Assessments (External)',
+    value:
+        dashboardTotals.value
+            .practicalNotEnrolled,
+    icon: 'pi pi-wrench',
+    cardBg: '!bg-purple-500',
+    buttonTextClass:
+        '!text-purple-500',
+    href:
+        '/dashboard/practical-external',
+    batchHref:
+        '/dashboard/practical-external/batch',
+    canCreateBatch: true,
+},
 ]);
 
 /*
@@ -285,13 +304,6 @@ function navigateTo(href?: string): void {
     router.visit(href);
 }
 
-function handleCreateBatch(card: DashboardCard): void {
-    if (!card.batchHref) {
-        return;
-    }
-
-    router.visit(card.batchHref);
-}
 
 /*
 |--------------------------------------------------------------------------
@@ -810,16 +822,18 @@ function handleStudentAction(
                             />
 
                             <Button
-                                v-if="item.canCreateBatch"
-                                type="button"
-                                label="Create Batch"
-                                icon="pi pi-users"
-                                severity="secondary"
-                                variant="outlined"
-                                class="!w-full !border-white/70 !bg-white/10 !text-xs !font-bold !text-white hover:!bg-white/20"
-                                :disabled="!item.batchHref"
-                                @click="handleCreateBatch(item)"
-                            />
+    v-if="
+        item.canCreateBatch &&
+        item.batchHref
+    "
+    as="a"
+    :href="item.batchHref"
+    label="Create Batch"
+    icon="pi pi-users"
+    severity="secondary"
+    variant="outlined"
+    class="!w-full !border-white/70 !bg-white/10 !text-xs !font-bold !text-white hover:!bg-white/20"
+/>
                         </div>
                     </div>
                 </template>

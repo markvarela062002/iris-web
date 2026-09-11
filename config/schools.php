@@ -40,6 +40,17 @@ return [
 
             'connection' => 'demo',
 
+            /*
+             * Base URL containing theoretical-exam.php.
+             *
+             * This is used for External examination
+             * invitation emails.
+             */
+            'theoretical_external_exam_url' => env(
+                'DEMO_THEORETICAL_EXTERNAL_EXAM_URL',
+                '',
+            ),
+
             'files' => [
                 /*
                  * Uploaded documents from file_upload_d.
@@ -53,7 +64,8 @@ return [
                 ),
 
                 /*
-                 * Journal uploads.
+                 * Journal uploads and assessment
+                 * reference files.
                  *
                  * Legacy public directory:
                  * /uploads
@@ -64,7 +76,8 @@ return [
                 ),
 
                 /*
-                 * Activity files and journal objective evidence.
+                 * Activity files, assessment evidence,
+                 * and journal objective evidence.
                  *
                  * Legacy public directory:
                  * /person_task
@@ -114,6 +127,11 @@ return [
             ),
 
             'connection' => 'exact',
+
+            'theoretical_external_exam_url' => env(
+                'EXACT_THEORETICAL_EXTERNAL_EXAM_URL',
+                '',
+            ),
 
             'files' => [
                 'documents_url' => env(
@@ -166,6 +184,11 @@ return [
 
             'connection' => 'igcfi',
 
+            'theoretical_external_exam_url' => env(
+                'IGCFI_THEORETICAL_EXTERNAL_EXAM_URL',
+                '',
+            ),
+
             'files' => [
                 'documents_url' => env(
                     'IGCFI_DOCUMENT_FILE_URL',
@@ -216,6 +239,11 @@ return [
             ),
 
             'connection' => 'mcl',
+
+            'theoretical_external_exam_url' => env(
+                'MCL_THEORETICAL_EXTERNAL_EXAM_URL',
+                '',
+            ),
 
             'files' => [
                 'documents_url' => env(
@@ -268,6 +296,11 @@ return [
 
             'connection' => 'mci',
 
+            'theoretical_external_exam_url' => env(
+                'MCI_THEORETICAL_EXTERNAL_EXAM_URL',
+                '',
+            ),
+
             'files' => [
                 'documents_url' => env(
                     'MCI_DOCUMENT_FILE_URL',
@@ -291,7 +324,7 @@ return [
             ],
         ],
 
- /*
+        /*
         |--------------------------------------------------------------------------
         | UPH
         |--------------------------------------------------------------------------
@@ -319,6 +352,11 @@ return [
 
             'connection' => 'uph',
 
+            'theoretical_external_exam_url' => env(
+                'UPH_THEORETICAL_EXTERNAL_EXAM_URL',
+                '',
+            ),
+
             'files' => [
                 'documents_url' => env(
                     'UPH_DOCUMENT_FILE_URL',
@@ -342,7 +380,13 @@ return [
             ],
         ],
 
-'UPHSD' => [
+        /*
+        |--------------------------------------------------------------------------
+        | UPHSD
+        |--------------------------------------------------------------------------
+        */
+
+        'UPHSD' => [
             'code' => strtoupper(
                 trim(
                     (string) env(
@@ -363,6 +407,11 @@ return [
             ),
 
             'connection' => 'uphsd',
+
+            'theoretical_external_exam_url' => env(
+                'UPHSD_THEORETICAL_EXTERNAL_EXAM_URL',
+                '',
+            ),
 
             'files' => [
                 'documents_url' => env(
