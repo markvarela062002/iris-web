@@ -405,6 +405,10 @@ function navigateToDashboard(): void {
     router.visit('/dashboard');
 }
 
+function navigateToDocumentList(): void {
+    router.visit('/monitoring/uploaded-documents');
+}
+
 /*
 |--------------------------------------------------------------------------
 | Actions
@@ -1099,7 +1103,7 @@ onBeforeUnmount(() => {
                     icon="pi pi-list-check"
                     severity="info"
                     size="small"
-                    @click="navigateToDashboard"
+                    @click="navigateToDocumentList"
                 />
             </template>
 

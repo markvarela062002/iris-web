@@ -121,13 +121,13 @@ const mainNavItems: NavItem[] = [
             {
                 title: 'Activity Updates',
                 href:
-                    '/dashboard/activity-updates',
+                    '/monitoring/activity-updates',
                 icon: Activity,
             },
             {
-                title: 'Document Uploading',
+                title: 'Uploaded Documents',
                 href:
-                    '/dashboard/uploaded-documents',
+                    '/monitoring/uploaded-documents',
                 icon: Upload,
             },
             {

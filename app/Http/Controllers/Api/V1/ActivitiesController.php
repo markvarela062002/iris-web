@@ -98,18 +98,21 @@ class ActivitiesController extends Controller
                 'person.gender',
 
                 'activity.desc_activity',
-            ])
-            ->where(
-                'person_activity.sto_validated',
-                '!=',
-                'Y',
-            )
-            ->where(
-                'person_activity.for_app',
-                '=',
-                'Y',
-            );
+            ]);
 
+            if (! $request->boolean('monitoring')) {
+                $query
+                    ->where(
+                        'person_activity.sto_validated',
+                        '!=',
+                        'Y',
+                    )
+                    ->where(
+                        'person_activity.for_app',
+                        '=',
+                        'Y',
+                    );
+            }
         $result = $this->datatableService->paginate(
             query: $query,
             request: $request,
@@ -166,7 +169,6 @@ class ActivitiesController extends Controller
          * Generate a direct public HTTPS URL for every
          * activity attachment.
          *
-         * This matches the legacy application behavior.
          * The browser requests the public file directly,
          * so Laravel does not need to proxy it through FTP.
          */
@@ -182,8 +184,8 @@ class ActivitiesController extends Controller
                         : (array) $row;
 
                     /*
-                     * Remove any accidental directory
-                     * components stored in the database.
+                     * Remove accidental directory components
+                     * stored in the database.
                      */
                     $filename = basename(
                         str_replace(
@@ -220,6 +222,36 @@ class ActivitiesController extends Controller
         return response()->json(
             $result,
         );
+    }
+
+    /**
+     * Return activity options for the Monitoring filter.
+     */
+    public function activityOptions(
+        Request $request,
+    ): JsonResponse {
+        $db = $this->resolveSchoolConnection(
+            $request,
+        );
+
+        if ($db instanceof JsonResponse) {
+            return $db;
+        }
+
+        $activities = $db
+            ->table('activity')
+            ->select([
+                'id',
+                'desc_activity',
+            ])
+            ->orderBy(
+                'desc_activity',
+            )
+            ->get();
+
+        return response()->json([
+            'data' => $activities,
+        ]);
     }
 
     /**

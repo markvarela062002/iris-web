@@ -96,6 +96,20 @@ Route::inertia(
     'dashboard/practical-internal/batch/Index',
 )->name('dashboard.practical-internal.batch');
 
+Route::inertia(
+    '/monitoring/activity-updates',
+    'monitoring/activity-updates/Index',
+)->name(
+    'monitoring.activity-updates',
+);
+
+Route::inertia(
+    '/monitoring/uploaded-documents',
+    'monitoring/uploaded-documents/Index',
+)->name(
+    'monitoring.uploaded-documents',
+);
+
     /*
     |--------------------------------------------------------------------------
     | Dashboard DataTables
@@ -163,6 +177,39 @@ Route::inertia(
     '/dashboard/practical-external/batch',
     'dashboard/practical-external/batch/Index',
 )->name('dashboard.practical-external.batch');
+
+        Route::get(
+        '/api/v1/monitoring/datatable/activity-updates',
+        [
+            ActivitiesController::class,
+            'index',
+        ],
+    )->name(
+        'api.v1.monitoring.datatable.activity-updates',
+    );
+
+    Route::get(
+        '/api/v1/monitoring/activity-updates/options',
+        [
+            ActivitiesController::class,
+            'activityOptions',
+        ],
+    )->name(
+        'api.v1.monitoring.activity-updates.options',
+    );
+
+    Route::get(
+        '/api/v1/monitoring/datatable/uploaded-documents',
+        [
+            DocumentsController::class,
+            'index',
+        ],
+    )->name(
+        'api.v1.monitoring.datatable.uploaded-documents',
+    );
+
+
+
 
     /*
     |--------------------------------------------------------------------------
