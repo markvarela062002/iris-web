@@ -460,9 +460,9 @@ onBeforeUnmount(() => {
 
 <template>
     <section
-        class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
+        class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-xl shadow-slate-200/40"
     >
-        <!-- TABLE HEADER -->
+        <!-- Table Header -->
 
         <div
             v-if="
@@ -472,92 +472,130 @@ onBeforeUnmount(() => {
                 $slots.header ||
                 $slots['header-actions']
             "
-            class="flex flex-col gap-4 border-b border-slate-200 bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+            class="relative overflow-hidden border-b border-slate-200/80 bg-gradient-to-r from-slate-50 via-white to-blue-50/50 px-5 py-5 lg:px-6"
         >
-            <!-- TITLE -->
+            <!-- Header Decoration -->
 
             <div
-                v-if="
-                    title ||
-                    description ||
-                    $slots.header
-                "
-                class="flex min-w-0 items-center gap-4"
-            >
-                <div
-                    v-if="headerIcon"
-                    class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-blue-500 shadow-md shadow-blue-500/20"
-                >
-                    <i
-                        :class="[
-                            headerIcon,
-                            '!text-[2rem] !font-bold !leading-none !text-white',
-                        ]"
-                    ></i>
-                </div>
-
-                <div class="min-w-0">
-                    <slot name="header">
-                        <h2
-                            v-if="title"
-                            class="truncate !text-xl !font-bold !leading-tight !text-[#21365A]"
-                        >
-                            {{ title }}
-                        </h2>
-
-                        <p
-                            v-if="description"
-                            class="mt-1 !text-sm !leading-relaxed !text-slate-500"
-                        >
-                            {{ description }}
-                        </p>
-                    </slot>
-                </div>
-            </div>
-
-            <!-- HEADER ACTIONS AND SEARCH -->
+                class="pointer-events-none absolute -top-16 -right-12 size-40 rounded-full bg-blue-400/[0.07] blur-2xl"
+            ></div>
 
             <div
-                class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center"
+                class="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
             >
-                <slot name="header-actions" />
+                <!-- Title -->
 
                 <div
-                    v-if="searchable"
-                    class="relative w-full sm:w-72"
+                    v-if="
+                        title ||
+                        description ||
+                        $slots.header
+                    "
+                    class="flex min-w-0 items-center gap-4"
                 >
-                    <IconField>
-                        <InputIcon
-                            class="pi pi-search"
-                        />
+                    <!-- Header Icon -->
 
-                        <InputText
-                            v-model="search"
-                            :placeholder="searchPlaceholder"
-                            class="h-10 w-full !rounded-lg !border-slate-300 !bg-white !pr-10 !text-sm !text-slate-900"
-                        />
-                    </IconField>
+                    <div
+                        v-if="headerIcon"
+                        class="relative flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-[#123A63] to-[#377EC0] text-white shadow-lg shadow-[#377EC0]/20"
+                    >
+                        <div
+                            class="pointer-events-none absolute -top-3 -right-3 size-8 rounded-full bg-white/15"
+                        ></div>
 
-                    <Button
-                        v-if="search"
-                        type="button"
-                        icon="pi pi-times"
-                        icon-only
-                        rounded
-                        variant="text"
-                        severity="secondary"
-                        aria-label="Clear search"
-                        title="Clear search"
-                        class="!absolute !top-1/2 !right-1 !size-8 !-translate-y-1/2 !p-0"
-                        @click="clearSearch"
-                    />
+                        <i
+                            :class="[
+                                headerIcon,
+                                'relative z-10 !text-[1.65rem] !leading-none !text-white',
+                            ]"
+                        ></i>
+                    </div>
+
+                    <!-- Header Text -->
+
+                    <div class="min-w-0">
+                        <slot name="header">
+                            <div
+                                class="mb-1 flex items-center gap-2"
+                            >
+                                <span
+                                    class="size-1.5 shrink-0 rounded-full bg-emerald-500"
+                                ></span>
+
+                                <span
+                                    class="text-[10px] font-bold tracking-[0.14em] text-[#377EC0] uppercase"
+                                >
+                                    Records Management
+                                </span>
+                            </div>
+
+                            <h2
+                                v-if="title"
+                                class="text-xl leading-tight font-bold tracking-tight text-[#21365A]"
+                            >
+                                {{ title }}
+                            </h2>
+
+                            <p
+                                v-if="description"
+                                class="mt-1 max-w-3xl text-sm leading-relaxed text-slate-500"
+                            >
+                                {{ description }}
+                            </p>
+                        </slot>
+                    </div>
+                </div>
+
+                <!-- Header Actions and Search -->
+
+                <div
+                    class="flex w-full shrink-0 flex-col gap-3 sm:w-auto sm:flex-row sm:items-center"
+                >
+                    <slot name="header-actions" />
+
+                    <!-- Search -->
+
+                    <div
+                        v-if="searchable"
+                        class="relative w-full sm:w-72 lg:w-80"
+                    >
+                        <IconField>
+                            <InputIcon
+                                class="pi pi-search !text-slate-400"
+                            />
+
+                            <InputText
+                                v-model="search"
+                                :placeholder="
+                                    searchPlaceholder
+                                "
+                                class="h-11 w-full !rounded-xl !border-slate-200 !bg-white !pr-11 !text-sm !text-slate-700 shadow-sm transition-all placeholder:!text-slate-400 hover:!border-slate-300 focus:!border-[#377EC0] focus:!ring-4 focus:!ring-[#377EC0]/10"
+                            />
+                        </IconField>
+
+                        <Button
+                            v-if="search"
+                            type="button"
+                            icon="pi pi-times"
+                            icon-only
+                            rounded
+                            variant="text"
+                            severity="secondary"
+                            aria-label="Clear search"
+                            title="Clear search"
+                            class="!absolute !top-1/2 !right-1.5 !size-8 !-translate-y-1/2 !p-0"
+                            @click="clearSearch"
+                        />
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- DATATABLE -->
+        <!-- DataTable -->
 
-        <div class="min-h-0 flex-1">
+        <div
+            class="min-h-0 flex-1 bg-white"
+        >
             <PrimeDataTable
                 :value="displayedData"
                 :loading="loading"
@@ -569,27 +607,55 @@ onBeforeUnmount(() => {
                 :scroll-height="scrollHeight"
                 :striped-rows="stripedRows"
                 :show-gridlines="showGridlines"
-                :removable-sort="removableSort"
-                :resizable-columns="resizableColumns"
+                :removable-sort="
+                    removableSort
+                "
+                :resizable-columns="
+                    resizableColumns
+                "
                 column-resize-mode="fit"
-                class="universal-datatable
-                       [&_.p-datatable-tbody>tr]:cursor-default
-                       [&_.p-datatable-tbody>tr>td]:transition-colors
-                       [&_.p-datatable-tbody>tr>td]:duration-150
-                       [&_.p-datatable-tbody>tr:hover>td]:!bg-blue-50"
                 :table-style="{
                     minWidth: tableMinWidth,
                 }"
+                class="
+                    universal-datatable
+                    [&_.p-datatable-table]:!border-separate
+                    [&_.p-datatable-table]:!border-spacing-0
+                    [&_.p-datatable-thead>tr>th]:!border-x-0
+                    [&_.p-datatable-thead>tr>th]:!border-t-0
+                    [&_.p-datatable-thead>tr>th]:!border-b
+                    [&_.p-datatable-thead>tr>th]:!border-slate-200
+                    [&_.p-datatable-thead>tr>th]:!bg-slate-50/80
+                    [&_.p-datatable-thead>tr>th]:!px-4
+                    [&_.p-datatable-thead>tr>th]:!py-3.5
+                    [&_.p-datatable-thead>tr>th]:!text-xs
+                    [&_.p-datatable-thead>tr>th]:!font-bold
+                    [&_.p-datatable-thead>tr>th]:!tracking-wide
+                    [&_.p-datatable-thead>tr>th]:!text-slate-600
+                    [&_.p-datatable-thead>tr>th]:!uppercase
+                    [&_.p-datatable-tbody>tr]:cursor-default
+                    [&_.p-datatable-tbody>tr>td]:!border-x-0
+                    [&_.p-datatable-tbody>tr>td]:!border-b
+                    [&_.p-datatable-tbody>tr>td]:!border-slate-100
+                    [&_.p-datatable-tbody>tr>td]:!bg-white
+                    [&_.p-datatable-tbody>tr>td]:!px-4
+                    [&_.p-datatable-tbody>tr>td]:!py-4
+                    [&_.p-datatable-tbody>tr>td]:transition-colors
+                    [&_.p-datatable-tbody>tr>td]:duration-200
+                    [&_.p-datatable-tbody>tr:hover>td]:!bg-blue-50/60
+                "
                 @sort="handleSort"
             >
-                <!-- DYNAMIC COLUMNS -->
+                <!-- Dynamic Columns -->
 
                 <Column
                     v-for="column in columns"
                     :key="column.field"
                     :field="column.field"
                     :header="column.header"
-                    :sortable="column.sortable"
+                    :sortable="
+                        column.sortable
+                    "
                     :frozen="column.frozen"
                     :align-frozen="
                         column.alignFrozen
@@ -626,96 +692,118 @@ onBeforeUnmount(() => {
                     </template>
                 </Column>
 
-               <!-- ACTIONS COLUMN -->
-<Column
-    v-if="
-        showActions &&
-        actions.length > 0
-    "
-    :header="actionsHeader"
-    frozen
-    align-frozen="right"
-    :style="{
-        minWidth: actionsWidth,
-    }"
-    header-class="!text-left"
-    body-class="!text-left"
->
-    <template #body="{ data: row }">
-        <slot
-            name="actions"
-            :data="row"
-            :actions="actions"
-        >
-            <div
-                class="flex w-full items-center justify-start gap-2"
-            >
-                <template
-                    v-for="action in actions"
-                    :key="action.key"
-                >
-                    <Button
-                        v-if="
-                            isActionVisible(
-                                action,
-                                row,
-                            )
-                        "
-                        type="button"
-                        :icon="action.icon"
-                        icon-only
-                        rounded
-                        raised
-                        :severity="
-                            action.severity ??
-                            undefined
-                        "
-                        :disabled="
-                            isActionDisabled(
-                                action,
-                                row,
-                            )
-                        "
-                        :aria-label="
-                            action.label
-                        "
-                        :title="
-                            action.label
-                        "
-                        class="!size-10 !min-h-10 !min-w-10 !shrink-0 !p-0"
-                        @click.stop="
-                            handleAction(
-                                action,
-                                row,
-                            )
-                        "
-                    />
-                </template>
-            </div>
-        </slot>
-    </template>
-</Column>
+                <!-- Actions Column -->
 
-                <!-- EMPTY STATE -->
+                <Column
+                    v-if="
+                        showActions &&
+                        actions.length > 0
+                    "
+                    :header="actionsHeader"
+                    frozen
+                    align-frozen="right"
+                    :style="{
+                        minWidth:
+                            actionsWidth,
+                    }"
+                    header-class="!text-left"
+                    body-class="!text-left"
+                >
+                    <template
+                        #body="{ data: row }"
+                    >
+                        <slot
+                            name="actions"
+                            :data="row"
+                            :actions="
+                                actions
+                            "
+                        >
+                            <div
+                                class="flex w-full items-center justify-start gap-2"
+                            >
+                                <template
+                                    v-for="action in actions"
+                                    :key="
+                                        action.key
+                                    "
+                                >
+                                    <Button
+                                        v-if="
+                                            isActionVisible(
+                                                action,
+                                                row,
+                                            )
+                                        "
+                                        type="button"
+                                        :icon="
+                                            action.icon
+                                        "
+                                        icon-only
+                                        rounded
+                                        raised
+                                        :severity="
+                                            action.severity ??
+                                            undefined
+                                        "
+                                        :disabled="
+                                            isActionDisabled(
+                                                action,
+                                                row,
+                                            )
+                                        "
+                                        :aria-label="
+                                            action.label
+                                        "
+                                        :title="
+                                            action.label
+                                        "
+                                        class="!size-10 !min-h-10 !min-w-10 !shrink-0 !p-0 transition-all duration-200 enabled:hover:!-translate-y-0.5 enabled:hover:!shadow-lg disabled:!cursor-not-allowed disabled:!opacity-40"
+                                        @click.stop="
+                                            handleAction(
+                                                action,
+                                                row,
+                                            )
+                                        "
+                                    />
+                                </template>
+                            </div>
+                        </slot>
+                    </template>
+                </Column>
+
+                <!-- Empty State -->
 
                 <template #empty>
                     <slot name="empty">
-                        <div class="py-12 text-center">
-                            <i
-                                :class="[
-                                    emptyIcon,
-                                    'text-4xl text-slate-300',
-                                ]"
-                            ></i>
+                        <div
+                            class="flex min-h-72 flex-col items-center justify-center px-6 py-14 text-center"
+                        >
+                            <div
+                                class="relative flex size-20 items-center justify-center rounded-3xl bg-gradient-to-br from-slate-50 to-blue-50 ring-1 ring-slate-200"
+                            >
+                                <div
+                                    class="absolute -top-1 -right-1 size-4 rounded-full bg-blue-100"
+                                ></div>
+
+                                <i
+                                    :class="[
+                                        emptyIcon,
+                                        'text-3xl text-[#377EC0]',
+                                    ]"
+                                ></i>
+                            </div>
 
                             <p
-                                class="mt-3 font-semibold text-slate-600"
+                                class="mt-5 text-base font-bold text-slate-700"
                             >
-                                {{ emptyTitle }}
+                                {{
+                                    emptyTitle
+                                }}
                             </p>
 
                             <p
-                                class="mt-1 text-sm text-slate-400"
+                                class="mt-1.5 max-w-sm text-sm leading-6 text-slate-400"
                             >
                                 {{
                                     emptyDescription
@@ -725,43 +813,81 @@ onBeforeUnmount(() => {
                     </slot>
                 </template>
 
-                <!-- LOADING STATE -->
+                <!-- Loading State -->
 
                 <template #loading>
                     <div
-                        class="flex items-center justify-center gap-3 py-12 text-slate-500"
+                        class="flex min-h-72 flex-col items-center justify-center gap-4 text-slate-500"
                     >
-                        <ProgressSpinner
-                            stroke-width="5"
-                            class="!size-7"
-                        />
+                        <div
+                            class="flex size-14 items-center justify-center rounded-2xl bg-blue-50"
+                        >
+                            <ProgressSpinner
+                                stroke-width="5"
+                                class="!size-7"
+                            />
+                        </div>
 
-                        <span>
-                            Loading records...
-                        </span>
+                        <div class="text-center">
+                            <p
+                                class="text-sm font-semibold text-slate-600"
+                            >
+                                Loading records
+                            </p>
+
+                            <p
+                                class="mt-1 text-xs text-slate-400"
+                            >
+                                Please wait a
+                                moment...
+                            </p>
+                        </div>
                     </div>
                 </template>
             </PrimeDataTable>
         </div>
 
-        <!-- PRIMEVUE PAGINATION -->
+        <!-- Pagination -->
 
         <div
             v-if="paginator"
-            class="flex min-h-16 w-full shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-white px-4 py-3 text-slate-500"
+            class="flex min-h-[72px] w-full shrink-0 flex-wrap items-center justify-between gap-4 border-t border-slate-200/80 bg-gradient-to-r from-slate-50/80 via-white to-slate-50/80 px-5 py-3"
         >
-            <!-- RECORD SUMMARY -->
+            <!-- Record Summary -->
 
             <div
-                class="min-w-0 flex-1 text-sm font-medium"
+                class="min-w-0 flex-1 text-sm font-medium text-slate-500"
             >
-                Showing {{ firstRecord }} to
-                {{ lastRecord }} of
-                {{ effectiveTotalRecords }}
+                Showing
+
+                <span
+                    class="font-bold text-slate-700"
+                >
+                    {{ firstRecord }}
+                </span>
+
+                to
+
+                <span
+                    class="font-bold text-slate-700"
+                >
+                    {{ lastRecord }}
+                </span>
+
+                of
+
+                <span
+                    class="font-bold text-[#377EC0]"
+                >
+                    {{
+                        effectiveTotalRecords
+                    }}
+                </span>
+
                 records
             </div>
 
-            <!-- PAGINATOR -->
+            <!-- Paginator -->
 
             <Paginator
                 :first="first"
@@ -770,18 +896,33 @@ onBeforeUnmount(() => {
                     effectiveTotalRecords
                 "
                 template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
-                class="!min-w-0 !flex-1 !border-0 !bg-transparent !p-0"
+                class="
+                    !min-w-0
+                    !flex-1
+                    !border-0
+                    !bg-transparent
+                    !p-0
+                    [&_.p-paginator-page]:!size-9
+                    [&_.p-paginator-page]:!min-w-9
+                    [&_.p-paginator-page]:!rounded-xl
+                    [&_.p-paginator-page-selected]:!bg-[#377EC0]
+                    [&_.p-paginator-page-selected]:!text-white
+                    [&_.p-paginator-first]:!rounded-xl
+                    [&_.p-paginator-prev]:!rounded-xl
+                    [&_.p-paginator-next]:!rounded-xl
+                    [&_.p-paginator-last]:!rounded-xl
+                "
                 @page="handlePage"
             />
 
-            <!-- ROWS PER PAGE -->
+            <!-- Rows Per Page -->
 
             <div
                 class="flex min-w-0 flex-1 items-center justify-end gap-2"
             >
                 <label
                     :for="`${dataKey}-rows`"
-                    class="text-sm font-semibold text-slate-600"
+                    class="text-xs font-bold tracking-wide text-slate-500 uppercase"
                 >
                     Rows
                 </label>
@@ -795,7 +936,7 @@ onBeforeUnmount(() => {
                         rowsPerPageOptions
                     "
                     aria-label="Rows per page"
-                    class="w-24"
+                    class="w-24 !rounded-xl"
                     @update:model-value="
                         changeRows
                     "
