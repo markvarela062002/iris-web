@@ -665,180 +665,272 @@ function handleStudentAction(
     >
         <!-- School hero -->
 
-        <section
-            class="relative overflow-hidden rounded-2xl border border-[#377EC0]/15 bg-white shadow-sm"
-        >
-            <div
-                class="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#377EC0]/[0.07] via-white to-[#377EC0]/[0.04]"
-            />
+<section
+    class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#07182D] via-[#123A63] to-[#377EC0] shadow-xl shadow-[#123A63]/15"
+>
+    <!-- Decorative background -->
 
-            <div
-                class="pointer-events-none absolute -top-28 -right-24 h-72 w-72 rounded-full bg-[#377EC0]/[0.08]"
-            />
+    <div
+        class="pointer-events-none absolute -top-32 -right-20 size-80 rounded-full bg-cyan-300/ blur-3xl"
+    ></div>
 
-            <div
-                class="pointer-events-none absolute right-32 -bottom-28 h-56 w-56 rounded-full border-[28px] border-[#377EC0]/[0.04]"
-            />
+    <div
+        class="pointer-events-none absolute -bottom-40 -left-20 size-96 rounded-full bg-blue-900/40 blur-3xl"
+    ></div>
 
-            <div
-                class="pointer-events-none absolute top-5 left-[43%] h-20 w-20 rounded-full border border-[#377EC0]/10"
-            />
+    <div
+        class="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.025] to-white/[0.08]"
+    ></div>
 
-            <div
-                class="relative z-10 flex min-h-[165px] flex-col justify-between gap-6 px-6 py-5 md:flex-row md:items-center lg:px-8 lg:py-6"
-            >
-                <div
-                    class="flex min-w-0 items-center gap-5 lg:gap-7"
-                >
-                    <div
-                        class="flex size-24 shrink-0 items-center justify-center rounded-2xl border border-[#377EC0]/15 bg-white p-3 shadow-sm sm:size-28 lg:size-32"
-                    >
-                        <img
-                            :src="school.logo"
-                            :alt="school.name"
-                            class="h-full w-full object-contain"
-                        />
-                    </div>
+    <div
+        class="pointer-events-none absolute top-0 right-[28%] h-full w-px bg-gradient-to-b from-transparent via-white/15 to-transparent"
+    ></div>
 
-                    <div class="min-w-0">
-                        <h1
-                            class="text-2xl leading-tight font-bold tracking-tight text-[#21365A] sm:text-3xl lg:text-4xl"
-                        >
-                            {{ school.name }}
-                        </h1>
+    <!-- Content -->
 
-                        <p
-                            class="mt-2 text-sm font-medium text-slate-500 sm:text-base"
-                        >
-                            IRIS — Student Activity Monitoring
-                            System
-                        </p>
-
-                        <p
-                            class="mt-1 hidden max-w-[650px] text-sm leading-6 text-slate-400 lg:block"
-                        >
-                            A centralized platform for monitoring,
-                            organizing, and managing student
-                            activities.
-                        </p>
-                    </div>
-                </div>
-
-                <div
-                    class="flex min-w-[290px] shrink-0 items-center gap-4 rounded-2xl border border-slate-200 bg-white/95 px-5 py-3.5 shadow-sm backdrop-blur"
-                >
-                    <div
-                        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#377EC0]/10"
-                    >
-                        <i
-                            class="pi pi-calendar text-lg text-[#377EC0]"
-                        />
-                    </div>
-
-                    <div class="flex-1 text-right">
-                        <div
-                            class="text-sm font-medium text-slate-500"
-                        >
-                            {{ currentDate }}
-                        </div>
-
-                        <div
-                            class="mt-0.5 font-mono text-2xl font-bold tracking-tight whitespace-nowrap text-slate-900 lg:text-[28px]"
-                        >
-                            {{ currentTime }}
-                        </div>
-
-                        <div
-                            class="mt-0.5 text-[10px] font-semibold tracking-[0.15em] text-slate-400 uppercase"
-                        >
-                            Philippine Standard Time
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Summary cards -->
+    <div
+        class="relative z-10 flex min-h-[190px] flex-col justify-between gap-8 px-6 py-7 md:flex-row md:items-center lg:px-9 lg:py-8"
+    >
+        <!-- School Identity -->
 
         <div
-            class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+            class="flex min-w-0 items-center gap-5 lg:gap-8"
         >
-            <Card
-                v-for="item in dashboardCards"
-                :key="item.label"
-                :class="[
-                    'dashboard-card overflow-hidden !rounded-2xl !border-0 !text-white shadow-sm',
-                    '[&_.p-card-body]:!p-0',
-                    '[&_.p-card-content]:!p-0',
-                    item.cardBg,
-                ]"
+            <!-- School Logo -->
+
+            <div
+                class="flex size-24 shrink-0 items-center justify-center sm:size-28 lg:size-32"
             >
-                <template #content>
-                    <div class="flex h-full flex-col p-4">
-                        <div class="flex items-start gap-3">
-                            <div
-                                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/20 text-white"
-                            >
-                                <i
-                                    :class="[
-                                        item.icon,
-                                        'text-lg font-bold',
-                                    ]"
-                                />
-                            </div>
+                <img
+                    :src="school.logo"
+                    :alt="school.name"
+                    class="h-full w-full object-contain drop-shadow-xl"
+                />
+            </div>
 
-                            <div class="min-w-0 flex-1">
-                                <p
-                                    class="text-sm leading-5 font-semibold text-white/90"
-                                >
-                                    {{ item.label }}
-                                </p>
+            <!-- School Information -->
 
-                                <h2
-                                    class="mt-1 text-[32px] leading-none font-bold tracking-tight text-white"
-                                >
-                                    {{ item.value }}
-                                </h2>
-                            </div>
-                        </div>
+            <div class="min-w-0">
+                <div
+                    class="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-bold tracking-[0.16em] text-blue-100 uppercase uppercase backdrop-blur-sm"
+                >
+                    <span
+                        class="size-1.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400"
+                    ></span>
 
-                        <div
-                            :class="[
-                                'mt-4 grid w-full gap-2',
-                                item.canCreateBatch
-                                    ? 'grid-cols-2'
-                                    : 'grid-cols-1',
-                            ]"
-                        >
-                            <Button
-                                type="button"
-                                label="View details"
-                                icon="pi pi-eye"
-                                severity="secondary"
-                                class="!w-full !border-white !bg-white !text-sm !font-bold"
-                                :class="item.buttonTextClass"
-                                :disabled="!item.href"
-                                @click="navigateTo(item.href)"
-                            />
+                    ADMIN PANNEL
+                </div>
 
-                            <Button
-    v-if="
-        item.canCreateBatch &&
-        item.batchHref
-    "
-    as="a"
-    :href="item.batchHref"
-    label="Create Batch"
-    icon="pi pi-users"
-    severity="secondary"
-    variant="outlined"
-    class="!w-full !border-white/70 !bg-white/10 !text-xs !font-bold !text-white hover:!bg-white/20"
-/>
-                        </div>
-                    </div>
-                </template>
-            </Card>
+                <h1
+                    class="text-2xl leading-tight font-bold tracking-tight text-white sm:text-3xl lg:text-4xl"
+                >
+                    {{ school.name }}
+                </h1>
+
+                <p
+                    class="mt-2 text-sm font-medium text-blue-100 sm:text-base"
+                >
+                    IRIS — Student Activity
+                    Monitoring System
+                </p>
+
+                <p
+                    class="mt-2 hidden max-w-[650px] text-sm leading-6 text-blue-100/65 lg:block"
+                >
+                    A centralized platform for
+                    monitoring, organizing, and
+                    managing student activities.
+                </p>
+            </div>
         </div>
+
+        <!-- Current Date and Time -->
+
+        <div
+            class="flex shrink-0 items-center gap-4 rounded-2xl border border-white/15 bg-white/10 px-5 py-4 backdrop-blur-md"
+        >
+            <!-- Calendar Icon -->
+
+            <div
+                class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white ring-1 ring-white/15"
+            >
+                <i
+                    class="pi pi-calendar text-lg"
+                ></i>
+            </div>
+
+            <!-- Time Information -->
+
+            <div>
+                <div
+                    class="flex items-baseline gap-3"
+                >
+                    <span
+                        class="font-mono text-2xl font-bold tracking-tight whitespace-nowrap text-white lg:text-[28px]"
+                    >
+                        {{ currentTime }}
+                    </span>
+
+                    <span
+                        class="rounded-full bg-emerald-400/15 px-2 py-0.5 text-[10px] font-bold tracking-[0.14em] text-emerald-300 uppercase"
+                    >
+                        PST
+                    </span>
+                </div>
+
+                <div
+                    class="mt-1 flex items-center gap-2 text-sm font-medium text-blue-100/75"
+                >
+                    <span>
+                        {{ currentDate }}
+                    </span>
+
+                    <span
+                        class="size-1 rounded-full bg-cyan-300"
+                    ></span>
+
+                    <span
+                        class="hidden text-xs text-blue-100/50 xl:inline"
+                    >
+                        Philippine Standard Time
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+        <!-- Summary Cards -->
+
+<div
+    class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4"
+>
+    <Card
+        v-for="item in dashboardCards"
+        :key="item.label"
+        :class="[
+            'dashboard-card group relative overflow-hidden !rounded-3xl !border-0 !text-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl',
+            '[&_.p-card-body]:!p-0',
+            '[&_.p-card-content]:!p-0',
+            item.cardBg,
+        ]"
+    >
+        <template #content>
+            <!-- Decorative Elements -->
+
+            <div
+                class="pointer-events-none absolute -top-14 -right-14 size-40 rounded-full bg-white/10 transition-transform duration-500 group-hover:scale-125"
+            ></div>
+
+            <div
+                class="pointer-events-none absolute -right-8 -bottom-16 size-32 rounded-full border-[18px] border-white/[0.07]"
+            ></div>
+
+            <div
+                class="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.12] via-transparent to-black/[0.08]"
+            ></div>
+
+            <!-- Card Content -->
+
+            <div
+                class="relative z-10 flex min-h-[220px] h-full flex-col p-5"
+            >
+                <!-- Header -->
+
+                <div
+                    class="flex items-start justify-between gap-4"
+                >
+                    <div
+                        class="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/15 text-white shadow-sm backdrop-blur-sm"
+                    >
+                        <i
+                            :class="[
+                                item.icon,
+                                'text-xl',
+                            ]"
+                        ></i>
+                    </div>
+
+                    <div
+                        class="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] text-white/80 uppercase backdrop-blur-sm"
+                    >
+                        <span
+                            class="size-1.5 rounded-full bg-emerald-300"
+                        ></span>
+
+                        Live
+                    </div>
+                </div>
+
+                <!-- Total -->
+
+                <div class="mt-5">
+                    <p
+                        class="text-[11px] font-bold tracking-[0.14em] text-white/70 uppercase"
+                    >
+                        Total Records
+                    </p>
+
+                    <h2
+                        class="mt-1 text-4xl leading-none font-bold tracking-tight text-white"
+                    >
+                        {{ item.value }}
+                    </h2>
+
+                    <p
+                        class="mt-2 min-h-10 text-sm leading-5 font-semibold text-white/90"
+                    >
+                        {{ item.label }}
+                    </p>
+                </div>
+
+                <!-- Actions -->
+
+                <div
+                    :class="[
+                        'mt-auto grid w-full gap-2.5 pt-5',
+                        item.canCreateBatch &&
+                        item.batchHref
+                            ? 'grid-cols-2'
+                            : 'grid-cols-1',
+                    ]"
+                >
+                    <Button
+                        type="button"
+                        label="View Details"
+                        icon="pi pi-arrow-right"
+                        icon-pos="right"
+                        severity="secondary"
+                        :disabled="!item.href"
+                        :class="[
+                            'group/button !w-full !rounded-xl !border-0 !bg-white !px-3 !py-2.5 !text-xs !font-bold shadow-sm transition-all hover:!bg-white/90',
+                            item.buttonTextClass,
+                        ]"
+                        @click="
+                            navigateTo(
+                                item.href,
+                            )
+                        "
+                    />
+
+                    <Button
+                        v-if="
+                            item.canCreateBatch &&
+                            item.batchHref
+                        "
+                        as="a"
+                        :href="item.batchHref"
+                        label="Create Batch"
+                        icon="pi pi-plus"
+                        severity="secondary"
+                        variant="outlined"
+                        class="!w-full !rounded-xl !border-white/30 !bg-white/10 !px-3 !py-2.5 !text-xs !font-bold !text-white backdrop-blur-sm transition-all hover:!border-white/50 hover:!bg-white/20"
+                    />
+                </div>
+            </div>
+        </template>
+    </Card>
+</div>
 
         <!-- Student monitoring table -->
 

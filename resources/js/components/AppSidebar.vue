@@ -117,8 +117,8 @@ const mainNavItems: NavItem[] = [
                 icon: Activity,
             },
             {
-                title: 'Document Uploading',
-                href: '/monitoring/document-uploading',
+                title: 'Uploaded Documents',
+                href: '/monitoring/uploaded-documents',
                 icon: Upload,
             },
             {
