@@ -56,59 +56,71 @@ Route::middleware(['auth'])->group(function (): void {
         'dashboard/daily-journals/Index',
     )->name('dashboard.daily-journals');
 
-Route::inertia(
-    '/dashboard/theoretical-internal',
-    'dashboard/theoretical-internal/datatable/Index',
-)->name(
-    'dashboard.theoretical-internal',
-);
+    Route::inertia(
+        '/dashboard/theoretical-internal',
+        'dashboard/theoretical-internal/datatable/Index',
+    )->name(
+        'dashboard.theoretical-internal',
+    );
 
-Route::inertia(
-    '/dashboard/theoretical-internal/batch',
-    'dashboard/theoretical-internal/batch/Index',
-)->name(
-    'dashboard.theoretical-internal.batch',
-);
+    Route::inertia(
+        '/dashboard/theoretical-external/batch',
+        'dashboard/theoretical-external/batch/Index',
+    )->name(
+        'dashboard.theoretical-external.batch',
+    );
 
-Route::inertia(
-    '/dashboard/theoretical-external',
-    'dashboard/theoretical-external/datatable/Index',
-)->name(
-    'dashboard.theoretical-external',
-);
+    Route::inertia(
+        '/dashboard/practical-external/batch',
+        'dashboard/practical-external/batch/Index',
+    )->name('dashboard.practical-external.batch');
 
-Route::inertia(
-    '/dashboard/practical-internal',
-    'dashboard/practical-internal/datatable/Index',
-)->name(
-    'dashboard.practical-internal',
-);
+    Route::inertia(
+        '/dashboard/practical-internal',
+        'dashboard/practical-internal/datatable/Index',
+    )->name(
+        'dashboard.practical-internal',
+    );
 
-Route::inertia(
-    '/dashboard/practical-external',
-    'dashboard/practical-external/datatable/Index',
-)->name(
-    'dashboard.practical-external',
-);
+    Route::inertia(
+        '/dashboard/practical-external',
+        'dashboard/practical-external/datatable/Index',
+    )->name(
+        'dashboard.practical-external',
+    );
 
-Route::inertia(
-    '/dashboard/practical-internal/batch',
-    'dashboard/practical-internal/batch/Index',
-)->name('dashboard.practical-internal.batch');
+    Route::inertia(
+        '/dashboard/practical-internal/batch',
+        'dashboard/practical-internal/batch/Index',
+    )->name('dashboard.practical-internal.batch');
 
-Route::inertia(
-    '/monitoring/activity-updates',
-    'monitoring/activity-updates/Index',
-)->name(
-    'monitoring.activity-updates',
-);
+    Route::inertia(
+        '/monitoring/activity-updates',
+        'monitoring/activity-updates/Index',
+    )->name(
+        'monitoring.activity-updates',
+    );
 
-Route::inertia(
-    '/monitoring/uploaded-documents',
-    'monitoring/uploaded-documents/Index',
-)->name(
-    'monitoring.uploaded-documents',
-);
+    Route::inertia(
+        '/monitoring/uploaded-documents',
+        'monitoring/uploaded-documents/Index',
+    )->name(
+        'monitoring.uploaded-documents',
+    );
+
+    Route::inertia(
+        '/dashboard/otg-updates',
+        'dashboard/otg-updates/Index',
+    )->name(
+        'dashboard.otg-updates',
+    );
+
+        Route::inertia(
+        '/monitoring/otg-updates',
+        'monitoring/otg-updates/Index',
+    )->name(
+        'monitoring.otg-updates',
+    );
 
     /*
     |--------------------------------------------------------------------------
@@ -166,18 +178,6 @@ Route::inertia(
         'api.v1.dashboard.datatable.daily-journals',
     );
 
-    Route::inertia(
-    '/dashboard/theoretical-external/batch',
-    'dashboard/theoretical-external/batch/Index',
-)->name(
-    'dashboard.theoretical-external.batch',
-);
-
-Route::inertia(
-    '/dashboard/practical-external/batch',
-    'dashboard/practical-external/batch/Index',
-)->name('dashboard.practical-external.batch');
-
         Route::get(
         '/api/v1/monitoring/datatable/activity-updates',
         [
@@ -206,6 +206,16 @@ Route::inertia(
         ],
     )->name(
         'api.v1.monitoring.datatable.uploaded-documents',
+    );
+
+    Route::get(
+        '/api/v1/monitoring/datatable/otg-updates',
+        [
+            OtgController::class,
+            'index',
+        ],
+    )->name(
+        'api.v1.monitoring.datatable.otg-updates',
     );
 
 

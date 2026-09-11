@@ -404,25 +404,62 @@
                                             $fileName = trim((string) (
                                                 $evidence->filename ?? ''
                                             ));
+
                                             $googleDriveLink = trim((string) (
                                                 $evidence->gdrive_link ?? ''
                                             ));
+
                                             $displayName = $fileName !== ''
                                                 ? $fileName
                                                 : ($googleDriveLink !== ''
                                                     ? $googleDriveLink
                                                     : 'Evidence unavailable');
+
+                                            /*
+                                            * Newer records may already contain a full
+                                            * URL in gdrive_link.
+                                            *
+                                            * Older records may only contain a filename.
+                                            * Those files are served through the existing
+                                            * person_task FTP route.
+                                            */
+                                            $evidenceUrl = '';
+
+                                            if ($googleDriveLink !== '') {
+                                                $evidenceUrl =
+                                                    $googleDriveLink;
+                                            } elseif ($fileName !== '') {
+                                                $safeFileName = basename(
+                                                    str_replace(
+                                                        '\\',
+                                                        '/',
+                                                        $fileName,
+                                                    ),
+                                                );
+
+                                                $evidenceUrl = route(
+                                                    'dashboard.files.person-task',
+                                                    [
+                                                        'filename' =>
+                                                            $safeFileName,
+                                                    ],
+                                                );
+                                            }
                                         @endphp
 
-                                        @if ($googleDriveLink !== '')
-                                            
+                                        @if ($evidenceUrl !== '')
+                                            <a
                                                 class="evidence-link"
-                                                href="{{ $googleDriveLink }}"
+                                                href="{{ $evidenceUrl }}"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
                                             >
                                                 {{ $displayName }}
                                             </a>
                                         @else
-                                            <span>{{ $displayName }}</span>
+                                            <span class="muted">
+                                                {{ $displayName }}
+                                            </span>
                                         @endif
 
                                         @if (! $loop->last)
