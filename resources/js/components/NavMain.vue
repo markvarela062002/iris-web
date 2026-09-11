@@ -1,6 +1,13 @@
 <script setup lang="ts">
-import { Link, usePage } from '@inertiajs/vue3';
-import { ChevronRight, Circle } from '@lucide/vue';
+import {
+    Link,
+    usePage,
+} from '@inertiajs/vue3';
+
+import {
+    ChevronRight,
+    Circle,
+} from '@lucide/vue';
 
 import {
     Collapsible,
@@ -27,76 +34,142 @@ defineProps<{
 
 const page = usePage();
 
-function getHref(item: NavItem): string {
-    if (typeof item.href === 'string') {
+function getHref(
+    item: NavItem,
+): string {
+    if (
+        typeof item.href === 'string'
+    ) {
         return item.href;
     }
 
     return item.href.url;
 }
 
-function isItemActive(item: NavItem): boolean {
+function isItemActive(
+    item: NavItem,
+): boolean {
     const href = getHref(item);
 
     if (!href || href === '#') {
         return false;
     }
 
-    return page.url === href || page.url.startsWith(`${href}/`);
+    return (
+        page.url === href ||
+        page.url.startsWith(
+            `${href}/`,
+        )
+    );
 }
 
-function hasActiveChild(item: NavItem): boolean {
-    return item.items?.some((child) => isItemActive(child)) ?? false;
+function hasActiveChild(
+    item: NavItem,
+): boolean {
+    return (
+        item.items?.some((child) =>
+            isItemActive(child),
+        ) ?? false
+    );
 }
 </script>
 
 <template>
-    <SidebarGroup>
-        <SidebarGroupLabel>MODULES</SidebarGroupLabel>
+    <SidebarGroup class="px-1">
+        <SidebarGroupLabel
+            class="
+                px-3
+                text-[10px]
+                font-bold
+                tracking-[0.16em]
+                !text-slate-400
+                uppercase
+            "
+        >
+            Modules
+        </SidebarGroupLabel>
 
-        <SidebarMenu>
+        <SidebarMenu class="gap-1">
             <template
                 v-for="item in items"
                 :key="item.title"
             >
-                <!-- DROPDOWN ITEM -->
+                <!-- Dropdown Item -->
+
                 <Collapsible
-                    v-if="item.items?.length"
+                    v-if="
+                        item.items?.length
+                    "
                     as-child
-                    :default-open="false"
+                    :default-open="
+                        hasActiveChild(
+                            item,
+                        )
+                    "
                     class="group/collapsible"
                 >
                     <SidebarMenuItem>
-                        <CollapsibleTrigger as-child>
+                        <CollapsibleTrigger
+                            as-child
+                        >
                             <SidebarMenuButton
-                                :tooltip="item.title"
-                                :is-active="hasActiveChild(item)"
+                                :tooltip="
+                                    item.title
+                                "
+                                :is-active="
+                                    hasActiveChild(
+                                        item,
+                                    )
+                                "
                                 class="
                                     nav-wrap-item
+                                    !min-h-10
+                                    !rounded-xl
+                                    !px-3
+                                    !text-slate-200
+                                    transition-all
+                                    duration-200
+                                    hover:!bg-white/10
+                                    hover:!text-white
                                     data-[active=true]:!bg-[#377EC0]
+                                    data-[active=true]:!font-semibold
                                     data-[active=true]:!text-white
-                                    hover:!bg-[#377EC0]/10
-                                    hover:!text-foreground
                                 "
                             >
                                 <!-- Parent Icon -->
+
                                 <component
-                                    :is="item.icon"
-                                    v-if="item.icon"
-                                    class="size-4 shrink-0"
+                                    :is="
+                                        item.icon
+                                    "
+                                    v-if="
+                                        item.icon
+                                    "
+                                    class="
+                                        size-4
+                                        shrink-0
+                                        !text-current
+                                    "
                                 />
 
                                 <!-- Parent Title -->
-                                <span class="min-w-0 flex-1 text-left">
-                                    {{ item.title }}
+
+                                <span
+                                    class="min-w-0 flex-1 text-left"
+                                >
+                                    {{
+                                        item.title
+                                    }}
                                 </span>
 
                                 <!-- Dropdown Arrow -->
+
                                 <ChevronRight
                                     class="
                                         ml-auto
                                         size-4
                                         shrink-0
+                                        !text-current
                                         transition-transform
                                         duration-200
                                         group-data-[state=open]/collapsible:rotate-90
@@ -107,48 +180,71 @@ function hasActiveChild(item: NavItem): boolean {
 
                         <CollapsibleContent>
                             <SidebarMenuSub
-                                class="group-data-[collapsible=icon]:hidden"
+                                class="
+                                    ml-4
+                                    border-white/15
+                                    pl-2
+                                    group-data-[collapsible=icon]:hidden
+                                "
                             >
                                 <SidebarMenuSubItem
                                     v-for="child in item.items"
-                                    :key="child.title"
+                                    :key="
+                                        child.title
+                                    "
                                     class="nav-wrap-sub-item"
                                 >
                                     <SidebarMenuSubButton
                                         as-child
-                                        :is-active="isItemActive(child)"
+                                        :is-active="
+                                            isItemActive(
+                                                child,
+                                            )
+                                        "
                                         class="
                                             nav-wrap-item
-                                            data-[active=true]:!bg-[#377EC0]
-                                            data-[active=true]:!text-white
-                                            hover:!bg-[#377EC0]/10
-                                            hover:!text-foreground
+                                            !min-h-9
+                                            !rounded-lg
+                                            !px-2.5
+                                            !text-slate-300
+                                            transition-all
+                                            duration-200
+                                            hover:!bg-white/10
+                                            hover:!text-white
+                                            data-[active=true]:!bg-[#377EC0]/30
+                                            data-[active=true]:!font-semibold
+                                            data-[active=true]:!text-blue-100
                                         "
                                     >
                                         <Link
-                                            :href="child.href"
-                                            class="flex w-full min-w-0 items-start gap-2"
+                                            :href="
+                                                child.href
+                                            "
+                                            class="flex w-full min-w-0 items-center gap-2.5"
                                         >
-                                            <!--
-                                                Use the custom child icon when
-                                                available. Otherwise, use a
-                                                circle as the default icon.
-                                            -->
+                                            <!-- Child Icon -->
+
                                             <component
-                                                :is="child.icon ?? Circle"
+                                                :is="
+                                                    child.icon ??
+                                                    Circle
+                                                "
                                                 class="
-                                                    mt-1
-                                                    size-3
+                                                    size-3.5
                                                     shrink-0
-                                                    text-[#377EC0]
+                                                    !text-current
+                                                    opacity-80
                                                 "
                                             />
 
                                             <!-- Child Title -->
+
                                             <span
-                                                class="min-w-0 flex-1 text-left"
+                                                class="min-w-0 flex-1 text-left leading-5"
                                             >
-                                                {{ child.title }}
+                                                {{
+                                                    child.title
+                                                }}
                                             </span>
                                         </Link>
                                     </SidebarMenuSubButton>
@@ -158,34 +254,62 @@ function hasActiveChild(item: NavItem): boolean {
                     </SidebarMenuItem>
                 </Collapsible>
 
-                <!-- NORMAL ITEM -->
+                <!-- Normal Item -->
+
                 <SidebarMenuItem v-else>
                     <SidebarMenuButton
                         as-child
-                        :tooltip="item.title"
-                        :is-active="isItemActive(item)"
+                        :tooltip="
+                            item.title
+                        "
+                        :is-active="
+                            isItemActive(
+                                item,
+                            )
+                        "
                         class="
                             nav-wrap-item
+                            !min-h-10
+                            !rounded-xl
+                            !px-3
+                            !text-slate-200
+                            transition-all
+                            duration-200
+                            hover:!bg-white/10
+                            hover:!text-white
                             data-[active=true]:!bg-[#377EC0]
+                            data-[active=true]:!font-semibold
                             data-[active=true]:!text-white
-                            hover:!bg-[#377EC0]/10
-                            hover:!text-foreground
                         "
                     >
                         <Link
                             :href="item.href"
-                            class="flex w-full min-w-0 items-start gap-2"
+                            class="flex w-full min-w-0 items-center gap-2.5"
                         >
-                            <!-- Normal Item Icon -->
+                            <!-- Item Icon -->
+
                             <component
-                                :is="item.icon"
-                                v-if="item.icon"
-                                class="size-4 shrink-0"
+                                :is="
+                                    item.icon
+                                "
+                                v-if="
+                                    item.icon
+                                "
+                                class="
+                                    size-4
+                                    shrink-0
+                                    !text-current
+                                "
                             />
 
-                            <!-- Normal Item Title -->
-                            <span class="min-w-0 flex-1 text-left">
-                                {{ item.title }}
+                            <!-- Item Title -->
+
+                            <span
+                                class="min-w-0 flex-1 text-left leading-5"
+                            >
+                                {{
+                                    item.title
+                                }}
                             </span>
                         </Link>
                     </SidebarMenuButton>

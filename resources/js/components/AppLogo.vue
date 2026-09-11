@@ -9,7 +9,7 @@ const name = usePage().props.name;
         <img
             src="/images/iris.png"
             alt="IRIS"
-            class="h-24 w-24 object-contain"
+            class="h-full w-full object-contain"
         />
     </div>
 </template>
