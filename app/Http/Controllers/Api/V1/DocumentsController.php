@@ -97,27 +97,6 @@ class DocumentsController extends Controller
                 '=',
                 'file_upload.id',
             )
-            ->where(function ($query): void {
-                $query
-                    ->where(
-                        'file_upload.sto_validated',
-                        '!=',
-                        'Y',
-                    )
-                    ->orWhere(
-                        'file_upload.sto_validated',
-                        '=',
-                        '',
-                    )
-                    ->orWhereNull(
-                        'file_upload.sto_validated',
-                    );
-            })
-            ->where(
-                'file_upload.for_app',
-                '=',
-                'Y',
-            )
             ->select([
                 'file_upload.id',
                 'file_upload.owner_id',
@@ -142,30 +121,30 @@ class DocumentsController extends Controller
                 'uploaded_files.filenames',
             ]);
 
-            if (! $request->boolean('monitoring')) {
-                $query
-                    ->where(function ($query): void {
-                        $query
-                            ->where(
-                                'file_upload.sto_validated',
-                                '!=',
-                                'Y',
-                            )
-                            ->orWhere(
-                                'file_upload.sto_validated',
-                                '=',
-                                '',
-                            )
-                            ->orWhereNull(
-                                'file_upload.sto_validated',
-                            );
-                    })
-                    ->where(
-                        'file_upload.for_app',
-                        '=',
-                        'Y',
-                    );
-                }
+        if (! $request->boolean('monitoring')) {
+            $query
+                ->where(function ($query): void {
+                    $query
+                        ->where(
+                            'file_upload.sto_validated',
+                            '!=',
+                            'Y',
+                        )
+                        ->orWhere(
+                            'file_upload.sto_validated',
+                            '=',
+                            '',
+                        )
+                        ->orWhereNull(
+                            'file_upload.sto_validated',
+                        );
+                })
+                ->where(
+                    'file_upload.for_app',
+                    '=',
+                    'Y',
+                );
+        }
         $result = $this->datatableService->paginate(
             query: $query,
             request: $request,
