@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\V1\TheoreticalBatchController;
 use App\Http\Controllers\Api\V1\TheoreticalExternalBatchController;
 use App\Http\Controllers\Api\V1\PracticalInternalBatchController;
 use App\Http\Controllers\Api\V1\PracticalExternalBatchController;
+use App\Http\Controllers\Api\V1\ReportsController;
 
 
 use Illuminate\Support\Facades\Route;
@@ -120,6 +121,20 @@ Route::middleware(['auth'])->group(function (): void {
         'monitoring/otg-updates/Index',
     )->name(
         'monitoring.otg-updates',
+    );
+
+    Route::inertia(
+        '/monitoring/daily-journals',
+        'dashboard/daily-journals/Index',
+    )->name(
+        'monitoring.daily-journals',
+    );
+
+    Route::inertia(
+        '/monitoring/reports',
+        'monitoring/reports/Index',
+    )->name(
+        'monitoring.reports',
     );
 
     /*
@@ -335,6 +350,32 @@ Route::middleware(['auth'])->group(function (): void {
         ],
     )->name(
         'api.v1.dashboard.activity-updates.revise',
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Monitoring Reports
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/api/v1/monitoring/reports/options',
+        [
+            ReportsController::class,
+            'options',
+        ],
+    )->name(
+        'api.v1.monitoring.reports.options',
+    );
+
+    Route::get(
+        '/api/v1/monitoring/reports',
+        [
+            ReportsController::class,
+            'index',
+        ],
+    )->name(
+        'api.v1.monitoring.reports.index',
     );
 
     /*

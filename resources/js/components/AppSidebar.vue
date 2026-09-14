@@ -140,7 +140,7 @@ const mainNavItems: NavItem[] = [
             {
                 title: 'Daily Journal',
                 href:
-                    '/dashboard/daily-journals',
+                    '/monitoring/daily-journals',
                 icon: Notebook,
             },
             {
