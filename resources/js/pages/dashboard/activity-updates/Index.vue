@@ -10,6 +10,8 @@ import Dialog from 'primevue/dialog';
 import Message from 'primevue/message';
 import PrimeTag from 'primevue/tag';
 import Textarea from 'primevue/textarea';
+import Toast from 'primevue/toast';
+import { useToast } from 'primevue/usetoast';
 import {
     computed,
     onBeforeUnmount,
@@ -75,6 +77,7 @@ type DataTableSortEvent = {
 };
 
 const activities = ref<DataTableRow[]>([]);
+const toast = useToast();
 const loading = ref(false);
 const actionLoading = ref(false);
 
@@ -98,7 +101,6 @@ const reviseDialogVisible = ref(false);
 const reviseRemarks = ref('');
 const reviseError = ref('');
 
-const successMessage = ref('');
 const errorMessage = ref('');
 
 let requestController: AbortController | null =
@@ -341,7 +343,6 @@ function handleAction(
     action: string,
     activity: DataTableRow,
 ): void {
-    successMessage.value = '';
     errorMessage.value = '';
 
     if (action === 'no-file') {
@@ -451,9 +452,14 @@ async function verifyActivity(): Promise<void> {
             },
         );
 
-        successMessage.value =
-            response.data.message ||
-            'The activity has been validated.';
+        toast.add({
+            severity: 'success',
+            summary: 'Activity Verified',
+            detail:
+                response.data.message ||
+                'The activity has been validated.',
+            life: 4000,
+        });
 
         verifyDialogVisible.value = false;
         selectedActivity.value = null;
@@ -530,9 +536,14 @@ async function reviseActivity(): Promise<void> {
             },
         );
 
-        successMessage.value =
-            response.data.message ||
-            'The activity has been saved.';
+        toast.add({
+            severity: 'warn',
+            summary: 'Revision Requested',
+            detail:
+                response.data.message ||
+                'The activity has been returned for revision.',
+            life: 4000,
+        });
 
         reviseDialogVisible.value = false;
         reviseRemarks.value = '';
@@ -781,18 +792,11 @@ onBeforeUnmount(() => {
 <template>
     <Head title="Activity Verification" />
 
+    <Toast position="top-right" />
+
     <div
         class="flex h-full min-h-0 flex-1 flex-col gap-4 overflow-y-auto bg-[#F8FAFC] p-4 lg:p-5"
     >
-        <Message
-            v-if="successMessage"
-            severity="success"
-            closable
-            @close="successMessage = ''"
-        >
-            {{ successMessage }}
-        </Message>
-
         <Message
             v-if="errorMessage"
             severity="error"

@@ -698,15 +698,28 @@ function handleStudentAction(
         >
             <!-- School Logo -->
 
-            <div
-                class="flex size-24 shrink-0 items-center justify-center sm:size-28 lg:size-32"
-            >
-                <img
-                    :src="school.logo"
-                    :alt="school.name"
-                    class="h-full w-full object-contain drop-shadow-xl"
-                />
-            </div>
+<div
+    class="
+        flex
+        size-24
+        shrink-0
+        items-center
+        justify-center
+        overflow-hidden
+        rounded-2xl
+        bg-white
+        p-3
+        shadow-lg
+        sm:size-28
+        lg:size-32
+    "
+>
+    <img
+        :src="school.logo"
+        :alt="school.name"
+        class="h-full w-full object-contain"
+    />
+</div>
 
             <!-- School Information -->
 

@@ -2,6 +2,7 @@ import { createInertiaApp } from '@inertiajs/vue3';
 
 import Aura from '@primeuix/themes/aura';
 import PrimeVue from 'primevue/config';
+import ToastService from 'primevue/toastservice';
 import 'primeicons/primeicons.css';
 
 import { initializeTheme } from '@/composables/useAppearance';
@@ -10,7 +11,8 @@ import AuthLayout from '@/layouts/AuthLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
 
-const appName = import.meta.env.VITE_APP_NAME || 'IRIS - SAM';
+const appName =
+    import.meta.env.VITE_APP_NAME || 'IRIS - SAM';
 
 createInertiaApp({
     title: (title) => {
@@ -44,14 +46,13 @@ createInertiaApp({
                 preset: Aura,
 
                 options: {
-                    /**
-                     * PrimeVue will use dark mode only when the
-                     * Laravel starter kit adds the .dark class.
-                     */
                     darkModeSelector: '.dark',
                 },
             },
         });
+
+        // Add this:
+        app.use(ToastService);
     },
 
     progress: {

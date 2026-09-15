@@ -387,6 +387,56 @@ return [
         ],
 
 
+                /*
+         * UPHSD school connection.
+         */
+        'uph' => [
+            'driver' => 'mysql',
+            'url' => env('UPHSD_DB_URL'),
+            'host' => env(
+                'UPHSD_DB_HOST',
+                '127.0.0.1',
+            ),
+            'port' => env(
+                'UPHSD_DB_PORT',
+                '3306',
+            ),
+            'database' => env(
+                'UPHSD_DB_DATABASE',
+            ),
+            'username' => env(
+                'UPHSD_DB_USERNAME',
+            ),
+            'password' => env(
+                'UPHSD_DB_PASSWORD',
+                '',
+            ),
+            'unix_socket' => env(
+                'UPHSD_DB_SOCKET',
+                '',
+            ),
+            'charset' => env(
+                'UPHSD_DB_CHARSET',
+                'utf8mb4',
+            ),
+            'collation' => env(
+                'UPHSD_DB_COLLATION',
+                'utf8mb4_unicode_ci',
+            ),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql')
+                ? array_filter([
+                    Mysql::ATTR_SSL_CA => env(
+                        'UPHSD_MYSQL_ATTR_SSL_CA',
+                    ),
+                ])
+                : [],
+        ],
+
+
         /*
          * Optional standard MariaDB connection.
          */

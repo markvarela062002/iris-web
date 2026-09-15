@@ -7,6 +7,8 @@ import Dialog from 'primevue/dialog';
 import Message from 'primevue/message';
 import PrimeTag from 'primevue/tag';
 import Textarea from 'primevue/textarea';
+import Toast from 'primevue/toast';
+import { useToast } from 'primevue/usetoast';
 import {
     computed,
     onBeforeUnmount,
@@ -78,6 +80,7 @@ type DataTableSortEvent = {
 };
 
 const documents = ref<DataTableRow[]>([]);
+const toast = useToast();
 
 const loading = ref(false);
 const actionLoading = ref(false);
@@ -102,7 +105,6 @@ const reviseDialogVisible = ref(false);
 const reviseRemarks = ref('');
 const reviseError = ref('');
 
-const successMessage = ref('');
 const errorMessage = ref('');
 
 let requestController:
@@ -419,7 +421,6 @@ function handleAction(
     action: string,
     document: DataTableRow,
 ): void {
-    successMessage.value = '';
     errorMessage.value = '';
 
     /*
@@ -550,9 +551,14 @@ async function verifyDocument(): Promise<void> {
                 },
             );
 
-        successMessage.value =
-            response.data.message ||
-            'The file has been validated.';
+        toast.add({
+            severity: 'success',
+            summary: 'Document Verified',
+            detail:
+                response.data.message ||
+                'The document has been validated.',
+            life: 4000,
+        });
 
         verifyDialogVisible.value =
             false;
@@ -638,9 +644,14 @@ async function reviseDocument(): Promise<void> {
                 },
             );
 
-        successMessage.value =
-            response.data.message ||
-            'The submitted record has been saved.';
+        toast.add({
+            severity: 'warn',
+            summary: 'Revision Requested',
+            detail:
+                response.data.message ||
+                'The document has been returned for revision.',
+            life: 4000,
+        });
 
         reviseDialogVisible.value =
             false;
@@ -1041,20 +1052,11 @@ onBeforeUnmount(() => {
 <template>
     <Head title="Documents Verification" />
 
+    <Toast position="top-right" />
+
     <div
         class="flex h-full min-h-0 flex-1 flex-col gap-4 overflow-y-auto bg-[#F8FAFC] p-4 lg:p-5"
     >
-        <!-- SUCCESS MESSAGE -->
-
-        <Message
-            v-if="successMessage"
-            severity="success"
-            closable
-            @close="successMessage = ''"
-        >
-            {{ successMessage }}
-        </Message>
-
         <!-- ERROR MESSAGE -->
 
         <Message
