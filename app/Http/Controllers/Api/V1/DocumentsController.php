@@ -17,9 +17,7 @@ class DocumentsController extends Controller
     ) {
     }
 
-    /**
-     * Return documents waiting for verification.
-     */
+
     public function index(Request $request): JsonResponse
     {
         $db = $this->resolveSchoolConnection($request);
