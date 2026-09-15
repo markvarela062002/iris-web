@@ -20,10 +20,20 @@ class OtgController extends Controller
     }
 
     /**
-     * Return completed OTG tasks for the selected month and year.
+     * Return OTG task records.
+     *
+     * Dashboard:
+     * - completed tasks for the selected month and year
+     *
+     * Monitoring:
+     * - recent completed OTG submissions
      */
-    public function index(Request $request): JsonResponse
-    {
+    public function index(
+        Request $request,
+    ): JsonResponse {
+        $isMonitoring =
+            $request->boolean('monitoring');
+
         $validated = $request->validate([
             'month' => [
                 'nullable',
@@ -39,11 +49,13 @@ class OtgController extends Controller
         ]);
 
         $month = (int) (
-            $validated['month'] ?? now()->month
+            $validated['month'] ??
+            now()->month
         );
 
         $year = (int) (
-            $validated['year'] ?? now()->year
+            $validated['year'] ??
+            now()->year
         );
 
         $fromDate = CarbonImmutable::create(
@@ -52,29 +64,32 @@ class OtgController extends Controller
             day: 1,
         )->startOfDay();
 
-        /*
-         * Use an exclusive next-month boundary so records from the
-         * entire final day are included when completed is a datetime.
-         */
-        $nextMonth = $fromDate->addMonth();
+        $nextMonth =
+            $fromDate->addMonth();
 
-        $toDate = $nextMonth->subDay();
+        $toDate =
+            $nextMonth->subDay();
 
-        $db = $this->resolveSchoolConnection($request);
+        $db =
+            $this->resolveSchoolConnection(
+                $request,
+            );
 
         if ($db instanceof JsonResponse) {
             return $db;
         }
 
         /*
-         * Legacy conditions:
-         *
-         * completed is within the selected month
-         * month_no != ''
-         * not_app != 'Y'
-         * has at least one person_task_file record
-         * has at least one person_task_proof record
-         */
+        * Base OTG query shared by Dashboard
+        * and Monitoring.
+        *
+        * A completed OTG task must have:
+        * - completion date
+        * - month onboard
+        * - Objective Evidence
+        * - Proof of Assessment
+        * - not marked N/A
+        */
         $query = $db
             ->table('person_task')
             ->leftJoin(
@@ -89,15 +104,8 @@ class OtgController extends Controller
                 '=',
                 'person_task.task_id',
             )
-            ->where(
+            ->whereNotNull(
                 'person_task.completed',
-                '>=',
-                $fromDate->format('Y-m-d H:i:s'),
-            )
-            ->where(
-                'person_task.completed',
-                '<',
-                $nextMonth->format('Y-m-d H:i:s'),
             )
             ->where(
                 'person_task.month_no',
@@ -109,24 +117,32 @@ class OtgController extends Controller
                 '!=',
                 'Y',
             )
-            ->whereExists(function ($query): void {
-                $query
-                    ->selectRaw('1')
-                    ->from('person_task_file')
-                    ->whereColumn(
-                        'person_task_file.person_task_id',
-                        'person_task.id',
-                    );
-            })
-            ->whereExists(function ($query): void {
-                $query
-                    ->selectRaw('1')
-                    ->from('person_task_proof')
-                    ->whereColumn(
-                        'person_task_proof.person_task_id',
-                        'person_task.id',
-                    );
-            })
+            ->whereExists(
+                function ($query): void {
+                    $query
+                        ->selectRaw('1')
+                        ->from(
+                            'person_task_file',
+                        )
+                        ->whereColumn(
+                            'person_task_file.person_task_id',
+                            'person_task.id',
+                        );
+                },
+            )
+            ->whereExists(
+                function ($query): void {
+                    $query
+                        ->selectRaw('1')
+                        ->from(
+                            'person_task_proof',
+                        )
+                        ->whereColumn(
+                            'person_task_proof.person_task_id',
+                            'person_task.id',
+                        );
+                },
+            )
             ->select([
                 'person_task.id',
                 'person_task.person_id',
@@ -147,50 +163,112 @@ class OtgController extends Controller
                 'task.desc_task',
             ]);
 
-        $result = $this->datatableService->paginate(
-            query: $query,
-            request: $request,
-            searchableColumns: [
-                'person.code_person',
-                'person.school_id_no',
-                'person.fname',
-                'person.mname',
-                'person.lname',
-                'person.gender',
-                'person.dept',
-                'task.ref_no',
-                'task.desc_task',
-                'person_task.completed',
-            ],
-            sortableColumns: [
-                'completed' => 'person_task.completed',
-                'code_person' => 'person.code_person',
-                'school_id_no' => 'person.school_id_no',
-                'fname' => 'person.fname',
-                'lname' => 'person.lname',
-                'dept' => 'person.dept',
-                'ref_no' => 'task.ref_no',
-                'desc_task' => 'task.desc_task',
-            ],
-            defaultSortColumn: 'completed',
-            defaultSortDirection: 'asc',
-        );
+        /*
+        * Dashboard only:
+        * limit records to the selected month/year.
+        *
+        * Monitoring skips this so the STO can see
+        * recent OTG submissions across all dates.
+        */
+        if (! $isMonitoring) {
+            $query
+                ->where(
+                    'person_task.completed',
+                    '>=',
+                    $fromDate->format(
+                        'Y-m-d H:i:s',
+                    ),
+                )
+                ->where(
+                    'person_task.completed',
+                    '<',
+                    $nextMonth->format(
+                        'Y-m-d H:i:s',
+                    ),
+                );
+        }
 
-        $result = $this->datatableService->addRowNumbers(
-            response: $result,
-            key: 'index',
-        );
+        $result =
+            $this->datatableService->paginate(
+                query: $query,
+                request: $request,
+
+                searchableColumns: [
+                    'person.code_person',
+                    'person.school_id_no',
+                    'person.fname',
+                    'person.mname',
+                    'person.lname',
+                    'person.gender',
+                    'person.dept',
+                    'task.ref_no',
+                    'task.desc_task',
+                    'person_task.completed',
+                ],
+
+                sortableColumns: [
+                    'completed' =>
+                        'person_task.completed',
+
+                    'code_person' =>
+                        'person.code_person',
+
+                    'school_id_no' =>
+                        'person.school_id_no',
+
+                    'fname' =>
+                        'person.fname',
+
+                    'lname' =>
+                        'person.lname',
+
+                    'dept' =>
+                        'person.dept',
+
+                    'ref_no' =>
+                        'task.ref_no',
+
+                    'desc_task' =>
+                        'task.desc_task',
+
+                    'month_no' =>
+                        'person_task.month_no',
+                ],
+
+                defaultSortColumn:
+                    'completed',
+
+                defaultSortDirection:
+                    $isMonitoring
+                        ? 'desc'
+                        : 'asc',
+            );
+
+        $result =
+            $this->datatableService
+                ->addRowNumbers(
+                    response: $result,
+                    key: 'index',
+                );
 
         $result['filters'] = [
             'month' => $month,
             'year' => $year,
-            'fromDate' => $fromDate->format('Y-m-d'),
-            'toDate' => $toDate->format('Y-m-d'),
+            'fromDate' =>
+                $fromDate->format(
+                    'Y-m-d',
+                ),
+            'toDate' =>
+                $toDate->format(
+                    'Y-m-d',
+                ),
         ];
 
-        return response()->json($result);
+        return response()->json(
+            $result,
+        );
     }
-
+    
     /**
      * Resolve the school database selected during login.
      */

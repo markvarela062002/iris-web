@@ -394,9 +394,6 @@ class ActivitiesController extends Controller
         ]);
     }
 
-    /**
-     * Resolve the school database selected during login.
-     */
     private function resolveSchoolConnection(
         Request $request,
     ): ConnectionInterface|JsonResponse {
@@ -412,7 +409,7 @@ class ActivitiesController extends Controller
             return response()->json(
                 [
                     'message' =>
-                        'No school database has been selected.',
+                        'No school has been selected.',
                 ],
                 Response::HTTP_FORBIDDEN,
             );
@@ -448,7 +445,6 @@ class ActivitiesController extends Controller
                 Response::HTTP_FORBIDDEN,
             );
         }
-
         $configuredCode = strtoupper(
             trim(
                 (string) (
@@ -457,7 +453,6 @@ class ActivitiesController extends Controller
                 ),
             ),
         );
-
         if (
             $configuredCode === '' ||
             !hash_equals(
@@ -526,4 +521,4 @@ class ActivitiesController extends Controller
             $connection,
         );
     }
-}
+}   

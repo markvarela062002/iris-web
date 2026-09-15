@@ -134,13 +134,13 @@ const mainNavItems: NavItem[] = [
                 title:
                     'Training Record Book (OTG)',
                 href:
-                    '/dashboard/otg-updates',
+                    '/monitoring/otg-updates',
                 icon: BookOpen,
             },
             {
                 title: 'Daily Journal',
                 href:
-                    '/dashboard/daily-journals',
+                    '/monitoring/daily-journals',
                 icon: Notebook,
             },
             {
