@@ -84,10 +84,8 @@ const mainNavItems: NavItem[] = [
         icon: ClipboardCheck,
         items: [
             {
-                title:
-                    'Theoretical - Internal',
-                href:
-                    '/dashboard/theoretical-internal',
+                title: 'Theoretical - Internal',
+                href: '/dashboard/theoretical-internal',
                 icon: BookOpen,
             },
             {
@@ -209,15 +207,16 @@ const mainNavItems: NavItem[] = [
         icon: Settings,
         items: [
             {
-                title: 'Exam Sessions',
+                title:
+                    'Exam Sessions',
                 href:
-                    '/assessment-setup/exam-sessions',
-                icon: Calendar,
+                    '/assessment-setup/exam-session',
+                icon: ClipboardCheck,
             },
             {
                 title: 'Exam Packages',
                 href:
-                    '/assessment-setup/exam-packages',
+                    '/assessment-setup/exam-package',
                 icon: Package,
             },
             {
@@ -249,14 +248,14 @@ const mainNavItems: NavItem[] = [
             {
                 title: 'Rubric Setup',
                 href:
-                    '/assessment-setup/rubric',
+                    '/assessment-setup/rubric-setup',
                 icon: List,
             },
             {
                 title:
                     'Practical Assessment Setup',
                 href:
-                    '/assessment-setup/practical',
+                    '/assessment-setup/practical-assessment-setup',
                 icon: ClipboardCheck,
             },
         ],

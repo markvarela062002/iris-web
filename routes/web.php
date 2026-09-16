@@ -16,6 +16,11 @@ use App\Http\Controllers\Api\V1\TheoreticalExternalBatchController;
 use App\Http\Controllers\Api\V1\PracticalInternalBatchController;
 use App\Http\Controllers\Api\V1\PracticalExternalBatchController;
 use App\Http\Controllers\Api\V1\ReportsController;
+use App\Http\Controllers\Api\V1\ExamSessionController;
+use App\Http\Controllers\Api\V1\ExamPackageController;
+use App\Http\Controllers\Api\V1\PracticalAssessmentSetupController;
+use App\Http\Controllers\Api\V1\RubricSetupController;
+use App\Http\Controllers\Api\V1\QuestionBankController;
 
 
 use Illuminate\Support\Facades\Route;
@@ -36,6 +41,28 @@ Route::middleware(['auth'])->group(function (): void {
         '/dashboard',
         'Dashboard',
     )->name('dashboard');
+
+    Route::inertia(
+        '/dashboard/theoretical-internal',
+        'dashboard/theoretical-internal/datatable/Index',
+    )->name('dashboard.theoretical-internal');
+
+    Route::inertia(
+        '/dashboard/theoretical-external',
+        'dashboard/theoretical-external/datatable/Index',
+    )->name('dashboard.theoretical-external');
+
+        Route::inertia(
+        '/dashboard/practical-internal',
+        'dashboard/practical-internal/datatable/Index',
+    )->name('dashboard.practical-internal');
+
+        Route::inertia(
+        '/dashboard/practical-external',
+        'dashboard/practical-external/datatable/Index',
+    )->name('dashboard.practical-external');
+
+
 
     Route::inertia(
         '/dashboard/activity-updates',
@@ -71,7 +98,14 @@ Route::middleware(['auth'])->group(function (): void {
         'dashboard.theoretical-external.batch',
     );
 
-    Route::inertia(
+        Route::inertia(
+        '/dashboard/theoretical-internal/batch',
+        'dashboard/theoretical-internal/batch/Index',
+    )->name(
+        'dashboard.theoretical-internal.batch',
+    );
+
+    Route::inertia( 
         '/dashboard/practical-external/batch',
         'dashboard/practical-external/batch/Index',
     )->name('dashboard.practical-external.batch');
@@ -136,6 +170,12 @@ Route::middleware(['auth'])->group(function (): void {
     )->name(
         'monitoring.reports',
     );
+
+    Route::inertia(
+    '/assessment-setup/question-bank',
+    'assessment-setup/question-bank/datatable/Index',
+)->name('assessment-setup.question-bank');
+
 
     /*
     |--------------------------------------------------------------------------
@@ -234,7 +274,27 @@ Route::middleware(['auth'])->group(function (): void {
     );
 
 
+    Route::inertia(
+        '/assessment-setup/exam-session',
+        'assessment-setup/exam-session/datatable/Index',
+    )->name(
+        'assessment-setup.exam-session',
+    );
 
+    Route::inertia(
+    '/assessment-setup/exam-package',
+    'assessment-setup/exam-package/datatable/Index',
+)->name('assessment-setup.exam-package');
+
+Route::inertia(
+    '/assessment-setup/practical-assessment-setup',
+    'assessment-setup/practical-assessment-setup/datatable/Index',
+)->name('assessment-setup.practical-assessment-setup');
+
+Route::inertia(
+    '/assessment-setup/rubric-setup',
+    'assessment-setup/rubric-setup/datatable/Index',
+)->name('assessment-setup.rubric-setup');
 
     /*
     |--------------------------------------------------------------------------
@@ -869,6 +929,88 @@ Route::get(
 
 });
 
+Route::get(
+    '/api/v1/assessment-setup/datatable/exam-sessions',
+    [ExamSessionController::class, 'index'],
+)->name('api.v1.assessment-setup.datatable.exam-sessions');
 
+Route::post(
+    '/api/v1/assessment-setup/exam-sessions',
+    [ExamSessionController::class, 'store'],
+)->name('api.v1.assessment-setup.exam-sessions.store');
+
+Route::get(
+    '/api/v1/assessment-setup/exam-sessions/{examSessionId}',
+    [ExamSessionController::class, 'show'],
+)->name('api.v1.assessment-setup.exam-sessions.show');
+
+Route::put(
+    '/api/v1/assessment-setup/exam-sessions/{examSessionId}',
+    [ExamSessionController::class, 'update'],
+)->name('api.v1.assessment-setup.exam-sessions.update');
+
+Route::delete(
+    '/api/v1/assessment-setup/exam-sessions/{examSessionId}',
+    [ExamSessionController::class, 'destroy'],
+)->name('api.v1.assessment-setup.exam-sessions.destroy');
+
+Route::get(
+    '/api/v1/assessment-setup/datatable/exam-packages',
+    [ExamPackageController::class, 'index'],
+)->name('api.v1.assessment-setup.datatable.exam-packages');
+
+Route::post('/api/v1/assessment-setup/exam-packages', [ExamPackageController::class, 'store']);
+Route::get('/api/v1/assessment-setup/exam-packages/{packageId}', [ExamPackageController::class, 'show']);
+Route::put('/api/v1/assessment-setup/exam-packages/{packageId}', [ExamPackageController::class, 'update']);
+Route::delete('/api/v1/assessment-setup/exam-packages/{packageId}', [ExamPackageController::class, 'destroy']);
+
+Route::get('/api/v1/assessment-setup/exam-packages/{packageId}/subjects', [ExamPackageController::class, 'subjects']);
+Route::post('/api/v1/assessment-setup/exam-packages/{packageId}/subjects', [ExamPackageController::class, 'storeSubject']);
+Route::put('/api/v1/assessment-setup/exam-packages/{packageId}/subjects/{subjectId}', [ExamPackageController::class, 'updateSubject']);
+Route::delete('/api/v1/assessment-setup/exam-packages/{packageId}/subjects/{subjectId}', [ExamPackageController::class, 'destroySubject']);
+
+Route::get('/api/v1/assessment-setup/datatable/practical-assessments', [PracticalAssessmentSetupController::class, 'index']);
+Route::get('/api/v1/assessment-setup/practical-assessments/options', [PracticalAssessmentSetupController::class, 'options']);
+Route::post('/api/v1/assessment-setup/practical-assessments', [PracticalAssessmentSetupController::class, 'store']);
+Route::put('/api/v1/assessment-setup/practical-assessments/{assessmentId}', [PracticalAssessmentSetupController::class, 'update']);
+Route::delete('/api/v1/assessment-setup/practical-assessments/{assessmentId}', [PracticalAssessmentSetupController::class, 'destroy']);
+
+Route::get('/api/v1/assessment-setup/practical-assessments/{assessmentId}/items', [PracticalAssessmentSetupController::class, 'items']);
+Route::post('/api/v1/assessment-setup/practical-assessments/{assessmentId}/items', [PracticalAssessmentSetupController::class, 'storeItem']);
+Route::put('/api/v1/assessment-setup/practical-assessments/{assessmentId}/items/{itemId}', [PracticalAssessmentSetupController::class, 'updateItem']);
+Route::delete('/api/v1/assessment-setup/practical-assessments/{assessmentId}/items/{itemId}', [PracticalAssessmentSetupController::class, 'destroyItem']);
+
+Route::post('/api/v1/assessment-setup/practical-assessments/item-files', [PracticalAssessmentSetupController::class, 'uploadItemFile']);
+Route::get('/api/v1/assessment-setup/practical-assessments/{assessmentId}/attachments', [PracticalAssessmentSetupController::class, 'attachments']);
+Route::post('/api/v1/assessment-setup/practical-assessments/{assessmentId}/attachments', [PracticalAssessmentSetupController::class, 'storeAttachment']);
+Route::delete('/api/v1/assessment-setup/practical-assessments/{assessmentId}/attachments/{attachmentId}', [PracticalAssessmentSetupController::class, 'destroyAttachment']);
+
+Route::get('/api/v1/assessment-setup/datatable/rubrics', [RubricSetupController::class, 'index']);
+Route::post('/api/v1/assessment-setup/rubrics', [RubricSetupController::class, 'store']);
+Route::put('/api/v1/assessment-setup/rubrics/{rubricId}', [RubricSetupController::class, 'update']);
+Route::delete('/api/v1/assessment-setup/rubrics/{rubricId}', [RubricSetupController::class, 'destroy']);
+
+Route::get('/api/v1/assessment-setup/rubrics/{rubricId}/criteria', [RubricSetupController::class, 'criteria']);
+Route::post('/api/v1/assessment-setup/rubrics/{rubricId}/criteria', [RubricSetupController::class, 'storeCriterion']);
+Route::put('/api/v1/assessment-setup/rubrics/{rubricId}/criteria/{criterionId}', [RubricSetupController::class, 'updateCriterion']);
+Route::delete('/api/v1/assessment-setup/rubrics/{rubricId}/criteria/{criterionId}', [RubricSetupController::class, 'destroyCriterion']);
+
+Route::post('/api/v1/assessment-setup/rubrics/{rubricId}/criteria/{criterionId}/levels', [RubricSetupController::class, 'storeLevel']);
+Route::put('/api/v1/assessment-setup/rubrics/{rubricId}/criteria/{criterionId}/levels/{levelId}', [RubricSetupController::class, 'updateLevel']);
+Route::delete('/api/v1/assessment-setup/rubrics/{rubricId}/criteria/{criterionId}/levels/{levelId}', [RubricSetupController::class, 'destroyLevel']);
+
+Route::get('/api/v1/assessment-setup/datatable/questions', [QuestionBankController::class, 'index']);
+Route::get('/api/v1/assessment-setup/questions/options', [QuestionBankController::class, 'options']);
+Route::get('/api/v1/assessment-setup/questions/packages/{courseId}/subjects', [QuestionBankController::class, 'subjects']);
+Route::post('/api/v1/assessment-setup/questions/images', [QuestionBankController::class, 'uploadImage']);
+
+Route::post('/api/v1/assessment-setup/questions', [QuestionBankController::class, 'store']);
+Route::put('/api/v1/assessment-setup/questions/{questionId}', [QuestionBankController::class, 'update']);
+Route::delete('/api/v1/assessment-setup/questions/{questionId}', [QuestionBankController::class, 'destroy']);
+
+Route::get('/api/v1/assessment-setup/questions/{questionId}/answers', [QuestionBankController::class, 'answers']);
+Route::post('/api/v1/assessment-setup/questions/{questionId}/answers', [QuestionBankController::class, 'storeAnswer']);
+Route::put('/api/v1/assessment-setup/questions/{questionId}/answers/{answerId}', [QuestionBankController::class, 'updateAnswer']);
+Route::delete('/api/v1/assessment-setup/questions/{questionId}/answers/{answerId}', [QuestionBankController::class, 'destroyAnswer']);
 
 require __DIR__.'/settings.php';
