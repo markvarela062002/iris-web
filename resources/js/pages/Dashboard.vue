@@ -18,6 +18,9 @@ import type {
     SharedData,
 } from '@/types';
 
+import Chart from 'primevue/chart';
+import type { ChartData, ChartOptions } from 'chart.js';
+
 defineOptions({
     inheritAttrs: false,
     layout: {
@@ -91,6 +94,85 @@ const currentDate = ref('');
 const currentTime = ref('');
 
 let clockInterval: ReturnType<typeof setInterval> | null = null;
+
+const reportYear = ref(new Date().getFullYear());
+
+const reportYears = Array.from(
+    { length: 10 },
+    (_, index) => new Date().getFullYear() - index,
+);
+
+const reportLoading = ref(false);
+const reportError = ref('');
+
+const yearlyChartData = ref<ChartData<'bar'>>({
+    labels: [],
+    datasets: [],
+});
+
+const yearlyChartOptions: ChartOptions<'bar'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: {
+            position: 'bottom',
+        },
+    },
+    scales: {
+        x: {
+            grid: {
+                display: false,
+            },
+        },
+        y: {
+            beginAtZero: true,
+            ticks: {
+                precision: 0,
+            },
+        },
+    },
+};
+
+let reportRequestController: AbortController | null = null;
+
+async function loadYearlyReport(): Promise<void> {
+    reportRequestController?.abort();
+
+    const controller = new AbortController();
+    reportRequestController = controller;
+
+    reportLoading.value = true;
+    reportError.value = '';
+
+    try {
+        const response = await axios.get<{
+            chart: ChartData<'bar'>;
+        }>('/api/v1/dashboard/reports/yearly', {
+            signal: controller.signal,
+            params: {
+                year: reportYear.value,
+            },
+            headers: {
+                Accept: 'application/json',
+            },
+        });
+
+        yearlyChartData.value = response.data.chart;
+    } catch (error: unknown) {
+        if (axios.isCancel(error)) return;
+
+        reportError.value = axios.isAxiosError(error)
+            ? String(
+                  error.response?.data?.message ??
+                      'Unable to load the yearly report.',
+              )
+            : 'Unable to load the yearly report.';
+    } finally {
+        if (reportRequestController === controller) {
+            reportLoading.value = false;
+        }
+    }
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -469,6 +551,7 @@ onMounted(() => {
     updatePhilippineTime();
 
     void loadStudents(1, true);
+    void loadYearlyReport();
 
     clockInterval = setInterval(() => {
         updatePhilippineTime();
@@ -481,6 +564,7 @@ onBeforeUnmount(() => {
     }
 
     studentRequestController?.abort();
+    reportRequestController?.abort();
 });
 
 /*
@@ -944,6 +1028,73 @@ function handleStudentAction(
         </template>
     </Card>
 </div>
+
+<Card>
+    <template #content>
+        <div
+            class="mb-6 flex flex-wrap items-center justify-between gap-4"
+        >
+            <div class="flex items-center gap-3">
+                <div
+                    class="flex size-14 shrink-0 items-center justify-center rounded-xl bg-[#21365A] text-white"
+                >
+                    <i class="pi pi-chart-bar text-2xl" />
+                </div>
+
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800">
+                        Yearly Activity Report
+                    </h2>
+
+                    <p class="text-sm text-slate-500">
+                        Monthly activities, uploaded documents, otg
+                        and daily journals.
+                    </p>
+                </div>
+            </div>
+
+            <Select
+                v-model="reportYear"
+                :options="reportYears"
+                :disabled="reportLoading"
+                class="w-32"
+                aria-label="Report year"
+                @change="loadYearlyReport"
+            />
+        </div>
+
+        <div
+            v-if="reportLoading"
+            class="flex h-96 items-center justify-center gap-2 text-slate-500"
+        >
+            <i class="pi pi-spin pi-spinner" />
+            Loading yearly report…
+        </div>
+
+        <div
+            v-else-if="reportError"
+            class="rounded-xl bg-red-50 p-4 text-red-700"
+        >
+            {{ reportError }}
+
+            <Button
+                label="Retry"
+                icon="pi pi-refresh"
+                severity="danger"
+                text
+                @click="loadYearlyReport"
+            />
+        </div>
+
+        <Chart
+            v-else
+            type="bar"
+            :data="yearlyChartData"
+            :options="yearlyChartOptions"
+            class="h-96"
+        />
+    </template>
+</Card>
 
         <!-- Student monitoring table -->
 

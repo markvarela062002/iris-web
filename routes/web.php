@@ -1013,4 +1013,9 @@ Route::post('/api/v1/assessment-setup/questions/{questionId}/answers', [Question
 Route::put('/api/v1/assessment-setup/questions/{questionId}/answers/{answerId}', [QuestionBankController::class, 'updateAnswer']);
 Route::delete('/api/v1/assessment-setup/questions/{questionId}/answers/{answerId}', [QuestionBankController::class, 'destroyAnswer']);
 
+Route::get(
+    '/api/v1/dashboard/reports/yearly',
+    [DashboardController::class, 'yearlyReport'],
+)->name('api.v1.dashboard.reports.yearly');
+
 require __DIR__.'/settings.php';
