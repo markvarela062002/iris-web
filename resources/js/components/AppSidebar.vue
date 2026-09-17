@@ -155,7 +155,7 @@ const mainNavItems: NavItem[] = [
         items: [
             {
                 title: 'Students',
-                href: '/databases/students',
+                href: '/databases/students/datatable',
                 icon: User,
             },
             {

@@ -338,9 +338,9 @@ function handleAction(
     }
 
     router.visit(
-        `/databases/students/${encodeURIComponent(
+        `/databases/students/profile/${encodeURIComponent(
             studentId,
-        )}/edit`,
+        )}`,
     );
 }
 

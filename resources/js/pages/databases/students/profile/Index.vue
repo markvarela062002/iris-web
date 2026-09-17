@@ -1884,7 +1884,7 @@ onBeforeUnmount(() => {
 
                 <template #content>
                     <div
-                        class="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
+                        class="grid gap-4 md:grid-cols-2 xl:grid-cols-2"
                     >
                         <div
                             class="flex flex-col gap-2"
@@ -1907,6 +1907,35 @@ onBeforeUnmount(() => {
                                 class="w-full"
                             />
                         </div>
+                                                <div
+                            class="flex flex-col gap-2"
+                        >
+                            <label
+                                for="student-cci-year"
+                                class="text-sm font-semibold text-slate-700"
+                            >
+                                CCI Year
+                                <span
+                                    class="text-red-500"
+                                >
+                                    *
+                                </span>
+                            </label>
+
+                            <Select
+                                id="student-cci-year"
+                                v-model="form.batch_no"
+                                :options="cciYearOptions"
+                                option-label="label"
+                                option-value="value"
+                                placeholder="Select CCI year"
+                                class="w-full"
+                            />
+                        </div>
+                    </div>
+                        <div
+                            class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+                        >
 
                         <div
                             class="flex flex-col gap-2"
@@ -1968,29 +1997,10 @@ onBeforeUnmount(() => {
                                 class="w-full"
                             />
                         </div>
-
+                    </div>  
                         <div
-                            class="flex flex-col gap-2"
-                        >
-                            <label
-                                for="student-gender"
-                                class="text-sm font-semibold text-slate-700"
-                            >
-                                Gender
-                            </label>
-
-                            <Select
-                                id="student-gender"
-                                v-model="form.gender"
-                                :options="genderOptions"
-                                option-label="label"
-                                option-value="value"
-                                placeholder="Select gender"
-                                show-clear
-                                class="w-full"
-                            />
-                        </div>
-
+                        class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4"
+                    >
                         <div
                             class="flex flex-col gap-2"
                         >
@@ -2051,32 +2061,29 @@ onBeforeUnmount(() => {
                                 class="w-full"
                             />
                         </div>
-
-                        <div
+                                                <div
                             class="flex flex-col gap-2"
                         >
                             <label
-                                for="student-cci-year"
+                                for="student-gender"
                                 class="text-sm font-semibold text-slate-700"
                             >
-                                CCI Year
-                                <span
-                                    class="text-red-500"
-                                >
-                                    *
-                                </span>
+                                Gender
                             </label>
 
                             <Select
-                                id="student-cci-year"
-                                v-model="form.batch_no"
-                                :options="cciYearOptions"
+                                id="student-gender"
+                                v-model="form.gender"
+                                :options="genderOptions"
                                 option-label="label"
                                 option-value="value"
-                                placeholder="Select CCI year"
+                                placeholder="Select gender"
+                                show-clear
                                 class="w-full"
                             />
                         </div>
+
+
                     </div>
                 </template>
             </Card>
@@ -2284,7 +2291,7 @@ onBeforeUnmount(() => {
 
                 <template #content>
                     <div
-                        class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+                        class="grid gap-4 md:grid-cols-2 xl:grid-cols-2"
                     >
                         <div
                             class="flex flex-col gap-2"
@@ -2323,6 +2330,10 @@ onBeforeUnmount(() => {
                         <div
                             class="hidden xl:block"
                         ></div>
+                    </div>
+                    <div
+                        class="grid gap-4 md:grid-cols-2 xl:grid-cols-2"
+                    >
 
                         <div
                             class="flex flex-col gap-2"
@@ -2357,10 +2368,10 @@ onBeforeUnmount(() => {
                                 class="w-full"
                             />
                         </div>
-
+                    </div>
                         <div
-                            class="hidden xl:block"
-                        ></div>
+                        class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-2"
+                        >
 
                         <div
                             class="flex flex-col gap-2"
@@ -2547,6 +2558,10 @@ onBeforeUnmount(() => {
                                 class="w-full"
                             />
                         </div>
+                    </div>
+                        <div
+                        class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-5"
+                        >
 
                         <div
                             class="flex flex-col gap-2"

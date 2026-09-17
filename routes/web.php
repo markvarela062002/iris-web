@@ -65,19 +65,8 @@ Route::middleware(['auth'])->group(function (): void {
 
 
     // Databases — Students
-    Route::inertia('/databases/students', 'databases/students/Index',)->name('databases.students');
-    Route::inertia(
-        '/databases/students/{studentId}/edit',
-        'databases/students/Edit',
-        [
-            'studentId' => fn () =>
-                (string) request()->route(
-                    'studentId',
-                ),
-        ],
-    )
-        ->whereUuid('studentId')
-        ->name('databases.students.edit');
+    Route::inertia('/databases/students/datatable', 'databases/students/datatable/Index',)->name('databases.students');
+    Route::inertia('/databases/students/profile/{studentId}', 'databases/students/profile/Index',['studentId' => fn () =>(string) request()->route('studentId',)])->whereUuid('studentId')->name('databases.students.edit');
 
     Route::get('/api/v1/databases/datatable/students', [StudentsController::class, 'index',],)->name('api.v1.databases.datatable.students');
     Route::get('/api/v1/databases/students/options', [StudentsController::class, 'options',],)->name('api.v1.databases.students.options');
