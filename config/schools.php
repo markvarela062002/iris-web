@@ -97,6 +97,25 @@ return [
                     'DEMO_JOURNAL_ESIG_URL',
                     '',
                 ),
+
+                /*
+                 * Student profile photos.
+                 *
+                 * Legacy public directory:
+                 * /photos
+                 */
+                'photos_url' => env(
+                    'DEMO_STUDENT_PHOTO_URL',
+                    '',
+                ),
+
+                /*
+                 * Existing legacy student-photo upload endpoint.
+                 */
+                'photo_upload_url' => env(
+                    'DEMO_STUDENT_PHOTO_UPLOAD_URL',
+                    '',
+                ),
             ],
         ],
 
@@ -151,6 +170,25 @@ return [
 
                 'signature_url' => env(
                     'EXACT_JOURNAL_ESIG_URL',
+                    '',
+                ),
+
+                /*
+                 * Student profile photos.
+                 *
+                 * Legacy public directory:
+                 * /photos
+                 */
+                'photos_url' => env(
+                    'EXACT_STUDENT_PHOTO_URL',
+                    '',
+                ),
+
+                /*
+                 * Existing legacy student-photo upload endpoint.
+                 */
+                'photo_upload_url' => env(
+                    'EXACT_STUDENT_PHOTO_UPLOAD_URL',
                     '',
                 ),
             ],
@@ -209,6 +247,25 @@ return [
                     'IGCFI_JOURNAL_ESIG_URL',
                     '',
                 ),
+
+                /*
+                 * Student profile photos.
+                 *
+                 * Legacy public directory:
+                 * /photos
+                 */
+                'photos_url' => env(
+                    'IGCFI_STUDENT_PHOTO_URL',
+                    '',
+                ),
+
+                /*
+                 * Existing legacy student-photo upload endpoint.
+                 */
+                'photo_upload_url' => env(
+                    'IGCFI_STUDENT_PHOTO_UPLOAD_URL',
+                    '',
+                ),
             ],
         ],
 
@@ -263,6 +320,25 @@ return [
 
                 'signature_url' => env(
                     'MCL_JOURNAL_ESIG_URL',
+                    '',
+                ),
+
+                /*
+                 * Student profile photos.
+                 *
+                 * Legacy public directory:
+                 * /photos
+                 */
+                'photos_url' => env(
+                    'MCL_STUDENT_PHOTO_URL',
+                    '',
+                ),
+
+                /*
+                 * Existing legacy student-photo upload endpoint.
+                 */
+                'photo_upload_url' => env(
+                    'MCL_STUDENT_PHOTO_UPLOAD_URL',
                     '',
                 ),
             ],
@@ -321,6 +397,25 @@ return [
                     'MCI_JOURNAL_ESIG_URL',
                     '',
                 ),
+
+                /*
+                 * Student profile photos.
+                 *
+                 * Legacy public directory:
+                 * /photos
+                 */
+                'photos_url' => env(
+                    'MCI_STUDENT_PHOTO_URL',
+                    '',
+                ),
+
+                /*
+                 * Existing legacy student-photo upload endpoint.
+                 */
+                'photo_upload_url' => env(
+                    'MCI_STUDENT_PHOTO_UPLOAD_URL',
+                    '',
+                ),
             ],
         ],
 
@@ -377,6 +472,25 @@ return [
                     'UPH_JOURNAL_ESIG_URL',
                     '',
                 ),
+
+                /*
+                 * Student profile photos.
+                 *
+                 * Legacy public directory:
+                 * /photos
+                 */
+                'photos_url' => env(
+                    'UPH_STUDENT_PHOTO_URL',
+                    '',
+                ),
+
+                /*
+                 * Existing legacy student-photo upload endpoint.
+                 */
+                'photo_upload_url' => env(
+                    'UPH_STUDENT_PHOTO_UPLOAD_URL',
+                    '',
+                ),
             ],
         ],
 
@@ -431,6 +545,25 @@ return [
 
                 'signature_url' => env(
                     'UPHSD_JOURNAL_ESIG_URL',
+                    '',
+                ),
+
+                /*
+                 * Student profile photos.
+                 *
+                 * Legacy public directory:
+                 * /photos
+                 */
+                'photos_url' => env(
+                    'UPHSD_STUDENT_PHOTO_URL',
+                    '',
+                ),
+
+                /*
+                 * Existing legacy student-photo upload endpoint.
+                 */
+                'photo_upload_url' => env(
+                    'UPHSD_STUDENT_PHOTO_UPLOAD_URL',
                     '',
                 ),
             ],
