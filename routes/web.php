@@ -24,6 +24,15 @@ use App\Http\Controllers\Api\V1\QuestionUploadController;
 use App\Http\Controllers\Api\V1\QuestionActivationController;
 use App\Http\Controllers\Api\V1\SubjectBatchUpdateController;
 use App\Http\Controllers\Api\V1\StudentsController;
+use App\Http\Controllers\Api\V1\ItemAnalysisHistoryController;
+use App\Http\Controllers\Api\V1\QuestionListController;
+use App\Http\Controllers\Api\V1\ItemAnalysisController;
+use App\Http\Controllers\Api\V1\DiscriminabilityIndexController;
+use App\Http\Controllers\Api\V1\DifficultyLevelController;
+use App\Http\Controllers\Api\V1\CorrectAnswerFrequencyController;
+use App\Http\Controllers\Api\V1\ExamResultsSummaryController;
+use App\Http\Controllers\Api\V1\ExamPackagesSummaryController;
+
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/login',)->name('home');
@@ -63,6 +72,15 @@ Route::middleware(['auth'])->group(function (): void {
     Route::inertia('/assessment-setup/rubric-setup', 'assessment-setup/rubric-setup/datatable/Index',)->name('assessment-setup.rubric-setup');
     Route::inertia('/assessment-setup/subject-batch', 'assessment-setup/subject-batch/datatable/Index',)->name('assessment-setup.subject-batch');
 
+    // Assessment Report 
+    Route::inertia('/assessment-reports/item-analysis-history', 'assessment-reports/item-analysis-history/datatable/Index')->name('assessment-reports.item-analysis-history');
+    Route::inertia('/assessment-reports/question-list', 'assessment-reports/question-list/datatable/Index')->name('assessment-reports.question-list');
+    Route::inertia('/assessment-reports/item-analysis', 'assessment-reports/item-analysis/datatable/Index')->name('assessment-reports.item-analysis');
+    Route::inertia('/assessment-reports/discriminability-index', 'assessment-reports/discriminability-index/datatable/Index')->name('assessment-reports.discriminability-index');
+    Route::inertia('/assessment-reports/difficulty-level', 'assessment-reports/difficulty-level/datatable/Index')->name('assessment-reports.difficulty-level');
+    Route::inertia('/assessment-reports/correct-answer-frequency', 'assessment-reports/correct-answer-frequency/datatable/Index')->name('assessment-reports.correct-answer-frequency');
+    Route::inertia('/assessment-reports/exam-results-summary', 'assessment-reports/exam-results-summary/datatable/Index')->name('assessment-reports.exam-results-summary');
+    Route::inertia('/assessment-reports/exam-packages-summary', 'assessment-reports/exam-packages-summary/datatable/Index')->name('assessment-reports.exam-packages-summary');
 
     // Databases — Students
     Route::inertia('/databases/students/datatable', 'databases/students/datatable/Index',)->name('databases.students');
@@ -142,7 +160,48 @@ Route::middleware(['auth'])->group(function (): void {
     Route::get('/api/v1/monitoring/reports/options', [ReportsController::class, 'options',],)->name('api.v1.monitoring.reports.options',);
     Route::get('/api/v1/monitoring/reports', [ReportsController::class, 'index',],)->name('api.v1.monitoring.reports.index',);
 
+    // Assessment Report — Item Analysis History API. Static routes precede {historyId}.
+    Route::get('/api/v1/assessment-reports/item-analysis-history/options', [ItemAnalysisHistoryController::class, 'options'])->name('api.v1.assessment-reports.item-analysis-history.options');
+    Route::get('/api/v1/assessment-reports/item-analysis-history/packages/{courseId}/subjects', [ItemAnalysisHistoryController::class, 'subjects'])->whereUuid('courseId')->name('api.v1.assessment-reports.item-analysis-history.subjects');
+    Route::get('/api/v1/assessment-reports/item-analysis-history', [ItemAnalysisHistoryController::class, 'index'])->name('api.v1.assessment-reports.item-analysis-history.index');
+    Route::get('/api/v1/assessment-reports/item-analysis-history/{historyId}/export', [ItemAnalysisHistoryController::class, 'export'])->whereUuid('historyId')->middleware('throttle:10,1')->name('api.v1.assessment-reports.item-analysis-history.export');
+    Route::get('/api/v1/assessment-reports/item-analysis-history/{historyId}', [ItemAnalysisHistoryController::class, 'show'])->whereUuid('historyId')->middleware('throttle:30,1')->name('api.v1.assessment-reports.item-analysis-history.show');
+    Route::delete('/api/v1/assessment-reports/item-analysis-history/{historyId}', [ItemAnalysisHistoryController::class, 'destroy'])->whereUuid('historyId')->name('api.v1.assessment-reports.item-analysis-history.destroy');
+
+        // Assessment Report — Questions List API.
+    Route::get('/api/v1/assessment-reports/question-list/options', [QuestionListController::class, 'options'])->name('api.v1.assessment-reports.question-list.options');
+    Route::get('/api/v1/assessment-reports/question-list/packages/{courseId}/subjects', [QuestionListController::class, 'subjects'])->whereUuid('courseId')->name('api.v1.assessment-reports.question-list.subjects');
+    Route::get('/api/v1/assessment-reports/question-list/export', [QuestionListController::class, 'export'])->middleware('throttle:10,1')->name('api.v1.assessment-reports.question-list.export');
+    Route::get('/api/v1/assessment-reports/question-list', [QuestionListController::class, 'index'])->name('api.v1.assessment-reports.question-list.index');
+        
+    // Assessment Report — Questions List API.
+    Route::get('/api/v1/assessment-reports/item-analysis/options', [ItemAnalysisController::class, 'options'])->name('api.v1.assessment-reports.item-analysis.options');
+    Route::get('/api/v1/assessment-reports/item-analysis/packages/{courseId}/subjects', [ItemAnalysisController::class, 'subjects'])->whereUuid('courseId')->name('api.v1.assessment-reports.item-analysis.subjects');
+    Route::post('/api/v1/assessment-reports/item-analysis/preview', [ItemAnalysisController::class, 'preview'])->middleware('throttle:30,1')->name('api.v1.assessment-reports.item-analysis.preview');
+    Route::post('/api/v1/assessment-reports/item-analysis/generate', [ItemAnalysisController::class, 'generate'])->middleware('throttle:10,1')->name('api.v1.assessment-reports.item-analysis.generate');
+    // Assessment Report: Discriminability Index.
+    Route::get('/api/v1/assessment-reports/discriminability-index/options', [DiscriminabilityIndexController::class, 'options'])->name('api.v1.discriminability-index.options');
+    Route::get('/api/v1/assessment-reports/discriminability-index/packages/{courseId}/subjects', [DiscriminabilityIndexController::class, 'subjects'])->whereUuid('courseId')->name('api.v1.discriminability-index.subjects');
+    Route::post('/api/v1/assessment-reports/discriminability-index/generate', [DiscriminabilityIndexController::class, 'generate'])->middleware('throttle:30,1')->name('api.v1.discriminability-index.generate');
+
+     // Assessment Report: Difficulty Level.
+    Route::get('/api/v1/assessment-reports/difficulty-level/options', [DifficultyLevelController::class, 'options'])->name('api.v1.difficulty-level.options');
+    Route::get('/api/v1/assessment-reports/difficulty-level/packages/{courseId}/subjects', [DifficultyLevelController::class, 'subjects'])->whereUuid('courseId')->name('api.v1.difficulty-level.subjects');
+    Route::post('/api/v1/assessment-reports/difficulty-level/generate', [DifficultyLevelController::class, 'generate'])->middleware('throttle:30,1')->name('api.v1.difficulty-level.generate');
+
+// Assessment Report: Frequency of Correct Answer.
+    Route::get('/api/v1/assessment-reports/correct-answer-frequency/options', [CorrectAnswerFrequencyController::class, 'options'])->name('api.v1.correct-answer-frequency.options');
+    Route::get('/api/v1/assessment-reports/correct-answer-frequency/packages/{courseId}/subjects', [CorrectAnswerFrequencyController::class, 'subjects'])->whereUuid('courseId')->name('api.v1.correct-answer-frequency.subjects');
+    Route::post('/api/v1/assessment-reports/correct-answer-frequency/generate', [CorrectAnswerFrequencyController::class, 'generate'])->middleware('throttle:30,1')->name('api.v1.correct-answer-frequency.generate');
+  // Assessment Report: Exam Results Summary.
+    Route::get('/api/v1/assessment-reports/exam-results-summary/options', [ExamResultsSummaryController::class, 'options'])->name('api.v1.exam-results-summary.options');
+    Route::post('/api/v1/assessment-reports/exam-results-summary/generate', [ExamResultsSummaryController::class, 'generate'])->middleware('throttle:30,1')->name('api.v1.exam-results-summary.generate');
+    // Assessment Report: Exam Packages Summary.
+    Route::get('/api/v1/assessment-reports/exam-packages-summary/options', [ExamPackagesSummaryController::class, 'options'])->name('api.v1.exam-packages-summary.options');
+    Route::get('/api/v1/assessment-reports/exam-packages-summary/subjects', [ExamPackagesSummaryController::class, 'subjects'])->name('api.v1.exam-packages-summary.subjects');
+    Route::post('/api/v1/assessment-reports/exam-packages-summary/generate', [ExamPackagesSummaryController::class, 'generate'])->middleware('throttle:30,1')->name('api.v1.exam-packages-summary.generate');
 });
+
 
 // Dashboard — existing routes outside the auth group
 Route::get('/api/v1/dashboard/reports/yearly', [DashboardController::class, 'yearlyReport'],)->name('api.v1.dashboard.reports.yearly');
