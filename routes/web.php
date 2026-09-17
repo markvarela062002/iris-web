@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\V1\QuestionBankController;
 use App\Http\Controllers\Api\V1\QuestionUploadController;
 use App\Http\Controllers\Api\V1\QuestionActivationController;
 use App\Http\Controllers\Api\V1\SubjectBatchUpdateController;
+use App\Http\Controllers\Api\V1\StudentsController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/login',)->name('home');
@@ -61,6 +62,17 @@ Route::middleware(['auth'])->group(function (): void {
     Route::inertia('/assessment-setup/practical-assessment-setup', 'assessment-setup/practical-assessment-setup/datatable/Index',)->name('assessment-setup.practical-assessment-setup');
     Route::inertia('/assessment-setup/rubric-setup', 'assessment-setup/rubric-setup/datatable/Index',)->name('assessment-setup.rubric-setup');
     Route::inertia('/assessment-setup/subject-batch', 'assessment-setup/subject-batch/datatable/Index',)->name('assessment-setup.subject-batch');
+
+
+    // Databases — Students
+    Route::inertia('/databases/students/datatable', 'databases/students/datatable/Index',)->name('databases.students');
+    Route::inertia('/databases/students/profile/{studentId}', 'databases/students/profile/Index',['studentId' => fn () =>(string) request()->route('studentId',)])->whereUuid('studentId')->name('databases.students.edit');
+
+    Route::get('/api/v1/databases/datatable/students', [StudentsController::class, 'index',],)->name('api.v1.databases.datatable.students');
+    Route::get('/api/v1/databases/students/options', [StudentsController::class, 'options',],)->name('api.v1.databases.students.options');
+    Route::get('/api/v1/databases/students/{studentId}', [StudentsController::class, 'show',],)->whereUuid('studentId')->name('api.v1.databases.students.show');
+    Route::put('/api/v1/databases/students/{studentId}', [StudentsController::class, 'update',],)->whereUuid('studentId')->name('api.v1.databases.students.update');
+    Route::post('/api/v1/databases/students/{studentId}/photo', [StudentsController::class, 'uploadPhoto',],)->whereUuid('studentId')->name('api.v1.databases.students.photo');
 
     // Dashboard — authenticated API and supporting routes
     Route::get('/api/v1/dashboard/datatable/students', [DashboardController::class, 'students',],)->name('api.v1.dashboard.datatable.students',);
