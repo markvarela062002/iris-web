@@ -228,21 +228,21 @@ const mainNavItems: NavItem[] = [
             {
                 title: 'Question Upload',
                 href:
-                    '/assessment-setup/question-upload',
+                    '/assessment-setup/question-bank-upload',
                 icon: Upload,
             },
             {
                 title:
                     'Question Activation',
                 href:
-                    '/assessment-setup/question-activation',
+                    '/assessment-setup/question-bank-activation',
                 icon: CheckCircle,
             },
             {
                 title:
                     'Subject Batch Update',
                 href:
-                    '/assessment-setup/subject-batch-update',
+                    '/assessment-setup/subject-batch',
                 icon: RefreshCw,
             },
             {
