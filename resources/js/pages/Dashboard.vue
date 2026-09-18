@@ -179,6 +179,10 @@ async function loadYearlyReport(): Promise<void> {
 | Dashboard totals
 |--------------------------------------------------------------------------
 */
+const dashboardCardsLoading = ref(true);
+const dashboardCardsLoaded = ref(false);
+const dashboardCardsError = ref('');
+
 
 const dashboardTotals = ref({
     activityVerification: 0,
@@ -404,6 +408,13 @@ async function loadStudents(
     studentRequestController = controller;
     studentsLoading.value = true;
 
+    const requestTotals = includeTotals || !dashboardCardsLoaded.value;
+
+    if (requestTotals) {
+        dashboardCardsLoading.value = true;
+        dashboardCardsError.value = '';
+    }
+
     try {
         const response = await axios.get<StudentApiResponse>(
             '/api/v1/dashboard/datatable/students',
@@ -416,7 +427,7 @@ async function loadStudents(
                     sort_field: studentsSortField.value,
                     sort_direction: studentsSortDirection.value,
                     list_type: studentListType.value,
-                    include_totals: includeTotals ? 1 : 0,
+                    include_totals: requestTotals ? 1 : 0,
                 },
                 headers: {
                     Accept: 'application/json',
@@ -426,34 +437,54 @@ async function loadStudents(
             },
         );
 
+        if (studentRequestController !== controller) {
+            return;
+        }
+
         students.value = response.data.data;
 
-        if (response.data.activity_verification_total !== undefined) {
-            dashboardTotals.value = {
+        if (requestTotals) {
+            const totals = {
                 activityVerification:
-                    response.data.activity_verification_total ?? 0,
-
+                    response.data.activity_verification_total,
                 documentsUpload:
-                    response.data.documents_upload_total ?? 0,
-
+                    response.data.documents_upload_total,
                 otgUpdates:
-                    response.data.otg_updates_total ?? 0,
-
+                    response.data.otg_updates_total,
                 dailyJournals:
-                    response.data.daily_journals_total ?? 0,
-
+                    response.data.daily_journals_total,
                 theoreticalEnrolled:
-                    response.data.theoretical_enrolled_total ?? 0,
-
+                    response.data.theoretical_enrolled_total,
                 theoreticalNotEnrolled:
-                    response.data.theoretical_not_enrolled_total ?? 0,
-
+                    response.data.theoretical_not_enrolled_total,
                 practicalEnrolled:
-                    response.data.practical_enrolled_total ?? 0,
-
+                    response.data.practical_enrolled_total,
                 practicalNotEnrolled:
-                    response.data.practical_not_enrolled_total ?? 0,
+                    response.data.practical_not_enrolled_total,
             };
+
+            const validTotals = Object.values(totals).every(
+                (value) =>
+                    typeof value === 'number' &&
+                    Number.isFinite(value),
+            );
+
+            if (validTotals) {
+                dashboardTotals.value = {
+                    activityVerification: totals.activityVerification!,
+                    documentsUpload: totals.documentsUpload!,
+                    otgUpdates: totals.otgUpdates!,
+                    dailyJournals: totals.dailyJournals!,
+                    theoreticalEnrolled: totals.theoreticalEnrolled!,
+                    theoreticalNotEnrolled: totals.theoreticalNotEnrolled!,
+                    practicalEnrolled: totals.practicalEnrolled!,
+                    practicalNotEnrolled: totals.practicalNotEnrolled!,
+                };
+
+                dashboardCardsLoaded.value = true;
+            } else {
+                dashboardCardsError.value = 'Unable to load totals.';
+            }
         }
 
         studentsTotal.value = response.data.meta.total;
@@ -471,22 +502,32 @@ async function loadStudents(
             return;
         }
 
+        if (studentRequestController !== controller) {
+            return;
+        }
+
         students.value = [];
         studentsTotal.value = 0;
+
+        if (requestTotals) {
+            dashboardCardsError.value = 'Unable to load totals.';
+        }
 
         if (axios.isAxiosError(error)) {
             console.error(
                 'Unable to load students:',
                 error.response?.data ?? error.message,
             );
-
-            return;
+        } else {
+            console.error('Unable to load students:', error);
         }
-
-        console.error('Unable to load students:', error);
     } finally {
         if (studentRequestController === controller) {
             studentsLoading.value = false;
+
+            if (requestTotals) {
+                dashboardCardsLoading.value = false;
+            }
         }
     }
 }
@@ -912,120 +953,127 @@ function handleStudentAction(
             item.cardBg,
         ]"
     >
-        <template #content>
-            <!-- Decorative Elements -->
+<template #content>
+    <!-- Loading Overlay -->
+    <div
+        v-if="dashboardCardsLoading"
+        class="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-black/15 text-white backdrop-blur-sm"
+        role="status"
+    >
+        <i
+            class="pi pi-spin pi-spinner !text-3xl"
+            aria-hidden="true"
+        ></i>
+        <span class="text-sm font-semibold">Loading…</span>
+    </div>
 
+    <!-- Decorative Elements -->
+    <div
+        class="pointer-events-none absolute -top-14 -right-14 size-40 rounded-full bg-white/10 transition-transform duration-500 group-hover:scale-125"
+    ></div>
+
+    <div
+        class="pointer-events-none absolute -right-8 -bottom-16 size-32 rounded-full border-[18px] border-white/[0.07]"
+    ></div>
+
+    <div
+        class="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.12] via-transparent to-black/[0.08]"
+    ></div>
+
+    <!-- Card Content -->
+    <div
+        class="relative z-10 flex h-full min-h-[220px] flex-col p-5 transition-opacity duration-200"
+        :class="{ 'pointer-events-none opacity-30': dashboardCardsLoading }"
+        :inert="dashboardCardsLoading"
+        :aria-busy="dashboardCardsLoading"
+    >
+        <!-- Header -->
+        <div class="flex items-start justify-between gap-4">
             <div
-                class="pointer-events-none absolute -top-14 -right-14 size-40 rounded-full bg-white/10 transition-transform duration-500 group-hover:scale-125"
-            ></div>
-
-            <div
-                class="pointer-events-none absolute -right-8 -bottom-16 size-32 rounded-full border-[18px] border-white/[0.07]"
-            ></div>
-
-            <div
-                class="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.12] via-transparent to-black/[0.08]"
-            ></div>
-
-            <!-- Card Content -->
-
-            <div
-                class="relative z-10 flex min-h-[220px] h-full flex-col p-5"
+                class="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/15 text-white shadow-sm backdrop-blur-sm"
             >
-                <!-- Header -->
-
-                <div
-                    class="flex items-start justify-between gap-4"
-                >
-                    <div
-                        class="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/15 text-white shadow-sm backdrop-blur-sm"
-                    >
-                        <i
-                            :class="[
-                                item.icon,
-                                'text-xl',
-                            ]"
-                        ></i>
-                    </div>
-
-                    <div
-                        class="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] text-white/80 uppercase backdrop-blur-sm"
-                    >
-                        <span
-                            class="size-1.5 rounded-full bg-emerald-300"
-                        ></span>
-
-                        Live
-                    </div>
-                </div>
-
-                <!-- Total -->
-
-                <div class="mt-5">
-                    <p
-                        class="text-[11px] font-bold tracking-[0.14em] text-white/70 uppercase"
-                    >
-                        Total Records
-                    </p>
-
-                    <h2
-                        class="mt-1 text-4xl leading-none font-bold tracking-tight text-white"
-                    >
-                        {{ item.value }}
-                    </h2>
-
-                    <p
-                        class="mt-2 min-h-10 text-sm leading-5 font-semibold text-white/90"
-                    >
-                        {{ item.label }}
-                    </p>
-                </div>
-
-                <!-- Actions -->
-
-                <div
-                    :class="[
-                        'mt-auto grid w-full gap-2.5 pt-5',
-                        item.canCreateBatch &&
-                        item.batchHref
-                            ? 'grid-cols-2'
-                            : 'grid-cols-1',
-                    ]"
-                >
-                    <Button
-                        type="button"
-                        label="View Details"
-                        icon="pi pi-arrow-right"
-                        icon-pos="right"
-                        severity="secondary"
-                        :disabled="!item.href"
-                        :class="[
-                            'group/button !w-full !rounded-xl !border-0 !bg-white !px-3 !py-2.5 !text-xs !font-bold shadow-sm transition-all hover:!bg-white/90',
-                            item.buttonTextClass,
-                        ]"
-                        @click="
-                            navigateTo(
-                                item.href,
-                            )
-                        "
-                    />
-
-                    <Button
-                        v-if="
-                            item.canCreateBatch &&
-                            item.batchHref
-                        "
-                        as="a"
-                        :href="item.batchHref"
-                        label="Create Batch"
-                        icon="pi pi-plus"
-                        severity="secondary"
-                        variant="outlined"
-                        class="!w-full !rounded-xl !border-white/30 !bg-white/10 !px-3 !py-2.5 !text-xs !font-bold !text-white backdrop-blur-sm transition-all hover:!border-white/50 hover:!bg-white/20"
-                    />
-                </div>
+                <i :class="[item.icon, 'text-xl']"></i>
             </div>
-        </template>
+
+            <div
+                class="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] text-white/80 uppercase backdrop-blur-sm"
+            >
+                <span class="size-1.5 rounded-full bg-emerald-300"></span>
+                Live
+            </div>
+        </div>
+
+        <!-- Total -->
+        <div class="mt-5">
+            <p
+                class="text-[11px] font-bold tracking-[0.14em] text-white/70 uppercase"
+            >
+                Total Records
+            </p>
+
+            <div
+                class="mt-1 flex min-h-10 items-center"
+                aria-live="polite"
+            >
+                <span
+                    v-if="!dashboardCardsLoading && dashboardCardsError"
+                    class="text-sm text-white/90"
+                >
+                    {{ dashboardCardsError }}
+                </span>
+
+                <h2
+                    v-else-if="!dashboardCardsLoading"
+                    class="text-4xl leading-none font-bold tracking-tight text-white"
+                >
+                    {{ item.value }}
+                </h2>
+            </div>
+
+            <p
+                class="mt-2 min-h-10 text-sm leading-5 font-semibold text-white/90"
+            >
+                {{ item.label }}
+            </p>
+        </div>
+
+        <!-- Actions -->
+        <div
+            :class="[
+                'mt-auto grid w-full gap-2.5 pt-5',
+                item.canCreateBatch && item.batchHref
+                    ? 'grid-cols-2'
+                    : 'grid-cols-1',
+            ]"
+        >
+            <Button
+                type="button"
+                label="View Details"
+                icon="pi pi-arrow-right"
+                icon-pos="right"
+                severity="secondary"
+                :disabled="dashboardCardsLoading || !item.href"
+                :class="[
+                    'group/button !w-full !rounded-xl !border-0 !bg-white !px-3 !py-2.5 !text-xs !font-bold shadow-sm transition-all hover:!bg-white/90',
+                    item.buttonTextClass,
+                ]"
+                @click="navigateTo(item.href)"
+            />
+
+            <Button
+                v-if="item.canCreateBatch && item.batchHref"
+                as="a"
+                :href="dashboardCardsLoading ? undefined : item.batchHref"
+                :aria-disabled="dashboardCardsLoading"
+                label="Create Batch"
+                icon="pi pi-plus"
+                severity="secondary"
+                variant="outlined"
+                class="!w-full !rounded-xl !border-white/30 !bg-white/10 !px-3 !py-2.5 !text-xs !font-bold !text-white backdrop-blur-sm transition-all hover:!border-white/50 hover:!bg-white/20"
+            />
+        </div>
+    </div>
+</template>
     </Card>
 </div>
 
