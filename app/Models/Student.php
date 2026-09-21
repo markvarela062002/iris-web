@@ -2,28 +2,29 @@
 
 namespace App\Models;
 
-use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 /**
  * @property string $id
+ * @property string|null $code_person
  * @property string|null $email
- * @property string $login_name
- * @property string $login_pass
- * @property string|null $login_type_id
+ * @property string|null $login_name
+ * @property string|null $login_pass
+ * @property string|null $login_id
  * @property string|null $school_id
- * @property string|null $sex
+ * @property string|null $school_id_no
+ * @property string|null $gender
  * @property string|null $active
- * @property string|null $lname
+ * @property string $lname
  * @property string|null $fname
  * @property string|null $mname
- * @property \Illuminate\Support\Carbon|null $eula_signed
- * @property \Illuminate\Support\Carbon|null $expiration_date
+ * @property string|null $dept
+ * @property string|null $batch_no
+ * @property string|null $access_exp
  * @property-read string $full_name
  * @property-read string $profile_image
  * @property-read string $avatar
@@ -31,31 +32,33 @@ use Illuminate\Notifications\Notifiable;
  * @property-read LoginType|null $loginType
  */
 #[Fillable([
+    'code_person',
     'email',
     'login_name',
     'login_pass',
-    'login_type_id',
+    'login_id',
     'school_id',
-    'eula_signed',
+    'school_id_no',
+    'gender',
     'active',
-    'expiration_date',
     'lname',
     'fname',
     'mname',
-    'sex',
+    'dept',
+    'batch_no',
+    'access_exp',
 ])]
 #[Hidden([
     'login_pass',
 ])]
-class User extends Authenticatable
+class Student extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use Notifiable;
 
     /**
-     * Existing ADMAPro login table.
+     * Existing ADMAPro student table.
      */
-    protected $table = 'login';
+    protected $table = 'person';
 
     /**
      * Existing UUID/string primary key.
@@ -73,13 +76,13 @@ class User extends Authenticatable
     protected $keyType = 'string';
 
     /**
-     * The existing login table has no Laravel timestamps.
+     * The person table has no Laravel timestamps.
      */
     public $timestamps = false;
 
     /**
      * Include computed attributes when the authenticated
-     * user is serialized for Inertia.
+     * student is serialized for Inertia.
      *
      * @var array<int, string>
      */
@@ -108,7 +111,7 @@ class User extends Authenticatable
 
     /**
      * Disable remember-token persistence because the
-     * legacy login table has no remember_token column.
+     * person table has no remember_token column.
      */
     public function getRememberTokenName(): string
     {
@@ -116,7 +119,7 @@ class User extends Authenticatable
     }
 
     /**
-     * Return the user's complete name.
+     * Return the student's complete name.
      */
     public function getFullNameAttribute(): string
     {
@@ -138,19 +141,19 @@ class User extends Authenticatable
     }
 
     /**
-     * Select the profile image using the sex value.
+     * Select the profile image using the gender value.
      */
     public function getProfileImageAttribute(): string
     {
-        $sex = strtoupper(
-            trim((string) $this->sex),
+        $gender = strtoupper(
+            trim((string) $this->gender),
         );
 
-        if ($sex === 'F') {
+        if ($gender === 'F') {
             return '/images/female.png';
         }
 
-        if ($sex === 'M') {
+        if ($gender === 'M') {
             return '/images/male.png';
         }
 
@@ -159,7 +162,7 @@ class User extends Authenticatable
 
     /**
      * Provide avatar compatibility for Vue starter-kit
-     * components that read user.avatar.
+     * components that read student.avatar.
      */
     public function getAvatarAttribute(): string
     {
@@ -167,48 +170,34 @@ class User extends Authenticatable
     }
 
     /**
-     * Identify this authenticated account as an
-     * administrator-side account.
+     * Identify this authenticated account as a student.
      */
     public function getAccountTypeAttribute(): string
     {
-        return 'administrator';
+        return 'student';
     }
 
     /**
-     * Get the user's assigned role.
+     * Get the student's role.
      *
-     * login.login_type_id references login_type.id.
+     * person.login_id references login_type.id.
      */
     public function loginType(): BelongsTo
     {
         return $this->belongsTo(
             LoginType::class,
-            'login_type_id',
+            'login_id',
             'id',
         );
     }
 
     /**
-     * Determine whether the account is active.
+     * Determine whether the student account is active.
      */
     public function isActive(): bool
     {
         return strtoupper(
             trim((string) $this->active),
         ) === 'Y';
-    }
-
-    /**
-     * Attribute casts.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'eula_signed' => 'date',
-            'expiration_date' => 'date',
-        ];
     }
 }

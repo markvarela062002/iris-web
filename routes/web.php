@@ -35,9 +35,54 @@ use App\Http\Controllers\Api\V1\ExamPackagesSummaryController;
 
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/login',)->name('home');
+Route::redirect(
+    '/',
+    '/login',
+)->name('home');
 
-Route::middleware(['auth'])->group(function (): void {
+/*
+|--------------------------------------------------------------------------
+| Student Routes
+|--------------------------------------------------------------------------
+|
+| Only authenticated student accounts may access these routes.
+|
+*/
+
+Route::middleware([
+    'auth',
+    'account.type:student',
+])->group(function (): void {
+    Route::inertia(
+        '/student-dashboard',
+        'StudentDashboard',
+    )->name('student.dashboard');
+
+    Route::get(
+        '/api/v1/student-dashboard/activities',
+        [
+            ActivitiesController::class,
+            'studentDashboard',
+        ],
+    )->name(
+        'api.v1.student-dashboard.activities',
+    );
+});
+
+/*
+|--------------------------------------------------------------------------
+| Administrator and Staff Routes
+|--------------------------------------------------------------------------
+|
+| Accounts authenticated through the login table may access the existing
+| dashboard, monitoring, assessment and database management routes.
+|
+*/
+
+Route::middleware([
+    'auth',
+    'account.type:administrator',
+])->group(function (): void {
     // Inertia pages
 
     // Dashboard
