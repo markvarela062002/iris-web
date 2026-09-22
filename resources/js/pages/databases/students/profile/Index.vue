@@ -23,11 +23,15 @@ import {
     ref,
 } from 'vue';
 
-import { dashboard } from '@/routes';
 
-const props = defineProps<{
-    studentId: string;
-}>();
+const props = withDefaults(
+    defineProps<{
+        studentId?: string | null;
+    }>(),
+    {
+        studentId: null,
+    },
+);
 
 defineOptions({
     inheritAttrs: false,
@@ -36,7 +40,7 @@ defineOptions({
         breadcrumbs: [
             {
                 title: 'Dashboard',
-                href: dashboard(),
+                href: '/dashboard',
             },
             {
                 title: 'Students',
@@ -170,6 +174,7 @@ const toast = useToast();
 
 const loading = ref(false);
 const saving = ref(false);
+const emailSending = ref(false);
 const photoUploading = ref(false);
 const pageError = ref('');
 
@@ -269,6 +274,20 @@ function emptyForm(): StudentForm {
 
 const form = ref<StudentForm>(
     emptyForm(),
+);
+
+const currentStudentId =
+    ref<string | null>(
+        props.studentId &&
+        props.studentId !== 'new'
+            ? props.studentId
+            : null,
+    );
+
+const isCreateMode = computed(
+    () =>
+        currentStudentId.value ===
+        null,
 );
 
 const genderOptions: LookupOption[] = [
@@ -382,7 +401,11 @@ const studentName = computed(() => {
     return (
         lastName ||
         otherNames ||
-        'STUDENT PROFILE'
+        (
+            isCreateMode.value
+                ? 'NEW STUDENT'
+                : 'STUDENT PROFILE'
+        )
     ).toUpperCase();
 });
 
@@ -573,6 +596,30 @@ function stringValue(
     ).trim();
 }
 
+function genderFormValue(
+    value: unknown,
+): string | null {
+    const gender = stringValue(
+        value,
+    ).toUpperCase();
+
+    if (
+        gender === 'M' ||
+        gender === 'MALE'
+    ) {
+        return 'MALE';
+    }
+
+    if (
+        gender === 'F' ||
+        gender === 'FEMALE'
+    ) {
+        return 'FEMALE';
+    }
+
+    return null;
+}
+
 function loadStudentIntoForm(
     student: StudentRecord,
 ): void {
@@ -592,8 +639,9 @@ function loadStudentIntoForm(
         lname:
             stringValue(student.lname),
         gender:
-            stringValue(student.gender) ||
-            null,
+            genderFormValue(
+                student.gender,
+            ),
         civ_status:
             stringValue(student.civ_status) ||
             null,
@@ -694,25 +742,7 @@ async function loadProfile(): Promise<void> {
     pageError.value = '';
 
     try {
-        const [
-            studentResponse,
-            optionsResponse,
-        ] = await Promise.all([
-            axios.get<StudentResponse>(
-                `/api/v1/databases/students/${encodeURIComponent(
-                    props.studentId,
-                )}`,
-                {
-                    signal: controller.signal,
-                    headers: {
-                        Accept:
-                            'application/json',
-                        'X-Requested-With':
-                            'XMLHttpRequest',
-                    },
-                    withCredentials: true,
-                },
-            ),
+        const optionsRequest =
             axios.get<StudentOptionsResponse>(
                 '/api/v1/databases/students/options',
                 {
@@ -725,7 +755,51 @@ async function loadProfile(): Promise<void> {
                     },
                     withCredentials: true,
                 },
+            );
+
+        if (isCreateMode.value) {
+            const optionsResponse =
+                await optionsRequest;
+
+            cityOptions.value =
+                optionsResponse.data.data.cities;
+
+            provinceOptions.value =
+                optionsResponse.data.data.provinces;
+
+            form.value =
+                emptyForm();
+
+            return;
+        }
+
+        const studentId =
+            currentStudentId.value;
+
+        if (!studentId) {
+            return;
+        }
+
+        const [
+            studentResponse,
+            optionsResponse,
+        ] = await Promise.all([
+            axios.get<StudentResponse>(
+                `/api/v1/databases/students/${encodeURIComponent(
+                    studentId,
+                )}`,
+                {
+                    signal: controller.signal,
+                    headers: {
+                        Accept:
+                            'application/json',
+                        'X-Requested-With':
+                            'XMLHttpRequest',
+                    },
+                    withCredentials: true,
+                },
             ),
+            optionsRequest,
         ]);
 
         loadStudentIntoForm(
@@ -772,100 +846,190 @@ async function saveStudent(): Promise<void> {
     pageError.value = '';
     resetCredentials.value = null;
 
+    const payload = {
+        school_id_no:
+            form.value.school_id_no.trim(),
+        fname:
+            form.value.fname.trim(),
+        mname:
+            form.value.mname.trim(),
+        lname:
+            form.value.lname.trim(),
+        gender:
+            form.value.gender,
+        civ_status:
+            form.value.civ_status,
+        birth_date:
+            formatDateParameter(
+                form.value.birth_date,
+            ),
+        birth_place:
+            form.value.birth_place.trim(),
+        batch_no:
+            form.value.batch_no,
+        st_address:
+            form.value.st_address.trim(),
+        city_id:
+            form.value.city_id,
+        province_id:
+            form.value.province_id,
+        mobile:
+            form.value.mobile.trim(),
+        phone:
+            form.value.phone.trim(),
+        email:
+            form.value.email.trim(),
+        facebook:
+            form.value.facebook.trim(),
+        st_address_province:
+            form.value.st_address_province.trim(),
+        phone_province:
+            form.value.phone_province.trim(),
+        mother_name:
+            form.value.mother_name.trim(),
+        mother_nos:
+            form.value.mother_nos.trim(),
+        father_name:
+            form.value.father_name.trim(),
+        father_nos:
+            form.value.father_nos.trim(),
+        spouse_name:
+            form.value.spouse_name.trim(),
+        spouse_nos:
+            form.value.spouse_nos.trim(),
+        date_reg:
+            formatDateParameter(
+                form.value.date_reg,
+            ),
+        dept:
+            form.value.dept,
+        etrb_type:
+            form.value.etrb_type,
+        notes:
+            form.value.notes.trim(),
+        ins_company:
+            form.value.ins_company.trim(),
+        ins_amt:
+            form.value.ins_amt || '0',
+        ins_hospital:
+            form.value.ins_hospital || '0',
+        ins_disability:
+            form.value.ins_disability || '0',
+        ins_death:
+            form.value.ins_death || '0',
+        stipend:
+            form.value.stipend || '0',
+        login_name:
+            form.value.login_name.trim(),
+        new_password:
+            submittedPassword ||
+            null,
+        new_password_confirmation:
+            form.value
+                .new_password_confirmation
+                .trim() ||
+            null,
+        active:
+            form.value.active,
+    };
+
     try {
+        if (isCreateMode.value) {
+            const response =
+                await axios.post<{
+                    message: string;
+                    data: {
+                        id: string;
+                        code_person: string;
+                        login_name: string;
+                        password: string;
+                        email_sent: boolean;
+                        email: string;
+                    };
+                }>(
+                    '/api/v1/databases/students',
+                    payload,
+                    {
+                        headers: {
+                            Accept:
+                                'application/json',
+                            'X-Requested-With':
+                                'XMLHttpRequest',
+                        },
+                        withCredentials: true,
+                    },
+                );
+
+            currentStudentId.value =
+                response.data.data.id;
+
+            form.value.code_person =
+                response.data.data.code_person;
+
+            form.value.login_name =
+                response.data.data.login_name;
+
+            form.value.new_password = '';
+            form.value.new_password_confirmation = '';
+
+            resetCredentials.value = {
+                loginName:
+                    response.data.data.login_name,
+                password:
+                    response.data.data.password,
+            };
+
+            toast.add({
+                severity:
+                    response.data.data.email_sent
+                        ? 'success'
+                        : 'warn',
+                summary:
+                    response.data.data.email_sent
+                        ? 'Student Added & Email Sent'
+                        : 'Student Added',
+                detail:
+                    response.data.message ||
+                    (
+                        response.data.data.email_sent
+                            ? 'Student added and login credentials emailed successfully.'
+                            : 'Student added, but the credential email could not be sent.'
+                    ),
+                life: 5000,
+            });
+
+            router.visit(
+                `/databases/students/profile/${encodeURIComponent(
+                    response.data.data.id,
+                )}`,
+                {
+                    replace: true,
+                    preserveState: true,
+                    preserveScroll: true,
+                },
+            );
+
+            return;
+        }
+
+        const studentId =
+            currentStudentId.value;
+
+        if (!studentId) {
+            pageError.value =
+                'The selected student ID is missing.';
+
+            return;
+        }
+
         const response =
             await axios.put<{
                 message: string;
             }>(
                 `/api/v1/databases/students/${encodeURIComponent(
-                    props.studentId,
+                    studentId,
                 )}`,
-                {
-                    school_id_no:
-                        form.value.school_id_no.trim(),
-                    fname:
-                        form.value.fname.trim(),
-                    mname:
-                        form.value.mname.trim(),
-                    lname:
-                        form.value.lname.trim(),
-                    gender:
-                        form.value.gender,
-                    civ_status:
-                        form.value.civ_status,
-                    birth_date:
-                        formatDateParameter(
-                            form.value.birth_date,
-                        ),
-                    birth_place:
-                        form.value.birth_place.trim(),
-                    batch_no:
-                        form.value.batch_no,
-                    st_address:
-                        form.value.st_address.trim(),
-                    city_id:
-                        form.value.city_id,
-                    province_id:
-                        form.value.province_id,
-                    mobile:
-                        form.value.mobile.trim(),
-                    phone:
-                        form.value.phone.trim(),
-                    email:
-                        form.value.email.trim(),
-                    facebook:
-                        form.value.facebook.trim(),
-                    st_address_province:
-                        form.value.st_address_province.trim(),
-                    phone_province:
-                        form.value.phone_province.trim(),
-                    mother_name:
-                        form.value.mother_name.trim(),
-                    mother_nos:
-                        form.value.mother_nos.trim(),
-                    father_name:
-                        form.value.father_name.trim(),
-                    father_nos:
-                        form.value.father_nos.trim(),
-                    spouse_name:
-                        form.value.spouse_name.trim(),
-                    spouse_nos:
-                        form.value.spouse_nos.trim(),
-                    date_reg:
-                        formatDateParameter(
-                            form.value.date_reg,
-                        ),
-                    dept:
-                        form.value.dept,
-                    etrb_type:
-                        form.value.etrb_type,
-                    notes:
-                        form.value.notes.trim(),
-                    ins_company:
-                        form.value.ins_company.trim(),
-                    ins_amt:
-                        form.value.ins_amt || '0',
-                    ins_hospital:
-                        form.value.ins_hospital || '0',
-                    ins_disability:
-                        form.value.ins_disability || '0',
-                    ins_death:
-                        form.value.ins_death || '0',
-                    stipend:
-                        form.value.stipend || '0',
-                    login_name:
-                        form.value.login_name.trim(),
-                    new_password:
-                        submittedPassword ||
-                        null,
-                    new_password_confirmation:
-                        form.value
-                            .new_password_confirmation
-                            .trim() ||
-                        null,
-                    active:
-                        form.value.active,
-                },
+                payload,
                 {
                     headers: {
                         Accept:
@@ -901,7 +1065,9 @@ async function saveStudent(): Promise<void> {
         pageError.value =
             getErrorMessage(
                 error,
-                'Unable to save the student profile.',
+                isCreateMode.value
+                    ? 'Unable to add the student.'
+                    : 'Unable to save the student profile.',
             );
     } finally {
         saving.value = false;
@@ -978,14 +1144,69 @@ function handleDefaultAvatarError(): void {
     defaultAvatarFailed.value = true;
 }
 
-function sendCredentialsEmail(): void {
-    toast.add({
-        severity: 'info',
-        summary: 'Send Email',
-        detail:
-            'Credential email sending will be connected to the existing emailer later.',
-        life: 3500,
-    });
+async function sendCredentialsEmail(): Promise<void> {
+    if (
+        isCreateMode.value ||
+        !currentStudentId.value
+    ) {
+        pageError.value =
+            'Save the student account before sending credentials.';
+
+        return;
+    }
+
+    if (emailSending.value) {
+        return;
+    }
+
+    emailSending.value = true;
+    pageError.value = '';
+
+    try {
+        const response =
+            await axios.post<{
+                message: string;
+            }>(
+                `/api/v1/databases/students/${encodeURIComponent(
+                    currentStudentId.value,
+                )}/send-credentials`,
+                {},
+                {
+                    headers: {
+                        Accept:
+                            'application/json',
+                        'X-Requested-With':
+                            'XMLHttpRequest',
+                    },
+                    withCredentials: true,
+                },
+            );
+
+        toast.add({
+            severity: 'success',
+            summary: 'Credentials Email Sent',
+            detail:
+                response.data.message ||
+                'The student login credentials were sent successfully.',
+            life: 4000,
+        });
+    } catch (error: unknown) {
+        pageError.value =
+            getErrorMessage(
+                error,
+                'Unable to send the student login credentials.',
+            );
+
+        toast.add({
+            severity: 'error',
+            summary: 'Email Not Sent',
+            detail:
+                pageError.value,
+            life: 5000,
+        });
+    } finally {
+        emailSending.value = false;
+    }
 }
 
 function openPhotoPicker(): void {
@@ -1528,6 +1749,13 @@ async function confirmPhotoCrop(): Promise<void> {
 }
 
 async function uploadPhoto(): Promise<void> {
+    if (isCreateMode.value) {
+        pageError.value =
+            'Save the new student before uploading a profile photo.';
+
+        return;
+    }
+
     if (!selectedPhoto.value) {
         pageError.value =
             'Select a profile photo first.';
@@ -1549,7 +1777,7 @@ async function uploadPhoto(): Promise<void> {
         const response =
             await axios.post<PhotoResponse>(
                 `/api/v1/databases/students/${encodeURIComponent(
-                    props.studentId,
+                    currentStudentId.value ?? '',
                 )}/photo`,
                 formData,
                 {
@@ -1618,7 +1846,7 @@ function handleActiveChange(
 
 function goBack(): void {
     router.visit(
-        '/databases/students',
+        '/databases/students/datatable',
     );
 }
 
@@ -1843,8 +2071,16 @@ onBeforeUnmount(() => {
 
                         <Button
                             type="button"
-                            label="Save Changes"
-                            icon="pi pi-save"
+                            :label="
+                                isCreateMode
+                                    ? 'Add Student'
+                                    : 'Save Changes'
+                            "
+                            :icon="
+                                isCreateMode
+                                    ? 'pi pi-plus'
+                                    : 'pi pi-save'
+                            "
                             severity="success"
                             :loading="saving"
                             :disabled="
@@ -2069,6 +2305,11 @@ onBeforeUnmount(() => {
                                 class="text-sm font-semibold text-slate-700"
                             >
                                 Gender
+                                <span
+                                    class="text-red-500"
+                                >
+                                    *
+                                </span>
                             </label>
 
                             <Select
@@ -2211,6 +2452,11 @@ onBeforeUnmount(() => {
                                 class="text-sm font-semibold text-slate-700"
                             >
                                 Email
+                                <span
+                                    class="text-red-500"
+                                >
+                                    *
+                                </span>
                             </label>
 
                             <InputText
@@ -2581,7 +2827,6 @@ onBeforeUnmount(() => {
                                 class="w-full"
                             />
                         </div>
-
                         <div
                             class="flex flex-col gap-2"
                         >
@@ -2600,7 +2845,6 @@ onBeforeUnmount(() => {
                                 class="w-full"
                             />
                         </div>
-
                         <div
                             class="flex flex-col gap-2"
                         >
@@ -2610,7 +2854,6 @@ onBeforeUnmount(() => {
                             >
                                 Disability Benefits
                             </label>
-
                             <InputText
                                 id="student-disability"
                                 v-model="form.ins_disability"
@@ -2619,7 +2862,6 @@ onBeforeUnmount(() => {
                                 class="w-full"
                             />
                         </div>
-
                         <div
                             class="flex flex-col gap-2"
                         >
@@ -2697,8 +2939,15 @@ onBeforeUnmount(() => {
                                 v-model="form.login_name"
                                 class="w-full"
                                 autocomplete="off"
-                                placeholder="Enter login name"
-                                :disabled="saving"
+                                :placeholder="
+                                    isCreateMode
+                                        ? 'Generated after save'
+                                        : 'Enter login name'
+                                "
+                                :disabled="
+                                    saving ||
+                                    isCreateMode
+                                "
                                 @input="
                                     clearResetCredentials
                                 "
@@ -2745,11 +2994,12 @@ onBeforeUnmount(() => {
                             </div>
                         </div>
 
-                        <!-- NEW PASSWORD -->
+                        <template v-if="!isCreateMode">
+                            <!-- NEW PASSWORD -->
 
-                        <div
-                            class="flex flex-col gap-2"
-                        >
+                            <div
+                                class="flex flex-col gap-2"
+                            >
                             <label
                                 for="student-new-password"
                                 class="text-sm font-semibold text-slate-700"
@@ -2821,20 +3071,29 @@ onBeforeUnmount(() => {
                                     clearResetCredentials
                                 "
                             />
-                        </div>
+                            </div>
+                        </template>
 
                         <Message
                             severity="info"
                             :closable="false"
                             class="md:col-span-2"
                         >
-                            The existing password is never displayed.
-                            Enter or generate a new password only when
-                            the student's login credentials need to be
-                            reset.
+                            <template v-if="isCreateMode">
+                                The System ID, Login Name and initial password
+                                will be generated when the new student is saved.
+                            </template>
+
+                            <template v-else>
+                                The existing password is never displayed.
+                                Enter or generate a new password only when
+                                the student's login credentials need to be
+                                reset.
+                            </template>
                         </Message>
 
                         <div
+                            v-if="!isCreateMode"
                             class="md:col-span-2 flex justify-end"
                         >
                             <Button
@@ -2843,7 +3102,8 @@ onBeforeUnmount(() => {
                                 icon="pi pi-envelope"
                                 severity="secondary"
                                 variant="outlined"
-                                :disabled="saving"
+                                :loading="emailSending"
+                                :disabled="saving || emailSending"
                                 @click="
                                     sendCredentialsEmail
                                 "
@@ -2918,7 +3178,8 @@ onBeforeUnmount(() => {
                                         icon="pi pi-envelope"
                                         severity="secondary"
                                         variant="outlined"
-                                        :disabled="saving"
+                                        :loading="emailSending"
+                                        :disabled="saving || emailSending"
                                         @click="
                                             sendCredentialsEmail
                                         "
@@ -2945,8 +3206,16 @@ onBeforeUnmount(() => {
 
                 <Button
                     type="button"
-                    label="Save Changes"
-                    icon="pi pi-save"
+                    :label="
+                        isCreateMode
+                            ? 'Add Student'
+                            : 'Save Changes'
+                    "
+                    :icon="
+                        isCreateMode
+                            ? 'pi pi-plus'
+                            : 'pi pi-save'
+                    "
                     severity="success"
                     :loading="saving"
                     :disabled="saving"
@@ -3148,5 +3417,4 @@ onBeforeUnmount(() => {
             </div>
         </template>
     </Dialog>
-
 </template>

@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\V1\QuestionUploadController;
 use App\Http\Controllers\Api\V1\QuestionActivationController;
 use App\Http\Controllers\Api\V1\SubjectBatchUpdateController;
 use App\Http\Controllers\Api\V1\StudentsController;
+use App\Http\Controllers\Api\V1\StudentBatchUploadController;
 use App\Http\Controllers\Api\V1\ItemAnalysisHistoryController;
 use App\Http\Controllers\Api\V1\QuestionListController;
 use App\Http\Controllers\Api\V1\ItemAnalysisController;
@@ -32,7 +33,7 @@ use App\Http\Controllers\Api\V1\DifficultyLevelController;
 use App\Http\Controllers\Api\V1\CorrectAnswerFrequencyController;
 use App\Http\Controllers\Api\V1\ExamResultsSummaryController;
 use App\Http\Controllers\Api\V1\ExamPackagesSummaryController;
-
+use App\Http\Controllers\Api\V1\StudentListReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/login',)->name('home');
@@ -85,12 +86,33 @@ Route::middleware(['auth'])->group(function (): void {
     // Databases — Students
     Route::inertia('/databases/students/datatable', 'databases/students/datatable/Index',)->name('databases.students');
     Route::inertia('/databases/students/profile/{studentId}', 'databases/students/profile/Index',['studentId' => fn () =>(string) request()->route('studentId',)])->whereUuid('studentId')->name('databases.students.edit');
+    Route::inertia('/databases/students/profile/new','databases/students/profile/Index',['studentId' => null,])->name('databases.students.profile.create');
+
+    Route::post('/api/v1/databases/students', [StudentsController::class,'store'])->name('api.v1.databases.students.store');
 
     Route::get('/api/v1/databases/datatable/students', [StudentsController::class, 'index',],)->name('api.v1.databases.datatable.students');
     Route::get('/api/v1/databases/students/options', [StudentsController::class, 'options',],)->name('api.v1.databases.students.options');
     Route::get('/api/v1/databases/students/{studentId}', [StudentsController::class, 'show',],)->whereUuid('studentId')->name('api.v1.databases.students.show');
     Route::put('/api/v1/databases/students/{studentId}', [StudentsController::class, 'update',],)->whereUuid('studentId')->name('api.v1.databases.students.update');
+    Route::post('/api/v1/databases/students/{studentId}/send-credentials', [StudentsController::class, 'sendCredentials',],)->middleware('throttle:5,1')->whereUuid('studentId')->name('api.v1.databases.students.send-credentials');
     Route::post('/api/v1/databases/students/{studentId}/photo', [StudentsController::class, 'uploadPhoto',],)->whereUuid('studentId')->name('api.v1.databases.students.photo');
+
+    // Databases — Batch Upload
+    Route::inertia('/databases/batch-upload/datatable', 'databases/batch-upload/datatable/Index',)->name('databases.batch-upload');
+
+    Route::prefix('/api/v1/databases/students/batch-upload')->controller(StudentBatchUploadController::class)->group(function (): void {
+        Route::get('/template', 'template')->name('api.v1.databases.students.batch-upload.template');
+        Route::post('/import', 'import')->middleware('throttle:10,1')->name('api.v1.databases.students.batch-upload.import');
+    });
+
+    // Databases - Student List Report
+    Route::inertia('/databases/student-list-report', 'databases/student-list-report/datatable/Index',)->name('databases.student-list-report');
+
+    Route::prefix('/api/v1/databases/student-list-report')->controller(StudentListReportController::class)->group(function (): void {
+        Route::get('/options', 'options')->name('api.v1.databases.student-list-report.options');
+        Route::get('/export', 'export')->middleware('throttle:10,1')->name('api.v1.databases.student-list-report.export');
+        Route::get('/', 'index')->name('api.v1.databases.student-list-report.index');
+    });
 
     // Dashboard — authenticated API and supporting routes
     Route::get('/api/v1/dashboard/datatable/students', [DashboardController::class, 'students',],)->name('api.v1.dashboard.datatable.students',);

@@ -2,6 +2,7 @@
 import { Head, router } from '@inertiajs/vue3';
 import axios from 'axios';
 import Avatar from 'primevue/avatar';
+import Button from 'primevue/button';
 import Message from 'primevue/message';
 import PrimeTag from 'primevue/tag';
 import {
@@ -162,7 +163,7 @@ const actions: DataTableAction[] = [
         key: 'edit',
         label: 'Edit Student',
         icon: 'pi pi-pencil',
-        severity: 'info',
+        severity: 'warn',
     },
 ];
 
@@ -316,6 +317,12 @@ function handleSearch(
     first.value = 0;
 
     void loadStudents(1);
+}
+
+function addStudent(): void {
+    router.visit(
+        '/databases/students/profile/new',
+    );
 }
 
 function handleAction(
@@ -834,6 +841,15 @@ onBeforeUnmount(() => {
                 handleAction
             "
         >
+            <template #header-actions>
+                <Button
+                    type="button"
+                    label="Add Student"
+                    icon="pi pi-plus"
+                    @click="addStudent"
+                />
+            </template>
+
             <!-- STUDENT INFORMATION -->
 
             <template
