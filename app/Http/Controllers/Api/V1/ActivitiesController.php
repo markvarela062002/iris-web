@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
+use App\Models\Student;
 
 class ActivitiesController extends Controller
 {
@@ -223,6 +224,163 @@ class ActivitiesController extends Controller
             $result,
         );
     }
+
+    /**
+ * Return the authenticated student's activity summary.
+ */
+public function studentDashboard(
+    Request $request,
+): JsonResponse {
+    $account = $request->user();
+
+    /*
+     * Only authenticated student accounts may use this
+     * endpoint.
+     */
+    if (! $account instanceof Student) {
+        return response()->json(
+            [
+                'message' =>
+                    'Only student accounts may access this resource.',
+            ],
+            Response::HTTP_FORBIDDEN,
+        );
+    }
+
+    $db = $this->resolveSchoolConnection(
+        $request,
+    );
+
+    if ($db instanceof JsonResponse) {
+        return $db;
+    }
+
+    $studentId = (string) $account
+        ->getAuthIdentifier();
+
+    /*
+     * Count every activity belonging to the currently
+     * authenticated student.
+     */
+    $total = $db
+        ->table('person_activity')
+        ->where(
+            'person_id',
+            $studentId,
+        )
+        ->count();
+
+    /*
+     * Return only the student's 10 most recent activities.
+     */
+    $activities = $db
+        ->table('person_activity')
+        ->leftJoin(
+            'activity',
+            'person_activity.activity_id',
+            '=',
+            'activity.id',
+        )
+        ->where(
+            'person_activity.person_id',
+            $studentId,
+        )
+        ->select([
+            'person_activity.id',
+            'person_activity.activity_id',
+            'person_activity.filename',
+            'person_activity.start_date',
+            'person_activity.end_date',
+            'person_activity.last_update',
+            'person_activity.sto_validated',
+            'person_activity.for_app',
+            'person_activity.revise_remarks',
+            'activity.desc_activity',
+        ])
+        ->orderByDesc(
+            'person_activity.last_update',
+        )
+        ->limit(10)
+        ->get()
+        ->map(
+            function (object $activity): array {
+                $validated = strtoupper(
+                    trim(
+                        (string) (
+                            $activity->sto_validated
+                            ?? ''
+                        ),
+                    ),
+                );
+
+                $forApproval = strtoupper(
+                    trim(
+                        (string) (
+                            $activity->for_app
+                            ?? ''
+                        ),
+                    ),
+                );
+
+                $remarks = trim(
+                    (string) (
+                        $activity->revise_remarks
+                        ?? ''
+                    ),
+                );
+
+                if ($validated === 'Y') {
+                    $status = 'Verified';
+                } elseif ($forApproval === 'Y') {
+                    $status = 'For Verification';
+                } elseif ($remarks !== '') {
+                    $status = 'For Revision';
+                } else {
+                    $status = 'Draft';
+                }
+
+                return [
+                    'id' => $activity->id,
+
+                    'activity_id' =>
+                        $activity->activity_id,
+
+                    'description' =>
+                        $activity->desc_activity
+                        ?? 'Activity',
+
+                    'filename' =>
+                        $activity->filename,
+
+                    'start_date' =>
+                        $activity->start_date,
+
+                    'end_date' =>
+                        $activity->end_date,
+
+                    'last_update' =>
+                        $activity->last_update,
+
+                    'sto_validated' =>
+                        $activity->sto_validated,
+
+                    'for_app' =>
+                        $activity->for_app,
+
+                    'revise_remarks' =>
+                        $remarks,
+
+                    'status' => $status,
+                ];
+            },
+        )
+        ->values();
+
+    return response()->json([
+        'total' => $total,
+        'data' => $activities,
+    ]);
+}
 
     /**
      * Return activity options for the Monitoring filter.

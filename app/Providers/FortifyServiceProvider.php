@@ -2,14 +2,18 @@
 
 namespace App\Providers;
 
+use App\Http\Responses\LoginResponse;
+use App\Models\Student;
 use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
+use Laravel\Fortify\Contracts\LoginResponse as LoginResponseContract;
 use Laravel\Fortify\Fortify;
 
 class FortifyServiceProvider extends ServiceProvider
@@ -19,7 +23,16 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        /*
+         * Use the custom login response to redirect:
+         *
+         * - Administrators to /dashboard
+         * - Students to /student-dashboard
+         */
+        $this->app->singleton(
+            LoginResponseContract::class,
+            LoginResponse::class,
+        );
     }
 
     /**
@@ -34,12 +47,12 @@ class FortifyServiceProvider extends ServiceProvider
 
     /**
      * Authenticate against the school database selected
-     * by the code entered on the login form.
+     * using the code entered on the login form.
      */
     private function configureAuthentication(): void
     {
         Fortify::authenticateUsing(
-            function (Request $request): ?User {
+            function (Request $request): ?Authenticatable {
                 $request->validate([
                     'login_name' => [
                         'required',
@@ -79,7 +92,7 @@ class FortifyServiceProvider extends ServiceProvider
                 );
 
                 /*
-                 * Read the available schools.
+                 * Read the configured schools.
                  */
                 $schools = config(
                     'schools.schools',
@@ -91,10 +104,11 @@ class FortifyServiceProvider extends ServiceProvider
                 }
 
                 /*
-                 * Select the school using only the submitted
-                 * login code. There is no default school.
+                 * Select the school using the submitted
+                 * school code. There is no default school.
                  */
-                $school = $schools[$submittedCode] ?? null;
+                $school =
+                    $schools[$submittedCode] ?? null;
 
                 if (! is_array($school)) {
                     return null;
@@ -113,6 +127,7 @@ class FortifyServiceProvider extends ServiceProvider
                 );
 
                 if (
+                    $configuredCode === '' ||
                     ! hash_equals(
                         $configuredCode,
                         $submittedCode,
@@ -122,20 +137,24 @@ class FortifyServiceProvider extends ServiceProvider
                 }
 
                 /*
-                 * Retrieve the configured connection name.
+                 * Retrieve the configured database
+                 * connection.
                  */
-                $connection = $school['connection'] ?? null;
+                $connection =
+                    $school['connection'] ?? null;
 
                 if (
                     ! is_string($connection) ||
-                    $connection === ''
+                    trim($connection) === ''
                 ) {
                     return null;
                 }
 
+                $connection = trim($connection);
+
                 /*
-                 * Confirm that the connection exists in
-                 * config/database.php.
+                 * Confirm that the database connection
+                 * exists in config/database.php.
                  */
                 $connectionConfig = config(
                     "database.connections.{$connection}",
@@ -146,86 +165,157 @@ class FortifyServiceProvider extends ServiceProvider
                 }
 
                 /*
-                 * Query the selected school's login table.
-                 */
-                $user = (new User())
-                    ->setConnection($connection)
-                    ->newQuery()
-                    ->whereRaw(
-                        'TRIM(login_name) = ?',
-                        [$loginName],
-                    )
-                    ->first();
-
-                if (! $user) {
-                    return null;
-                }
-
-                /*
-                 * Only active accounts may log in.
-                 */
-                if (! $user->isActive()) {
-                    return null;
-                }
-
-                /*
-                 * Reject expired accounts.
-                 */
-                if (
-                    $user->expiration_date &&
-                    now()
-                        ->startOfDay()
-                        ->greaterThan(
-                            $user->expiration_date,
-                        )
-                ) {
-                    return null;
-                }
-
-                /*
-                 * Legacy ADMAPro login_pass values are
-                 * stored as plaintext.
-                 */
-                $storedPassword = (string) $user->login_pass;
-
-                if (
-                    ! hash_equals(
-                        $storedPassword,
-                        $password,
-                    )
-                ) {
-                    return null;
-                }
-
-                /*
-                 * Use the selected school database for the
-                 * remainder of this request.
+                 * Use the selected school database for this
+                 * authentication request.
                  */
                 config([
                     'database.default' => $connection,
                 ]);
 
                 DB::setDefaultConnection($connection);
+                DB::purge($connection);
 
                 /*
-                 * Save the selected school and connection
-                 * in the session.
+                 * First, attempt authentication against
+                 * the administrator-side login table.
                  */
-                $request->session()->put([
-                    'school_code' => $configuredCode,
-                    'database_connection' => $connection,
-                ]);
+                $user = (new User())
+                    ->setConnection($connection)
+                    ->newQuery()
+                    ->with('loginType')
+                    ->whereRaw(
+                        'TRIM(login_name) = ?',
+                        [$loginName],
+                    )
+                    ->first();
 
+                if (
+                    $user &&
+                    $user->isActive() &&
+                    ! $this->isUserExpired($user) &&
+                    $this->passwordMatches(
+                        $user->login_pass,
+                        $password,
+                    )
+                ) {
+                    $this->storeAuthenticatedAccount(
+                        request: $request,
+                        schoolCode: $configuredCode,
+                        connection: $connection,
+                        accountType: 'administrator',
+                        roleId: $user->login_type_id,
+                    );
+
+                    $user->setConnection($connection);
+
+                    return $user;
+                }
 
                 /*
-                 * Preserve the selected connection on the
-                 * authenticated model.
+                 * If no valid login-table account matched,
+                 * attempt authentication against person.
                  */
-                $user->setConnection($connection);
+                $student = (new Student())
+                    ->setConnection($connection)
+                    ->newQuery()
+                    ->with('loginType')
+                    ->whereRaw(
+                        'TRIM(login_name) = ?',
+                        [$loginName],
+                    )
+                    ->first();
 
-                return $user;
+                if (
+                    ! $student ||
+                    ! $student->isActive() ||
+                    ! $this->passwordMatches(
+                        $student->login_pass,
+                        $password,
+                    )
+                ) {
+                    return null;
+                }
+
+                $this->storeAuthenticatedAccount(
+                    request: $request,
+                    schoolCode: $configuredCode,
+                    connection: $connection,
+                    accountType: 'student',
+                    roleId: $student->login_id,
+                );
+
+                $student->setConnection($connection);
+
+                return $student;
             },
         );
+    }
+
+    /**
+     * Determine whether an administrator-side account
+     * has expired.
+     */
+    private function isUserExpired(
+        User $user,
+    ): bool {
+        if (! $user->expiration_date) {
+            return false;
+        }
+
+        return now()
+            ->startOfDay()
+            ->greaterThan(
+                $user->expiration_date,
+            );
+    }
+
+    /**
+     * Compare the submitted password with the legacy
+     * plaintext password.
+     */
+    private function passwordMatches(
+        mixed $storedPassword,
+        string $submittedPassword,
+    ): bool {
+        $storedPassword = (string) $storedPassword;
+
+        if (
+            $storedPassword === '' ||
+            $submittedPassword === ''
+        ) {
+            return false;
+        }
+
+        return hash_equals(
+            $storedPassword,
+            $submittedPassword,
+        );
+    }
+
+    /**
+     * Save the selected school and authenticated account
+     * information in the session.
+     */
+    private function storeAuthenticatedAccount(
+        Request $request,
+        string $schoolCode,
+        string $connection,
+        string $accountType,
+        mixed $roleId,
+    ): void {
+        $request->session()->put([
+            'school_code' => $schoolCode,
+
+            'database_connection' =>
+                $connection,
+
+            'account_type' => $accountType,
+
+            'login_type_id' =>
+                is_string($roleId)
+                    ? $roleId
+                    : null,
+        ]);
     }
 
     /**

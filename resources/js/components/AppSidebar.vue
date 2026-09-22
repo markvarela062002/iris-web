@@ -1,6 +1,12 @@
 <script setup lang="ts">
 
-import { Link } from '@inertiajs/vue3';
+import {
+
+    Link,
+
+    usePage,
+
+} from '@inertiajs/vue3';
 
 import {
 
@@ -52,6 +58,8 @@ import {
 
 } from '@lucide/vue';
 
+import { computed } from 'vue';
+
 import AppLogo from '@/components/AppLogo.vue';
 
 import NavMain from '@/components/NavMain.vue';
@@ -78,7 +86,47 @@ import {
 
 import { dashboard } from '@/routes';
 
-import type { NavItem } from '@/types';
+import type {
+
+    NavItem,
+
+    SharedData,
+
+} from '@/types';
+
+type AuthenticatedAccount =
+
+    SharedData['auth']['user'] & {
+
+        account_type?: string | null;
+
+        role?: string | null;
+
+    };
+
+const page = usePage<SharedData>();
+
+const authenticatedAccount = computed(() => {
+
+    return page.props.auth
+
+        .user as AuthenticatedAccount;
+
+});
+
+const isCadet = computed(() => {
+
+    return String(
+
+        authenticatedAccount.value?.role ?? '',
+
+    )
+
+        .trim()
+
+        .toLowerCase() === 'cadet';
+
+});
 
 const mainNavItems: NavItem[] = [
 
@@ -168,13 +216,9 @@ const mainNavItems: NavItem[] = [
 
             {
 
-                title:
+                title: 'Theoretical - External',
 
-                    'Theoretical - External',
-
-                href:
-
-                    '/dashboard/theoretical-external',
+                href: '/dashboard/theoretical-external',
 
                 icon: CircleHelp,
 
@@ -182,13 +226,9 @@ const mainNavItems: NavItem[] = [
 
             {
 
-                title:
+                title: 'Practical - Internal',
 
-                    'Practical - Internal',
-
-                href:
-
-                    '/dashboard/practical-internal',
+                href: '/dashboard/practical-internal',
 
                 icon: ClipboardCheck,
 
@@ -196,13 +236,9 @@ const mainNavItems: NavItem[] = [
 
             {
 
-                title:
+                title: 'Practical - External',
 
-                    'Practical - External',
-
-                href:
-
-                    '/dashboard/practical-external',
+                href: '/dashboard/practical-external',
 
                 icon: ClipboardCheck,
 
@@ -226,9 +262,7 @@ const mainNavItems: NavItem[] = [
 
                 title: 'Activity Updates',
 
-                href:
-
-                    '/monitoring/activity-updates',
+                href: '/monitoring/activity-updates',
 
                 icon: Activity,
 
@@ -238,9 +272,7 @@ const mainNavItems: NavItem[] = [
 
                 title: 'Uploaded Documents',
 
-                href:
-
-                    '/monitoring/uploaded-documents',
+                href: '/monitoring/uploaded-documents',
 
                 icon: Upload,
 
@@ -248,13 +280,9 @@ const mainNavItems: NavItem[] = [
 
             {
 
-                title:
+                title: 'Training Record Book (OTG)',
 
-                    'Training Record Book (OTG)',
-
-                href:
-
-                    '/monitoring/otg-updates',
+                href: '/monitoring/otg-updates',
 
                 icon: BookOpen,
 
@@ -264,9 +292,7 @@ const mainNavItems: NavItem[] = [
 
                 title: 'Daily Journal',
 
-                href:
-
-                    '/monitoring/daily-journals',
+                href: '/monitoring/daily-journals',
 
                 icon: Notebook,
 
@@ -310,9 +336,7 @@ const mainNavItems: NavItem[] = [
 
                 title: 'Batch Upload',
 
-                href:
-
-                    '/databases/batch-upload/datatable',
+                href: '/databases/batch-upload/datatable',
 
                 icon: Upload,
 
@@ -320,13 +344,9 @@ const mainNavItems: NavItem[] = [
 
             {
 
-                title:
+                title: 'Student List Report',
 
-                    'Student List Report',
-
-                href:
-
-                    '/databases/student-list-report',
+                href: '/databases/student-list-report/datatable',
 
                 icon: Users,
 
@@ -348,13 +368,9 @@ const mainNavItems: NavItem[] = [
 
             {
 
-                title:
+                title: 'Activity Types Setup',
 
-                    'Activity Types Setup',
-
-                href:
-
-                    '/setup/activity-types',
+                href: '/setup/activity-types',
 
                 icon: Activity,
 
@@ -362,13 +378,9 @@ const mainNavItems: NavItem[] = [
 
             {
 
-                title:
+                title: 'Requirement Types Setup',
 
-                    'Requirement Types Setup',
-
-                href:
-
-                    '/setup/requirement-types',
+                href: '/setup/requirement-types',
 
                 icon: List,
 
@@ -376,13 +388,9 @@ const mainNavItems: NavItem[] = [
 
             {
 
-                title:
+                title: 'TRB - OTG Content Setup',
 
-                    'TRB - OTG Content Setup',
-
-                href:
-
-                    '/setup/trb-otg-content',
+                href: '/setup/trb-otg-content',
 
                 icon: BookOpen,
 
@@ -404,13 +412,9 @@ const mainNavItems: NavItem[] = [
 
             {
 
-                title:
+                title: 'Exam Sessions',
 
-                    'Exam Sessions',
-
-                href:
-
-                    '/assessment-setup/exam-session',
+                href: '/assessment-setup/exam-session',
 
                 icon: ClipboardCheck,
 
@@ -420,9 +424,7 @@ const mainNavItems: NavItem[] = [
 
                 title: 'Exam Packages',
 
-                href:
-
-                    '/assessment-setup/exam-package',
+                href: '/assessment-setup/exam-package',
 
                 icon: Package,
 
@@ -432,9 +434,7 @@ const mainNavItems: NavItem[] = [
 
                 title: 'Question Bank',
 
-                href:
-
-                    '/assessment-setup/question-bank',
+                href: '/assessment-setup/question-bank',
 
                 icon: CircleHelp,
 
@@ -454,9 +454,7 @@ const mainNavItems: NavItem[] = [
 
             {
 
-                title:
-
-                    'Question Activation',
+                title: 'Question Activation',
 
                 href:
 
@@ -468,9 +466,7 @@ const mainNavItems: NavItem[] = [
 
             {
 
-                title:
-
-                    'Subject Batch Update',
+                title: 'Subject Batch Update',
 
                 href:
 
@@ -494,9 +490,7 @@ const mainNavItems: NavItem[] = [
 
             {
 
-                title:
-
-                    'Practical Assessment Setup',
+                title: 'Practical Assessment Setup',
 
                 href:
 
@@ -522,9 +516,7 @@ const mainNavItems: NavItem[] = [
 
             {
 
-                title:
-
-                    'Exam Packages Summary',
+                title: 'Exam Packages Summary',
 
                 href:
 
@@ -536,9 +528,7 @@ const mainNavItems: NavItem[] = [
 
             {
 
-                title:
-
-                    'Exam Results Summary',
+                title: 'Exam Results Summary',
 
                 href:
 
@@ -550,9 +540,7 @@ const mainNavItems: NavItem[] = [
 
             {
 
-                title:
-
-                    'Correct Answer Frequency',
+                title: 'Correct Answer Frequency',
 
                 href:
 
@@ -576,9 +564,7 @@ const mainNavItems: NavItem[] = [
 
             {
 
-                title:
-
-                    'Discriminability Index',
+                title: 'Discriminability Index',
 
                 href:
 
@@ -614,9 +600,7 @@ const mainNavItems: NavItem[] = [
 
             {
 
-                title:
-
-                    'Item Analysis History',
+                title: 'Item Analysis History',
 
                 href:
 
@@ -632,215 +616,257 @@ const mainNavItems: NavItem[] = [
 
 ];
 
+/*
+
+ * Cadets only see the student dashboard.
+
+ * All other account roles see the complete navigation.
+
+ */
+
+const visibleNavItems = computed<NavItem[]>(() => {
+
+    if (isCadet.value) {
+
+        return [
+
+            {
+
+                title: 'Dashboard',
+
+                href: '/student-dashboard',
+
+                icon: LayoutGrid,
+
+            },
+
+        ];
+
+    }
+
+    return mainNavItems;
+
+});
+
+const logoDestination = computed(() => {
+
+    return isCadet.value
+
+        ? '/student-dashboard'
+
+        : dashboard();
+
+});
+
 </script>
 
 <template>
 
     <Sidebar
 
-    collapsible="icon"
+        collapsible="icon"
 
-    variant="sidebar"
+        variant="sidebar"
 
-    class="
+        class="
 
             overflow-hidden
 
-        rounded-r-2xl
+            rounded-r-2xl
 
-        border-r-0
+            border-r-0
 
+            [&_[data-sidebar=sidebar]]:!border-0
 
+            [&_[data-sidebar=sidebar]]:!bg-[#0B223D]
 
-        [&_[data-sidebar=sidebar]]:!border-0
+            [&_[data-sidebar=sidebar]]:!text-white
 
-        [&_[data-sidebar=sidebar]]:!bg-[#0B223D]
+            [&_[data-sidebar=group-label]]:!text-[10px]
 
-        [&_[data-sidebar=sidebar]]:!text-white
+            [&_[data-sidebar=group-label]]:!font-bold
 
-        [&_[data-sidebar=group-label]]:!text-slate-400
+            [&_[data-sidebar=group-label]]:!tracking-[0.15em]
 
-        [&_[data-sidebar=group-label]]:!text-[10px]
+            [&_[data-sidebar=group-label]]:!text-slate-400
 
-        [&_[data-sidebar=group-label]]:!font-bold
+            [&_[data-sidebar=group-label]]:uppercase
 
-        [&_[data-sidebar=group-label]]:!tracking-[0.15em]
+            [&_[data-sidebar=menu-button]]:!rounded-xl
 
-        [&_[data-sidebar=group-label]]:uppercase
+            [&_[data-sidebar=menu-button]]:!text-slate-200
 
-        [&_[data-sidebar=menu-button]]:!rounded-xl
+            [&_[data-sidebar=menu-button]]:transition-all
 
-        [&_[data-sidebar=menu-button]]:!text-slate-200
+            [&_[data-sidebar=menu-button]]:duration-200
 
-        [&_[data-sidebar=menu-button]]:transition-all
+            [&_[data-sidebar=menu-button]:hover]:!bg-white/10
 
-        [&_[data-sidebar=menu-button]]:duration-200
+            [&_[data-sidebar=menu-button]:hover]:!text-white
 
-        [&_[data-sidebar=menu-button]:hover]:!bg-white/10
+            [&_[data-sidebar=menu-button][data-active=true]]:!bg-[#377EC0]
 
-        [&_[data-sidebar=menu-button]:hover]:!text-white
+            [&_[data-sidebar=menu-button][data-active=true]]:!font-semibold
 
-        [&_[data-sidebar=menu-button][data-active=true]]:!bg-[#377EC0]
+            [&_[data-sidebar=menu-button][data-active=true]]:!text-white
 
-        [&_[data-sidebar=menu-button][data-active=true]]:!font-semibold
+            [&_[data-sidebar=menu-sub]]:!border-white/15
 
-        [&_[data-sidebar=menu-button][data-active=true]]:!text-white
+            [&_[data-sidebar=menu-sub-button]]:!rounded-lg
 
-        [&_[data-sidebar=menu-sub]]:!border-white/15
+            [&_[data-sidebar=menu-sub-button]]:!text-slate-300
 
-        [&_[data-sidebar=menu-sub-button]]:!rounded-lg
+            [&_[data-sidebar=menu-sub-button]]:transition-all
 
-        [&_[data-sidebar=menu-sub-button]]:!text-slate-300
+            [&_[data-sidebar=menu-sub-button]]:duration-200
 
-        [&_[data-sidebar=menu-sub-button]]:transition-all
+            [&_[data-sidebar=menu-sub-button]:hover]:!bg-white/10
 
-        [&_[data-sidebar=menu-sub-button]]:duration-200
+            [&_[data-sidebar=menu-sub-button]:hover]:!text-white
 
-        [&_[data-sidebar=menu-sub-button]:hover]:!bg-white/10
+            [&_[data-sidebar=menu-sub-button][data-active=true]]:!bg-[#377EC0]/25
 
-        [&_[data-sidebar=menu-sub-button]:hover]:!text-white
+            [&_[data-sidebar=menu-sub-button][data-active=true]]:!font-semibold
 
-        [&_[data-sidebar=menu-sub-button][data-active=true]]:!bg-[#377EC0]/25
+            [&_[data-sidebar=menu-sub-button][data-active=true]]:!text-blue-200
 
-        [&_[data-sidebar=menu-sub-button][data-active=true]]:!font-semibold
+            [&_[data-sidebar=menu-sub-button]_svg]:!text-current
 
-        [&_[data-sidebar=menu-sub-button][data-active=true]]:!text-blue-200
+            [&_[data-sidebar=menu-button]_svg]:!text-current
 
-        [&_[data-sidebar=menu-sub-button]_svg]:!text-current
+            [&_[data-sidebar=separator]]:!bg-white/10
 
-        [&_[data-sidebar=menu-button]_svg]:!text-current
+        "
 
-        [&_[data-sidebar=separator]]:!bg-white/10
+    >
 
-    "
+        <!-- Logo Header -->
 
->
+        <SidebarHeader
 
-        <!-- Compact Logo Header -->
+            class="border-b border-white/10 p-3"
 
-       <!-- Larger Logo Header -->
+        >
 
-<SidebarHeader class="border-b border-white/10 p-3">
+            <SidebarMenu>
 
-    <SidebarMenu>
+                <SidebarMenuItem>
 
-        <SidebarMenuItem>
+                    <SidebarMenuButton
 
-            <SidebarMenuButton
+                        size="lg"
 
-                size="lg"
+                        as-child
 
-                as-child
-
-                tooltip="Student Activity Monitoring"
-
-                class="
-
-                    h-28
-
-                    justify-center
-
-                    rounded-xl
-
-                    bg-transparent
-
-                    p-2
-
-                    hover:bg-white/5
-
-                    group-data-[collapsible=icon]:h-14
-
-                    group-data-[collapsible=icon]:p-1
-
-                "
-
-            >
-
-                <Link
-
-                    :href="dashboard()"
-
-                    class="
-
-                        flex
-
-                        h-full
-
-                        w-full
-
-                        flex-col
-
-                        items-center
-
-                        justify-center
-
-                        gap-2
-
-                    "
-
-                >
-
-                    <div
+                        tooltip="Student Activity Monitoring"
 
                         class="
 
-                            flex
-
-                            size-20
-
-                            shrink-0
-
-                            items-center
+                            h-28
 
                             justify-center
 
-                            group-data-[collapsible=icon]:size-11
+                            rounded-xl
+
+                            bg-transparent
+
+                            p-2
+
+                            hover:bg-white/5
+
+                            group-data-[collapsible=icon]:h-14
+
+                            group-data-[collapsible=icon]:p-1
 
                         "
 
                     >
 
-                        <AppLogo />
+                        <Link
 
-                    </div>
+                            :href="logoDestination"
 
-                    <p
+                            class="
 
-                        class="
+                                flex
 
-                            text-center
+                                h-full
 
-                            text-[10px]
+                                w-full
 
-                            font-semibold
+                                flex-col
 
-                            tracking-[0.16em]
+                                items-center
 
-                            whitespace-nowrap
+                                justify-center
 
-                            text-blue-100/70
+                                gap-2
 
-                            uppercase
+                            "
 
-                            group-data-[collapsible=icon]:hidden
+                        >
 
-                        "
+                            <div
 
-                    >
+                                class="
 
-                        Student Activity Monitoring
+                                    flex
 
-                    </p>
+                                    size-20
 
-                </Link>
+                                    shrink-0
 
-            </SidebarMenuButton>
+                                    items-center
 
-        </SidebarMenuItem>
+                                    justify-center
 
-    </SidebarMenu>
+                                    group-data-[collapsible=icon]:size-11
 
-</SidebarHeader>
+                                "
+
+                            >
+
+                                <AppLogo />
+
+                            </div>
+
+                            <p
+
+                                class="
+
+                                    text-center
+
+                                    text-[10px]
+
+                                    font-semibold
+
+                                    tracking-[0.16em]
+
+                                    whitespace-nowrap
+
+                                    text-blue-100/70
+
+                                    uppercase
+
+                                    group-data-[collapsible=icon]:hidden
+
+                                "
+
+                            >
+
+                                Student Activity Monitoring
+
+                            </p>
+
+                        </Link>
+
+                    </SidebarMenuButton>
+
+                </SidebarMenuItem>
+
+            </SidebarMenu>
+
+        </SidebarHeader>
 
         <!-- Navigation -->
 
@@ -860,11 +886,7 @@ const mainNavItems: NavItem[] = [
 
         >
 
-            <NavMain
-
-                :items="mainNavItems"
-
-            />
+            <NavMain :items="visibleNavItems" />
 
         </SidebarContent>
 

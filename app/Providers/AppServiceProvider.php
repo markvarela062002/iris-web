@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Auth\SchoolUserProvider;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
@@ -11,7 +13,7 @@ use Illuminate\Validation\Rules\Password;
 class AppServiceProvider extends ServiceProvider
 {
     /**
-     * Register any application services.
+     * Register application services.
      */
     public function register(): void
     {
@@ -19,15 +21,30 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Bootstrap any application services.
+     * Bootstrap application services.
      */
     public function boot(): void
     {
+        /*
+         * Register the custom authentication provider used
+         * by config/auth.php.
+         *
+         * This provider restores either:
+         *
+         * - App\Models\User from the login table
+         * - App\Models\Student from the person table
+         */
+        Auth::provider(
+            'school-users',
+            fn (): SchoolUserProvider =>
+                new SchoolUserProvider(),
+        );
+
         $this->configureDefaults();
     }
 
     /**
-     * Configure default behaviors for production-ready applications.
+     * Configure default application behavior.
      */
     protected function configureDefaults(): void
     {
@@ -37,14 +54,16 @@ class AppServiceProvider extends ServiceProvider
             app()->isProduction(),
         );
 
-        Password::defaults(fn (): ?Password => app()->isProduction()
-            ? Password::min(12)
-                ->mixedCase()
-                ->letters()
-                ->numbers()
-                ->symbols()
-                ->uncompromised()
-            : null,
+        Password::defaults(
+            fn (): ?Password =>
+                app()->isProduction()
+                    ? Password::min(12)
+                        ->mixedCase()
+                        ->letters()
+                        ->numbers()
+                        ->symbols()
+                        ->uncompromised()
+                    : null,
         );
     }
 }

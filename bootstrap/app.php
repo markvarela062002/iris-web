@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Middleware\HandleAppearance;
+use App\Http\Middleware\EnsureAccountType;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SetSchoolDatabase;
 use Illuminate\Foundation\Application;
@@ -21,22 +21,28 @@ return Application::configure(
         function (Middleware $middleware): void {
             $middleware->encryptCookies(
                 except: [
-                    'appearance',
                     'sidebar_state',
                 ],
             );
 
             /*
+             * Register route middleware aliases.
+             */
+            $middleware->alias([
+                'account.type' =>
+                    EnsureAccountType::class,
+            ]);
+
+            /*
              * SetSchoolDatabase must run before:
              *
-             * - Laravel retrieves the authenticated user
+             * - Laravel restores the authenticated account
              * - HandleInertiaRequests shares auth information
-             * - Dashboard controllers execute queries
+             * - Controllers execute database queries
              */
             $middleware->web(
                 append: [
                     SetSchoolDatabase::class,
-                    HandleAppearance::class,
                     HandleInertiaRequests::class,
                     AddLinkHeadersForPreloadedAssets::class,
                 ],

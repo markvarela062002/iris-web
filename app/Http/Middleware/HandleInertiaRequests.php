@@ -82,12 +82,71 @@ class HandleInertiaRequests extends Middleware
             ]
             : [
                 'code' => '',
+
                 'name' => (string) config(
                     'app.name',
                     'IRIS - SAM',
                 ),
+
                 'logo' => '/images/iris.png',
             ];
+
+        /*
+         * Retrieve the authenticated administrator or student.
+         */
+        $account = $request->user();
+
+        /*
+         * Load the role assigned through login_type.
+         */
+        if (
+            $account &&
+            method_exists($account, 'loginType')
+        ) {
+            $account->loadMissing('loginType');
+        }
+
+        $role = $account?->getRelationValue(
+            'loginType',
+        );
+
+        /*
+         * Normalize both User and Student models into the
+         * same structure for the Vue application.
+         */
+        $authenticatedUser = $account
+            ? [
+                ...$account->toArray(),
+
+                'account_type' => (string) (
+                    $account->getAttribute(
+                        'account_type',
+                    ) ?? 'unknown'
+                ),
+
+                'role' => $role
+                    ? (string) $role->code_type
+                    : 'CADET',
+
+                'role_id' => $account->getAttribute(
+                    'login_type_id',
+                ) ?? $account->getAttribute(
+                    'login_id',
+                ),
+
+                'is_admin' => $role
+                    ? $role->isAdministrator()
+                    : false,
+
+                'can_delete' => $role
+                    ? $role->canDelete()
+                    : false,
+
+                'is_internal' => $role
+                    ? $role->isInternal()
+                    : false,
+            ]
+            : null;
 
         return [
             ...parent::share($request),
@@ -95,7 +154,7 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
 
             'auth' => [
-                'user' => $request->user(),
+                'user' => $authenticatedUser,
             ],
 
             'school' => $schoolIdentity,
