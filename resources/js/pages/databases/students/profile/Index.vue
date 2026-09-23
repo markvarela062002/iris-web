@@ -7,6 +7,7 @@ import axios from 'axios';
 import Avatar from 'primevue/avatar';
 import Button from 'primevue/button';
 import Card from 'primevue/card';
+import Checkbox from 'primevue/checkbox';
 import DatePicker from 'primevue/datepicker';
 import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
@@ -275,6 +276,18 @@ function emptyForm(): StudentForm {
 const form = ref<StudentForm>(
     emptyForm(),
 );
+
+const activeStudentAccount = computed({
+    get(): boolean {
+        return form.value.active === 'Y';
+    },
+
+    set(value: boolean): void {
+        form.value.active = value
+            ? 'Y'
+            : 'N';
+    },
+});
 
 const currentStudentId =
     ref<string | null>(
@@ -1832,18 +1845,6 @@ async function uploadPhoto(): Promise<void> {
     }
 }
 
-function handleActiveChange(
-    event: Event,
-): void {
-    const target =
-        event.target as HTMLInputElement;
-
-    form.value.active =
-        target.checked
-            ? 'Y'
-            : 'N';
-}
-
 function goBack(): void {
     router.visit(
         '/databases/students/datatable',
@@ -2974,23 +2975,23 @@ onBeforeUnmount(() => {
                             <div
                                 class="flex min-h-[42px] items-center rounded-xl border border-slate-200 bg-slate-50 px-4"
                             >
-                                <label
-                                    class="flex cursor-pointer items-center gap-3 text-sm font-semibold text-slate-700"
+                                <div
+                                    class="flex items-center gap-3"
                                 >
-                                    <input
-                                        type="checkbox"
-                                        class="h-4 w-4 rounded border-slate-300"
-                                        :checked="
-                                            form.active === 'Y'
-                                        "
+                                    <Checkbox
+                                        input-id="student-active-account"
+                                        v-model="activeStudentAccount"
+                                        binary
                                         :disabled="saving"
-                                        @change="
-                                            handleActiveChange
-                                        "
                                     />
 
-                                    Active Student Account
-                                </label>
+                                    <label
+                                        for="student-active-account"
+                                        class="cursor-pointer text-sm font-semibold text-slate-700"
+                                    >
+                                        Active Student Account
+                                    </label>
+                                </div>
                             </div>
                         </div>
 

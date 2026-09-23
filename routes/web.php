@@ -34,6 +34,10 @@ use App\Http\Controllers\Api\V1\CorrectAnswerFrequencyController;
 use App\Http\Controllers\Api\V1\ExamResultsSummaryController;
 use App\Http\Controllers\Api\V1\ExamPackagesSummaryController;
 use App\Http\Controllers\Api\V1\StudentListReportController;
+use App\Http\Controllers\Api\V1\ActivityTypesController;
+use App\Http\Controllers\Api\V1\RequirementTypesController;
+use App\Http\Controllers\Api\V1\AlertSetupController;
+use App\Http\Controllers\Api\V1\TrbOtgContentController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect(
@@ -106,7 +110,43 @@ Route::middleware([
     Route::inertia('/monitoring/uploaded-documents', 'monitoring/uploaded-documents/Index',)->name('monitoring.uploaded-documents',);
     Route::inertia('/monitoring/otg-updates', 'monitoring/otg-updates/Index',)->name('monitoring.otg-updates',);
     Route::inertia('/monitoring/daily-journals', 'dashboard/daily-journals/Index',)->name('monitoring.daily-journals',);
+    Route::inertia(
+        '/monitoring/daily-journals/{journalId}',
+        'monitoring/daily-journals/Index',
+        [
+            'journalId' => fn () => (string) request()->route('journalId'),
+        ],
+    )->whereUuid('journalId')->name('monitoring.daily-journals.edit');
     Route::inertia('/monitoring/reports', 'monitoring/reports/Index',)->name('monitoring.reports',);
+
+    // Setup — Activity Types
+    Route::inertia('/setup/activity-types/datatable','setup/activity-types/datatable/Index',)->name('setup.activity-types');
+
+    Route::get('/api/v1/setup/activity-types/datatable',[ActivityTypesController::class,'index',],)->name('api.v1.setup.datatable.activity-types',);
+    Route::post('/api/v1/setup/activity-types',[ActivityTypesController::class,'store'])->name('api.v1.setup.activity-types.store');
+    Route::put('/api/v1/setup/activity-types/{activityId}',[ActivityTypesController::class,'update'])->whereUuid('activityId')->name('api.v1.setup.activity-types.update');
+    Route::delete('/api/v1/setup/activity-types/{activityId}',[ActivityTypesController::class,'destroy'])->whereUuid('activityId')->name('api.v1.setup.activity-types.destroy');
+
+    // Setup — Requirement Types
+    Route::inertia('/setup/requirement-types/datatable','setup/requirement-types/datatable/Index',)->name('setup.requirement-types');
+    Route::get('/api/v1/setup/requirement-types/datatable',[RequirementTypesController::class,'index',],)->name('api.v1.setup.datatable.requirement-types',);
+    Route::get('/api/v1/setup/requirement-types/options',[RequirementTypesController::class,'options',],)->name('api.v1.setup.requirement-types.options',);
+    Route::post('/api/v1/setup/requirement-types',[RequirementTypesController::class,'store'])->name('api.v1.setup.requirement-types.store');
+    Route::put('/api/v1/setup/requirement-types/{requirementId}',[RequirementTypesController::class,'update'])->whereUuid('requirementId')->name('api.v1.setup.requirement-types.update');
+    Route::delete('/api/v1/setup/requirement-types/{requirementId}',[RequirementTypesController::class,'destroy'])->whereUuid('requirementId')->name('api.v1.setup.requirement-types.destroy');
+
+    // Setup - Alert Setup
+    Route::inertia('/setup/alert-setup/datatable','setup/alert-setup/datatable/Index',)->name('setup.alert-setup');
+    Route::get('/api/v1/setup/alert-setup/datatable',[AlertSetupController::class,'index',],)->name('api.v1.setup.alert-setup.datatable');
+    Route::put('/api/v1/setup/alert-setup/{alertSetupId}',[AlertSetupController::class,'update'])->whereUuid('alertSetupId')->name('api.v1.setup.alert-setup.update');
+
+    // Setup — TRB - OTG Content Setup
+    Route::inertia('/setup/trb-otg-content/datatable','setup/trb-otg-content/datatable/Index',)->name('setup.trb-otg-content');
+    Route::get('/api/v1/setup/trb-otg-content/options',[TrbOtgContentController::class,'options',],)->name('api.v1.setup.trb-otg-content.options');
+    Route::get('/api/v1/setup/trb-otg-content/template',[TrbOtgContentController::class,'template',],)->name('api.v1.setup.trb-otg-content.template');
+    Route::get('/api/v1/setup/trb-otg-content/{trbTypeId}/content',[TrbOtgContentController::class,'show',],)->whereUuid('trbTypeId')->name('api.v1.setup.trb-otg-content.show');
+    Route::post('/api/v1/setup/trb-otg-content/import',[TrbOtgContentController::class,'import',],)->middleware('throttle:10,1')->name('api.v1.setup.trb-otg-content.import');
+    Route::delete('/api/v1/setup/trb-otg-content/{trbTypeId}',[TrbOtgContentController::class,'destroy',],)->whereUuid('trbTypeId')->name('api.v1.setup.trb-otg-content.destroy');
 
     // Assessment Setup
     Route::inertia('/assessment-setup/question-bank', 'assessment-setup/question-bank/datatable/Index',)->name('assessment-setup.question-bank');
@@ -226,6 +266,16 @@ Route::middleware([
     Route::get('/api/v1/monitoring/datatable/otg-updates', [OtgController::class, 'index',],)->name('api.v1.monitoring.datatable.otg-updates',);
     Route::get('/api/v1/monitoring/reports/options', [ReportsController::class, 'options',],)->name('api.v1.monitoring.reports.options',);
     Route::get('/api/v1/monitoring/reports', [ReportsController::class, 'index',],)->name('api.v1.monitoring.reports.index',);
+     // Monitoring — Daily Journals
+    Route::inertia('/monitoring/daily-journals','dashboard/daily-journals/Index',)->name('monitoring.daily-journals');
+    Route::inertia('/monitoring/daily-journals/datatable/{journalId}','monitoring/daily-journals/datatable/Index',['journalId' => fn () => (string) request()->route('journalId')])->whereUuid('journalId')->name('monitoring.daily-journals.edit');
+    
+    Route::prefix('/api/v1/monitoring/daily-journals')->controller(JournalsController::class)->group(function (): void {
+        Route::get('/{journalId}', 'show')->whereUuid('journalId')->name('api.v1.monitoring.daily-journals.show');
+        Route::put('/{journalId}', 'update')->whereUuid('journalId')->name('api.v1.monitoring.daily-journals.update');
+        Route::post('/{journalId}/evidence', 'uploadEvidence')->whereUuid('journalId')->name('api.v1.monitoring.daily-journals.evidence');
+        Route::post('/{journalId}/signature', 'uploadSignature')->middleware('throttle:10,1')->whereUuid('journalId')->name('api.v1.monitoring.daily-journals.signature');
+    });
 
     // Assessment Report — Item Analysis History API. Static routes precede {historyId}.
     Route::get('/api/v1/assessment-reports/item-analysis-history/options', [ItemAnalysisHistoryController::class, 'options'])->name('api.v1.assessment-reports.item-analysis-history.options');

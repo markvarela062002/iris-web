@@ -367,10 +367,16 @@ const mainNavItems: NavItem[] = [
         items: [
 
             {
+            title: 'Alerts Setup',
+            href: '/setup/alert-setup/datatable',
+            icon: Bell,
+            },
+
+            {
 
                 title: 'Activity Types Setup',
 
-                href: '/setup/activity-types',
+                href: '/setup/activity-types/datatable',
 
                 icon: Activity,
 
@@ -380,7 +386,7 @@ const mainNavItems: NavItem[] = [
 
                 title: 'Requirement Types Setup',
 
-                href: '/setup/requirement-types',
+                href: '/setup/requirement-types/datatable',
 
                 icon: List,
 
@@ -390,7 +396,7 @@ const mainNavItems: NavItem[] = [
 
                 title: 'TRB - OTG Content Setup',
 
-                href: '/setup/trb-otg-content',
+                href: '/setup/trb-otg-content/datatable',
 
                 icon: BookOpen,
 

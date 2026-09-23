@@ -9,13 +9,16 @@ use Illuminate\Database\Query\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Mpdf\Mpdf;
 use Mpdf\Output\Destination;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
+use Throwable;
 
 class JournalsController extends Controller
 {
@@ -24,31 +27,26 @@ class JournalsController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-[
-    $connection,
-    $school,
-] = $this->resolveSchoolConnection(
-    $request,
-);
+        [$connection, $school] = $this->resolveSchoolConnection(
+            $request,
+        );
 
-$database = DB::connection(
-    $connection,
-);
+        $database = DB::connection($connection);
 
-/*
- * Journal objective evidence is stored in the same
- * public person_task directory as activity files.
- */
-$evidenceBaseUrl = rtrim(
-    trim(
-        (string) data_get(
-            $school,
-            'files.activity_url',
-            '',
-        ),
-    ),
-    '/',
-);
+        /*
+         * Journal objective evidence is stored in the same public
+         * person_task directory as activity files.
+         */
+        $evidenceBaseUrl = rtrim(
+            trim(
+                (string) data_get(
+                    $school,
+                    'files.activity_url',
+                    '',
+                ),
+            ),
+            '/',
+        );
 
         $validated = $request->validate([
             'date_from' => [
@@ -170,17 +168,17 @@ $evidenceBaseUrl = rtrim(
             ->paginate($perPage)
             ->withQueryString();
 
-$records = collect(
-    $paginator->items(),
-)
-    ->map(
-        fn (object $journal): array =>
-            $this->transformJournal(
-                journal: $journal,
-                evidenceBaseUrl: $evidenceBaseUrl,
-            ),
-    )
-    ->values();
+        $records = collect(
+            $paginator->items(),
+        )
+            ->map(
+                fn (object $journal): array =>
+                    $this->transformJournal(
+                        journal: $journal,
+                        evidenceBaseUrl: $evidenceBaseUrl,
+                    ),
+            )
+            ->values();
 
         return response()->json([
             'data' => $records,
@@ -351,6 +349,448 @@ $records = collect(
     }
 
     /**
+     * Return one daily journal for the monitoring edit page.
+     */
+    public function show(
+        Request $request,
+        string $journalId,
+    ): JsonResponse {
+        [$connection, $school] = $this->resolveSchoolConnection(
+            $request,
+        );
+
+        $database = DB::connection($connection);
+
+        $journal = $this->findJournalOrFail(
+            $database,
+            $journalId,
+        );
+
+        return response()->json([
+            'data' => $this->transformJournalForEdit(
+                journal: $journal,
+                personTaskBaseUrl: $this->personTaskBaseUrl(
+                    $school,
+                ),
+            ),
+        ]);
+    }
+
+    /**
+     * Update a daily journal from the administrator monitoring page.
+     *
+     * Validation status is retained, but administrators may correct
+     * journal information after STO validation.
+     */
+    public function update(
+        Request $request,
+        string $journalId,
+    ): JsonResponse {
+        [$connection, $school] = $this->resolveSchoolConnection(
+            $request,
+        );
+
+        $database = DB::connection($connection);
+
+        $this->findJournalOrFail(
+            $database,
+            $journalId,
+        );
+
+        $validated = $request->validate([
+            'date_journal' => [
+                'required',
+                'date_format:Y-m-d',
+            ],
+            'journal_time' => [
+                'required',
+                'date_format:H:i',
+            ],
+            'journal_time_to' => [
+                'required',
+                'date_format:H:i',
+            ],
+            'vessel_name' => [
+                'required',
+                'string',
+                'max:50',
+            ],
+            'ship_lat' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
+            'ship_long' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
+            'ship_vicinity' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
+            'port_depart' => [
+                'nullable',
+                'string',
+                'max:1000',
+            ],
+            'port_dest' => [
+                'nullable',
+                'string',
+                'max:1000',
+            ],
+            'pos_fix' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
+            'course_speed' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
+            'fo_rob' => [
+                'nullable',
+                'string',
+                'max:2000',
+            ],
+            'fo_dob' => [
+                'nullable',
+                'string',
+                'max:2000',
+            ],
+            'fo_lob' => [
+                'nullable',
+                'string',
+                'max:2000',
+            ],
+            'fo_cons' => [
+                'nullable',
+                'string',
+                'max:2000',
+            ],
+            'do_cons' => [
+                'nullable',
+                'string',
+                'max:2000',
+            ],
+            'average_rpm' => [
+                'nullable',
+                'string',
+                'max:2000',
+            ],
+            'average_speed' => [
+                'nullable',
+                'string',
+                'max:2000',
+            ],
+            'activities' => [
+                'required',
+                'string',
+                'max:20000',
+            ],
+            'key_areas' => [
+                'nullable',
+                'string',
+                'max:20000',
+            ],
+            'sto_name' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
+        ]);
+
+        $hours = $this->calculateDutyHoursDecimal(
+            $validated['date_journal'],
+            $validated['journal_time'],
+            $validated['journal_time_to'],
+        );
+
+        $database
+            ->table('person_journal')
+            ->where('id', $journalId)
+            ->update([
+                'date_journal' =>
+                    $validated['date_journal'],
+                'journal_time' =>
+                    $validated['journal_time'],
+                'journal_time_to' =>
+                    $validated['journal_time_to'],
+                'hrs' =>
+                    $hours,
+                'vessel_name' =>
+                    trim($validated['vessel_name']),
+                'ship_lat' =>
+                    $this->nullableString(
+                        $validated['ship_lat'] ?? null,
+                    ),
+                'ship_long' =>
+                    $this->nullableString(
+                        $validated['ship_long'] ?? null,
+                    ),
+                'ship_vicinity' =>
+                    $this->nullableString(
+                        $validated['ship_vicinity'] ?? null,
+                    ),
+                'port_depart' =>
+                    $this->nullableString(
+                        $validated['port_depart'] ?? null,
+                    ),
+                'port_dest' =>
+                    $this->nullableString(
+                        $validated['port_dest'] ?? null,
+                    ),
+                'pos_fix' =>
+                    $this->nullableString(
+                        $validated['pos_fix'] ?? null,
+                    ),
+                'course_speed' =>
+                    $this->nullableString(
+                        $validated['course_speed'] ?? null,
+                    ),
+                'fo_rob' =>
+                    $this->nullableString(
+                        $validated['fo_rob'] ?? null,
+                    ),
+                'fo_dob' =>
+                    $this->nullableString(
+                        $validated['fo_dob'] ?? null,
+                    ),
+                'fo_lob' =>
+                    $this->nullableString(
+                        $validated['fo_lob'] ?? null,
+                    ),
+                'fo_cons' =>
+                    $this->nullableString(
+                        $validated['fo_cons'] ?? null,
+                    ),
+                'do_cons' =>
+                    $this->nullableString(
+                        $validated['do_cons'] ?? null,
+                    ),
+                'average_rpm' =>
+                    $this->nullableString(
+                        $validated['average_rpm'] ?? null,
+                    ),
+                'average_speed' =>
+                    $this->nullableString(
+                        $validated['average_speed'] ?? null,
+                    ),
+                'activities' =>
+                    trim($validated['activities']),
+                'key_areas' =>
+                    $this->nullableString(
+                        $validated['key_areas'] ?? null,
+                    ),
+                'sto_name' =>
+                    $this->nullableString(
+                        $validated['sto_name'] ?? null,
+                    ),
+            ]);
+
+        $updated = $this->findJournalOrFail(
+            $database,
+            $journalId,
+        );
+
+        return response()->json([
+            'message' =>
+                'Daily journal saved successfully.',
+            'data' =>
+                $this->transformJournalForEdit(
+                    journal: $updated,
+                    personTaskBaseUrl: $this->personTaskBaseUrl(
+                        $school,
+                    ),
+                ),
+        ]);
+    }
+
+    /**
+     * Replace the journal objective evidence on the selected school's
+     * existing person_task FTP disk. Administrators may correct evidence
+     * even when the journal has already been validated.
+     */
+    public function uploadEvidence(
+        Request $request,
+        string $journalId,
+    ): JsonResponse {
+        [$connection, $school] = $this->resolveSchoolConnection(
+            $request,
+        );
+
+        $database = DB::connection($connection);
+        $journal = $this->findJournalOrFail(
+            $database,
+            $journalId,
+        );
+
+        $validated = $request->validate([
+            'evidence' => [
+                'required',
+                'file',
+                'max:20480',
+                'mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,txt,csv',
+            ],
+        ]);
+
+        /** @var UploadedFile $file */
+        $file = $validated['evidence'];
+
+        $diskName = $this->schoolDiskName(
+            $request,
+            'person_task',
+        );
+
+        $newFilename = $this->storeRemoteFile(
+            diskName: $diskName,
+            file: $file,
+            prefix: 'journal',
+        );
+
+        $oldFilename = basename(
+            str_replace(
+                '\\',
+                '/',
+                trim((string) ($journal->file_name ?? '')),
+            ),
+        );
+
+        try {
+            $database
+                ->table('person_journal')
+                ->where('id', $journalId)
+                ->update([
+                    'file_name' => $newFilename,
+                    'gdrive_link' => null,
+                ]);
+        } catch (Throwable $exception) {
+            $this->deleteRemoteFileQuietly(
+                $diskName,
+                $newFilename,
+            );
+
+            throw $exception;
+        }
+
+        if (
+            $oldFilename !== ''
+            && $oldFilename !== $newFilename
+        ) {
+            $this->deleteRemoteFileQuietly(
+                $diskName,
+                $oldFilename,
+            );
+        }
+
+        $updated = $this->findJournalOrFail(
+            $database,
+            $journalId,
+        );
+
+        return response()->json([
+            'message' =>
+                'Objective evidence uploaded successfully.',
+            'data' =>
+                $this->transformJournalForEdit(
+                    journal: $updated,
+                    personTaskBaseUrl: $this->personTaskBaseUrl(
+                        $school,
+                    ),
+                ),
+        ]);
+    }
+
+    /**
+     * Save the STO signature and validate the journal.
+     *
+     * The legacy application uses person_journal.esig_file as the STO
+     * signature / validation marker, so this method preserves that rule.
+     */
+    public function uploadSignature(
+        Request $request,
+        string $journalId,
+    ): JsonResponse {
+        [$connection, $school] = $this->resolveSchoolConnection(
+            $request,
+        );
+
+        $database = DB::connection($connection);
+        $journal = $this->findJournalOrFail(
+            $database,
+            $journalId,
+        );
+
+        $this->ensureJournalIsEditable($journal);
+
+        $validated = $request->validate([
+            'sto_name' => [
+                'required',
+                'string',
+                'max:50',
+            ],
+            'signature' => [
+                'required',
+                'file',
+                'max:5120',
+                'mimes:png,jpg,jpeg,webp',
+            ],
+        ]);
+
+        /** @var UploadedFile $file */
+        $file = $validated['signature'];
+
+        $diskName = $this->schoolDiskName(
+            $request,
+            'person_task',
+        );
+
+        $newFilename = $this->storeRemoteFile(
+            diskName: $diskName,
+            file: $file,
+            prefix: 'journal_sto_signature',
+        );
+
+        try {
+            $database
+                ->table('person_journal')
+                ->where('id', $journalId)
+                ->update([
+                    'sto_name' =>
+                        trim($validated['sto_name']),
+                    'esig_file' =>
+                        $newFilename,
+                ]);
+        } catch (Throwable $exception) {
+            $this->deleteRemoteFileQuietly(
+                $diskName,
+                $newFilename,
+            );
+
+            throw $exception;
+        }
+
+        $updated = $this->findJournalOrFail(
+            $database,
+            $journalId,
+        );
+
+        return response()->json([
+            'message' =>
+                'STO signature saved. The journal is now validated.',
+            'data' =>
+                $this->transformJournalForEdit(
+                    journal: $updated,
+                    personTaskBaseUrl: $this->personTaskBaseUrl(
+                        $school,
+                    ),
+                ),
+        ]);
+    }
+
+    /**
      * Generate and display the selected student's journal PDF.
      */
     public function download(Request $request): Response
@@ -448,6 +888,16 @@ $records = collect(
             search: null,
         );
 
+        $studentSignatureDisk = $this->schoolDiskName(
+            $request,
+            'esig',
+        );
+
+        $personTaskDisk = $this->schoolDiskName(
+            $request,
+            'person_task',
+        );
+
         $journals = $query
             ->orderBy(
                 'person_journal.date_journal',
@@ -459,7 +909,11 @@ $records = collect(
             ->map(
                 function (
                     object $journal,
-                ) use ($student): object {
+                ) use (
+                    $student,
+                    $studentSignatureDisk,
+                    $personTaskDisk,
+                ): object {
                     $journal->duty_hours =
                         $this->calculateDutyHours(
                             $journal->date_journal,
@@ -468,15 +922,15 @@ $records = collect(
                         );
 
                     $journal->student_signature =
-                        $this->imageDataUri(
-                            'images',
+                        $this->remoteImageDataUri(
+                            $studentSignatureDisk,
                             $student->dig_signature
                                 ?? null,
                         );
 
                     $journal->officer_signature =
-                        $this->imageDataUri(
-                            'person_task',
+                        $this->remoteImageDataUri(
+                            $personTaskDisk,
                             $journal->esig_file
                                 ?? null,
                         );
@@ -753,152 +1207,324 @@ $records = collect(
         }
     }
 
-/**
- * Convert a journal row into the DataTable response.
- *
- * @return array<string, mixed>
- */
-private function transformJournal(
-    object $journal,
-    string $evidenceBaseUrl,
-): array {
-    $fileName = basename(
-        str_replace(
-            '\\',
-            '/',
-            trim(
-                (string) (
-                    $journal->file_name ?? ''
+    /**
+     * Convert a journal row into the DataTable response.
+     *
+     * @return array<string, mixed>
+     */
+    private function transformJournal(
+        object $journal,
+        string $evidenceBaseUrl,
+    ): array {
+        $fileName = basename(
+            str_replace(
+                '\\',
+                '/',
+                trim(
+                    (string) (
+                        $journal->file_name ?? ''
+                    ),
                 ),
             ),
-        ),
-    );
+        );
 
-    $googleDriveId = trim(
-        (string) (
-            $journal->gdrive_link ?? ''
-        ),
-    );
+        $googleDriveId = trim(
+            (string) (
+                $journal->gdrive_link ?? ''
+            ),
+        );
 
-    $evidenceUrl = null;
-    $evidenceSource = null;
+        $evidenceUrl = null;
+        $evidenceSource = null;
 
-    /*
-     * Preserve the legacy Google Drive behavior.
-     */
-    if (
-        $fileName !== '' &&
-        $googleDriveId !== ''
-    ) {
-        $evidenceUrl = Str::startsWith(
-            $googleDriveId,
-            [
-                'http://',
-                'https://',
-            ],
-        )
-            ? $googleDriveId
-            : 'https://drive.google.com/file/d/'.
-                rawurlencode($googleDriveId).
-                '/view';
+        if (
+            $fileName !== ''
+            && $googleDriveId !== ''
+        ) {
+            $evidenceUrl = Str::startsWith(
+                $googleDriveId,
+                [
+                    'http://',
+                    'https://',
+                ],
+            )
+                ? $googleDriveId
+                : 'https://drive.google.com/file/d/'.
+                    rawurlencode($googleDriveId).
+                    '/view';
 
-        $evidenceSource = 'google-drive';
-    } elseif (
-        $fileName !== '' &&
-        $evidenceBaseUrl !== ''
-    ) {
-        /*
-         * Generate the selected school's public
-         * person_task URL.
-         */
-        $evidenceUrl =
-            $evidenceBaseUrl.
-            '/'.
-            rawurlencode($fileName);
+            $evidenceSource = 'google-drive';
+        } elseif (
+            $fileName !== ''
+            && $evidenceBaseUrl !== ''
+        ) {
+            $evidenceUrl =
+                $evidenceBaseUrl.
+                '/'.
+                rawurlencode($fileName);
 
-        $evidenceSource = 'school-server';
+            $evidenceSource = 'school-server';
+        }
+
+        $isValidated = $this->isValidated(
+            $journal->esig_file ?? null,
+        );
+
+        return [
+            'id' =>
+                (string) $journal->id,
+
+            'person_id' =>
+                (string) $journal->person_id,
+
+            'date_journal' =>
+                $journal->date_journal,
+
+            'school_id_no' =>
+                $journal->school_id_no,
+
+            'fname' =>
+                $journal->fname,
+
+            'mname' =>
+                $journal->mname,
+
+            'lname' =>
+                $journal->lname,
+
+            'gender' =>
+                $journal->gender,
+
+            'department' =>
+                $journal->dept,
+
+            'student_name' =>
+                $this->studentName(
+                    $journal,
+                ),
+
+            'vessel_name' =>
+                $journal->vessel_name,
+
+            'journal_time' =>
+                $journal->journal_time,
+
+            'journal_time_to' =>
+                $journal->journal_time_to,
+
+            'duty_hours' =>
+                $this->calculateDutyHours(
+                    $journal->date_journal,
+                    $journal->journal_time,
+                    $journal->journal_time_to,
+                ),
+
+            'port_depart' =>
+                $journal->port_depart,
+
+            'port_dest' =>
+                $journal->port_dest,
+
+            'file_name' =>
+                $fileName,
+
+            'evidence_url' =>
+                $evidenceUrl,
+
+            'evidence_source' =>
+                $evidenceSource,
+
+            'status' =>
+                $isValidated
+                    ? 'Validated'
+                    : 'Pending',
+
+            'validated' =>
+                $isValidated,
+        ];
     }
 
-    $isValidated = $this->isValidated(
-        $journal->esig_file ?? null,
-    );
+    /**
+     * Convert a journal row into the edit-page response.
+     *
+     * @return array<string, mixed>
+     */
+    private function transformJournalForEdit(
+        object $journal,
+        string $personTaskBaseUrl = '',
+    ): array {
+        $fileName = $this->safeFilename(
+            $journal->file_name ?? null,
+        );
 
-    return [
-        'id' =>
-            (string) $journal->id,
+        $officerSignature = $this->safeFilename(
+            $journal->esig_file ?? null,
+        );
 
-        'person_id' =>
-            (string) $journal->person_id,
-
-        'date_journal' =>
-            $journal->date_journal,
-
-        'school_id_no' =>
-            $journal->school_id_no,
-
-        'fname' =>
-            $journal->fname,
-
-        'mname' =>
-            $journal->mname,
-
-        'lname' =>
-            $journal->lname,
-
-        'gender' =>
-            $journal->gender,
-
-        'department' =>
-            $journal->dept,
-
-        'student_name' =>
-            $this->studentName(
-                $journal,
+        $googleDriveId = trim(
+            (string) (
+                $journal->gdrive_link ?? ''
             ),
+        );
 
-        'vessel_name' =>
-            $journal->vessel_name,
+        $evidenceUrl = null;
+        $evidenceSource = null;
 
-        'journal_time' =>
-            $journal->journal_time,
+        if (
+            $fileName !== ''
+            && $googleDriveId !== ''
+        ) {
+            $evidenceUrl = Str::startsWith(
+                $googleDriveId,
+                ['http://', 'https://'],
+            )
+                ? $googleDriveId
+                : 'https://drive.google.com/file/d/'.
+                    rawurlencode($googleDriveId).
+                    '/view';
 
-        'journal_time_to' =>
-            $journal->journal_time_to,
+            $evidenceSource = 'google-drive';
+        } elseif ($fileName !== '') {
+            $evidenceUrl = $this->personTaskFileUrl(
+                filename: $fileName,
+                personTaskBaseUrl: $personTaskBaseUrl,
+            );
 
-        'duty_hours' =>
-            $this->calculateDutyHours(
+            $evidenceSource = 'school-server';
+        }
+
+        $validated = $this->isValidated(
+            $journal->esig_file ?? null,
+        );
+
+        return [
+            'id' => (string) $journal->id,
+            'person_id' => (string) $journal->person_id,
+            'school_id_no' => $journal->school_id_no,
+            'fname' => $journal->fname,
+            'mname' => $journal->mname,
+            'lname' => $journal->lname,
+            'gender' => $journal->gender,
+            'department' => $journal->dept,
+            'student_name' => $this->studentName($journal),
+            'date_journal' => $journal->date_journal,
+            'journal_time' => $journal->journal_time,
+            'journal_time_to' => $journal->journal_time_to,
+            'duty_hours' => $this->calculateDutyHours(
                 $journal->date_journal,
                 $journal->journal_time,
                 $journal->journal_time_to,
             ),
-
-        'port_depart' =>
-            $journal->port_depart,
-
-        'port_dest' =>
-            $journal->port_dest,
-
-        'file_name' =>
-            $fileName,
-
-        /*
-         * Complete public or Google Drive URL.
-         */
-        'evidence_url' =>
-            $evidenceUrl,
-
-        'evidence_source' =>
-            $evidenceSource,
-
-        'status' =>
-            $isValidated
+            'vessel_name' => $journal->vessel_name,
+            'ship_lat' => $journal->ship_lat,
+            'ship_long' => $journal->ship_long,
+            'ship_vicinity' => $journal->ship_vicinity,
+            'port_depart' => $journal->port_depart,
+            'port_dest' => $journal->port_dest,
+            'pos_fix' => $journal->pos_fix,
+            'course_speed' => $journal->course_speed,
+            'fo_rob' => $journal->fo_rob,
+            'fo_dob' => $journal->fo_dob,
+            'fo_lob' => $journal->fo_lob,
+            'fo_cons' => $journal->fo_cons,
+            'do_cons' => $journal->do_cons,
+            'average_rpm' => $journal->average_rpm,
+            'average_speed' => $journal->average_speed,
+            'activities' => $this->decodeLegacyText(
+                $journal->activities ?? null,
+            ),
+            'key_areas' => $this->decodeLegacyText(
+                $journal->key_areas ?? null,
+            ),
+            'sto_name' => $journal->sto_name,
+            'file_name' => $fileName,
+            'gdrive_link' => $journal->gdrive_link,
+            'evidence_url' => $evidenceUrl,
+            'evidence_source' => $evidenceSource,
+            'officer_signature_file' => $officerSignature,
+            'officer_signature_url' =>
+                $officerSignature !== ''
+                    ? $this->personTaskFileUrl(
+                        filename: $officerSignature,
+                        personTaskBaseUrl: $personTaskBaseUrl,
+                    )
+                    : null,
+            'validated' => $validated,
+            'status' => $validated
                 ? 'Validated'
                 : 'Pending',
+        ];
+    }
 
-        'validated' =>
-            $isValidated,
-    ];
-}
+    /**
+     * Return the selected school's existing public person_task URL.
+     * This is the same location used by the legacy daily-journal STO
+     * signatures and by the existing activity-file configuration.
+     */
+    private function personTaskBaseUrl(
+        array $school,
+    ): string {
+        return rtrim(
+            trim(
+                (string) data_get(
+                    $school,
+                    'files.activity_url',
+                    '',
+                ),
+            ),
+            '/',
+        );
+    }
+
+    private function personTaskFileUrl(
+        string $filename,
+        string $personTaskBaseUrl,
+    ): string {
+        if ($personTaskBaseUrl !== '') {
+            return $personTaskBaseUrl.
+                '/'.
+                rawurlencode($filename);
+        }
+
+        return '/dashboard/files/person-task/'.
+            rawurlencode($filename);
+    }
+
+    /**
+     * Locate one journal with its student data.
+     */
+    private function findJournalOrFail(
+        ConnectionInterface $database,
+        string $journalId,
+    ): object {
+        $journal = $this
+            ->journalQuery($database)
+            ->where(
+                'person_journal.id',
+                $journalId,
+            )
+            ->first();
+
+        abort_if(
+            $journal === null,
+            HttpResponse::HTTP_NOT_FOUND,
+            'The selected daily journal was not found.',
+        );
+
+        return $journal;
+    }
+
+    private function ensureJournalIsEditable(
+        object $journal,
+    ): void {
+        abort_if(
+            $this->isValidated(
+                $journal->esig_file ?? null,
+            ),
+            HttpResponse::HTTP_CONFLICT,
+            'This daily journal is already validated and can no longer be edited.',
+        );
+    }
 
     /**
      * Build a student's display name.
@@ -949,6 +1575,39 @@ private function transformJournal(
         mixed $timeFrom,
         mixed $timeTo,
     ): string {
+        $minutes = $this->calculateDutyMinutes(
+            $date,
+            $timeFrom,
+            $timeTo,
+        );
+
+        return sprintf(
+            '%d hr %d min',
+            intdiv($minutes, 60),
+            $minutes % 60,
+        );
+    }
+
+    private function calculateDutyHoursDecimal(
+        mixed $date,
+        mixed $timeFrom,
+        mixed $timeTo,
+    ): float {
+        return round(
+            $this->calculateDutyMinutes(
+                $date,
+                $timeFrom,
+                $timeTo,
+            ) / 60,
+            2,
+        );
+    }
+
+    private function calculateDutyMinutes(
+        mixed $date,
+        mixed $timeFrom,
+        mixed $timeTo,
+    ): int {
         $startTime = trim((string) $timeFrom);
         $endTime = trim((string) $timeTo);
 
@@ -956,7 +1615,7 @@ private function transformJournal(
             $startTime === ''
             || $endTime === ''
         ) {
-            return '0 hr 0 min';
+            return 0;
         }
 
         try {
@@ -977,16 +1636,10 @@ private function transformJournal(
                 $end->addDay();
             }
 
-            $minutes = (int) $start
+            return (int) $start
                 ->diffInMinutes($end);
-
-            return sprintf(
-                '%d hr %d min',
-                intdiv($minutes, 60),
-                $minutes % 60,
-            );
-        } catch (\Throwable) {
-            return '0 hr 0 min';
+        } catch (Throwable) {
+            return 0;
         }
     }
 
@@ -1006,41 +1659,234 @@ private function transformJournal(
         );
     }
 
+    private function nullableString(
+        mixed $value,
+    ): ?string {
+        $text = trim((string) ($value ?? ''));
+
+        return $text === ''
+            ? null
+            : $text;
+    }
+
+    private function decodeLegacyText(
+        mixed $value,
+    ): string {
+        $text = (string) ($value ?? '');
+
+        return urldecode($text);
+    }
+
+    private function safeFilename(
+        mixed $filename,
+    ): string {
+        return basename(
+            str_replace(
+                '\\',
+                '/',
+                trim((string) ($filename ?? '')),
+            ),
+        );
+    }
+
     /**
-     * Convert a local signature image to an embedded data URI.
+     * Resolve the selected school's configured FTP disk name.
      */
-    private function imageDataUri(
-        string $directory,
+    private function schoolDiskName(
+        Request $request,
+        string $storageType,
+    ): string {
+        $schoolCode = strtolower(
+            trim(
+                (string) $request
+                    ->session()
+                    ->get('school_code', ''),
+            ),
+        );
+
+        abort_if(
+            $schoolCode === '',
+            HttpResponse::HTTP_FORBIDDEN,
+            'No school has been selected.',
+        );
+
+        abort_unless(
+            preg_match(
+                '/\A[a-z0-9_-]+\z/',
+                $schoolCode,
+            ) === 1,
+            HttpResponse::HTTP_FORBIDDEN,
+            'The selected school code is invalid.',
+        );
+
+        abort_unless(
+            in_array(
+                $storageType,
+                [
+                    'person_task',
+                    'esig',
+                ],
+                true,
+            ),
+            HttpResponse::HTTP_BAD_REQUEST,
+            'The requested storage type is invalid.',
+        );
+
+        $diskName = sprintf(
+            'admapro_%s_%s',
+            $schoolCode,
+            $storageType,
+        );
+
+        abort_unless(
+            is_array(
+                config(
+                    "filesystems.disks.{$diskName}",
+                ),
+            ),
+            HttpResponse::HTTP_INTERNAL_SERVER_ERROR,
+            'The selected school file storage is not configured.',
+        );
+
+        return $diskName;
+    }
+
+    private function storeRemoteFile(
+        string $diskName,
+        UploadedFile $file,
+        string $prefix,
+    ): string {
+        $extension = strtolower(
+            $file->getClientOriginalExtension(),
+        );
+
+        if ($extension === '') {
+            $extension = strtolower(
+                (string) $file->extension(),
+            );
+        }
+
+        $extension = preg_replace(
+            '/[^a-z0-9]+/',
+            '',
+            $extension,
+        ) ?: 'bin';
+
+        $filename = sprintf(
+            '%s_%s_%s.%s',
+            $prefix,
+            now('Asia/Manila')->format(
+                'Ymd_His',
+            ),
+            Str::lower(Str::random(8)),
+            $extension,
+        );
+
+        $stream = fopen(
+            $file->getRealPath(),
+            'rb',
+        );
+
+        abort_if(
+            $stream === false,
+            HttpResponse::HTTP_UNPROCESSABLE_ENTITY,
+            'The selected file could not be read.',
+        );
+
+        try {
+            $stored = Storage::disk($diskName)
+                ->put(
+                    $filename,
+                    $stream,
+                );
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }
+
+        abort_unless(
+            $stored,
+            HttpResponse::HTTP_BAD_GATEWAY,
+            'The file could not be uploaded to the selected school storage.',
+        );
+
+        return $filename;
+    }
+
+    private function deleteRemoteFileQuietly(
+        string $diskName,
+        string $filename,
+    ): void {
+        if ($filename === '') {
+            return;
+        }
+
+        try {
+            $disk = Storage::disk($diskName);
+
+            if ($disk->exists($filename)) {
+                $disk->delete($filename);
+            }
+        } catch (Throwable) {
+            // The database update remains authoritative.
+        }
+    }
+
+    /**
+     * Convert an image stored on the selected school's FTP disk into
+     * an embedded data URI for the PDF renderer.
+     */
+    private function remoteImageDataUri(
+        string $diskName,
         mixed $filename,
     ): ?string {
-        $safeFilename = basename(
-            trim((string) $filename),
-        );
+        $safeFilename = $this->safeFilename($filename);
 
         if ($safeFilename === '') {
             return null;
         }
 
-        $path = public_path(
-            $directory.
-            DIRECTORY_SEPARATOR.
-            $safeFilename,
-        );
+        try {
+            $disk = Storage::disk($diskName);
 
-        if (! File::isFile($path)) {
+            if (! $disk->exists($safeFilename)) {
+                return null;
+            }
+
+            $contents = $disk->get($safeFilename);
+
+            $mimeType = $disk->mimeType($safeFilename);
+
+            if (
+                ! is_string($mimeType)
+                || ! str_starts_with(
+                    $mimeType,
+                    'image/',
+                )
+            ) {
+                $mimeType = match (
+                    strtolower(
+                        pathinfo(
+                            $safeFilename,
+                            PATHINFO_EXTENSION,
+                        ),
+                    )
+                ) {
+                    'jpg', 'jpeg' => 'image/jpeg',
+                    'webp' => 'image/webp',
+                    default => 'image/png',
+                };
+            }
+
+            return sprintf(
+                'data:%s;base64,%s',
+                $mimeType,
+                base64_encode($contents),
+            );
+        } catch (Throwable) {
             return null;
         }
-
-        $mimeType = File::mimeType($path)
-            ?: 'image/png';
-
-        return sprintf(
-            'data:%s;base64,%s',
-            $mimeType,
-            base64_encode(
-                (string) File::get($path),
-            ),
-        );
     }
 
     /**

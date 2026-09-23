@@ -1951,7 +1951,7 @@ onBeforeUnmount(() => {
                         class="flex min-w-0 items-center gap-2"
                     >
                         <i
-                            class="pi pi-envelope shrink-0 text-xs text-violet-500"
+                            class="pi pi-envelope shrink-0 text-xs text-red-500"
                         ></i>
 
                         <span
@@ -1990,7 +1990,7 @@ onBeforeUnmount(() => {
                             class="flex items-center gap-1.5 text-xs text-slate-600"
                         >
                             <i
-                                class="pi pi-mobile text-emerald-500"
+                                class="pi pi-mobile text-cyan-500"
                             ></i>
 
                             {{
@@ -2009,7 +2009,7 @@ onBeforeUnmount(() => {
                             class="flex items-center gap-1.5 text-xs text-slate-600"
                         >
                             <i
-                                class="pi pi-phone text-cyan-500"
+                                class="pi pi-phone text-emerald-500"
                             ></i>
 
                             {{
@@ -2037,7 +2037,7 @@ onBeforeUnmount(() => {
                         class="flex items-center gap-2 text-xs"
                     >
                         <i
-                            class="pi pi-calendar shrink-0 text-amber-500"
+                            class="pi pi-calendar shrink-0 text-blue-500"
                         ></i>
 
                         <span
