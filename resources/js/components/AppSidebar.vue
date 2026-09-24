@@ -152,19 +152,9 @@ const mainNavItems: NavItem[] = [
 
             {
 
-                title: 'Statistics',
-
-                href: '/alerts/statistics',
-
-                icon: BarChart3,
-
-            },
-
-            {
-
                 title: 'Calendar',
 
-                href: '/alerts/calendar',
+                href: '/alerts/calendar/datatable',
 
                 icon: Calendar,
 
@@ -174,7 +164,7 @@ const mainNavItems: NavItem[] = [
 
                 title: 'Announcements',
 
-                href: '/alerts/announcements',
+                href: '/alerts/announcements/datatable',
 
                 icon: Megaphone,
 

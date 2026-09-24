@@ -37,6 +37,9 @@ use App\Http\Controllers\Api\V1\StudentListReportController;
 use App\Http\Controllers\Api\V1\ActivityTypesController;
 use App\Http\Controllers\Api\V1\RequirementTypesController;
 use App\Http\Controllers\Api\V1\AlertSetupController;
+use App\Http\Controllers\Api\V1\AlertCalendarController;
+use App\Http\Controllers\Api\V1\AnnouncementsController;
+use App\Http\Controllers\Api\V1\MessageController;
 use App\Http\Controllers\Api\V1\TrbOtgContentController;
 use Illuminate\Support\Facades\Route;
 
@@ -104,6 +107,31 @@ Route::middleware([
     Route::inertia('/dashboard/practical-external', 'dashboard/practical-external/datatable/Index',)->name('dashboard.practical-external');
     Route::inertia('/dashboard/practical-internal/batch', 'dashboard/practical-internal/batch/Index',)->name('dashboard.practical-internal.batch');
     Route::inertia('/dashboard/practical-external/batch', 'dashboard/practical-external/batch/Index',)->name('dashboard.practical-external.batch');
+
+    // Alerts — Calendar
+    Route::inertia('/alerts/calendar/datatable','alerts/calendar/datatable/Index',)->name('alerts.calendar');
+    Route::get('/api/v1/alerts/calendar/events',[AlertCalendarController::class,'events',],)->name('api.v1.alerts.calendar.events');
+    Route::get('/api/v1/alerts/calendar/events/{type}/{date}',[AlertCalendarController::class,'details',],)->whereIn('type',['person_activity','file_upload','person_task','person_journal'])->where('date','\d{4}-\d{2}-\d{2}')->name('api.v1.alerts.calendar.details');
+
+    // Alerts — Announcements
+    Route::inertia('/alerts/announcements/datatable','alerts/announcements/datatable/Index',)->name('alerts.announcements');
+    Route::get('/api/v1/alerts/datatable/announcements',[AnnouncementsController::class,'index',],)->name('api.v1.alerts.datatable.announcements');
+    Route::post('/api/v1/alerts/announcements',[AnnouncementsController::class,'store',],)->name('api.v1.alerts.announcements.store');
+    Route::put('/api/v1/alerts/announcements/{announcementId}',[AnnouncementsController::class,'update',],)->whereUuid('announcementId')->name('api.v1.alerts.announcements.update');
+    Route::delete('/api/v1/alerts/announcements/{announcementId}',[AnnouncementsController::class,'destroy',],)->whereUuid('announcementId')->name('api.v1.alerts.announcements.destroy');
+
+    // Alerts — Messages
+    Route::inertia('/alerts/messages','alerts/messages/Index',)->name('alerts.messages');
+    Route::get('/api/v1/alerts/messages',[MessageController::class,'fetchMessageModule',],)->name('api.v1.alerts.messages.index');
+    Route::get('/api/v1/alerts/messages/administrators',[MessageController::class,'fetchAdministrators',],)->name('api.v1.alerts.messages.administrators');
+    Route::get('/api/v1/alerts/messages/students',[MessageController::class,'fetchStudents',],)->name('api.v1.alerts.messages.students');
+    Route::get('/api/v1/alerts/messages/{inboxId}/replies',[MessageController::class,'fetchMessageReplies',],)->name('api.v1.alerts.messages.replies');
+    Route::post('/api/v1/alerts/messages',[MessageController::class,'storeMessage',],)->name('api.v1.alerts.messages.store');
+    Route::post('/api/v1/alerts/messages/{inboxId}/replies',[MessageController::class,'storeMessageReply',],)->name('api.v1.alerts.messages.replies.store');
+    Route::delete('/api/v1/alerts/messages/{inboxId}/history',[MessageController::class,'deleteConversationHistory',])->where('inboxId','[A-Za-z0-9\-]+');
+    Route::delete('/api/v1/alerts/messages/{inboxId}/original',[MessageController::class,'deleteOriginalMessage',],)->where('inboxId','[A-Za-z0-9\-]+',);
+    Route::delete('/api/v1/alerts/messages/{inboxId}/replies/{replyId}',[MessageController::class,'deleteMessageReply',],)->where(['inboxId' =>'[A-Za-z0-9\-]+','replyId' =>'[A-Za-z0-9\-]+',]);
+
 
     // Monitoring
     Route::inertia('/monitoring/activity-updates', 'monitoring/activity-updates/Index',)->name('monitoring.activity-updates',);

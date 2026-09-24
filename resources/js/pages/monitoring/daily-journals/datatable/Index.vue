@@ -1007,7 +1007,7 @@ async function signJournal(): Promise<void> {
 
         toast.add({
             severity: 'success',
-            summary: 'Journal Validated',
+            summary: 'Journal Signed',
             detail:
                 response.data.message ||
                 'STO signature saved successfully.',
@@ -1147,7 +1147,7 @@ onBeforeUnmount(() => {
                                 />
 
                                 <PrimeTag
-                                    :value="journal?.status || 'Pending'"
+                                    :value="isValidated ? 'Signed' : 'Pending'"
                                     :severity="isValidated ? 'success' : 'secondary'"
                                     :icon="isValidated ? 'pi pi-check-circle' : 'pi pi-clock'"
                                     rounded
@@ -1576,7 +1576,7 @@ onBeforeUnmount(() => {
                             </div>
 
                             <PrimeTag
-                                :value="isValidated ? 'Validated' : 'Signature Required'"
+                                :value="isValidated ? 'Signed' : 'Signature Required'"
                                 :severity="isValidated ? 'success' : 'warn'"
                                 :icon="isValidated ? 'pi pi-check-circle' : 'pi pi-clock'"
                                 rounded
