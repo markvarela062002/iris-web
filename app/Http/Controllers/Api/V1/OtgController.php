@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\Response;
+use App\Models\Student;
 
 class OtgController extends Controller
 {
@@ -268,6 +269,224 @@ class OtgController extends Controller
             $result,
         );
     }
+
+    /**
+ * Return the authenticated student's OTG summary.
+ */
+public function studentDashboard(
+    Request $request,
+): JsonResponse {
+    $account = $request->user();
+
+    if (! $account instanceof Student) {
+        return response()->json(
+            [
+                'message' =>
+                    'Only student accounts may access this resource.',
+            ],
+            Response::HTTP_FORBIDDEN,
+        );
+    }
+
+    $db = $this->resolveSchoolConnection(
+        $request,
+    );
+
+    if ($db instanceof JsonResponse) {
+        return $db;
+    }
+
+    $studentId = (string) $account
+        ->getAuthIdentifier();
+
+    /*
+     * Count all applicable OTG tasks assigned to the
+     * authenticated student.
+     */
+    $totalTasks = $db
+        ->table('person_task')
+        ->where(
+            'person_id',
+            $studentId,
+        )
+        ->whereRaw(
+            "UPPER(TRIM(COALESCE(not_app, ''))) != 'Y'",
+        )
+        ->count();
+
+    /*
+     * Count completed OTG tasks.
+     *
+     * A completed OTG task must contain:
+     * - a completion date
+     * - a month onboard
+     * - objective evidence
+     * - proof of assessment
+     * - not be marked N/A
+     */
+    $completedTasks = $db
+        ->table('person_task')
+        ->where(
+            'person_id',
+            $studentId,
+        )
+        ->whereNotNull(
+            'completed',
+        )
+        ->whereRaw(
+            "TRIM(COALESCE(completed, '')) != ''",
+        )
+        ->whereRaw(
+            "TRIM(COALESCE(month_no, '')) != ''",
+        )
+        ->whereRaw(
+            "UPPER(TRIM(COALESCE(not_app, ''))) != 'Y'",
+        )
+        ->whereExists(
+            function ($query): void {
+                $query
+                    ->selectRaw('1')
+                    ->from('person_task_file')
+                    ->whereColumn(
+                        'person_task_file.person_task_id',
+                        'person_task.id',
+                    );
+            },
+        )
+        ->whereExists(
+            function ($query): void {
+                $query
+                    ->selectRaw('1')
+                    ->from('person_task_proof')
+                    ->whereColumn(
+                        'person_task_proof.person_task_id',
+                        'person_task.id',
+                    );
+            },
+        )
+        ->count();
+
+    /*
+     * Avoid division by zero when no OTG tasks have
+     * been assigned.
+     */
+    $completionPercentage = $totalTasks > 0
+        ? round(
+            ($completedTasks / $totalTasks) * 100,
+            1,
+        )
+        : 0.0;
+
+    /*
+     * Return the student's latest 10 completed OTG tasks.
+     */
+    $tasks = $db
+        ->table('person_task')
+        ->leftJoin(
+            'task',
+            'task.id',
+            '=',
+            'person_task.task_id',
+        )
+        ->where(
+            'person_task.person_id',
+            $studentId,
+        )
+        ->whereNotNull(
+            'person_task.completed',
+        )
+        ->whereRaw(
+            "TRIM(COALESCE(person_task.completed, '')) != ''",
+        )
+        ->whereRaw(
+            "TRIM(COALESCE(person_task.month_no, '')) != ''",
+        )
+        ->whereRaw(
+            "UPPER(TRIM(COALESCE(person_task.not_app, ''))) != 'Y'",
+        )
+        ->whereExists(
+            function ($query): void {
+                $query
+                    ->selectRaw('1')
+                    ->from('person_task_file')
+                    ->whereColumn(
+                        'person_task_file.person_task_id',
+                        'person_task.id',
+                    );
+            },
+        )
+        ->whereExists(
+            function ($query): void {
+                $query
+                    ->selectRaw('1')
+                    ->from('person_task_proof')
+                    ->whereColumn(
+                        'person_task_proof.person_task_id',
+                        'person_task.id',
+                    );
+            },
+        )
+        ->select([
+            'person_task.id',
+            'person_task.person_id',
+            'person_task.task_id',
+            'person_task.completed',
+            'person_task.month_no',
+            'person_task.not_app',
+
+            'task.ref_no',
+            'task.desc_task',
+        ])
+        ->orderByDesc(
+            'person_task.completed',
+        )
+        ->limit(10)
+        ->get()
+        ->map(
+            static function (
+                object $task,
+            ): array {
+                return [
+                    'id' =>
+                        $task->id,
+
+                    'task_id' =>
+                        $task->task_id,
+
+                    'reference_number' =>
+                        $task->ref_no,
+
+                    'description' =>
+                        $task->desc_task
+                        ?? 'OTG Task',
+
+                    'month_number' =>
+                        $task->month_no,
+
+                    'completed_at' =>
+                        $task->completed,
+
+                    'status' =>
+                        'Completed',
+                ];
+            },
+        )
+        ->values();
+
+    return response()->json([
+        'percentage' =>
+            $completionPercentage,
+
+        'completed' =>
+            $completedTasks,
+
+        'total' =>
+            $totalTasks,
+
+        'data' =>
+            $tasks,
+    ]);
+}
     
     /**
      * Resolve the school database selected during login.

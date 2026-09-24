@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Student;
 use App\Services\DatatableService;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Http\JsonResponse;
@@ -17,23 +18,23 @@ class DocumentsController extends Controller
     ) {
     }
 
-
+    /**
+     * Return uploaded documents for administrator monitoring.
+     */
     public function index(Request $request): JsonResponse
     {
-        $db = $this->resolveSchoolConnection($request);
+        $db = $this->resolveSchoolConnection(
+            $request,
+        );
 
         if ($db instanceof JsonResponse) {
             return $db;
         }
 
-        $schoolCode = $this->resolveSchoolCode($request);
+        $schoolCode = $this->resolveSchoolCode(
+            $request,
+        );
 
-        /*
-         * Uploaded documents are stored in the legacy /docs folder.
-         *
-         * Example:
-         * https://exact-cme-iris.ph/docs
-         */
         $documentsBaseUrl = rtrim(
             trim(
                 (string) config(
@@ -45,13 +46,14 @@ class DocumentsController extends Controller
         );
 
         /*
-         * Combine every file_upload_d filename into its parent
-         * file_upload record.
+         * Combine every file_upload_d filename into its
+         * parent file_upload record.
          */
         $uploadedFiles = $db
             ->table('file_upload_d')
             ->select([
                 'file_upload_id',
+
                 DB::raw(
                     <<<'SQL'
                     GROUP_CONCAT(
@@ -62,18 +64,10 @@ class DocumentsController extends Controller
                     SQL,
                 ),
             ])
-            ->groupBy('file_upload_id');
+            ->groupBy(
+                'file_upload_id',
+            );
 
-        /*
-         * Legacy administrator filter:
-         *
-         * (
-         *     sto_validated != 'Y'
-         *     OR sto_validated = ''
-         *     OR sto_validated IS NULL
-         * )
-         * AND for_app = 'Y'
-         */
         $query = $db
             ->table('file_upload')
             ->leftJoin(
@@ -121,28 +115,31 @@ class DocumentsController extends Controller
 
         if (! $request->boolean('monitoring')) {
             $query
-                ->where(function ($query): void {
-                    $query
-                        ->where(
-                            'file_upload.sto_validated',
-                            '!=',
-                            'Y',
-                        )
-                        ->orWhere(
-                            'file_upload.sto_validated',
-                            '=',
-                            '',
-                        )
-                        ->orWhereNull(
-                            'file_upload.sto_validated',
-                        );
-                })
+                ->where(
+                    function ($query): void {
+                        $query
+                            ->where(
+                                'file_upload.sto_validated',
+                                '!=',
+                                'Y',
+                            )
+                            ->orWhere(
+                                'file_upload.sto_validated',
+                                '=',
+                                '',
+                            )
+                            ->orWhereNull(
+                                'file_upload.sto_validated',
+                            );
+                    },
+                )
                 ->where(
                     'file_upload.for_app',
                     '=',
                     'Y',
                 );
         }
+
         $result = $this->datatableService->paginate(
             query: $query,
             request: $request,
@@ -160,42 +157,57 @@ class DocumentsController extends Controller
                 'file_upload.time_uploaded',
             ],
             sortableColumns: [
-                'fname' => 'person.fname',
-                'lname' => 'person.lname',
-                'school_id_no' => 'person.school_id_no',
-                'file_desc' => 'file_upload.file_desc',
-                'desc_requirement' => 'requirement.desc_requirement',
-                'date_uploaded' => 'file_upload.date_uploaded',
-                'last_update' => 'file_upload.last_update',
+                'fname' =>
+                    'person.fname',
+
+                'lname' =>
+                    'person.lname',
+
+                'school_id_no' =>
+                    'person.school_id_no',
+
+                'file_desc' =>
+                    'file_upload.file_desc',
+
+                'desc_requirement' =>
+                    'requirement.desc_requirement',
+
+                'date_uploaded' =>
+                    'file_upload.date_uploaded',
+
+                'last_update' =>
+                    'file_upload.last_update',
             ],
             defaultSortColumn: 'date_uploaded',
             defaultSortDirection: 'desc',
         );
 
-        $result = $this->datatableService->addRowNumbers(
-            response: $result,
-            key: 'index',
-        );
+        $result = $this->datatableService
+            ->addRowNumbers(
+                response: $result,
+                key: 'index',
+            );
 
-        /*
-         * Add the correct public document URLs.
-         *
-         * Storage::exists() is intentionally not called here because
-         * that would create one FTP connection/request for every file.
-         */
         $result['data'] = collect(
             $result['data'] ?? [],
         )
             ->map(
-                function ($row) use ($documentsBaseUrl): array {
+                function ($row) use (
+                    $documentsBaseUrl,
+                ): array {
                     $record = is_object($row)
                         ? get_object_vars($row)
                         : (array) $row;
 
-                    $record['files'] = $this->buildFileList(
-                        filenames: $record['filenames'] ?? null,
-                        documentsBaseUrl: $documentsBaseUrl,
-                    );
+                    $record['files'] =
+                        $this->buildFileList(
+                            filenames:
+                                $record['filenames']
+                                ?? null,
+
+                            documentsBaseUrl:
+                                $documentsBaseUrl,
+                        );
 
                     return $record;
                 },
@@ -203,7 +215,228 @@ class DocumentsController extends Controller
             ->values()
             ->all();
 
-        return response()->json($result);
+        return response()->json(
+            $result,
+        );
+    }
+
+    /**
+     * Return the authenticated student's document summary.
+     */
+    public function studentDashboard(
+        Request $request,
+    ): JsonResponse {
+        $account = $request->user();
+
+        if (! $account instanceof Student) {
+            return response()->json(
+                [
+                    'message' =>
+                        'Only student accounts may access this resource.',
+                ],
+                Response::HTTP_FORBIDDEN,
+            );
+        }
+
+        $db = $this->resolveSchoolConnection(
+            $request,
+        );
+
+        if ($db instanceof JsonResponse) {
+            return $db;
+        }
+
+        $studentId = (string) $account
+            ->getAuthIdentifier();
+
+        $schoolCode = $this->resolveSchoolCode(
+            $request,
+        );
+
+        $documentsBaseUrl = rtrim(
+            trim(
+                (string) config(
+                    "schools.schools.{$schoolCode}.files.documents_url",
+                    '',
+                ),
+            ),
+            '/',
+        );
+
+        /*
+         * Count every uploaded document belonging to the
+         * authenticated student, regardless of status.
+         */
+        $total = $db
+            ->table('file_upload')
+            ->where(
+                'owner_id',
+                $studentId,
+            )
+            ->count();
+
+        /*
+         * Combine the filenames belonging to each upload.
+         */
+        $uploadedFiles = $db
+            ->table('file_upload_d')
+            ->select([
+                'file_upload_id',
+
+                DB::raw(
+                    <<<'SQL'
+                    GROUP_CONCAT(
+                        filename_d
+                        ORDER BY order_no
+                        SEPARATOR '|||FILE|||'
+                    ) AS filenames
+                    SQL,
+                ),
+            ])
+            ->groupBy(
+                'file_upload_id',
+            );
+
+        /*
+         * Return the student's 10 latest uploaded documents.
+         */
+        $documents = $db
+            ->table('file_upload')
+            ->leftJoin(
+                'requirement',
+                'requirement.id',
+                '=',
+                'file_upload.requirement_id',
+            )
+            ->leftJoinSub(
+                $uploadedFiles,
+                'uploaded_files',
+                'uploaded_files.file_upload_id',
+                '=',
+                'file_upload.id',
+            )
+            ->where(
+                'file_upload.owner_id',
+                $studentId,
+            )
+            ->select([
+                'file_upload.id',
+                'file_upload.owner_id',
+                'file_upload.requirement_id',
+                'file_upload.file_desc',
+                'file_upload.date_uploaded',
+                'file_upload.time_uploaded',
+                'file_upload.sto_validated',
+                'file_upload.for_app',
+                'file_upload.revise_remarks',
+                'file_upload.last_update',
+
+                'requirement.desc_requirement',
+
+                'uploaded_files.filenames',
+            ])
+            ->orderByDesc(
+                'file_upload.last_update',
+            )
+            ->limit(10)
+            ->get()
+            ->map(
+                function (object $document) use (
+                    $documentsBaseUrl,
+                ): array {
+                    $validated = strtoupper(
+                        trim(
+                            (string) (
+                                $document->sto_validated
+                                ?? ''
+                            ),
+                        ),
+                    );
+
+                    $forApproval = strtoupper(
+                        trim(
+                            (string) (
+                                $document->for_app
+                                ?? ''
+                            ),
+                        ),
+                    );
+
+                    $remarks = trim(
+                        (string) (
+                            $document->revise_remarks
+                            ?? ''
+                        ),
+                    );
+
+                    if ($validated === 'Y') {
+                        $status = 'Verified';
+                    } elseif ($remarks !== '') {
+                        $status = 'For Revision';
+                    } elseif ($forApproval === 'Y') {
+                        $status = 'For Verification';
+                    } else {
+                        $status = 'Draft';
+                    }
+
+                    return [
+                        'id' =>
+                            $document->id,
+
+                        'requirement_id' =>
+                            $document->requirement_id,
+
+                        'description' =>
+                            $document->file_desc
+                            ?: (
+                                $document
+                                    ->desc_requirement
+                                ?? 'Uploaded Document'
+                            ),
+
+                        'requirement' =>
+                            $document->desc_requirement
+                            ?? null,
+
+                        'date_uploaded' =>
+                            $document->date_uploaded,
+
+                        'time_uploaded' =>
+                            $document->time_uploaded,
+
+                        'last_update' =>
+                            $document->last_update,
+
+                        'sto_validated' =>
+                            $document->sto_validated,
+
+                        'for_app' =>
+                            $document->for_app,
+
+                        'revise_remarks' =>
+                            $remarks,
+
+                        'status' =>
+                            $status,
+
+                        'files' =>
+                            $this->buildFileList(
+                                filenames:
+                                    $document->filenames
+                                    ?? null,
+
+                                documentsBaseUrl:
+                                    $documentsBaseUrl,
+                            ),
+                    ];
+                },
+            )
+            ->values();
+
+        return response()->json([
+            'total' => $total,
+            'data' => $documents,
+        ]);
     }
 
     /**
@@ -213,7 +446,9 @@ class DocumentsController extends Controller
         Request $request,
         string $fileUploadId,
     ): JsonResponse {
-        $db = $this->resolveSchoolConnection($request);
+        $db = $this->resolveSchoolConnection(
+            $request,
+        );
 
         if ($db instanceof JsonResponse) {
             return $db;
@@ -221,27 +456,42 @@ class DocumentsController extends Controller
 
         $documentExists = $db
             ->table('file_upload')
-            ->where('id', $fileUploadId)
+            ->where(
+                'id',
+                $fileUploadId,
+            )
             ->exists();
 
         if (! $documentExists) {
-            return response()->json([
-                'message' => 'The uploaded document could not be found.',
-            ], Response::HTTP_NOT_FOUND);
+            return response()->json(
+                [
+                    'message' =>
+                        'The uploaded document could not be found.',
+                ],
+                Response::HTTP_NOT_FOUND,
+            );
         }
 
         $db
             ->table('file_upload')
-            ->where('id', $fileUploadId)
+            ->where(
+                'id',
+                $fileUploadId,
+            )
             ->update([
                 'sto_validated' => 'Y',
                 'for_app' => 'N',
                 'revise_remarks' => '',
-                'last_update' => now()->format('Y-m-d H:i:s'),
+
+                'last_update' =>
+                    now()->format(
+                        'Y-m-d H:i:s',
+                    ),
             ]);
 
         return response()->json([
-            'message' => 'The file has been validated.',
+            'message' =>
+                'The file has been validated.',
         ]);
     }
 
@@ -252,17 +502,22 @@ class DocumentsController extends Controller
         Request $request,
         string $fileUploadId,
     ): JsonResponse {
-        $validated = $request->validate([
-            'revise_remarks' => [
-                'required',
-                'string',
+        $validated = $request->validate(
+            [
+                'revise_remarks' => [
+                    'required',
+                    'string',
+                ],
             ],
-        ], [
-            'revise_remarks.required' =>
-                'Reason for revision is required.',
-        ]);
+            [
+                'revise_remarks.required' =>
+                    'Reason for revision is required.',
+            ],
+        );
 
-        $db = $this->resolveSchoolConnection($request);
+        $db = $this->resolveSchoolConnection(
+            $request,
+        );
 
         if ($db instanceof JsonResponse) {
             return $db;
@@ -270,33 +525,49 @@ class DocumentsController extends Controller
 
         $documentExists = $db
             ->table('file_upload')
-            ->where('id', $fileUploadId)
+            ->where(
+                'id',
+                $fileUploadId,
+            )
             ->exists();
 
         if (! $documentExists) {
-            return response()->json([
-                'message' => 'The uploaded document could not be found.',
-            ], Response::HTTP_NOT_FOUND);
+            return response()->json(
+                [
+                    'message' =>
+                        'The uploaded document could not be found.',
+                ],
+                Response::HTTP_NOT_FOUND,
+            );
         }
 
         $db
             ->table('file_upload')
-            ->where('id', $fileUploadId)
+            ->where(
+                'id',
+                $fileUploadId,
+            )
             ->update([
                 'for_app' => 'N',
+
                 'revise_remarks' => trim(
                     $validated['revise_remarks'],
                 ),
-                'last_update' => now()->format('Y-m-d H:i:s'),
+
+                'last_update' =>
+                    now()->format(
+                        'Y-m-d H:i:s',
+                    ),
             ]);
 
         return response()->json([
-            'message' => 'The submitted record has been saved.',
+            'message' =>
+                'The submitted record has been saved.',
         ]);
     }
 
     /**
-     * Convert the concatenated filenames into file information
+     * Convert concatenated filenames into file information
      * consumed by the Vue DataTable.
      *
      * @return array<int, array{
@@ -309,7 +580,9 @@ class DocumentsController extends Controller
         mixed $filenames,
         string $documentsBaseUrl,
     ): array {
-        $value = trim((string) $filenames);
+        $value = trim(
+            (string) $filenames,
+        );
 
         if (
             $value === '' ||
@@ -319,16 +592,15 @@ class DocumentsController extends Controller
         }
 
         return collect(
-            explode('|||FILE|||', $value),
+            explode(
+                '|||FILE|||',
+                $value,
+            ),
         )
             ->map(
                 static function (
                     string $filename,
                 ): string {
-                    /*
-                     * Remove accidental directory paths and normalize
-                     * Windows-style path separators.
-                     */
                     return basename(
                         str_replace(
                             '\\',
@@ -349,22 +621,23 @@ class DocumentsController extends Controller
                 static function (
                     string $filename,
                     int $index,
-                ) use ($documentsBaseUrl): array {
+                ) use (
+                    $documentsBaseUrl,
+                ): array {
                     return [
-                        'name' => $filename,
+                        'name' =>
+                            $filename,
 
                         'label' =>
                             'View or download document '.
                             ($index + 1),
 
-                        /*
-                         * Supports images, PDFs, DOCX, XLSX and other
-                         * file types served by the legacy website.
-                         */
                         'url' =>
                             $documentsBaseUrl.
                             '/'.
-                            rawurlencode($filename),
+                            rawurlencode(
+                                $filename,
+                            ),
                     ];
                 },
             )
@@ -381,7 +654,10 @@ class DocumentsController extends Controller
             trim(
                 (string) $request
                     ->session()
-                    ->get('school_code', ''),
+                    ->get(
+                        'school_code',
+                        '',
+                    ),
             ),
         );
     }
@@ -392,12 +668,18 @@ class DocumentsController extends Controller
     private function resolveSchoolConnection(
         Request $request,
     ): ConnectionInterface|JsonResponse {
-        $schoolCode = $this->resolveSchoolCode($request);
+        $schoolCode = $this->resolveSchoolCode(
+            $request,
+        );
 
         if ($schoolCode === '') {
-            return response()->json([
-                'message' => 'No school database has been selected.',
-            ], Response::HTTP_FORBIDDEN);
+            return response()->json(
+                [
+                    'message' =>
+                        'No school database has been selected.',
+                ],
+                Response::HTTP_FORBIDDEN,
+            );
         }
 
         $schools = config(
@@ -406,25 +688,36 @@ class DocumentsController extends Controller
         );
 
         if (! is_array($schools)) {
-            return response()->json([
-                'message' => 'School configuration is unavailable.',
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return response()->json(
+                [
+                    'message' =>
+                        'School configuration is unavailable.',
+                ],
+                Response::HTTP_INTERNAL_SERVER_ERROR,
+            );
         }
 
-        $school = $schools[$schoolCode] ?? null;
+        $school =
+            $schools[$schoolCode] ?? null;
 
         if (! is_array($school)) {
-            return response()->json([
-                'message' => 'The selected school is not configured.',
-                'schoolCode' => $schoolCode,
-            ], Response::HTTP_FORBIDDEN);
+            return response()->json(
+                [
+                    'message' =>
+                        'The selected school is not configured.',
+
+                    'schoolCode' =>
+                        $schoolCode,
+                ],
+                Response::HTTP_FORBIDDEN,
+            );
         }
 
         $configuredCode = strtoupper(
             trim(
                 (string) (
-                    $school['code'] ??
-                    $schoolCode
+                    $school['code']
+                    ?? $schoolCode
                 ),
             ),
         );
@@ -436,42 +729,69 @@ class DocumentsController extends Controller
                 $schoolCode,
             )
         ) {
-            return response()->json([
-                'message' => 'The selected school code is invalid.',
-            ], Response::HTTP_FORBIDDEN);
+            return response()->json(
+                [
+                    'message' =>
+                        'The selected school code is invalid.',
+                ],
+                Response::HTTP_FORBIDDEN,
+            );
         }
 
-        $connection = $school['connection'] ?? null;
+        $connection =
+            $school['connection'] ?? null;
 
         if (
             ! is_string($connection) ||
-            $connection === ''
+            trim($connection) === ''
         ) {
-            return response()->json([
-                'message' => 'The school database connection is missing.',
-                'schoolCode' => $schoolCode,
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return response()->json(
+                [
+                    'message' =>
+                        'The school database connection is missing.',
+
+                    'schoolCode' =>
+                        $schoolCode,
+                ],
+                Response::HTTP_INTERNAL_SERVER_ERROR,
+            );
         }
+
+        $connection = trim(
+            $connection,
+        );
 
         $connectionConfig = config(
             "database.connections.{$connection}",
         );
 
         if (! is_array($connectionConfig)) {
-            return response()->json([
-                'message' =>
-                    'The school database connection is not configured.',
-                'schoolCode' => $schoolCode,
-                'connection' => $connection,
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return response()->json(
+                [
+                    'message' =>
+                        'The school database connection is not configured.',
+
+                    'schoolCode' =>
+                        $schoolCode,
+
+                    'connection' =>
+                        $connection,
+                ],
+                Response::HTTP_INTERNAL_SERVER_ERROR,
+            );
         }
 
         config([
-            'database.default' => $connection,
+            'database.default' =>
+                $connection,
         ]);
 
-        DB::setDefaultConnection($connection);
+        DB::setDefaultConnection(
+            $connection,
+        );
 
-        return DB::connection($connection);
+        return DB::connection(
+            $connection,
+        );
     }
 }

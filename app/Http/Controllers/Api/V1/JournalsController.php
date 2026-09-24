@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Student;
 use Carbon\Carbon;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Query\Builder;
@@ -218,6 +219,94 @@ class JournalsController extends Controller
                 'next' =>
                     $paginator->nextPageUrl(),
             ],
+        ]);
+    }
+
+    /**
+     * Return the authenticated student's journal summary.
+     */
+    public function studentDashboard(
+        Request $request,
+    ): JsonResponse {
+        $account = $request->user();
+
+        if (! $account instanceof Student) {
+            return response()->json(
+                [
+                    'message' =>
+                        'Only student accounts may access this resource.',
+                ],
+                HttpResponse::HTTP_FORBIDDEN,
+            );
+        }
+
+        [
+            $connection,
+            $school,
+        ] = $this->resolveSchoolConnection(
+            $request,
+        );
+
+        $database = DB::connection(
+            $connection,
+        );
+
+        $studentId = (string) $account
+            ->getAuthIdentifier();
+
+        $evidenceBaseUrl = rtrim(
+            trim(
+                (string) data_get(
+                    $school,
+                    'files.activity_url',
+                    '',
+                ),
+            ),
+            '/',
+        );
+
+        /*
+         * Count all journals belonging to the logged-in
+         * student.
+         */
+        $total = $database
+            ->table('person_journal')
+            ->where(
+                'person_id',
+                $studentId,
+            )
+            ->count();
+
+        /*
+         * Return the student's 10 most recent journals.
+         */
+        $journals = $this
+            ->journalQuery($database)
+            ->where(
+                'person_journal.person_id',
+                $studentId,
+            )
+            ->orderByDesc(
+                'person_journal.date_journal',
+            )
+            ->orderByDesc(
+                'person_journal.journal_time',
+            )
+            ->limit(10)
+            ->get()
+            ->map(
+                fn (object $journal): array =>
+                    $this->transformJournal(
+                        journal: $journal,
+                        evidenceBaseUrl:
+                            $evidenceBaseUrl,
+                    ),
+            )
+            ->values();
+
+        return response()->json([
+            'total' => $total,
+            'data' => $journals,
         ]);
     }
 
@@ -1324,6 +1413,12 @@ class JournalsController extends Controller
 
             'port_dest' =>
                 $journal->port_dest,
+
+            'activities' =>
+                $journal->activities,
+
+            'key_areas' =>
+                $journal->key_areas,
 
             'file_name' =>
                 $fileName,

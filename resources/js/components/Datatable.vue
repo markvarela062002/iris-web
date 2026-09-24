@@ -493,23 +493,23 @@ onBeforeUnmount(() => {
                     "
                     class="flex min-w-0 items-center gap-4"
                 >
-                    <!-- Header Icon -->
+<!-- Header Icon -->
+<div
+    v-if="headerIcon"
+    class="relative flex shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-[#123A63] to-[#377EC0] text-white shadow-lg shadow-[#377EC0]/20"
+    style="width: 56px; height: 56px"
+>
+    <div
+        class="pointer-events-none absolute -top-3 -right-3 size-8 rounded-full bg-white/15"
+    ></div>
 
-                    <div
-                        v-if="headerIcon"
-                        class="relative flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-[#123A63] to-[#377EC0] text-white shadow-lg shadow-[#377EC0]/20"
-                    >
-                        <div
-                            class="pointer-events-none absolute -top-3 -right-3 size-8 rounded-full bg-white/15"
-                        ></div>
-
-                        <i
-                            :class="[
-                                headerIcon,
-                                'relative z-10 !text-[1.65rem] !leading-none !text-white',
-                            ]"
-                        ></i>
-                    </div>
+    <i
+        :class="[
+            headerIcon,
+            'relative z-10 !text-[1.65rem] !leading-none !text-white',
+        ]"
+    ></i>
+</div>
 
                     <!-- Header Text -->
 

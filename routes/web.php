@@ -75,6 +75,35 @@ Route::middleware([
     )->name(
         'api.v1.student-dashboard.activities',
     );
+    Route::get(
+    '/api/v1/student-dashboard/documents',
+    [
+        DocumentsController::class,
+        'studentDashboard',
+    ],
+)->name(
+    'api.v1.student-dashboard.documents',
+);
+
+Route::get(
+    '/api/v1/student-dashboard/otg',
+    [
+        OtgController::class,
+        'studentDashboard',
+    ],
+)->name(
+    'api.v1.student-dashboard.otg',
+);
+
+Route::get(
+    '/api/v1/student-dashboard/journals',
+    [
+        JournalsController::class,
+        'studentDashboard',
+    ],
+)->name(
+    'api.v1.student-dashboard.journals',
+);
 });
 
 /*
@@ -138,13 +167,6 @@ Route::middleware([
     Route::inertia('/monitoring/uploaded-documents', 'monitoring/uploaded-documents/Index',)->name('monitoring.uploaded-documents',);
     Route::inertia('/monitoring/otg-updates', 'monitoring/otg-updates/Index',)->name('monitoring.otg-updates',);
     Route::inertia('/monitoring/daily-journals', 'dashboard/daily-journals/Index',)->name('monitoring.daily-journals',);
-    Route::inertia(
-        '/monitoring/daily-journals/{journalId}',
-        'monitoring/daily-journals/Index',
-        [
-            'journalId' => fn () => (string) request()->route('journalId'),
-        ],
-    )->whereUuid('journalId')->name('monitoring.daily-journals.edit');
     Route::inertia('/monitoring/reports', 'monitoring/reports/Index',)->name('monitoring.reports',);
 
     // Setup — Activity Types
@@ -198,8 +220,8 @@ Route::middleware([
 
     // Databases — Students
     Route::inertia('/databases/students/datatable', 'databases/students/datatable/Index',)->name('databases.students');
-    Route::inertia('/databases/students/profile/{studentId}', 'databases/students/profile/Index',['studentId' => fn () =>(string) request()->route('studentId',)])->whereUuid('studentId')->name('databases.students.edit');
     Route::inertia('/databases/students/profile/new','databases/students/profile/Index',['studentId' => null,])->name('databases.students.profile.create');
+    Route::inertia('/databases/students/profile/{studentId}', 'databases/students/profile/Index',['studentId' => fn () =>(string) request()->route('studentId',)])->whereUuid('studentId')->name('databases.students.edit');
 
     Route::post('/api/v1/databases/students', [StudentsController::class,'store'])->name('api.v1.databases.students.store');
 
@@ -295,7 +317,6 @@ Route::middleware([
     Route::get('/api/v1/monitoring/reports/options', [ReportsController::class, 'options',],)->name('api.v1.monitoring.reports.options',);
     Route::get('/api/v1/monitoring/reports', [ReportsController::class, 'index',],)->name('api.v1.monitoring.reports.index',);
      // Monitoring — Daily Journals
-    Route::inertia('/monitoring/daily-journals','dashboard/daily-journals/Index',)->name('monitoring.daily-journals');
     Route::inertia('/monitoring/daily-journals/datatable/{journalId}','monitoring/daily-journals/datatable/Index',['journalId' => fn () => (string) request()->route('journalId')])->whereUuid('journalId')->name('monitoring.daily-journals.edit');
     
     Route::prefix('/api/v1/monitoring/daily-journals')->controller(JournalsController::class)->group(function (): void {
