@@ -185,12 +185,42 @@ return [
                 ),
 
                 /*
-                 * Existing legacy student-photo upload endpoint.
+                 * Existing student-photo upload
                  */
                 'photo_upload_url' => env(
                     'EXACT_STUDENT_PHOTO_UPLOAD_URL',
                     '',
                 ),
+
+            ],
+
+            /*
+             * Message attachments use the same legacy /uploads public
+             * directory as journal uploads, while FTP credentials stay
+             * separate from the public file URLs above.
+             */
+            'storage' => [
+                'ftp' => [
+                    'host' => env('ADMAPRO_EXACT_FTP_HOST'),
+                    'username' => env('ADMAPRO_EXACT_FTP_USERNAME'),
+                    'password' => env('ADMAPRO_EXACT_FTP_PASSWORD'),
+                    'port' => env('ADMAPRO_EXACT_FTP_PORT', 21),
+                    'root' => env('ADMAPRO_EXACT_FTP_ROOT', '/uploads'),
+                ],
+
+                'message' => [
+                    'upload_url' => env(
+                        'EXACT_JOURNAL_UPLOAD_URL',
+                        '',
+                    ),
+                ],
+
+                'journal' => [
+                    'upload_url' => env(
+                        'EXACT_JOURNAL_UPLOAD_URL',
+                        '',
+                    ),
+                ],
             ],
         ],
 

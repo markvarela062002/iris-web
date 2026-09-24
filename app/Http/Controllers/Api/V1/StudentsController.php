@@ -9,8 +9,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 class StudentsController extends Controller
 {
@@ -437,6 +439,462 @@ class StudentsController extends Controller
 
 
     /**
+     * Create a student in the selected school database.
+     */
+    public function store(
+        Request $request,
+    ): JsonResponse {
+        $db = $this->resolveSchoolConnection(
+            $request,
+        );
+
+        if ($db instanceof JsonResponse) {
+            return $db;
+        }
+
+        $validated = $request->validate([
+            'school_id_no' => [
+                'required',
+                'string',
+                'max:20',
+            ],
+            'fname' => [
+                'required',
+                'string',
+                'max:30',
+            ],
+            'mname' => [
+                'nullable',
+                'string',
+                'max:30',
+            ],
+            'lname' => [
+                'required',
+                'string',
+                'max:30',
+            ],
+            'gender' => [
+                'required',
+                'in:MALE,FEMALE',
+            ],
+            'civ_status' => [
+                'nullable',
+                'in:SINGLE,MARRIED,SEPARATED,WIDOW/ER',
+            ],
+            'birth_date' => [
+                'nullable',
+                'date',
+            ],
+            'birth_place' => [
+                'nullable',
+                'string',
+            ],
+            'batch_no' => [
+                'required',
+                'string',
+                'max:20',
+            ],
+            'st_address' => [
+                'nullable',
+                'string',
+            ],
+            'city_id' => [
+                'nullable',
+            ],
+            'province_id' => [
+                'nullable',
+            ],
+            'mobile' => [
+                'nullable',
+                'string',
+            ],
+            'phone' => [
+                'nullable',
+                'string',
+            ],
+            'email' => [
+                'required',
+                'email',
+                'max:80',
+            ],
+            'facebook' => [
+                'nullable',
+                'string',
+            ],
+            'st_address_province' => [
+                'nullable',
+                'string',
+            ],
+            'phone_province' => [
+                'nullable',
+                'string',
+            ],
+            'mother_name' => [
+                'nullable',
+                'string',
+            ],
+            'mother_nos' => [
+                'nullable',
+                'string',
+            ],
+            'father_name' => [
+                'nullable',
+                'string',
+            ],
+            'father_nos' => [
+                'nullable',
+                'string',
+            ],
+            'spouse_name' => [
+                'nullable',
+                'string',
+            ],
+            'spouse_nos' => [
+                'nullable',
+                'string',
+            ],
+            'date_reg' => [
+                'nullable',
+                'date',
+            ],
+            'dept' => [
+                'required',
+                'in:DECK,ENGINE,NON-MARITIME',
+            ],
+            'etrb_type' => [
+                'required',
+                'in:GMET,ISF,GMET and ISF,TRMF,SCHOOL',
+            ],
+            'notes' => [
+                'nullable',
+                'string',
+            ],
+            'ins_company' => [
+                'nullable',
+                'string',
+            ],
+            'ins_amt' => [
+                'nullable',
+                'numeric',
+            ],
+            'ins_hospital' => [
+                'nullable',
+                'numeric',
+            ],
+            'ins_disability' => [
+                'nullable',
+                'numeric',
+            ],
+            'ins_death' => [
+                'nullable',
+                'numeric',
+            ],
+            'stipend' => [
+                'nullable',
+                'numeric',
+            ],
+            'active' => [
+                'required',
+                'in:Y,N',
+            ],
+        ]);
+
+        $schoolId = trim(
+            (string) $validated[
+                'school_id_no'
+            ],
+        );
+
+        if (
+            $db
+                ->table('person')
+                ->where(
+                    'school_id_no',
+                    $schoolId,
+                )
+                ->exists()
+        ) {
+            return response()->json([
+                'message' =>
+                    'The School ID No. is already being used by another student.',
+                'errors' => [
+                    'school_id_no' => [
+                        'The School ID No. is already being used by another student.',
+                    ],
+                ],
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $loginId = (string) (
+            $request
+                ->session()
+                ->get('login_id')
+            ??
+            $request
+                ->user()
+                ?->getAuthIdentifier()
+            ??
+            ''
+        );
+
+        $created = $db->transaction(
+            function () use (
+                $db,
+                $validated,
+                $schoolId,
+                $loginId,
+            ): array {
+                $db
+                    ->table('person')
+                    ->orderBy('id')
+                    ->lockForUpdate()
+                    ->first([
+                        'id',
+                    ]);
+
+                $prefix =
+                    now()->format(
+                        'Ym',
+                    );
+
+                $latestCode =
+                    (string) (
+                        $db
+                            ->table('person')
+                            ->where(
+                                'code_person',
+                                'like',
+                                $prefix . '%',
+                            )
+                            ->orderByDesc(
+                                'code_person',
+                            )
+                            ->value(
+                                'code_person',
+                            )
+                        ??
+                        ''
+                    );
+
+                $nextSequence = 1;
+
+                if (
+                    strlen(
+                        $latestCode,
+                    ) >= 10
+                ) {
+                    $nextSequence =
+                        (
+                            (int) substr(
+                                $latestCode,
+                                -4,
+                            )
+                        ) + 1;
+                }
+
+                do {
+                    $codePerson =
+                        $prefix .
+                        str_pad(
+                            (string) $nextSequence,
+                            4,
+                            '0',
+                            STR_PAD_LEFT,
+                        );
+
+                    $nextSequence++;
+                } while (
+                    $db
+                        ->table('person')
+                        ->where(
+                            'code_person',
+                            $codePerson,
+                        )
+                        ->exists()
+                );
+
+                $loginName =
+                    $codePerson;
+
+                $characters =
+                    '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@$*';
+
+                $password = '';
+                $maximum =
+                    strlen(
+                        $characters,
+                    ) - 1;
+
+                for (
+                    $index = 0;
+                    $index < 6;
+                    $index++
+                ) {
+                    $password .=
+                        $characters[
+                            random_int(
+                                0,
+                                $maximum,
+                            )
+                        ];
+                }
+
+                $studentId =
+                    (string) Str::uuid();
+
+                $db
+                    ->table('person')
+                    ->insert([
+                        'id' =>
+                            $studentId,
+                        'code_person' =>
+                            $codePerson,
+                        'school_id_no' =>
+                            $schoolId,
+                        'fname' =>
+                            $validated['fname'],
+                        'mname' =>
+                            $validated['mname'] ?? '',
+                        'lname' =>
+                            $validated['lname'],
+                        'gender' =>
+                            $this->genderDatabaseValue(
+                                $validated['gender'],
+                            ),
+                        'civ_status' =>
+                            $validated['civ_status'] ?? '',
+                        'birth_date' =>
+                            $validated['birth_date'] ??
+                            '1970-01-01',
+                        'birth_place' =>
+                            $validated['birth_place'] ?? '',
+                        'batch_no' =>
+                            $validated['batch_no'],
+                        'st_address' =>
+                            $validated['st_address'] ?? '',
+                        'city_id' =>
+                            $validated['city_id'] ?? '',
+                        'province_id' =>
+                            $validated['province_id'] ?? '',
+                        'mobile' =>
+                            $validated['mobile'] ?? '',
+                        'phone' =>
+                            $validated['phone'] ?? '',
+                        'email' =>
+                            $validated['email'],
+                        'facebook' =>
+                            $validated['facebook'] ?? '',
+                        'st_address_province' =>
+                            $validated['st_address_province'] ?? '',
+                        'phone_province' =>
+                            $validated['phone_province'] ?? '',
+                        'mother_name' =>
+                            $validated['mother_name'] ?? '',
+                        'mother_nos' =>
+                            $validated['mother_nos'] ?? '',
+                        'father_name' =>
+                            $validated['father_name'] ?? '',
+                        'father_nos' =>
+                            $validated['father_nos'] ?? '',
+                        'spouse_name' =>
+                            $validated['spouse_name'] ?? '',
+                        'spouse_nos' =>
+                            $validated['spouse_nos'] ?? '',
+                        'date_reg' =>
+                            $validated['date_reg'] ??
+                            now()->format('Y-m-d'),
+                        'dept' =>
+                            $validated['dept'],
+                        'etrb_type' =>
+                            $validated['etrb_type'],
+                        'notes' =>
+                            $validated['notes'] ?? '',
+                        'ins_company' =>
+                            $validated['ins_company'] ?? '',
+                        'ins_amt' =>
+                            $validated['ins_amt'] ?? 0,
+                        'ins_hospital' =>
+                            $validated['ins_hospital'] ?? 0,
+                        'ins_disability' =>
+                            $validated['ins_disability'] ?? 0,
+                        'ins_death' =>
+                            $validated['ins_death'] ?? 0,
+                        'stipend' =>
+                            $validated['stipend'] ?? 0,
+                        'login_name' =>
+                            $loginName,
+                        'login_pass' =>
+                            $password,
+                        'active' =>
+                            $validated['active'],
+                        'login_id' =>
+                            $loginId,
+                        'last_update' =>
+                            now()->format(
+                                'Y-m-d H:i:s',
+                            ),
+                    ]);
+
+                return [
+                    'id' =>
+                        $studentId,
+                    'code_person' =>
+                        $codePerson,
+                    'login_name' =>
+                        $loginName,
+                    'password' =>
+                        $password,
+                ];
+            },
+        );
+
+        /*
+         * The student account is already committed at this point.
+         * Email delivery is intentionally outside the database transaction:
+         * an SMTP problem must never remove a successfully created account.
+         */
+        $emailSent = false;
+
+        try {
+            $this->sendCredentialEmail(
+                email: (string) $validated['email'],
+                studentName: trim(
+                    (string) $validated['lname']
+                    .', '
+                    .(string) $validated['fname']
+                    .' '
+                    .(string) ($validated['mname'] ?? ''),
+                ),
+                loginName: (string) $created['login_name'],
+                password: (string) $created['password'],
+                schoolCode: $this->selectedSchoolCode(
+                    $request,
+                ),
+            );
+
+            $emailSent = true;
+        } catch (Throwable $error) {
+            report($error);
+        }
+
+        $created['email_sent'] =
+            $emailSent;
+
+        $created['email'] =
+            (string) $validated['email'];
+
+        return response()->json([
+            'message' =>
+                $emailSent
+                    ? 'Student added successfully. Login credentials were sent to the student email.'
+                    : 'Student added successfully, but the credential email could not be sent. Use Send Email on the student profile to retry.',
+            'data' =>
+                $created,
+        ], Response::HTTP_CREATED);
+    }
+
+
+    /**
      * Return one student profile from the selected school database.
      */
     public function show(
@@ -620,7 +1078,7 @@ class StudentsController extends Controller
                 'max:30',
             ],
             'gender' => [
-                'nullable',
+                'required',
                 'in:MALE,FEMALE',
             ],
             'civ_status' => [
@@ -659,8 +1117,9 @@ class StudentsController extends Controller
                 'string',
             ],
             'email' => [
-                'nullable',
+                'required',
                 'email',
+                'max:80',
             ],
             'facebook' => [
                 'nullable',
@@ -797,7 +1256,9 @@ class StudentsController extends Controller
             'lname' =>
                 $validated['lname'],
             'gender' =>
-                $validated['gender'] ?? '',
+                $this->genderDatabaseValue(
+                    $validated['gender'],
+                ),
             'civ_status' =>
                 $validated['civ_status'] ?? '',
             'birth_date' =>
@@ -906,6 +1367,133 @@ class StudentsController extends Controller
                 $newPassword !== ''
                     ? 'Student profile and login credentials updated successfully.'
                     : 'Student profile saved successfully.',
+        ]);
+    }
+
+    /**
+     * Send the student's CURRENT saved login credentials to the email
+     * address stored on the selected school database.
+     *
+     * The password is read only on the server and is never returned to
+     * the browser by this endpoint.
+     */
+    public function sendCredentials(
+        Request $request,
+        string $studentId,
+    ): JsonResponse {
+        $db = $this->resolveSchoolConnection(
+            $request,
+        );
+
+        if ($db instanceof JsonResponse) {
+            return $db;
+        }
+
+        $student = $db
+            ->table('person')
+            ->where(
+                'id',
+                $studentId,
+            )
+            ->first([
+                'fname',
+                'mname',
+                'lname',
+                'email',
+                'login_name',
+                'login_pass',
+            ]);
+
+        if (! $student) {
+            return response()->json([
+                'message' =>
+                    'Student not found.',
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $email = trim(
+            (string) (
+                $student->email
+                ?? ''
+            ),
+        );
+
+        if (
+            $email === ''
+            ||
+            filter_var(
+                $email,
+                FILTER_VALIDATE_EMAIL,
+            ) === false
+        ) {
+            return response()->json([
+                'message' =>
+                    'The student does not have a valid email address. Save a valid email address first.',
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $loginName = trim(
+            (string) (
+                $student->login_name
+                ?? ''
+            ),
+        );
+
+        $password = (string) (
+            $student->login_pass
+            ?? ''
+        );
+
+        if (
+            $loginName === ''
+            ||
+            $password === ''
+        ) {
+            return response()->json([
+                'message' =>
+                    'The student account does not have complete login credentials to send.',
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $studentName = trim(
+            (string) (
+                $student->lname
+                ?? ''
+            )
+            .', '
+            .(string) (
+                $student->fname
+                ?? ''
+            )
+            .' '
+            .(string) (
+                $student->mname
+                ?? ''
+            ),
+        );
+
+        try {
+            $this->sendCredentialEmail(
+                email: $email,
+                studentName: $studentName,
+                loginName: $loginName,
+                password: $password,
+                schoolCode: $this->selectedSchoolCode(
+                    $request,
+                ),
+            );
+        } catch (Throwable $error) {
+            report($error);
+
+            return response()->json([
+                'message' =>
+                    'The credential email could not be sent. The student account was not changed. Please try again.',
+            ], Response::HTTP_BAD_GATEWAY);
+        }
+
+        return response()->json([
+            'message' =>
+                "Login credentials were sent to {$email}.",
         ]);
     }
 
@@ -1055,6 +1643,124 @@ class StudentsController extends Controller
                     ),
             ],
         ]);
+    }
+
+    private function genderDatabaseValue(
+        string $gender,
+    ): string {
+        return match (
+            strtoupper(
+                trim(
+                    $gender,
+                ),
+            )
+        ) {
+            'MALE', 'M' => 'M',
+            'FEMALE', 'F' => 'F',
+            default => '',
+        };
+    }
+
+    /**
+     * Shared account-email view used by Student Profile and Batch Upload.
+     */
+    private function sendCredentialEmail(
+        string $email,
+        string $studentName,
+        string $loginName,
+        string $password,
+        string $schoolCode,
+    ): void {
+        $webUrl = rtrim(
+            trim(
+                (string) config(
+                    'mail.iris.web_url',
+                    config(
+                        'app.url',
+                        '',
+                    ),
+                ),
+            ),
+            '/',
+        );
+
+        $androidUrl = trim(
+            (string) config(
+                'mail.iris.android_url',
+                '',
+            ),
+        );
+
+        $appStoreUrl = trim(
+            (string) config(
+                'mail.iris.app_store_url',
+                '',
+            ),
+        );
+
+        $bcc = config(
+            'mail.iris.bcc',
+            [],
+        );
+
+        $bcc = is_array($bcc)
+            ? array_values(
+                array_filter(
+                    $bcc,
+                    static fn (
+                        mixed $address,
+                    ): bool =>
+                        is_string($address)
+                        &&
+                        filter_var(
+                            $address,
+                            FILTER_VALIDATE_EMAIL,
+                        ) !== false,
+                ),
+            )
+            : [];
+
+        Mail::send(
+            'emails.student-account',
+            [
+                'studentName' =>
+                    $studentName,
+                'username' =>
+                    $loginName,
+                'password' =>
+                    $password,
+                'schoolCode' =>
+                    $schoolCode,
+                'webUrl' =>
+                    $webUrl,
+                'androidUrl' =>
+                    $androidUrl,
+                'appStoreUrl' =>
+                    $appStoreUrl,
+            ],
+            static function (
+                $message,
+            ) use (
+                $email,
+                $studentName,
+                $bcc,
+            ): void {
+                $message
+                    ->to(
+                        $email,
+                        $studentName,
+                    )
+                    ->subject(
+                        'Your IRIS-SAM account',
+                    );
+
+                if ($bcc !== []) {
+                    $message->bcc(
+                        $bcc,
+                    );
+                }
+            },
+        );
     }
 
     private function selectedSchoolCode(
