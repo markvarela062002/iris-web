@@ -177,6 +177,8 @@ const totalRecords = ref(0);
 const first = ref(0);
 const perPage = ref(10);
 const search = ref('');
+const statusOptions = ['All', 'Pending', 'Validated'] as const;
+const statusFilter = ref<(typeof statusOptions)[number]>('All');
 const sortField = ref('date_journal');
 const sortDirection =
     ref<'asc' | 'desc'>('desc');
@@ -322,15 +324,15 @@ const columns: DataTableColumn[] = [
         sortable: true,
         searchable: false,
         class:
-            'w-[190px] min-w-[190px]',
+            'min-w-[190px]',
     },
     {
         field: 'journal_time',
         header: 'Duty Time',
-        sortable: true,
+        sortable: false,
         searchable: false,
         class:
-            'w-[220px] min-w-[220px]',
+            'min-w-[190px]',
     },
     {
         field: 'vessel_name',
@@ -338,7 +340,7 @@ const columns: DataTableColumn[] = [
         sortable: false,
         searchable: true,
         class:
-            'w-[250px] min-w-[250px] whitespace-normal',
+            'min-w-[240px] whitespace-normal',
     },
     {
         field: 'port_depart',
@@ -346,7 +348,7 @@ const columns: DataTableColumn[] = [
         sortable: false,
         searchable: true,
         class:
-            'w-[300px] min-w-[300px] whitespace-normal',
+            'min-w-[240px] whitespace-normal',
     },
     {
         field: 'activities',
@@ -354,15 +356,15 @@ const columns: DataTableColumn[] = [
         sortable: false,
         searchable: true,
         class:
-            'w-[360px] min-w-[360px] whitespace-normal',
+            'min-w-[280px] whitespace-normal',
     },
     {
         field: 'status',
         header: 'Status',
-        sortable: true,
+        sortable: false,
         searchable: false,
         class:
-            'w-[150px] min-w-[150px]',
+            'min-w-[150px]',
     },
 ];
 
@@ -748,6 +750,7 @@ function listParameters(
         page: pageNumber,
         per_page: perPage.value,
         search: search.value,
+        ...(statusFilter.value !== 'All' ? { status: statusFilter.value } : {}),
         sort_field:
             sortField.value,
         sort_direction:
@@ -1725,22 +1728,31 @@ function handleSearch(
     void loadJournals(1);
 }
 
-function applyDateRange(): void {
-    if (!validateDateRange()) {
+function handleColumnFilter(field: string, value: string): void {
+    if (field !== 'status' || !statusOptions.includes(value as (typeof statusOptions)[number])) {
         return;
     }
 
+    statusFilter.value = value as (typeof statusOptions)[number];
     first.value = 0;
-
     void loadJournals(1);
 }
 
-function clearDateRange(): void {
-    dateRange.value = null;
+async function handleDateRangeChange(
+    value: Date | Date[] | (Date | null)[] | null | undefined,
+): Promise<void> {
+    // Wait until both dates are chosen before filtering the table.
+    if (
+        value != null &&
+        (!Array.isArray(value) || !value[0] || !value[1])
+    ) {
+        return;
+    }
+
+    await nextTick();
     pageError.value = '';
     first.value = 0;
-
-    void loadJournals(1);
+    await loadJournals(1);
 }
 
 async function reloadCurrentPage(): Promise<void> {
@@ -1850,56 +1862,6 @@ onBeforeUnmount(() => {
             {{ pageError }}
         </Message>
 
-        <Card
-            class="!rounded-2xl !border !border-slate-200 !shadow-sm [&_.p-card-body]:!p-4 [&_.p-card-content]:!p-0"
-        >
-            <template #content>
-                <div
-                    class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between"
-                >
-                    <div class="min-w-0 flex-1">
-                        <label
-                            class="mb-2 block text-sm font-semibold text-slate-700"
-                        >
-                            Journal Date Range
-                        </label>
-
-                        <DatePicker
-                            v-model="dateRange"
-                            selection-mode="range"
-                            date-format="M d, yy"
-                            show-icon
-                            icon-display="input"
-                            :manual-input="false"
-                            class="w-full lg:max-w-[430px]"
-                            input-class="w-full"
-                            placeholder="Select start and end date"
-                        />
-                    </div>
-
-                    <div class="flex flex-wrap gap-2">
-                        <Button
-                            type="button"
-                            label="View"
-                            icon="pi pi-search"
-                            severity="info"
-                            variant="outlined"
-                            @click="applyDateRange"
-                        />
-
-                        <Button
-                            type="button"
-                            label="Clear"
-                            icon="pi pi-filter-slash"
-                            severity="secondary"
-                            variant="outlined"
-                            @click="clearDateRange"
-                        />
-                    </div>
-                </div>
-            </template>
-        </Card>
-
         <Datatable
             title="Daily Journals"
             description="View and manage your daily journal records."
@@ -1909,11 +1871,14 @@ onBeforeUnmount(() => {
             empty-description="No matching daily journal records were found."
             empty-icon="pi pi-book"
             table-min-width="1470px"
+            actions-header="Actions"
+            actions-width="170px"
             data-key="id"
             lazy
             :loading="loading"
             :data="journals"
             :columns="columns"
+            :column-filters="{ status: { value: statusFilter, options: statusOptions } }"
             :actions="actions"
             :total-records="totalRecords"
             :first="first"
@@ -1927,27 +1892,42 @@ onBeforeUnmount(() => {
             @page="handlePage"
             @sort="handleSort"
             @search="handleSearch"
+            @filter="handleColumnFilter"
             @action="handleAction"
         >
             <template #header-actions>
-                <Button
-                    type="button"
-                    label="Print"
-                    icon="pi pi-print"
-                    severity="secondary"
-                    size="small"
-                    variant="outlined"
-                    @click="printJournals"
-                />
+                <div class="flex flex-wrap items-center gap-2">
+                    <DatePicker
+                        v-model="dateRange"
+                        selection-mode="range"
+                        date-format="M d, yy"
+                        show-icon
+                        icon-display="input"
+                        :manual-input="false"
+                        class="w-[350px] max-w-full"
+                        input-class="w-full !text-sm"
+                        placeholder="Journal date range"
+                        aria-label="Journal date range"
+                        @update:model-value="handleDateRangeChange"
+                    />
+                    <Button
+                        type="button"
+                        label="Print"
+                        icon="pi pi-print"
+                        severity="info"
+                        size="small"
+                        @click="printJournals"
+                    />
 
-                <Button
-                    type="button"
-                    label="Add Journal"
-                    icon="pi pi-plus"
-                    severity="success"
-                    size="small"
-                    @click="openAddJournal"
-                />
+                    <Button
+                        type="button"
+                        label="Add Journal"
+                        icon="pi pi-plus"
+                        severity="success"
+                        size="small"
+                        @click="openAddJournal"
+                    />
+                </div>
             </template>
 
             <template #cell-date_journal="{ value }">

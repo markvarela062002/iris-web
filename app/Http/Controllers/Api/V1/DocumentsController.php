@@ -29,6 +29,10 @@ class DocumentsController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $request->validate([
+            'status' => ['nullable', 'in:Verified,Pending,Draft,For Revision'],
+        ]);
+
         $db = $this->resolveSchoolConnection(
             $request,
         );
@@ -146,6 +150,33 @@ class DocumentsController extends Controller
                 );
         }
 
+        $status = $request->query('status');
+
+        if ($status === 'Verified') {
+            $query->where('file_upload.sto_validated', 'Y');
+        } elseif (in_array($status, ['Pending', 'Draft', 'For Revision'], true)) {
+            $query->where(function ($query): void {
+                $query->where('file_upload.sto_validated', '!=', 'Y')
+                    ->orWhereNull('file_upload.sto_validated');
+            });
+
+            if ($status === 'Pending') {
+                $query->where('file_upload.for_app', 'Y');
+            } elseif ($status === 'For Revision') {
+                $query->where(function ($query): void {
+                    $query->where('file_upload.for_app', '!=', 'Y')
+                        ->orWhereNull('file_upload.for_app');
+                });
+                $query->whereRaw("TRIM(COALESCE(file_upload.revise_remarks, '')) NOT IN ('', '-')");
+            } else {
+                $query->where(function ($query): void {
+                    $query->where('file_upload.for_app', '!=', 'Y')
+                        ->orWhereNull('file_upload.for_app');
+                });
+                $query->whereRaw("TRIM(COALESCE(file_upload.revise_remarks, '')) IN ('', '-')");
+            }
+        }
+
         $result = $this->datatableService->paginate(
             query: $query,
             request: $request,
@@ -183,6 +214,9 @@ class DocumentsController extends Controller
 
                 'last_update' =>
                     'file_upload.last_update',
+
+                'sto_validated' =>
+                    'file_upload.sto_validated',
             ],
             defaultSortColumn: 'date_uploaded',
             defaultSortDirection: 'desc',
@@ -579,6 +613,10 @@ class DocumentsController extends Controller
     public function studentIndex(
         Request $request,
     ): JsonResponse {
+        $request->validate([
+            'status' => ['nullable', 'in:Verified,Pending,Draft,For Revision'],
+        ]);
+
         $account = $request->user();
 
         if (! $account instanceof Student) {
@@ -627,6 +665,32 @@ class DocumentsController extends Controller
                 'file_upload.last_update',
                 'requirement.desc_requirement',
             ]);
+
+        $status = $request->query('status');
+
+        if ($status === 'Verified') {
+            $query->where('file_upload.sto_validated', 'Y');
+        } elseif (in_array($status, ['Pending', 'Draft', 'For Revision'], true)) {
+            $query->where(function ($query): void {
+                $query->where('file_upload.sto_validated', '!=', 'Y')
+                    ->orWhereNull('file_upload.sto_validated');
+            });
+
+            if ($status === 'Pending') {
+                $query->where('file_upload.for_app', 'Y');
+            } else {
+                $query->where(function ($query): void {
+                    $query->where('file_upload.for_app', '!=', 'Y')
+                        ->orWhereNull('file_upload.for_app');
+                });
+
+                $query->whereRaw(
+                    $status === 'For Revision'
+                        ? "TRIM(COALESCE(file_upload.revise_remarks, '')) <> ''"
+                        : "TRIM(COALESCE(file_upload.revise_remarks, '')) = ''",
+                );
+            }
+        }
 
         $result = $this->datatableService->paginate(
             query: $query,

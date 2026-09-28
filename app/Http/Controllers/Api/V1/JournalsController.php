@@ -74,6 +74,10 @@ class JournalsController extends Controller
                 'string',
                 'max:150',
             ],
+            'status' => [
+                'nullable',
+                'in:Pending,Validated',
+            ],
             'sort_field' => [
                 'nullable',
                 'string',
@@ -156,6 +160,24 @@ class JournalsController extends Controller
             schoolId: $validated['school_id'] ?? null,
             search: $validated['search'] ?? null,
         );
+
+        if (($validated['status'] ?? null) === 'Validated') {
+            $query->whereRaw(
+                "TRIM(COALESCE(person_journal.esig_file, '')) <> ''"
+            )->whereRaw(
+                "LOWER(TRIM(person_journal.esig_file)) <> 'null'"
+            );
+        } elseif (($validated['status'] ?? null) === 'Pending') {
+            $query->where(function (Builder $statusQuery): void {
+                $statusQuery
+                    ->whereNull('person_journal.esig_file')
+                    ->orWhereRaw("TRIM(person_journal.esig_file) = ''")
+                    ->orWhereRaw(
+                        "LOWER(TRIM(person_journal.esig_file)) = 'null'"
+                    );
+            });
+        }
+
 
         $paginator = $query
             ->orderBy(

@@ -421,7 +421,7 @@ const vesselColumns: DataTableColumn[] = [
     {
         field: 'onboard_period',
         header: 'Onboard Period',
-        sortable: true,
+        sortable: false,
         searchable: false,
         class:
             'w-[260px] min-w-[260px] whitespace-normal',
@@ -667,6 +667,20 @@ function textOrFallback(
         ).trim();
 
     return text || fallback;
+}
+
+function workbookProgress(workbook: TrainingWorkbook): number {
+    if (workbook.effective_task_count <= 0) {
+        return 0;
+    }
+
+    return Math.max(
+        0,
+        Math.min(
+            100,
+            (workbook.completed_task_count / workbook.effective_task_count) * 100,
+        ),
+    );
 }
 
 function formatPercentage(
@@ -2211,10 +2225,10 @@ onBeforeUnmount(() => {
 
         <!-- WEB APPLICATION HEADER -->
         <div
-            class="mb-4 flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-5 shadow-sm md:flex-row md:items-center md:justify-between"
+            class="mb-4 flex flex-col gap-4 rounded-3xl border border-slate-200/80 bg-gradient-to-r from-slate-50 via-white to-blue-50/50 px-5 py-5 shadow-xl shadow-slate-200/40 sm:flex-row sm:items-center sm:justify-between lg:px-6"
         >
             <div
-                class="flex min-w-0 items-center gap-3"
+                class="flex min-w-0 items-center gap-4"
             >
                 <!-- Same module icon treatment used by the shared Datatable header. -->
                 <div
@@ -2230,8 +2244,12 @@ onBeforeUnmount(() => {
                 </div>
 
                 <div class="min-w-0">
+                    <div class="mb-1 flex items-center gap-2">
+                        <span class="size-1.5 shrink-0 rounded-full bg-emerald-500"></span>
+                        <span class="text-[10px] font-bold tracking-[0.14em] text-[#377EC0] uppercase">Records Management</span>
+                    </div>
                     <h1
-                        class="text-xl font-semibold text-slate-900"
+                        class="text-xl leading-tight font-bold tracking-tight text-[#21365A]"
                     >
                         Training Record Book
                         (OTG)
@@ -2256,6 +2274,7 @@ onBeforeUnmount(() => {
                     icon="pi pi-refresh"
                     severity="secondary"
                     variant="outlined"
+                    size="small"
                     :loading="loading"
                     @click="loadTraining"
                 />
@@ -2266,6 +2285,7 @@ onBeforeUnmount(() => {
                     icon="pi pi-print"
                     severity="secondary"
                     variant="outlined"
+                    size="small"
                     @click="printEtrb"
                 />
             </div>
@@ -2649,11 +2669,11 @@ onBeforeUnmount(() => {
                 class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
             >
                 <div
-                    class="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 md:flex-row md:items-center md:justify-between"
+                    class="flex flex-col gap-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 via-white to-blue-50/50 px-5 py-5 md:flex-row md:items-center md:justify-between lg:px-6"
                 >
                     <div>
                         <h2
-                            class="font-semibold text-slate-900"
+                            class="text-xl leading-tight font-bold tracking-tight text-[#21365A]"
                         >
                             TRB / Workbooks
                         </h2>
@@ -2757,11 +2777,9 @@ onBeforeUnmount(() => {
                                 </div>
 
                                 <div
-                                    class="min-w-0 flex-1"
+                                    class="grid min-w-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,450px)_minmax(0,1fr)] lg:items-center"
                                 >
-                                    <div
-                                        class="font-medium text-slate-900"
-                                    >
+                                    <div class="min-w-0 font-medium text-slate-900">
                                         {{
                                             workbookIndex +
                                             1
@@ -2774,32 +2792,30 @@ onBeforeUnmount(() => {
                                         }}
                                     </div>
 
-                                    <div
-                                        class="mt-1 text-sm text-slate-500"
-                                    >
-                                        {{
-                                            workbook.completed_task_count
-                                        }}
-                                        completed
-                                        of
-                                        {{
-                                            workbook.effective_task_count
-                                        }}
-                                        required
-                                        tasks
+                                    <div class="w-full">
+                                        <div class="flex items-center justify-between gap-3 text-sm font-semibold text-slate-700">
+                                            <span>
+                                                {{ workbook.completed_task_count }} of {{ workbook.effective_task_count }} tasks
+                                            </span>
+                                            <span class="text-[#21365A]">
+                                                {{ formatPercentage(workbookProgress(workbook)) }}
+                                            </span>
+                                        </div>
+                                        <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
+                                            <div
+                                                class="h-full rounded-full bg-green-700 transition-all duration-300"
+                                                :style="{
+                                                    width: `${workbookProgress(workbook)}%`,
+                                                }"
+                                            ></div>
+                                        </div>
+                                        <p class="mt-2 text-xs text-slate-500">
+                                            {{ workbook.completed_task_count }} completed,
+                                            {{ Math.max(0, workbook.effective_task_count - workbook.completed_task_count) }} remaining
+                                        </p>
                                     </div>
+                                    <div class="hidden lg:block" aria-hidden="true"></div>
                                 </div>
-
-                                <PrimeTag
-                                    :value="
-                                        formatPercentage(
-                                            workbook.completion_percentage,
-                                        )
-                                    "
-                                    severity="info"
-                                    rounded
-                                    class="hidden sm:inline-flex"
-                                />
 
                                 <i
                                     class="pi text-slate-400"
