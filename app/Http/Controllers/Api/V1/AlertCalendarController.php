@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Student;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -29,6 +30,7 @@ class AlertCalendarController extends Controller
         ]);
 
         $db = $this->schoolConnection($request);
+        $studentId = $this->authenticatedStudentId($request);
 
         [$from, $to] = $this->monthRange(
             $validated['month'],
@@ -44,6 +46,13 @@ class AlertCalendarController extends Controller
          */
         $activityEvents = $db
             ->table('person_activity')
+            ->when(
+                $studentId !== null,
+                static fn ($query) => $query->where(
+                    'person_activity.person_id',
+                    $studentId,
+                ),
+            )
             ->selectRaw(
                 'start_date AS event_date, COUNT(id) AS qty',
             )
@@ -88,6 +97,13 @@ class AlertCalendarController extends Controller
 
         $documentEvents = $db
             ->table('file_upload')
+            ->when(
+                $studentId !== null,
+                static fn ($query) => $query->where(
+                    'file_upload.owner_id',
+                    $studentId,
+                ),
+            )
             ->selectRaw(
                 'date_uploaded AS event_date, COUNT(id) AS qty',
             )
@@ -132,6 +148,13 @@ class AlertCalendarController extends Controller
 
         $taskEvents = $db
             ->table('person_task')
+            ->when(
+                $studentId !== null,
+                static fn ($query) => $query->where(
+                    'person_task.person_id',
+                    $studentId,
+                ),
+            )
             ->selectRaw(
                 'completed AS event_date, COUNT(id) AS qty',
             )
@@ -181,6 +204,13 @@ class AlertCalendarController extends Controller
 
         $journalEvents = $db
             ->table('person_journal')
+            ->when(
+                $studentId !== null,
+                static fn ($query) => $query->where(
+                    'person_journal.person_id',
+                    $studentId,
+                ),
+            )
             ->selectRaw(
                 'date_journal AS event_date, COUNT(id) AS qty',
             )
@@ -259,6 +289,7 @@ class AlertCalendarController extends Controller
         )->validate();
 
         $db = $this->schoolConnection($request);
+        $studentId = $this->authenticatedStudentId($request);
 
         if ($type === 'person_activity') {
             $rows = $db
@@ -278,6 +309,13 @@ class AlertCalendarController extends Controller
                 ->where(
                     'person_activity.start_date',
                     $date,
+                )
+                ->when(
+                    $studentId !== null,
+                    static fn ($query) => $query->where(
+                        'person_activity.person_id',
+                        $studentId,
+                    ),
                 )
                 ->orderBy('person.lname')
                 ->orderBy('person.fname')
@@ -330,6 +368,13 @@ class AlertCalendarController extends Controller
                 ->where(
                     'file_upload.date_uploaded',
                     $date,
+                )
+                ->when(
+                    $studentId !== null,
+                    static fn ($query) => $query->where(
+                        'file_upload.owner_id',
+                        $studentId,
+                    ),
                 )
                 ->orderBy('person.lname')
                 ->orderBy('person.fname')
@@ -419,6 +464,13 @@ class AlertCalendarController extends Controller
                 ->where(
                     'person_journal.date_journal',
                     $date,
+                )
+                ->when(
+                    $studentId !== null,
+                    static fn ($query) => $query->where(
+                        'person_journal.person_id',
+                        $studentId,
+                    ),
                 )
                 ->orderBy('person.lname')
                 ->orderBy('person.fname')
@@ -511,6 +563,13 @@ class AlertCalendarController extends Controller
                 'person_task.completed',
                 $date,
             )
+            ->when(
+                $studentId !== null,
+                static fn ($query) => $query->where(
+                    'person_task.person_id',
+                    $studentId,
+                ),
+            )
             ->orderBy('person.lname')
             ->orderBy('person.fname')
             ->orderBy('task.prio')
@@ -540,6 +599,26 @@ class AlertCalendarController extends Controller
         return response()->json([
             'data' => $rows,
         ]);
+    }
+
+
+    /**
+     * Return the authenticated student's person ID when the
+     * current account is a student. Administrator requests
+     * return null so their existing school-wide calendar is
+     * left unchanged.
+     */
+    private function authenticatedStudentId(
+        Request $request,
+    ): ?string {
+        $account = $request->user();
+
+        if (! $account instanceof Student) {
+            return null;
+        }
+
+        return (string) $account
+            ->getAuthIdentifier();
     }
 
     /** @return array{0: string, 1: string} */

@@ -311,6 +311,644 @@ class JournalsController extends Controller
     }
 
     /**
+     * Return daily journals belonging only to the authenticated student.
+     *
+     * The existing administrator index() method remains the single source
+     * of truth for filtering, sorting, pagination and row transformation.
+     */
+    public function studentIndex(
+        Request $request,
+    ): JsonResponse {
+        $account = $request->user();
+
+        if (! $account instanceof Student) {
+            return response()->json(
+                [
+                    'message' =>
+                        'Only student accounts may access this resource.',
+                ],
+                HttpResponse::HTTP_FORBIDDEN,
+            );
+        }
+
+        $studentId = (string) $account
+            ->getAuthIdentifier();
+
+        $request->merge([
+            'person_id' => $studentId,
+            'school_id' => null,
+        ]);
+
+        [$connection] = $this->resolveSchoolConnection(
+            $request,
+        );
+
+        $database = DB::connection($connection);
+
+        $student = $database
+            ->table('person')
+            ->select([
+                'person.id',
+                'person.school_id_no',
+                'person.gender',
+                'person.dept',
+            ])
+            ->where('person.id', $studentId)
+            ->first();
+
+        abort_if(
+            $student === null,
+            HttpResponse::HTTP_NOT_FOUND,
+            'The student record was not found.',
+        );
+
+        $response = $this->index($request);
+
+        $payload = $response->getData(true);
+
+        $payload['student'] = [
+            'id' => (string) $student->id,
+            'school_id_no' => $student->school_id_no,
+            'gender' => $student->gender,
+            'department' => $student->dept,
+        ];
+
+        return response()->json(
+            $payload,
+            $response->getStatusCode(),
+        );
+    }
+
+    /**
+     * Return one daily journal belonging only to the authenticated student.
+     */
+    public function studentShow(
+        Request $request,
+        string $journalId,
+    ): JsonResponse {
+        $account = $request->user();
+
+        if (! $account instanceof Student) {
+            return response()->json(
+                [
+                    'message' =>
+                        'Only student accounts may access this resource.',
+                ],
+                HttpResponse::HTTP_FORBIDDEN,
+            );
+        }
+
+        [$connection, $school] = $this->resolveSchoolConnection(
+            $request,
+        );
+
+        $database = DB::connection($connection);
+
+        $journal = $this->findJournalOrFail(
+            $database,
+            $journalId,
+        );
+
+        abort_unless(
+            hash_equals(
+                (string) $account->getAuthIdentifier(),
+                (string) ($journal->person_id ?? ''),
+            ),
+            HttpResponse::HTTP_NOT_FOUND,
+            'The selected daily journal was not found.',
+        );
+
+        return response()->json([
+            'data' => $this->transformJournalForEdit(
+                journal: $journal,
+                personTaskBaseUrl: $this->personTaskBaseUrl(
+                    $school,
+                ),
+            ),
+        ]);
+    }
+
+    /**
+     * Add a Daily Journal for the authenticated student.
+     *
+     * The field contract follows the existing administrator Daily Journal
+     * form. Ownership is always taken from the authenticated Student model.
+     */
+    public function studentStore(
+        Request $request,
+    ): JsonResponse {
+        $account = $request->user();
+
+        if (! $account instanceof Student) {
+            return response()->json(
+                [
+                    'message' =>
+                        'Only student accounts may access this resource.',
+                ],
+                HttpResponse::HTTP_FORBIDDEN,
+            );
+        }
+
+        [$connection, $school] = $this->resolveSchoolConnection(
+            $request,
+        );
+
+        $database = DB::connection($connection);
+
+        $validated = $request->validate([
+            'date_journal' => [
+                'required',
+                'date_format:Y-m-d',
+            ],
+            'journal_time' => [
+                'required',
+                'date_format:H:i',
+            ],
+            'journal_time_to' => [
+                'required',
+                'date_format:H:i',
+            ],
+            'vessel_name' => [
+                'required',
+                'string',
+                'max:50',
+            ],
+            'ship_lat' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
+            'ship_long' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
+            'ship_vicinity' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
+            'port_depart' => [
+                'nullable',
+                'string',
+                'max:1000',
+            ],
+            'port_dest' => [
+                'nullable',
+                'string',
+                'max:1000',
+            ],
+            'pos_fix' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
+            'course_speed' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
+            'fo_rob' => [
+                'nullable',
+                'string',
+                'max:2000',
+            ],
+            'fo_dob' => [
+                'nullable',
+                'string',
+                'max:2000',
+            ],
+            'fo_lob' => [
+                'nullable',
+                'string',
+                'max:2000',
+            ],
+            'fo_cons' => [
+                'nullable',
+                'string',
+                'max:2000',
+            ],
+            'do_cons' => [
+                'nullable',
+                'string',
+                'max:2000',
+            ],
+            'average_rpm' => [
+                'nullable',
+                'string',
+                'max:2000',
+            ],
+            'average_speed' => [
+                'nullable',
+                'string',
+                'max:2000',
+            ],
+            'activities' => [
+                'required',
+                'string',
+                'max:20000',
+            ],
+            'key_areas' => [
+                'nullable',
+                'string',
+                'max:20000',
+            ],
+            'sto_name' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
+        ]);
+
+        $studentId = (string) $account
+            ->getAuthIdentifier();
+
+        $studentExists = $database
+            ->table('person')
+            ->where('id', $studentId)
+            ->exists();
+
+        abort_unless(
+            $studentExists,
+            HttpResponse::HTTP_NOT_FOUND,
+            'The student record was not found.',
+        );
+
+        $journalId = (string) Str::uuid();
+
+        $hours = $this->calculateDutyHoursDecimal(
+            $validated['date_journal'],
+            $validated['journal_time'],
+            $validated['journal_time_to'],
+        );
+
+        $database
+            ->table('person_journal')
+            ->insert([
+                'id' => $journalId,
+                'date_journal' =>
+                    $validated['date_journal'],
+                'person_id' => $studentId,
+                'file_name' => null,
+                'login_id' => $studentId,
+                'lat_long' => null,
+                'pos_fix' =>
+                    $this->nullableString(
+                        $validated['pos_fix'] ?? null,
+                    ),
+                'course_speed' =>
+                    $this->nullableString(
+                        $validated['course_speed'] ?? null,
+                    ),
+                'activities' =>
+                    trim($validated['activities']),
+                'esig_file' => null,
+                'key_areas' =>
+                    $this->nullableString(
+                        $validated['key_areas'] ?? null,
+                    ),
+                'sto_name' =>
+                    $this->nullableString(
+                        $validated['sto_name'] ?? null,
+                    ),
+                'vessel_name' =>
+                    trim($validated['vessel_name']),
+                'ship_lat' =>
+                    $this->nullableString(
+                        $validated['ship_lat'] ?? null,
+                    ),
+                'ship_long' =>
+                    $this->nullableString(
+                        $validated['ship_long'] ?? null,
+                    ),
+                'ship_vicinity' =>
+                    $this->nullableString(
+                        $validated['ship_vicinity'] ?? null,
+                    ),
+                'journal_time' =>
+                    $validated['journal_time'],
+                'journal_time_to' =>
+                    $validated['journal_time_to'],
+                'hrs' => $hours,
+                'fo_do' => null,
+                'fo_rob' =>
+                    $this->nullableString(
+                        $validated['fo_rob'] ?? null,
+                    ),
+                'fo_dob' =>
+                    $this->nullableString(
+                        $validated['fo_dob'] ?? null,
+                    ),
+                'fo_lob' =>
+                    $this->nullableString(
+                        $validated['fo_lob'] ?? null,
+                    ),
+                'average_rpm' =>
+                    $this->nullableString(
+                        $validated['average_rpm'] ?? null,
+                    ),
+                'average_speed' =>
+                    $this->nullableString(
+                        $validated['average_speed'] ?? null,
+                    ),
+                'port_depart' =>
+                    $this->nullableString(
+                        $validated['port_depart'] ?? null,
+                    ),
+                'port_dest' =>
+                    $this->nullableString(
+                        $validated['port_dest'] ?? null,
+                    ),
+                'fo_cons' =>
+                    $this->nullableString(
+                        $validated['fo_cons'] ?? null,
+                    ),
+                'do_cons' =>
+                    $this->nullableString(
+                        $validated['do_cons'] ?? null,
+                    ),
+                'gdrive_link' => null,
+            ]);
+
+        $created = $this->findJournalOrFail(
+            $database,
+            $journalId,
+        );
+
+        return response()->json(
+            [
+                'message' =>
+                    'Daily journal added successfully.',
+                'data' =>
+                    $this->transformJournalForEdit(
+                        journal: $created,
+                        personTaskBaseUrl:
+                            $this->personTaskBaseUrl(
+                                $school,
+                            ),
+                    ),
+            ],
+            HttpResponse::HTTP_CREATED,
+        );
+    }
+
+    /**
+     * Update a Daily Journal belonging to the authenticated student.
+     *
+     * Ownership is checked here before the existing administrator update()
+     * implementation is reused.
+     */
+    public function studentUpdate(
+        Request $request,
+        string $journalId,
+    ): JsonResponse {
+        $account = $request->user();
+
+        if (! $account instanceof Student) {
+            return response()->json(
+                [
+                    'message' =>
+                        'Only student accounts may access this resource.',
+                ],
+                HttpResponse::HTTP_FORBIDDEN,
+            );
+        }
+
+        [$connection] = $this->resolveSchoolConnection(
+            $request,
+        );
+
+        $database = DB::connection($connection);
+
+        $journal = $this->findJournalOrFail(
+            $database,
+            $journalId,
+        );
+
+        abort_unless(
+            hash_equals(
+                (string) $account->getAuthIdentifier(),
+                (string) ($journal->person_id ?? ''),
+            ),
+            HttpResponse::HTTP_NOT_FOUND,
+            'The selected daily journal was not found.',
+        );
+
+        return $this->update(
+            $request,
+            $journalId,
+        );
+    }
+
+    /**
+     * Upload or replace objective evidence for the authenticated student's
+     * Daily Journal.
+     */
+    public function studentUploadEvidence(
+        Request $request,
+        string $journalId,
+    ): JsonResponse {
+        $account = $request->user();
+
+        if (! $account instanceof Student) {
+            return response()->json(
+                [
+                    'message' =>
+                        'Only student accounts may access this resource.',
+                ],
+                HttpResponse::HTTP_FORBIDDEN,
+            );
+        }
+
+        [$connection] = $this->resolveSchoolConnection(
+            $request,
+        );
+
+        $database = DB::connection($connection);
+
+        $journal = $this->findJournalOrFail(
+            $database,
+            $journalId,
+        );
+
+        abort_unless(
+            hash_equals(
+                (string) $account->getAuthIdentifier(),
+                (string) ($journal->person_id ?? ''),
+            ),
+            HttpResponse::HTTP_NOT_FOUND,
+            'The selected daily journal was not found.',
+        );
+
+        return $this->uploadEvidence(
+            $request,
+            $journalId,
+        );
+    }
+
+    /**
+     * Save the STO signature for the authenticated student's Daily Journal.
+     */
+    public function studentUploadSignature(
+        Request $request,
+        string $journalId,
+    ): JsonResponse {
+        $account = $request->user();
+
+        if (! $account instanceof Student) {
+            return response()->json(
+                [
+                    'message' =>
+                        'Only student accounts may access this resource.',
+                ],
+                HttpResponse::HTTP_FORBIDDEN,
+            );
+        }
+
+        [$connection] = $this->resolveSchoolConnection(
+            $request,
+        );
+
+        $database = DB::connection($connection);
+
+        $journal = $this->findJournalOrFail(
+            $database,
+            $journalId,
+        );
+
+        abort_unless(
+            hash_equals(
+                (string) $account->getAuthIdentifier(),
+                (string) ($journal->person_id ?? ''),
+            ),
+            HttpResponse::HTTP_NOT_FOUND,
+            'The selected daily journal was not found.',
+        );
+
+        return $this->uploadSignature(
+            $request,
+            $journalId,
+        );
+    }
+
+    /**
+     * Delete a Daily Journal belonging to the authenticated student.
+     *
+     * Database ownership is checked before deletion. Objective evidence and
+     * the STO signature are cleaned up from the same selected-school
+     * person_task disk used by the existing senior upload methods.
+     */
+    public function studentDestroy(
+        Request $request,
+        string $journalId,
+    ): JsonResponse {
+        $account = $request->user();
+
+        if (! $account instanceof Student) {
+            return response()->json(
+                [
+                    'message' =>
+                        'Only student accounts may access this resource.',
+                ],
+                HttpResponse::HTTP_FORBIDDEN,
+            );
+        }
+
+        [$connection] = $this->resolveSchoolConnection(
+            $request,
+        );
+
+        $database = DB::connection($connection);
+
+        $journal = $this->findJournalOrFail(
+            $database,
+            $journalId,
+        );
+
+        $studentId = (string) $account
+            ->getAuthIdentifier();
+
+        abort_unless(
+            hash_equals(
+                $studentId,
+                (string) ($journal->person_id ?? ''),
+            ),
+            HttpResponse::HTTP_NOT_FOUND,
+            'The selected daily journal was not found.',
+        );
+
+        $evidenceFilename = $this->safeFilename(
+            $journal->file_name ?? null,
+        );
+
+        $signatureFilename = $this->safeFilename(
+            $journal->esig_file ?? null,
+        );
+
+        $database->transaction(
+            function () use (
+                $database,
+                $journalId,
+                $studentId,
+            ): void {
+                $database
+                    ->table('person_journal')
+                    ->where('id', $journalId)
+                    ->where('person_id', $studentId)
+                    ->delete();
+            },
+        );
+
+        $diskName = $this->schoolDiskName(
+            $request,
+            'person_task',
+        );
+
+        $this->deleteRemoteFileQuietly(
+            $diskName,
+            $evidenceFilename,
+        );
+
+        if (
+            $signatureFilename !== $evidenceFilename
+        ) {
+            $this->deleteRemoteFileQuietly(
+                $diskName,
+                $signatureFilename,
+            );
+        }
+
+        return response()->json([
+            'message' =>
+                'Daily journal deleted successfully.',
+        ]);
+    }
+
+    /**
+     * Print only the authenticated student's Daily Journals using the
+     * existing senior PDF implementation.
+     */
+    public function studentDownload(
+        Request $request,
+    ): Response {
+        $account = $request->user();
+
+        abort_unless(
+            $account instanceof Student,
+            HttpResponse::HTTP_FORBIDDEN,
+            'Only student accounts may access this resource.',
+        );
+
+        $request->merge([
+            'person_id' =>
+                (string) $account->getAuthIdentifier(),
+            'school_id' => null,
+        ]);
+
+        return $this->download($request);
+    }
+
+    /**
      * Return student suggestions for the PrimeVue AutoComplete.
      */
     public function students(Request $request): JsonResponse

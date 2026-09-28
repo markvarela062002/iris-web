@@ -104,6 +104,69 @@ Route::get(
 )->name(
     'api.v1.student-dashboard.journals',
 );
+    // Alerts — Student Calendar
+    Route::inertia('/alerts/calendar/student/datatable','alerts/calendar/student/datatable/Index')->name('student.alerts.calendar');
+    Route::get('/api/v1/student/alerts/calendar/events',[AlertCalendarController::class,'events'])->name('api.v1.student.alerts.calendar.events');
+    Route::get('/api/v1/student/alerts/calendar/events/{type}/{date}',[AlertCalendarController::class,'details'])->whereIn('type',['person_activity','file_upload','person_task','person_journal'])->where('date','\d{4}-\d{2}-\d{2}')->name('api.v1.student.alerts.calendar.details');
+
+    // Alerts — Student Announcements
+    Route::inertia('/alerts/announcements/student/datatable','alerts/announcements/student/datatable/Index')->name('student.alerts.announcements');
+    Route::get('/api/v1/student/alerts/datatable/announcements',[AnnouncementsController::class,'studentIndex'])->name('api.v1.student.alerts.datatable.announcements');
+
+    // Alerts — Student Messages
+    Route::inertia('/alerts/messages/student','alerts/messages/student/Index')->name('student.alerts.messages');
+    Route::get('/api/v1/student/alerts/messages',[MessageController::class,'studentFetchMessageModule'])->name('api.v1.student.alerts.messages.index');
+    Route::get('/api/v1/student/alerts/messages/administrators',[MessageController::class,'fetchAdministrators'])->name('api.v1.student.alerts.messages.administrators');
+    Route::get('/api/v1/student/alerts/messages/students',[MessageController::class,'fetchStudents'])->name('api.v1.student.alerts.messages.students');
+    Route::get('/api/v1/student/alerts/messages/{inboxId}/replies',[MessageController::class,'studentFetchMessageReplies'])->where('inboxId','[A-Za-z0-9\-]+')->name('api.v1.student.alerts.messages.replies');
+    Route::post('/api/v1/student/alerts/messages',[MessageController::class,'studentStoreMessage'])->name('api.v1.student.alerts.messages.store');
+    Route::post('/api/v1/student/alerts/messages/{inboxId}/replies',[MessageController::class,'studentStoreMessageReply'])->where('inboxId','[A-Za-z0-9\-]+')->name('api.v1.student.alerts.messages.replies.store');
+
+    // Updates — Student Activity Updates
+    Route::inertia('/monitoring/activity-updates/student/datatable','monitoring/activity-updates/student/datatable/Index')->name('student.monitoring.activity-updates');
+    Route::get('/api/v1/student/activity-updates',[ActivitiesController::class,'studentIndex'])->name('api.v1.student.activity-updates.index');
+    Route::get('/api/v1/student/activity-updates/options',[ActivitiesController::class,'studentOptions'])->name('api.v1.student.activity-updates.options');
+    Route::post('/api/v1/student/activity-updates',[ActivitiesController::class,'studentStore'])->name('api.v1.student.activity-updates.store');
+    Route::post('/api/v1/student/activity-updates/{activityRecordId}',[ActivitiesController::class,'studentUpdate'])->where('activityRecordId','[A-Za-z0-9\-]+')->name('api.v1.student.activity-updates.update');
+    Route::delete('/api/v1/student/activity-updates/{activityRecordId}',[ActivitiesController::class,'studentDestroy'])->where('activityRecordId','[A-Za-z0-9\-]+')->name('api.v1.student.activity-updates.destroy');
+
+    // Updates — Student Documents Uploading
+    Route::inertia('/monitoring/uploaded-documents/student/datatable','monitoring/uploaded-documents/student/datatable/Index')->name('student.monitoring.uploaded-documents');
+    Route::get('/api/v1/student/uploaded-documents',[DocumentsController::class,'studentIndex'])->name('api.v1.student.uploaded-documents.index');
+    Route::get('/api/v1/student/uploaded-documents/options',[DocumentsController::class,'studentOptions'])->name('api.v1.student.uploaded-documents.options');
+    Route::post('/api/v1/student/uploaded-documents',[DocumentsController::class,'studentStore'])->name('api.v1.student.uploaded-documents.store');
+    Route::post('/api/v1/student/uploaded-documents/{fileUploadId}',[DocumentsController::class,'studentUpdate'])->where('fileUploadId','[A-Za-z0-9\-]+')->name('api.v1.student.uploaded-documents.update');
+    Route::delete('/api/v1/student/uploaded-documents/{fileUploadId}',[DocumentsController::class,'studentDestroy'])->where('fileUploadId','[A-Za-z0-9\-]+')->name('api.v1.student.uploaded-documents.destroy');
+
+    // Updates — Student Training Record Book (OTG)
+    Route::inertia('/monitoring/otg-updates/student/datatable','monitoring/otg-updates/student/datatable/Index')->name('student.monitoring.otg-updates');
+    Route::get('/api/v1/student/otg',[OtgController::class,'studentIndex'])->name('api.v1.student.otg.index');
+    Route::get('/api/v1/student/otg/vessel-options',[OtgController::class,'studentVesselOptions'])->name('api.v1.student.otg.vessel-options');
+    Route::post('/api/v1/student/otg/vessels',[OtgController::class,'studentStoreVessel'])->name('api.v1.student.otg.vessels.store');
+    Route::put('/api/v1/student/otg/vessels/{vesselId}',[OtgController::class,'studentUpdateVessel'])->whereUuid('vesselId')->name('api.v1.student.otg.vessels.update');
+    Route::delete('/api/v1/student/otg/vessels/{vesselId}',[OtgController::class,'studentDestroyVessel'])->whereUuid('vesselId')->name('api.v1.student.otg.vessels.destroy');
+    Route::get('/api/v1/student/otg/workbook-options',[OtgController::class,'studentWorkbookOptions'])->name('api.v1.student.otg.workbook-options');
+    Route::post('/api/v1/student/otg/workbooks',[OtgController::class,'studentStoreWorkbook'])->name('api.v1.student.otg.workbooks.store');
+    Route::delete('/api/v1/student/otg/workbooks/{workbookAssignmentId}',[OtgController::class,'studentDestroyWorkbook'])->whereUuid('workbookAssignmentId')->name('api.v1.student.otg.workbooks.destroy');
+    Route::get('/api/v1/student/otg/tasks/{personTaskId}',[OtgController::class,'studentTaskDetails'])->whereUuid('personTaskId')->name('api.v1.student.otg.tasks.show');
+    Route::post('/api/v1/student/otg/tasks/{personTaskId}',[OtgController::class,'studentUpdateTask'])->whereUuid('personTaskId')->name('api.v1.student.otg.tasks.update');
+    Route::delete('/api/v1/student/otg/tasks/objective-evidence/{fileId}',[OtgController::class,'studentRemoveObjectiveEvidence'])->whereUuid('fileId')->name('api.v1.student.otg.tasks.objective-evidence.destroy');
+    Route::delete('/api/v1/student/otg/tasks/proof-of-assessment/{fileId}',[OtgController::class,'studentRemoveProofOfAssessment'])->whereUuid('fileId')->name('api.v1.student.otg.tasks.proof-of-assessment.destroy');
+    Route::get('/monitoring/otg-updates/student/print',[OtgPrintController::class,'studentDownload'])->name('student.monitoring.otg-updates.print');
+
+    // Updates — Student Daily Journals
+    Route::inertia('/monitoring/daily-journals/student/datatable','monitoring/daily-journals/student/datatable/Index')->name('student.monitoring.daily-journals');
+    Route::get('/api/v1/student/daily-journals',[JournalsController::class,'studentIndex'])->name('api.v1.student.daily-journals.index');
+    Route::post('/api/v1/student/daily-journals',[JournalsController::class,'studentStore'])->name('api.v1.student.daily-journals.store');
+    Route::get('/api/v1/student/daily-journals/{journalId}',[JournalsController::class,'studentShow'])->whereUuid('journalId')->name('api.v1.student.daily-journals.show');
+    Route::put('/api/v1/student/daily-journals/{journalId}',[JournalsController::class,'studentUpdate'])->whereUuid('journalId')->name('api.v1.student.daily-journals.update');
+    Route::post('/api/v1/student/daily-journals/{journalId}/evidence',[JournalsController::class,'studentUploadEvidence'])->whereUuid('journalId')->name('api.v1.student.daily-journals.evidence');
+    Route::post('/api/v1/student/daily-journals/{journalId}/signature',[JournalsController::class,'studentUploadSignature'])->middleware('throttle:10,1')->whereUuid('journalId')->name('api.v1.student.daily-journals.signature');
+    Route::delete('/api/v1/student/daily-journals/{journalId}',[JournalsController::class,'studentDestroy'])->whereUuid('journalId')->name('api.v1.student.daily-journals.destroy');
+    Route::get('/monitoring/daily-journals/student/print',[JournalsController::class,'studentDownload'])->name('student.monitoring.daily-journals.print');
+
+
+
 });
 
 /*

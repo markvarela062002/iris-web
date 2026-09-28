@@ -687,7 +687,7 @@ onBeforeUnmount(() => {
                         class="flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/20 bg-white p-1 shadow-xl"
                     >
                         <img
-                            :src="profileImage"
+                            :src="profileImage ?? undefined"
                             :alt="displayName"
                             class="h-full w-full rounded-xl object-cover"
                         />

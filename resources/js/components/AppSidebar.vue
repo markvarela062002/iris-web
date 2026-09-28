@@ -635,6 +635,100 @@ const visibleNavItems = computed<NavItem[]>(() => {
                 icon: LayoutGrid,
 
             },
+            {
+
+                title: 'Alerts',
+
+                href: '#',
+
+                icon: Bell,
+
+                items: [
+
+                    {
+
+                        title: 'Calendar',
+
+                        href: '/alerts/calendar/student/datatable',
+
+                        icon: Calendar,
+
+                    },
+
+                    {
+
+                        title: 'Announcements',
+
+                        href: '/alerts/announcements/student/datatable',
+
+                        icon: Megaphone,
+
+                    },
+
+                    {
+
+                        title: 'Messages',
+
+                        href: '/alerts/messages/student',
+
+                        icon: MessageSquare,
+
+                    },
+
+                ],
+
+            },
+
+            
+            {   title: 'Updates',
+
+                href: '#',
+
+                icon: Monitor,
+
+                items: [
+
+                {
+
+                    title: 'Activity Updates',
+
+                    href: '/monitoring/activity-updates/student/datatable',
+
+                    icon: Activity,
+
+                },
+
+                {
+
+                    title: 'Uploaded Documents',
+
+                    href: '/monitoring/uploaded-documents/student/datatable',
+
+                    icon: Upload,
+
+                },
+
+                {
+
+                    title: 'Training Record Book (OTG)',
+
+                    href: '/monitoring/otg-updates/student/datatable',
+
+                    icon: BookOpen,
+
+                },
+
+                {
+
+                    title: 'Daily Journal',
+
+                    href: '/monitoring/daily-journals/student/datatable',
+
+                    icon: Notebook,
+
+                },
+            ],
+            }
 
         ];
 

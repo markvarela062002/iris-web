@@ -23,7 +23,6 @@ type MessageListItem = {
     last_update?: string | null;
     content_inbox: string | null;
     has_unread?: boolean;
-    is_deleted?: boolean;
 };
 
 type ConversationResponse = {
@@ -42,10 +41,9 @@ const props = defineProps<{
 const emit = defineEmits<{
     select: [conversation: MessageListItem];
     selectionResolved: [];
-    deleted: [inboxId: string];
 }>();
 
-const API = '/api/v1/alerts/messages';
+const API = '/api/v1/student/alerts/messages';
 const POLL_INTERVAL_MS = 15000;
 
 const conversations = ref<MessageListItem[]>([]);
@@ -54,8 +52,6 @@ const initialLoading = ref(true);
 const backgroundRefreshing = ref(false);
 const errorMessage = ref('');
 const failedAvatarSources = ref<Set<string>>(new Set());
-const confirmDeleteInboxId = ref<string | null>(null);
-const deletingInboxId = ref<string | null>(null);
 
 let pollTimer: number | null = null;
 let requestRunning = false;
@@ -187,8 +183,6 @@ function conversationSignature(items: MessageListItem[]): string {
                 item.inbox_id,
                 item.last_update ?? '',
                 item.date_read ?? '',
-                String(item.has_unread ?? ''),
-                String(item.is_deleted ?? ''),
                 item.recipient_full_name ?? '',
                 item.recipient_photo_url ?? '',
                 item.recipient_gender ?? '',
@@ -205,46 +199,6 @@ function errorText(error: unknown): string {
         if (typeof message === 'string' && message.trim() !== '') return message;
     }
     return error instanceof Error ? error.message : 'Unable to load messages.';
-}
-
-function askToDeleteConversation(conversation: MessageListItem): void {
-    confirmDeleteInboxId.value = conversation.inbox_id;
-}
-
-function cancelDeleteConversation(): void {
-    confirmDeleteInboxId.value = null;
-}
-
-async function deleteConversationHistory(conversation: MessageListItem): Promise<void> {
-    if (!props.currentUserId || deletingInboxId.value) return;
-
-    deletingInboxId.value = conversation.inbox_id;
-    errorMessage.value = '';
-
-    try {
-        await axios.delete(
-            `${API}/${encodeURIComponent(conversation.inbox_id)}/history`,
-            {
-                data: {
-                    user_id: props.currentUserId,
-                },
-            },
-        );
-
-        conversations.value = conversations.value.filter(
-            (item) => item.inbox_id !== conversation.inbox_id,
-        );
-
-        if (confirmDeleteInboxId.value === conversation.inbox_id) {
-            confirmDeleteInboxId.value = null;
-        }
-
-        emit('deleted', conversation.inbox_id);
-    } catch (error) {
-        errorMessage.value = errorText(error);
-    } finally {
-        deletingInboxId.value = null;
-    }
 }
 
 function resolveRequestedSelection(): void {
@@ -277,16 +231,6 @@ async function loadConversations(initial = false): Promise<void> {
         }
 
         errorMessage.value = '';
-
-        if (
-            props.selectedInboxId &&
-            !conversations.value.some(
-                (item) => item.inbox_id === props.selectedInboxId,
-            )
-        ) {
-            emit('deleted', props.selectedInboxId);
-        }
-
         resolveRequestedSelection();
 
         if (
@@ -356,16 +300,10 @@ onBeforeUnmount(() => {
                 <slot name="new-message" />
             </div>
 
-            <div class="relative">
-                <i
-                    class="pi pi-search pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-sm text-slate-400"
-                ></i>
-                <InputText
-                    v-model="search"
-                    class="w-full !pl-9"
-                    placeholder="Search messages"
-                />
-            </div>
+            <span class="p-input-icon-left block">
+                <i class="pi pi-search"></i>
+                <InputText v-model="search" class="w-full" placeholder="Search messages" />
+            </span>
         </div>
 
         <Message v-if="errorMessage" severity="error" :closable="false" class="m-3 shrink-0">
@@ -381,135 +319,79 @@ onBeforeUnmount(() => {
         </div>
 
         <div v-else class="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-            <div
+            <Button
                 v-for="conversation in filteredConversations"
                 :key="conversation.inbox_id"
+                type="button"
+                unstyled
                 :class="[
-                    'group relative flex w-full items-stretch border-b border-slate-100 transition',
+                    'flex w-full items-center gap-3 border-b border-slate-100 px-4 py-3 text-left transition',
                     selectedInboxId === conversation.inbox_id
                         ? 'bg-[#377EC0]/5'
                         : 'bg-white hover:bg-slate-50',
                 ]"
+                @click="emit('select', conversation)"
             >
-                <Button
-                    type="button"
-                    unstyled
-                    class="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left"
-                    @click="emit('select', conversation)"
-                >
-                    <div class="relative h-12 w-12 shrink-0 overflow-hidden rounded-full">
-                        <PrimeImage
-                            v-if="avatarSource(conversation)"
-                            :src="avatarSource(conversation) || ''"
-                            :alt="displayName(conversation)"
-                            class="block h-full w-full"
-                            image-class="h-full w-full object-cover"
-                            @error="markAvatarFailed(avatarSource(conversation))"
-                        />
-                        <Avatar
-                            v-else
-                            :label="initials(displayName(conversation))"
-                            shape="circle"
-                            class="!h-full !w-full !bg-[#377EC0]/10 !text-sm !font-bold !text-[#377EC0]"
-                        />
+                <div class="relative h-12 w-12 shrink-0 overflow-hidden rounded-full">
+                    <PrimeImage
+                        v-if="avatarSource(conversation)"
+                        :src="avatarSource(conversation) || ''"
+                        :alt="displayName(conversation)"
+                        class="block h-full w-full"
+                        image-class="h-full w-full object-cover"
+                        @error="markAvatarFailed(avatarSource(conversation))"
+                    />
+                    <Avatar
+                        v-else
+                        :label="initials(displayName(conversation))"
+                        shape="circle"
+                        class="!h-full !w-full !bg-[#377EC0]/10 !text-sm !font-bold !text-[#377EC0]"
+                    />
+                    <span
+                        v-if="isUnread(conversation)"
+                        class="absolute right-0 top-0 h-3 w-3 rounded-full border-2 border-white bg-[#377EC0]"
+                    ></span>
+                </div>
+
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2">
+                        <span
+                            :class="[
+                                'min-w-0 flex-1 truncate text-sm',
+                                isUnread(conversation)
+                                    ? 'font-bold text-slate-950'
+                                    : 'font-semibold text-slate-800',
+                            ]"
+                        >
+                            {{ displayName(conversation) }}
+                        </span>
+                        <span class="shrink-0 text-[11px] text-slate-400">
+                            {{ formatListDate(conversation.last_update || conversation.date_inbox) }}
+                        </span>
+                    </div>
+
+                    <div class="mt-1 flex items-center gap-2">
+                        <span
+                            :class="[
+                                'min-w-0 flex-1 truncate text-xs',
+                                isUnread(conversation)
+                                    ? 'font-semibold text-slate-700'
+                                    : 'text-slate-500',
+                            ]"
+                        >
+                            {{
+                                cleanLegacyText(conversation.content_inbox) ||
+                                conversation.subj_inbox ||
+                                'Open conversation'
+                            }}
+                        </span>
                         <span
                             v-if="isUnread(conversation)"
-                            class="absolute right-0 top-0 h-3 w-3 rounded-full border-2 border-white bg-[#377EC0]"
+                            class="h-2.5 w-2.5 shrink-0 rounded-full bg-[#377EC0]"
                         ></span>
                     </div>
-
-                    <div class="min-w-0 flex-1">
-                        <div class="flex items-center gap-2">
-                            <span
-                                :class="[
-                                    'min-w-0 flex-1 truncate text-sm',
-                                    isUnread(conversation)
-                                        ? 'font-bold text-slate-950'
-                                        : 'font-normal text-slate-800',
-                                ]"
-                            >
-                                {{ displayName(conversation) }}
-                            </span>
-                            <span
-                                :class="[
-                                    'shrink-0 text-[11px] text-slate-400',
-                                    isUnread(conversation) ? 'font-bold' : 'font-normal',
-                                ]"
-                            >
-                                {{ formatListDate(conversation.last_update || conversation.date_inbox) }}
-                            </span>
-                        </div>
-
-                        <div class="mt-1 flex items-center gap-2">
-                            <span
-                                :class="[
-                                    'min-w-0 flex-1 truncate text-xs',
-                                    isUnread(conversation)
-                                        ? 'font-bold text-slate-700'
-                                        : 'font-normal text-slate-500',
-                                    conversation.is_deleted ? 'italic' : '',
-                                ]"
-                            >
-                                {{
-                                    cleanLegacyText(conversation.content_inbox) ||
-                                    conversation.subj_inbox ||
-                                    'Open conversation'
-                                }}
-                            </span>
-                            <span
-                                v-if="isUnread(conversation)"
-                                class="h-2.5 w-2.5 shrink-0 rounded-full bg-[#377EC0]"
-                            ></span>
-                        </div>
-                    </div>
-                </Button>
-
-                <div class="flex shrink-0 items-center pr-2">
-                    <Button
-                        type="button"
-                        icon="pi pi-trash"
-                        severity="danger"
-                        text
-                        rounded
-                        size="small"
-                        :disabled="Boolean(deletingInboxId)"
-                        aria-label="Delete chat history"
-                        title="Delete chat history"
-                        @click.stop="askToDeleteConversation(conversation)"
-                    />
                 </div>
-
-                <div
-                    v-if="confirmDeleteInboxId === conversation.inbox_id"
-                    class="absolute inset-0 z-20 flex items-center justify-end gap-2 bg-white/95 px-3 backdrop-blur-sm"
-                >
-                    <span class="mr-auto text-xs font-semibold text-slate-700">
-                        Delete this chat for both participants?
-                    </span>
-                    <Button
-                        type="button"
-                        label="Cancel"
-                        severity="secondary"
-                        size="small"
-                        text
-                        :disabled="deletingInboxId === conversation.inbox_id"
-                        @click.stop="cancelDeleteConversation"
-                    />
-                    <Button
-                        type="button"
-                        label="Delete"
-                        icon="pi pi-trash"
-                        severity="danger"
-                        size="small"
-                        :loading="deletingInboxId === conversation.inbox_id"
-                        :disabled="
-                            Boolean(deletingInboxId) &&
-                            deletingInboxId !== conversation.inbox_id
-                        "
-                        @click.stop="deleteConversationHistory(conversation)"
-                    />
-                </div>
-            </div>
+            </Button>
 
             <div
                 v-if="filteredConversations.length === 0"

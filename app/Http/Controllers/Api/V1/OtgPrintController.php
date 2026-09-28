@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Student;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -15,6 +16,31 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class OtgPrintController extends Controller
 {
+
+    /**
+     * Generate the authenticated student's own OTG PDF.
+     *
+     * No person ID is accepted by the student route. The existing download()
+     * implementation is reused with the authenticated Student identifier.
+     */
+    public function studentDownload(
+        Request $request,
+    ): Response {
+        $account = $request->user();
+
+        abort_unless(
+            $account instanceof Student,
+            HttpResponse::HTTP_FORBIDDEN,
+            'Only student accounts may access this resource.',
+        );
+
+        return $this->download(
+            $request,
+            (string) $account
+                ->getAuthIdentifier(),
+        );
+    }
+
     /**
      * Generate and display a student's OTG PDF.
      */
