@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Student;
 use App\Services\DatatableService;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Http\JsonResponse;
@@ -103,6 +104,101 @@ class AnnouncementsController extends Controller
                     return [
                         ...$data,
                         'status' => $status,
+                    ];
+                },
+            )
+            ->values()
+            ->all();
+
+        return response()->json($result);
+    }
+
+
+    /**
+     * Return active announcements for the authenticated student.
+     *
+     * This endpoint is read-only. Student accounts may only view
+     * announcements currently published to all users in their
+     * selected school database.
+     */
+    public function studentIndex(Request $request): JsonResponse
+    {
+        $account = $request->user();
+
+        if (! $account instanceof Student) {
+            return response()->json([
+                'message' => 'Only student accounts may access this resource.',
+            ], Response::HTTP_FORBIDDEN);
+        }
+
+        $db = $this->resolveSchoolConnection($request);
+
+        if ($db instanceof JsonResponse) {
+            return $db;
+        }
+
+        $today = now()->toDateString();
+
+        $query = $db
+            ->table('announcement')
+            ->select([
+                'announcement.id',
+                'announcement.ref_no',
+                'announcement.subject',
+                'announcement.details',
+                'announcement.post_by',
+                'announcement.post_until',
+                'announcement.to_all',
+                'announcement.posted_by_id',
+                'announcement.login_id',
+                'announcement.last_update',
+            ])
+            ->where('announcement.to_all', 'Y')
+            ->where(function ($query) use ($today): void {
+                $query
+                    ->whereNull('announcement.post_by')
+                    ->orWhere('announcement.post_by', '')
+                    ->orWhere('announcement.post_by', '<=', $today);
+            })
+            ->where(function ($query) use ($today): void {
+                $query
+                    ->whereNull('announcement.post_until')
+                    ->orWhere('announcement.post_until', '')
+                    ->orWhere('announcement.post_until', '>=', $today);
+            });
+
+        $result = $this->datatableService->paginate(
+            query: $query,
+            request: $request,
+            searchableColumns: [
+                'announcement.ref_no',
+                'announcement.subject',
+                'announcement.details',
+                'announcement.post_by',
+                'announcement.post_until',
+            ],
+            sortableColumns: [
+                'subject' => 'announcement.subject',
+                'post_by' => 'announcement.post_by',
+                'post_until' => 'announcement.post_until',
+                'last_update' => 'announcement.last_update',
+            ],
+            defaultSortColumn: 'post_by',
+            defaultSortDirection: 'desc',
+        );
+
+        $result['data'] = collect($result['data'])
+            ->map(
+                static function (
+                    object|array $row,
+                ): array {
+                    $data = is_object($row)
+                        ? (array) $row
+                        : $row;
+
+                    return [
+                        ...$data,
+                        'status' => 'Active',
                     ];
                 },
             )

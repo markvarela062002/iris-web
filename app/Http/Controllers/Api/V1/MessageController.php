@@ -3019,6 +3019,110 @@ class MessageController extends Controller
     }
 
 
+    /**
+     * Student Messages endpoints reuse the existing message methods while
+     * forcing user_id to the authenticated student account. This prevents a
+     * student from changing user_id in the request and reading or sending as
+     * another account.
+     */
+    public function studentFetchMessageModule(
+        Request $request,
+    ): JsonResponse {
+        $studentId =
+            $this->authenticatedStudentId(
+                $request,
+            );
+
+        $request->query->set(
+            'user_id',
+            $studentId,
+        );
+
+        return $this->fetchMessageModule(
+            $request,
+        );
+    }
+
+
+    public function studentFetchMessageReplies(
+        Request $request,
+        string $inboxId,
+    ): JsonResponse {
+        $studentId =
+            $this->authenticatedStudentId(
+                $request,
+            );
+
+        $request->query->set(
+            'user_id',
+            $studentId,
+        );
+
+        return $this->fetchMessageReplies(
+            $request,
+            $inboxId,
+        );
+    }
+
+
+    public function studentStoreMessage(
+        Request $request,
+    ): JsonResponse {
+        $request->merge([
+            'user_id' =>
+                $this->authenticatedStudentId(
+                    $request,
+                ),
+        ]);
+
+        return $this->storeMessage(
+            $request,
+        );
+    }
+
+
+    public function studentStoreMessageReply(
+        Request $request,
+        string $inboxId,
+    ): JsonResponse {
+        $request->merge([
+            'user_id' =>
+                $this->authenticatedStudentId(
+                    $request,
+                ),
+        ]);
+
+        return $this->storeMessageReply(
+            $request,
+            $inboxId,
+        );
+    }
+
+
+    /**
+     * The student route group already guarantees account.type:student. Keep
+     * the authenticated account as the single source of truth for ownership.
+     */
+    private function authenticatedStudentId(
+        Request $request,
+    ): string {
+        $studentId =
+            trim(
+                (string) $request
+                    ->user()
+                    ?->getAuthIdentifier(),
+            );
+
+        abort_if(
+            $studentId === '',
+            403,
+            'Authenticated student account is unavailable.',
+        );
+
+        return $studentId;
+    }
+
+
 
     //POST
 
