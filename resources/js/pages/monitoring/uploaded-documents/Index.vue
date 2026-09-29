@@ -1,34 +1,34 @@
 <script setup lang="ts">
-import {
-    Head,
-    router,
-} from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
+
 import axios from 'axios';
+
 import Avatar from 'primevue/avatar';
+
 import Button from 'primevue/button';
+
 import Dialog from 'primevue/dialog';
+
 import Message from 'primevue/message';
+
 import PrimeTag from 'primevue/tag';
-import {
-    computed,
-    onBeforeUnmount,
-    onMounted,
-    ref,
-} from 'vue';
+
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
 import Datatable from '@/components/Datatable.vue';
+
 import { dashboard } from '@/routes';
 
-import type {
-    DataTableAction,
-    DataTableColumn,
-    DataTableRow,
-} from '@/types';
+import type { DataTableAction, DataTableColumn, DataTableRow } from '@/types';
 
 /*
+
 |--------------------------------------------------------------------------
+
 | Page configuration
+
 |--------------------------------------------------------------------------
+
 */
 
 defineOptions({
@@ -38,10 +38,13 @@ defineOptions({
         breadcrumbs: [
             {
                 title: 'Dashboard',
+
                 href: dashboard(),
             },
+
             {
                 title: 'Uploaded Documents',
+
                 href: '/monitoring/uploaded-documents',
             },
         ],
@@ -49,14 +52,20 @@ defineOptions({
 });
 
 /*
+
 |--------------------------------------------------------------------------
+
 | API response types
+
 |--------------------------------------------------------------------------
+
 */
 
 type UploadedFile = {
     name: string;
+
     label: string;
+
     url: string;
 };
 
@@ -65,36 +74,51 @@ type DocumentApiResponse = {
 
     meta: {
         currentPage: number;
+
         lastPage: number;
+
         perPage: number;
+
         total: number;
+
         from: number | null;
+
         to: number | null;
     };
 
     links: {
         first: string | null;
+
         last: string | null;
+
         previous: string | null;
+
         next: string | null;
     };
 };
 
 type DataTablePageEvent = {
     page: number;
+
     rows: number;
+
     first: number;
 };
 
 type DataTableSortEvent = {
     sortField: string;
+
     sortOrder: number;
 };
 
 /*
+
 |--------------------------------------------------------------------------
+
 | Page state
+
 |--------------------------------------------------------------------------
+
 */
 
 const documents = ref<DataTableRow[]>([]);
@@ -102,270 +126,294 @@ const documents = ref<DataTableRow[]>([]);
 const loading = ref(false);
 
 const totalRecords = ref(0);
+
 const first = ref(0);
+
 const perPage = ref(10);
 
 const search = ref('');
 
 const sortField = ref('date_uploaded');
 
-const sortDirection = ref<'asc' | 'desc'>(
-    'desc',
-);
+const sortDirection = ref<'asc' | 'desc'>('desc');
 
-const selectedDocument =
-    ref<DataTableRow | null>(null);
+const selectedDocument = ref<DataTableRow | null>(null);
 
 const filesDialogVisible = ref(false);
 
 const errorMessage = ref('');
 
-let requestController: AbortController | null =
-    null;
+let requestController: AbortController | null = null;
 
 /*
+
 |--------------------------------------------------------------------------
+
 | Datatable columns
+
 |--------------------------------------------------------------------------
+
 */
 
 const columns: DataTableColumn[] = [
     {
         field: 'fname',
+
         header: 'Student Information',
+
         sortable: false,
+
         searchable: true,
+
         frozen: true,
+
         alignFrozen: 'left',
+
         class: 'w-[360px] min-w-[360px]',
     },
+
     {
         field: 'desc_requirement',
+
         header: 'Requirement Type',
+
         sortable: false,
+
         searchable: false,
-        class: 'w-[300px] min-w-[300px] whitespace-normal',
+
+        class: 'w-[390px] min-w-[390px] whitespace-normal',
     },
+
     {
         field: 'date_uploaded',
+
         header: 'Date Uploaded',
+
         sortable: false,
+
         searchable: false,
-        class: 'w-[220px] min-w-[220px]',
+
+        class: 'w-[230px] min-w-[230px]',
     },
+
     {
         field: 'sto_validated',
+
         header: 'Verified',
+
         sortable: true,
+
         searchable: false,
+
         class: 'w-[150px] min-w-[150px]',
     },
+
     {
         field: 'revise_remarks',
+
         header: 'Remarks',
+
         sortable: false,
+
         searchable: false,
-        class: 'w-[260px] min-w-[260px]',
+
+        class: 'w-[300px] min-w-[300px]',
     },
 ];
 
 /*
+
 |--------------------------------------------------------------------------
+
 | Datatable actions
+
 |--------------------------------------------------------------------------
+
 */
 
 const actions: DataTableAction[] = [
     {
         key: 'view-files',
+
         label: 'View or download file',
+
         icon: 'pi pi-download',
+
         severity: 'info',
 
         visible: (row) => {
-            return (
-                getUploadedFiles(row).length > 0
-            );
+            return getUploadedFiles(row).length > 0;
         },
     },
+
     {
         key: 'no-files',
+
         label: 'No uploaded file',
+
         icon: 'pi pi-download',
+
         severity: 'secondary',
 
         visible: (row) => {
-            return (
-                getUploadedFiles(row).length === 0
-            );
+            return getUploadedFiles(row).length === 0;
         },
     },
 ];
 
 /*
+
 |--------------------------------------------------------------------------
+
 | Computed values
+
 |--------------------------------------------------------------------------
+
 */
 
-const selectedFiles = computed<
-    UploadedFile[]
->(() => {
+const selectedFiles = computed<UploadedFile[]>(() => {
     if (!selectedDocument.value) {
         return [];
     }
 
-    return getUploadedFiles(
-        selectedDocument.value,
-    );
+    return getUploadedFiles(selectedDocument.value);
 });
 
 /*
+
 |--------------------------------------------------------------------------
+
 | Load documents
+
 |--------------------------------------------------------------------------
+
 */
 
-async function loadDocuments(
-    pageNumber = 1,
-): Promise<void> {
+async function loadDocuments(pageNumber = 1): Promise<void> {
     requestController?.abort();
 
-    const controller =
-        new AbortController();
+    const controller = new AbortController();
 
     requestController = controller;
 
     loading.value = true;
+
     errorMessage.value = '';
 
     try {
-        const response =
-            await axios.get<DocumentApiResponse>(
-                '/api/v1/monitoring/datatable/uploaded-documents',
-                {
-                    signal: controller.signal,
+        const response = await axios.get<DocumentApiResponse>(
+            '/api/v1/monitoring/datatable/uploaded-documents',
 
-                    params: {
-                        page: pageNumber,
-                        per_page: perPage.value,
-                        search: search.value,
-                        sort_field:
-                            sortField.value,
-                        sort_direction:
-                            sortDirection.value,
-                        monitoring: true,
-                    },
+            {
+                signal: controller.signal,
 
-                    headers: {
-                        Accept:
-                            'application/json',
+                params: {
+                    page: pageNumber,
 
-                        'X-Requested-With':
-                            'XMLHttpRequest',
-                    },
+                    per_page: perPage.value,
 
-                    withCredentials: true,
+                    search: search.value,
+
+                    sort_field: sortField.value,
+
+                    sort_direction: sortDirection.value,
+
+                    monitoring: true,
                 },
-            );
 
-        documents.value =
-            response.data.data;
+                headers: {
+                    Accept: 'application/json',
 
-        totalRecords.value =
-            response.data.meta.total;
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
 
-        perPage.value =
-            response.data.meta.perPage;
+                withCredentials: true,
+            },
+        );
+
+        documents.value = response.data.data;
+
+        totalRecords.value = response.data.meta.total;
+
+        perPage.value = response.data.meta.perPage;
 
         first.value =
-            (
-                response.data.meta.currentPage -
-                1
-            ) *
-            response.data.meta.perPage;
+            (response.data.meta.currentPage - 1) * response.data.meta.perPage;
     } catch (error: unknown) {
         if (
             axios.isCancel(error) ||
-            (
-                axios.isAxiosError(error) &&
-                error.code ===
-                    'ERR_CANCELED'
-            )
+            (axios.isAxiosError(error) && error.code === 'ERR_CANCELED')
         ) {
             return;
         }
 
         documents.value = [];
+
         totalRecords.value = 0;
 
-        errorMessage.value =
-            'Unable to load uploaded documents.';
+        errorMessage.value = 'Unable to load uploaded documents.';
 
         console.error(
             'Unable to load uploaded documents:',
+
             error,
         );
     } finally {
-        if (
-            requestController === controller
-        ) {
+        if (requestController === controller) {
             loading.value = false;
         }
     }
 }
 
 /*
+
 |--------------------------------------------------------------------------
+
 | Datatable events
+
 |--------------------------------------------------------------------------
+
 */
 
-function handlePage(
-    event: DataTablePageEvent,
-): void {
+function handlePage(event: DataTablePageEvent): void {
     perPage.value = event.rows;
+
     first.value = event.first;
 
-    void loadDocuments(
-        event.page + 1,
-    );
+    void loadDocuments(event.page + 1);
 }
 
-function handleSort(
-    event: DataTableSortEvent,
-): void {
-    sortField.value =
-        event.sortField ||
-        'date_uploaded';
+function handleSort(event: DataTableSortEvent): void {
+    sortField.value = event.sortField || 'date_uploaded';
 
-    sortDirection.value =
-        event.sortOrder === -1
-            ? 'desc'
-            : 'asc';
+    sortDirection.value = event.sortOrder === -1 ? 'desc' : 'asc';
 
     first.value = 0;
 
     void loadDocuments(1);
 }
 
-function handleSearch(
-    value: string,
-): void {
+function handleSearch(value: string): void {
     search.value = value;
+
     first.value = 0;
 
     void loadDocuments(1);
 }
 
 /*
+
 |--------------------------------------------------------------------------
+
 | Actions
+
 |--------------------------------------------------------------------------
+
 */
 
 function handleAction(
     action: string,
+
     document: DataTableRow,
 ): void {
     errorMessage.value = '';
@@ -379,27 +427,29 @@ function handleAction(
     }
 }
 
-function openUploadedFiles(
-    document: DataTableRow,
-): void {
-    const files =
-        getUploadedFiles(document);
+function openUploadedFiles(document: DataTableRow): void {
+    const files = getUploadedFiles(document);
 
     if (files.length === 0) {
-        errorMessage.value =
-            'This record does not have an uploaded file.';
+        errorMessage.value = 'This record does not have an uploaded file.';
 
         return;
     }
 
     /*
+
      * If there is only one file,
+
      * open it immediately.
+
      */
+
     if (files.length === 1) {
         window.open(
             files[0].url,
+
             '_blank',
+
             'noopener,noreferrer',
         );
 
@@ -407,82 +457,76 @@ function openUploadedFiles(
     }
 
     /*
+
      * Multiple files:
+
      * show the files inside a dialog.
+
      */
-    selectedDocument.value =
-        document;
+
+    selectedDocument.value = document;
 
     filesDialogVisible.value = true;
 }
 
 function closeFilesDialog(): void {
     filesDialogVisible.value = false;
+
     selectedDocument.value = null;
 }
 
 /*
+
 |--------------------------------------------------------------------------
+
 | Navigation
+
 |--------------------------------------------------------------------------
+
 */
 
 function navigateToVerification(): void {
-    router.visit(
-        '/dashboard/uploaded-documents',
-    );
+    router.visit('/dashboard/uploaded-documents');
 }
 
 /*
+
 |--------------------------------------------------------------------------
+
 | Student helpers
+
 |--------------------------------------------------------------------------
+
 */
 
-function getStudentFullName(
-    document: DataTableRow,
-): string {
-    const lastName = String(
-        document.lname ?? '',
-    ).trim();
+function getStudentFullName(document: DataTableRow): string {
+    const lastName = String(document.lname ?? '').trim();
 
-    const otherNames = [
-        document.fname,
-        document.mname,
-    ]
+    const otherNames = [document.fname, document.mname]
+
         .filter((name) => {
-            return (
-                typeof name === 'string' &&
-                name.trim() !== ''
-            );
+            return typeof name === 'string' && name.trim() !== '';
         })
+
         .map((name) => {
             return String(name).trim();
         })
+
         .join(' ');
 
     if (lastName && otherNames) {
         return `${lastName}, ${otherNames}`.toUpperCase();
     }
 
-    return (
-        lastName || otherNames
-    ).toUpperCase();
+    return (lastName || otherNames).toUpperCase();
 }
 
-function getStudentInitials(
-    document: DataTableRow,
-): string {
-    const firstName = String(
-        document.fname ?? '',
-    ).trim();
+function getStudentInitials(document: DataTableRow): string {
+    const firstName = String(document.fname ?? '').trim();
 
-    const lastName = String(
-        document.lname ?? '',
-    ).trim();
+    const lastName = String(document.lname ?? '').trim();
 
-    const initials =
-        `${firstName.charAt(0)}${lastName.charAt(0)}`;
+    const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`;
 
     return initials.toUpperCase() || 'ST';
 }
@@ -490,6 +534,7 @@ function getStudentInitials(
 function getStudentAvatar(gender: unknown): string {
     const normalizedGender = String(gender ?? '')
         .trim()
+
         .toUpperCase();
 
     if (normalizedGender === 'M' || normalizedGender === 'MALE') {
@@ -503,130 +548,102 @@ function getStudentAvatar(gender: unknown): string {
     return '/images/defaul-cadet.png';
 }
 
-function getSchoolIdLabel(
-    value: unknown,
-): string {
-    const schoolId = String(
-        value ?? '',
-    ).trim();
+function getSchoolIdLabel(value: unknown): string {
+    const schoolId = String(value ?? '').trim();
 
     return schoolId || 'No School ID';
 }
 
 /*
+
 |--------------------------------------------------------------------------
+
 | Status helpers
+
 |--------------------------------------------------------------------------
+
 */
 
-function isVerified(
-    document: DataTableRow,
-): boolean {
-    return String(
-        document.sto_validated ?? '',
-    )
-        .trim()
-        .toUpperCase() === 'Y';
-}
-
-function hasRevisionRemarks(
-    document: DataTableRow,
-): boolean {
-    const remarks = String(
-        document.revise_remarks ?? '',
-    ).trim();
-
+function isVerified(document: DataTableRow): boolean {
     return (
-        remarks !== '' &&
-        remarks !== '-'
+        String(document.sto_validated ?? '')
+            .trim()
+
+            .toUpperCase() === 'Y'
     );
 }
 
+function hasRevisionRemarks(document: DataTableRow): boolean {
+    const remarks = String(document.revise_remarks ?? '').trim();
+
+    return remarks !== '' && remarks !== '-';
+}
+
 /*
+
 |--------------------------------------------------------------------------
+
 | File helpers
+
 |--------------------------------------------------------------------------
+
 */
 
-function getUploadedFiles(
-    document: DataTableRow,
-): UploadedFile[] {
+function getUploadedFiles(document: DataTableRow): UploadedFile[] {
     if (!Array.isArray(document.files)) {
         return [];
     }
 
-    return document.files.flatMap(
-        (candidate): UploadedFile[] => {
-            if (
-                candidate === null ||
-                typeof candidate !== 'object'
-            ) {
-                return [];
-            }
+    return document.files.flatMap((candidate): UploadedFile[] => {
+        if (candidate === null || typeof candidate !== 'object') {
+            return [];
+        }
 
-            const file =
-                candidate as Record<
-                    string,
-                    unknown
-                >;
+        const file = candidate as Record<string, unknown>;
 
-            const name = String(
-                file.name ?? '',
-            ).trim();
+        const name = String(file.name ?? '').trim();
 
-            const url = String(
-                file.url ?? '',
-            ).trim();
+        const url = String(file.url ?? '').trim();
 
-            const label = String(
-                file.label ??
-                    'View or download file',
-            ).trim();
+        const label = String(file.label ?? 'View or download file').trim();
 
-            if (
-                name === '' ||
-                url === ''
-            ) {
-                return [];
-            }
+        if (name === '' || url === '') {
+            return [];
+        }
 
-            return [
-                {
-                    name,
-                    label,
-                    url,
-                },
-            ];
-        },
-    );
+        return [
+            {
+                name,
+
+                label,
+
+                url,
+            },
+        ];
+    });
 }
 
-function getUploadedFileIcon(
-    filename: string,
-): string {
+function getUploadedFileIcon(filename: string): string {
     const extension =
         filename
+
             .split('.')
+
             .pop()
+
             ?.trim()
+
             .toLowerCase() ?? '';
 
     if (extension === 'pdf') {
         return 'pi pi-file-pdf';
     }
 
-    if (
-        extension === 'doc' ||
-        extension === 'docx'
-    ) {
+    if (extension === 'doc' || extension === 'docx') {
         return 'pi pi-file-word';
     }
 
-    if (
-        extension === 'xls' ||
-        extension === 'xlsx' ||
-        extension === 'csv'
-    ) {
+    if (extension === 'xls' || extension === 'xlsx' || extension === 'csv') {
         return 'pi pi-file-excel';
     }
 
@@ -644,66 +661,57 @@ function getUploadedFileIcon(
 }
 
 /*
+
 |--------------------------------------------------------------------------
+
 | Date helpers
+
 |--------------------------------------------------------------------------
+
 */
 
 function formatUploadedDate(
     dateValue: unknown,
+
     timeValue: unknown,
 ): string {
-    const date = String(
-        dateValue ?? '',
-    ).trim();
+    const date = String(dateValue ?? '').trim();
 
-    const time = String(
-        timeValue ?? '',
-    ).trim();
+    const time = String(timeValue ?? '').trim();
 
-    if (
-        !date ||
-        date === '1970-01-01'
-    ) {
+    if (!date || date === '1970-01-01') {
         return '—';
     }
 
-    const combinedValue = time
-        ? `${date} ${time}`
-        : date;
+    const combinedValue = time ? `${date} ${time}` : date;
 
-    const normalizedValue =
-        combinedValue.replace(
-            ' ',
-            'T',
-        );
+    const normalizedValue = combinedValue.replace(
+        ' ',
 
-    const parsedDate =
-        new Date(normalizedValue);
+        'T',
+    );
 
-    if (
-        Number.isNaN(
-            parsedDate.getTime(),
-        )
-    ) {
+    const parsedDate = new Date(normalizedValue);
+
+    if (Number.isNaN(parsedDate.getTime())) {
         return combinedValue;
     }
 
     return new Intl.DateTimeFormat(
         'en-PH',
+
         {
             timeZone: 'Asia/Manila',
+
             month: 'short',
+
             day: 'numeric',
+
             year: 'numeric',
 
-            hour: time
-                ? '2-digit'
-                : undefined,
+            hour: time ? '2-digit' : undefined,
 
-            minute: time
-                ? '2-digit'
-                : undefined,
+            minute: time ? '2-digit' : undefined,
 
             hour12: true,
         },
@@ -711,9 +719,13 @@ function formatUploadedDate(
 }
 
 /*
+
 |--------------------------------------------------------------------------
+
 | Lifecycle
+
 |--------------------------------------------------------------------------
+
 */
 
 onMounted(() => {
@@ -752,7 +764,8 @@ onBeforeUnmount(() => {
             empty-title="No uploaded documents found"
             empty-description="No matching uploaded document records were found."
             empty-icon="pi pi-file"
-            table-min-width="1300px"
+            table-min-width="1560px"
+            actions-width="130px"
             data-key="id"
             lazy
             :loading="loading"
@@ -764,8 +777,11 @@ onBeforeUnmount(() => {
             :rows="perPage"
             :rows-per-page-options="[
                 10,
+
                 20,
+
                 50,
+
                 100,
             ]"
             @page="handlePage"
@@ -782,34 +798,18 @@ onBeforeUnmount(() => {
                     icon="pi pi-file-check"
                     severity="info"
                     size="small"
-                    @click="
-                        navigateToVerification
-                    "
+                    @click="navigateToVerification"
                 />
             </template>
 
             <!-- STUDENT INFORMATION -->
 
             <template #cell-fname="{ data }">
-                <div
-                    class="flex items-center gap-3"
-                >
+                <div class="flex items-center gap-3">
                     <Avatar
-                        v-if="
-                            getStudentAvatar(
-                                data.gender,
-                            )
-                        "
-                        :image="
-                            getStudentAvatar(
-                                data.gender,
-                            ) ?? undefined
-                        "
-                        :aria-label="
-                            getStudentFullName(
-                                data,
-                            )
-                        "
+                        v-if="getStudentAvatar(data.gender)"
+                        :image="getStudentAvatar(data.gender) ?? undefined"
+                        :aria-label="getStudentFullName(data)"
                         shape="circle"
                         size="large"
                         class="shrink-0"
@@ -817,36 +817,20 @@ onBeforeUnmount(() => {
 
                     <Avatar
                         v-else
-                        :label="
-                            getStudentInitials(
-                                data,
-                            )
-                        "
+                        :label="getStudentInitials(data)"
                         shape="circle"
                         size="large"
                         class="shrink-0 !bg-[#377EC0]/10 !text-xs !font-bold !text-[#377EC0]"
                     />
 
                     <div class="min-w-0">
-                        <p
-                            class="truncate font-semibold text-slate-700"
-                        >
-                            {{
-                                getStudentFullName(
-                                    data,
-                                ) || '—'
-                            }}
+                        <p class="truncate font-semibold text-slate-700">
+                            {{ getStudentFullName(data) || '—' }}
                         </p>
 
-                        <div
-                            class="mt-1 flex flex-wrap items-center gap-1.5"
-                        >
+                        <div class="mt-1 flex flex-wrap items-center gap-1.5">
                             <PrimeTag
-                                :value="
-                                    getSchoolIdLabel(
-                                        data.school_id_no,
-                                    )
-                                "
+                                :value="getSchoolIdLabel(data.school_id_no)"
                                 severity="info"
                                 icon="pi pi-id-card"
                                 class="!px-2 !py-0.5 !text-xs !font-semibold"
@@ -858,14 +842,8 @@ onBeforeUnmount(() => {
 
             <!-- REQUIREMENT TYPE -->
 
-            <template
-                #cell-desc_requirement="{
-                    value,
-                }"
-            >
-                <div
-                    class="flex min-w-0 items-start gap-2 whitespace-normal"
-                >
+            <template #cell-desc_requirement="{ value }">
+                <div class="flex min-w-0 items-start gap-2 whitespace-normal">
                     <i
                         class="pi pi-list-check mt-0.5 shrink-0 text-green-500"
                     ></i>
@@ -880,22 +858,17 @@ onBeforeUnmount(() => {
 
             <!-- UPLOADED DATE -->
 
-            <template
-                #cell-date_uploaded="{ data }"
-            >
-                <div
-                    class="flex items-center gap-2"
-                >
-                    <i
-                        class="pi pi-clock text-lg text-yellow-500"
-                    ></i>
+            <template #cell-date_uploaded="{ data }">
+                <div class="flex items-center gap-2">
+                    <i class="pi pi-clock text-lg text-yellow-500"></i>
 
                     <span
-                        class="whitespace-nowrap text-sm font-medium text-slate-600"
+                        class="text-sm font-medium whitespace-nowrap text-slate-600"
                     >
                         {{
                             formatUploadedDate(
                                 data.date_uploaded,
+
                                 data.time_uploaded,
                             )
                         }}
@@ -905,9 +878,7 @@ onBeforeUnmount(() => {
 
             <!-- VERIFIED STATUS -->
 
-            <template
-                #cell-sto_validated="{ data }"
-            >
+            <template #cell-sto_validated="{ data }">
                 <PrimeTag
                     v-if="isVerified(data)"
                     value="Verified"
@@ -916,9 +887,7 @@ onBeforeUnmount(() => {
                 />
 
                 <PrimeTag
-                    v-else-if="
-                        hasRevisionRemarks(data)
-                    "
+                    v-else-if="hasRevisionRemarks(data)"
                     value="Revise"
                     severity="danger"
                     icon="pi pi-undo"
@@ -934,25 +903,15 @@ onBeforeUnmount(() => {
 
             <!-- REMARKS -->
 
-            <template
-                #cell-revise_remarks="{ value }"
-            >
+            <template #cell-revise_remarks="{ value }">
                 <span
-                    v-if="
-                        value &&
-                        String(value).trim() !== '-'
-                    "
+                    v-if="value && String(value).trim() !== '-'"
                     class="text-sm font-medium text-slate-700"
                 >
                     {{ value }}
                 </span>
 
-                <span
-                    v-else
-                    class="text-slate-400"
-                >
-                    —
-                </span>
+                <span v-else class="text-slate-400"> — </span>
             </template>
         </Datatable>
 
@@ -967,13 +926,8 @@ onBeforeUnmount(() => {
         >
             <div class="space-y-3">
                 <Button
-                    v-for="(
-                        file,
-                        index
-                    ) in selectedFiles"
-                    :key="
-                        `${file.name}-${index}`
-                    "
+                    v-for="(file, index) in selectedFiles"
+                    :key="`${file.name}-${index}`"
                     as="a"
                     :href="file.url"
                     target="_blank"
@@ -984,33 +938,25 @@ onBeforeUnmount(() => {
                 >
                     <i
                         :class="[
-                            getUploadedFileIcon(
-                                file.name,
-                            ),
+                            getUploadedFileIcon(file.name),
+
                             'shrink-0 text-lg',
                         ]"
                     ></i>
 
-                    <span
-                        class="min-w-0 text-left"
-                    >
-                        <span
-                            class="block text-xs font-semibold"
-                        >
+                    <span class="min-w-0 text-left">
+                        <span class="block text-xs font-semibold">
                             Document
+
                             {{ index + 1 }}
                         </span>
 
-                        <span
-                            class="block truncate font-semibold"
-                        >
+                        <span class="block truncate font-semibold">
                             {{ file.name }}
                         </span>
                     </span>
 
-                    <i
-                        class="pi pi-external-link ml-auto shrink-0"
-                    ></i>
+                    <i class="pi pi-external-link ml-auto shrink-0"></i>
                 </Button>
             </div>
         </Dialog>

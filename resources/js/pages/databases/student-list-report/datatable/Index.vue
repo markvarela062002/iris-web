@@ -762,7 +762,7 @@ function getStudentAvatar(gender: unknown): string {
         return '/images/female-cadet.png';
     }
 
-    return '/images/defaul-cadet.png';
+    return '/images/default-cadet.png';
 }
 
 function getSchoolId(

@@ -205,7 +205,7 @@ onMounted(() => void loadEvents());
         </Message>
 
         <Calendar
-            title="Alerts Calendar"
+            title="Calendar"
             description="Review activity updates and completed OTG tasks by date."
             header-icon="pi pi-calendar"
             :month="month"

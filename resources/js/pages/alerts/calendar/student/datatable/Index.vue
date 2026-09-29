@@ -224,7 +224,7 @@ onMounted(() => void loadEvents());
         </Message>
 
         <Calendar
-            title="My Alerts Calendar"
+            title="My Calendar"
             description="Review your activity updates, uploaded documents, completed OTG tasks, and daily journals by date."
             header-icon="pi pi-calendar"
             :month="month"

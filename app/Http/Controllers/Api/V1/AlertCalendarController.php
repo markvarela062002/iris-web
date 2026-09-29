@@ -141,9 +141,9 @@ class AlertCalendarController extends Controller
                         'color' =>
                             '#00BF8F',
                         'icon' =>
-                            'pi pi-upload',
+                            'pi pi-file-arrow-up',
                     ];
-                },
+                },  
             );
 
         $taskEvents = $db
@@ -197,7 +197,7 @@ class AlertCalendarController extends Controller
                         'color' =>
                             '#FF293D',
                         'icon' =>
-                            'pi pi-book',
+                            'pi pi-bookmark',
                     ];
                 },
             );
@@ -248,7 +248,7 @@ class AlertCalendarController extends Controller
                         'color' =>
                             '#347EFF',
                         'icon' =>
-                            'pi pi-file-edit',
+                            'pi pi-book',
                     ];
                 },
             );

@@ -1140,6 +1140,18 @@ onBeforeUnmount(() => {
             header="Add External Practical Assessment"
             class="w-[95vw] max-w-2xl"
         >
+
+                            <div
+                class="mb-4 flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900"
+                role="note"
+            >
+                <i class="pi pi-info-circle" aria-hidden="true"></i>
+                <span
+                    >Note: Fields marked with
+                    <span class="font-semibold text-red-500">*</span> are
+                    required fields.</span
+                >
+            </div>  
             <form
                 class="grid grid-cols-1 gap-4 md:grid-cols-2"
                 @submit.prevent="saveAdd"
@@ -1149,10 +1161,6 @@ onBeforeUnmount(() => {
                     severity="error"
                     class="md:col-span-2"
                     >{{ addError }}</Message
-                >
-                <Message severity="info" class="md:col-span-2"
-                    >Leaving From Date and Due Date blank keeps the assessment
-                    open for submissions.</Message
                 >
                 <div class="md:col-span-2">
                     <label class="mb-2 block text-sm font-semibold"
