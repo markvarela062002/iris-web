@@ -347,11 +347,13 @@ Route::middleware([
     Route::get('/api/v1/dashboard/theoretical/batch/options', [TheoreticalBatchController::class, 'options',],)->name('api.v1.dashboard.theoretical.batch.options',);
     Route::get('/api/v1/dashboard/theoretical/batch/students', [TheoreticalBatchController::class, 'students',],)->name('api.v1.dashboard.theoretical.batch.students',);
     Route::post('/api/v1/dashboard/theoretical/batch', [TheoreticalBatchController::class, 'store',],)->name('api.v1.dashboard.theoretical.batch.store',);
+    Route::post('/api/v1/dashboard/theoretical-assessments', [TheoreticalAssessmentsController::class, 'store'])->name('api.v1.dashboard.theoretical-assessments.store');
     Route::get('/api/v1/dashboard/theoretical/batch/{batchId}', [TheoreticalBatchController::class, 'show',],)->where('batchId', '[A-Za-z0-9\-]+',)->name('api.v1.dashboard.theoretical.batch.show',);
     Route::patch('/api/v1/dashboard/theoretical/batch/{batchId}', [TheoreticalBatchController::class, 'update',],)->where('batchId', '[A-Za-z0-9\-]+',)->name('api.v1.dashboard.theoretical.batch.update',);
     Route::get('/api/v1/dashboard/datatable/theoretical-external-batches', [TheoreticalExternalBatchController::class, 'index',],)->name('api.v1.dashboard.datatable.theoretical-external-batches',);
     Route::get('/api/v1/dashboard/theoretical-external/batch/options', [TheoreticalExternalBatchController::class, 'options',],)->name('api.v1.dashboard.theoretical-external.batch.options',);
     Route::post('/api/v1/dashboard/theoretical-external/batch', [TheoreticalExternalBatchController::class, 'store',],)->name('api.v1.dashboard.theoretical-external.batch.store',);
+    Route::post('/api/v1/dashboard/theoretical-external', [TheoreticalExternalAssessmentsController::class, 'store'])->name('api.v1.dashboard.theoretical-external.store');
     Route::get('/api/v1/dashboard/theoretical-external/batch/{batchId}', [TheoreticalExternalBatchController::class, 'show',],)->where('batchId', '[A-Za-z0-9\-]+',)->name('api.v1.dashboard.theoretical-external.batch.show',);
     Route::prefix('/api/v1/dashboard/practical-internal/batches',)->name('api.v1.dashboard.practical-internal.batches.',)->controller(PracticalInternalBatchController::class,)->group(function (): void {
         Route::get('/', 'index',)->name('index');
@@ -361,6 +363,8 @@ Route::middleware([
         Route::get('/{batchId}', 'show',)->whereUuid('batchId')->name('show');
     });
     Route::get('/api/v1/dashboard/datatable/practical-internal', [PracticalInternalAssessmentsController::class, 'index',],)->name('api.v1.dashboard.datatable.practical-internal',);
+Route::get('/api/v1/dashboard/practical-internal/options', [PracticalInternalAssessmentsController::class, 'options'])->name('api.v1.dashboard.practical-internal.options');
+Route::post('/api/v1/dashboard/practical-internal', [PracticalInternalAssessmentsController::class, 'store'])->name('api.v1.dashboard.practical-internal.store');
     Route::get('/api/v1/dashboard/practical-internal/{assessmentId}', [PracticalInternalAssessmentsController::class, 'show',],)->whereUuid('assessmentId')->name('api.v1.dashboard.practical-internal.show',);
     Route::patch('/api/v1/dashboard/practical-internal/{assessmentId}/grade', [PracticalInternalAssessmentsController::class, 'grade',],)->whereUuid('assessmentId')->name('api.v1.dashboard.practical-internal.grade',);
     Route::prefix('/api/v1/dashboard/practical-external/batches',)->name('api.v1.dashboard.practical-external.batches.',)->controller(PracticalExternalBatchController::class,)->group(function (): void {
@@ -370,6 +374,8 @@ Route::middleware([
         Route::post('/', 'store')->name('store');
         Route::get('/{batchId}', 'show')->whereUuid('batchId')->name('show');
     });
+    Route::get('/api/v1/dashboard/practical-external/options', [PracticalExternalAssessmentsController::class, 'options'])->name('api.v1.dashboard.practical-external.options');
+Route::post('/api/v1/dashboard/practical-external', [PracticalExternalAssessmentsController::class, 'store'])->name('api.v1.dashboard.practical-external.store');
     Route::get('/api/v1/dashboard/practical-external/{assessmentId}', [PracticalExternalBatchController::class, 'show'],)->whereUuid('assessmentId')->name('api.v1.dashboard.practical-external.show');
 
     // Monitoring — authenticated API and supporting routes

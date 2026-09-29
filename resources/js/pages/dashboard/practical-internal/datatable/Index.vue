@@ -1,29 +1,31 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
+
 import axios from 'axios';
+
 import Avatar from 'primevue/avatar';
+
 import Button from 'primevue/button';
+
 import Checkbox from 'primevue/checkbox';
+
 import Dialog from 'primevue/dialog';
+
+import InputText from 'primevue/inputtext';
+
 import Message from 'primevue/message';
+
 import PrimeTag from 'primevue/tag';
+
 import Select from 'primevue/select';
-import {
-    computed,
-    onBeforeUnmount,
-    onMounted,
-    reactive,
-    ref,
-} from 'vue';
+
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 
 import Datatable from '@/components/Datatable.vue';
+
 import { dashboard } from '@/routes';
 
-import type {
-    DataTableAction,
-    DataTableColumn,
-    DataTableRow,
-} from '@/types';
+import type { DataTableAction, DataTableColumn, DataTableRow } from '@/types';
 
 defineOptions({
     inheritAttrs: false,
@@ -32,10 +34,13 @@ defineOptions({
         breadcrumbs: [
             {
                 title: 'Dashboard',
+
                 href: dashboard(),
             },
+
             {
                 title: 'Practical Internal',
+
                 href: '/dashboard/practical-internal',
             },
         ],
@@ -44,30 +49,43 @@ defineOptions({
 
 type RemoteFile = {
     name: string;
+
     url: string;
 };
 
 type RubricOption = {
     id: string;
+
     title: string;
+
     points: number;
 };
 
 type RubricCriterion = {
     id: string;
+
     title: string;
+
     description: string;
+
     options: RubricOption[];
 };
 
 type AssessmentItem = {
     id: string;
+
     assessment_item_id: string;
+
     description: string;
+
     answer: string;
+
     points: number;
+
     maximum_points: number;
+
     reference_file: RemoteFile | null;
+
     evidence_file: RemoteFile | null;
 };
 
@@ -76,30 +94,47 @@ type AssessmentDetails = {
 
     student: {
         id: string;
+
         name: string;
+
         school_id_no: string;
+
         dept: string | null;
+
         gender: string | null;
     };
 
     title: string;
+
     instructions: string;
+
     grade_system: string;
+
     passing_mark: number;
+
     date_taken: string | null;
+
     due_date: string | null;
+
     is_completed: boolean;
+
     is_pending: boolean;
 
     items: AssessmentItem[];
+
     rubric_criteria: RubricCriterion[];
+
     reference_files: RemoteFile[];
 
     result: {
         earned_points: number;
+
         maximum_points: number;
+
         percentage: number;
+
         passing_mark: number;
+
         remarks: 'PASS' | 'FAIL';
     };
 };
@@ -109,106 +144,221 @@ type AssessmentApiResponse = {
 
     meta: {
         currentPage: number;
+
         lastPage: number;
+
         perPage: number;
+
         total: number;
+
         from: number | null;
+
         to: number | null;
     };
 
     links: {
         first: string | null;
+
         last: string | null;
+
         previous: string | null;
+
         next: string | null;
     };
 };
 
 type DataTablePageEvent = {
     page: number;
+
     rows: number;
+
     first: number;
 };
 
 type DataTableSortEvent = {
     sortField: string;
+
     sortOrder: number;
 };
 
 type GradePayload = {
     item_id: string;
+
     points: number | null;
+
     rubric_selections?: Record<string, string | null>;
 };
 
 const assessments = ref<DataTableRow[]>([]);
-const selectedAssessment =
-    ref<AssessmentDetails | null>(null);
+
+const selectedAssessment = ref<AssessmentDetails | null>(null);
 
 const loading = ref(false);
+
 const detailsLoading = ref(false);
+
 const saving = ref(false);
+
+type Choice = { id: string; label: string };
+const addVisible = ref(false);
+const addSaving = ref(false);
+const addError = ref('');
+const studentChoices = ref<Choice[]>([]);
+const assessmentChoices = ref<Choice[]>([]);
+const addForm = ref({
+    person_id: '',
+    p_assess_h_id: '',
+    from_date: '',
+    due_date: '',
+    assessor: '',
+});
+let studentSearchTimer: ReturnType<typeof setTimeout> | undefined;
+async function loadAddOptions(studentSearch = ''): Promise<void> {
+    try {
+        const response = await axios.get(
+            '/api/v1/dashboard/practical-internal/options',
+            {
+                params: { student_search: studentSearch },
+            },
+        );
+        studentChoices.value = response.data.students ?? [];
+        assessmentChoices.value = response.data.assessments ?? [];
+    } catch (error: unknown) {
+        addError.value = getErrorMessage(error, 'Unable to load form choices.');
+    }
+}
+function searchStudents(event: { value: string }): void {
+    if (studentSearchTimer) clearTimeout(studentSearchTimer);
+    studentSearchTimer = setTimeout(
+        () => void loadAddOptions(event.value),
+        250,
+    );
+}
+function openAdd(): void {
+    addError.value = '';
+    addVisible.value = true;
+    void loadAddOptions();
+}
+async function saveAdd(): Promise<void> {
+    addError.value = '';
+    addSaving.value = true;
+    try {
+        const response = await axios.post(
+            '/api/v1/dashboard/practical-internal',
+            {
+                ...addForm.value,
+                from_date: addForm.value.from_date || null,
+                due_date: addForm.value.due_date || null,
+            },
+        );
+        addVisible.value = false;
+        addForm.value = {
+            person_id: '',
+            p_assess_h_id: '',
+            from_date: '',
+            due_date: '',
+            assessor: '',
+        };
+        successMessage.value = response.data.message ?? 'Record saved.';
+        await reloadCurrentPage();
+    } catch (error: unknown) {
+        if (axios.isAxiosError(error) && error.response?.data?.errors) {
+            addError.value = Object.values(
+                error.response.data.errors as Record<string, string[]>,
+            )
+                .flat()
+                .join(' ');
+        } else {
+            addError.value = getErrorMessage(
+                error,
+                'Unable to save the assessment.',
+            );
+        }
+    } finally {
+        addSaving.value = false;
+    }
+}
 
 const gradingDialogVisible = ref(false);
 
 const totalRecords = ref(0);
+
 const first = ref(0);
+
 const rows = ref(10);
+
 const search = ref('');
 
 const sortField = ref('date_taken');
-const sortDirection = ref<'asc' | 'desc'>(
-    'desc',
-);
+
+const sortDirection = ref<'asc' | 'desc'>('desc');
 
 const successMessage = ref('');
+
 const errorMessage = ref('');
+
 const gradingError = ref('');
 
-const pointGrades = reactive<
-    Record<string, number | null>
->({});
+const pointGrades = reactive<Record<string, number | null>>({});
 
-const checklistGrades = reactive<
-    Record<string, boolean>
->({});
+const checklistGrades = reactive<Record<string, boolean>>({});
 
 const rubricSelections = reactive<
     Record<string, Record<string, string | null>>
 >({});
 
-let requestController: AbortController | null =
-    null;
+let requestController: AbortController | null = null;
 
 const columns: DataTableColumn[] = [
     {
         field: 'student_name',
+
         header: 'Student Information',
+
         sortable: true,
+
         searchable: true,
+
         frozen: true,
+
         alignFrozen: 'left',
+
         class: 'min-w-[320px]',
     },
+
     {
         field: 'title_assess',
+
         header: 'Practical Assessment',
+
         sortable: true,
+
         searchable: true,
+
         class: 'min-w-[360px] whitespace-normal',
     },
+
     {
         field: 'date_taken',
+
         header: 'Assessment Schedule',
+
         sortable: true,
+
         searchable: false,
+
         class: 'min-w-[240px]',
     },
+
     {
         field: 'grade_system',
+
         header: 'Grading System',
+
         sortable: false,
+
         searchable: true,
+
         class: 'min-w-[160px]',
     },
 ];
@@ -216,23 +366,23 @@ const columns: DataTableColumn[] = [
 const actions: DataTableAction[] = [
     {
         key: 'grade',
+
         label: 'View and grade assessment',
+
         icon: 'pi pi-pencil',
+
         severity: 'warn',
     },
 ];
 
 const currentPage = computed(() => {
-    return (
-        Math.floor(first.value / rows.value) + 1
-    );
+    return Math.floor(first.value / rows.value) + 1;
 });
 
 const normalizedGradeSystem = computed(() => {
-    return String(
-        selectedAssessment.value?.grade_system ?? '',
-    )
+    return String(selectedAssessment.value?.grade_system ?? '')
         .trim()
+
         .toLowerCase();
 });
 
@@ -249,44 +399,36 @@ const displayedEarnedPoints = computed(() => {
 
     if (normalizedGradeSystem.value === 'points') {
         return assessment.items.reduce(
-            (total, item) =>
-                total +
-                Number(pointGrades[item.id] ?? 0),
+            (total, item) => total + Number(pointGrades[item.id] ?? 0),
+
             0,
         );
     }
 
-    if (
-        normalizedGradeSystem.value === 'checklist'
-    ) {
+    if (normalizedGradeSystem.value === 'checklist') {
         return assessment.items.reduce(
-            (total, item) =>
-                total +
-                (checklistGrades[item.id] ? 1 : 0),
+            (total, item) => total + (checklistGrades[item.id] ? 1 : 0),
+
             0,
         );
     }
 
     return assessment.items.reduce(
         (total, item) => {
-            const selections =
-                rubricSelections[item.id] ?? {};
+            const selections = rubricSelections[item.id] ?? {};
 
             return (
                 total +
                 Object.values(selections).reduce(
                     (itemTotal, optionId) => {
-                        return (
-                            itemTotal +
-                            getRubricOptionPoints(
-                                optionId,
-                            )
-                        );
+                        return itemTotal + getRubricOptionPoints(optionId);
                     },
+
                     0,
                 )
             );
         },
+
         0,
     );
 });
@@ -308,83 +450,81 @@ const displayedPercentage = computed(() => {
 
     return Number(
         (
-            (displayedEarnedPoints.value /
-                displayedMaximumPoints.value) *
+            (displayedEarnedPoints.value / displayedMaximumPoints.value) *
             100
         ).toFixed(1),
     );
 });
 
-const displayedRemarks = computed<
-    'PASS' | 'FAIL'
->(() => {
-    const passingMark =
-        selectedAssessment.value?.passing_mark ?? 0;
+const displayedRemarks = computed<'PASS' | 'FAIL'>(() => {
+    const passingMark = selectedAssessment.value?.passing_mark ?? 0;
 
-    return displayedPercentage.value >= passingMark
-        ? 'PASS'
-        : 'FAIL';
+    return displayedPercentage.value >= passingMark ? 'PASS' : 'FAIL';
 });
 
-async function loadAssessments(
-    pageNumber = 1,
-): Promise<void> {
+async function loadAssessments(pageNumber = 1): Promise<void> {
     requestController?.abort();
 
     const controller = new AbortController();
 
     requestController = controller;
+
     loading.value = true;
+
     errorMessage.value = '';
 
     try {
-        const response =
-            await axios.get<AssessmentApiResponse>(
-                '/api/v1/dashboard/datatable/practical-internal',
-                {
-                    signal: controller.signal,
+        const response = await axios.get<AssessmentApiResponse>(
+            '/api/v1/dashboard/datatable/practical-internal',
 
-                    params: {
-                        page: pageNumber,
-                        per_page: rows.value,
-                        search: search.value,
-                        sort_field: sortField.value,
-                        sort_direction:
-                            sortDirection.value,
-                    },
+            {
+                signal: controller.signal,
 
-                    headers: {
-                        Accept: 'application/json',
-                        'X-Requested-With':
-                            'XMLHttpRequest',
-                    },
+                params: {
+                    page: pageNumber,
 
-                    withCredentials: true,
+                    per_page: rows.value,
+
+                    search: search.value,
+
+                    sort_field: sortField.value,
+
+                    sort_direction: sortDirection.value,
                 },
-            );
+
+                headers: {
+                    Accept: 'application/json',
+
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+
+                withCredentials: true,
+            },
+        );
 
         assessments.value = response.data.data;
-        totalRecords.value =
-            response.data.meta.total;
+
+        totalRecords.value = response.data.meta.total;
+
         rows.value = response.data.meta.perPage;
 
         first.value =
-            (response.data.meta.currentPage - 1) *
-            response.data.meta.perPage;
+            (response.data.meta.currentPage - 1) * response.data.meta.perPage;
     } catch (error: unknown) {
         if (
             axios.isCancel(error) ||
-            (axios.isAxiosError(error) &&
-                error.code === 'ERR_CANCELED')
+            (axios.isAxiosError(error) && error.code === 'ERR_CANCELED')
         ) {
             return;
         }
 
         assessments.value = [];
+
         totalRecords.value = 0;
 
         errorMessage.value = getErrorMessage(
             error,
+
             'Unable to load practical assessments.',
         );
     } finally {
@@ -394,11 +534,11 @@ async function loadAssessments(
     }
 }
 
-async function openAssessment(
-    assessmentId: string,
-): Promise<void> {
+async function openAssessment(assessmentId: string): Promise<void> {
     detailsLoading.value = true;
+
     gradingError.value = '';
+
     resetGradeState();
 
     try {
@@ -408,28 +548,27 @@ async function openAssessment(
             `/api/v1/dashboard/practical-internal/${encodeURIComponent(
                 assessmentId,
             )}`,
+
             {
                 headers: {
                     Accept: 'application/json',
-                    'X-Requested-With':
-                        'XMLHttpRequest',
+
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
 
                 withCredentials: true,
             },
         );
 
-        selectedAssessment.value =
-            response.data.data;
+        selectedAssessment.value = response.data.data;
 
-        initializeGradeState(
-            response.data.data,
-        );
+        initializeGradeState(response.data.data);
 
         gradingDialogVisible.value = true;
     } catch (error: unknown) {
         errorMessage.value = getErrorMessage(
             error,
+
             'Unable to load the selected assessment.',
         );
     } finally {
@@ -437,29 +576,19 @@ async function openAssessment(
     }
 }
 
-function initializeGradeState(
-    assessment: AssessmentDetails,
-): void {
+function initializeGradeState(assessment: AssessmentDetails): void {
     resetGradeState();
 
     assessment.items.forEach((item) => {
-        pointGrades[item.id] =
-            assessment.is_completed
-                ? item.points
-                : null;
+        pointGrades[item.id] = assessment.is_completed ? item.points : null;
 
-        checklistGrades[item.id] =
-            item.points > 0;
+        checklistGrades[item.id] = item.points > 0;
 
         rubricSelections[item.id] = {};
 
-        assessment.rubric_criteria.forEach(
-            (criterion) => {
-                rubricSelections[item.id][
-                    criterion.id
-                ] = null;
-            },
-        );
+        assessment.rubric_criteria.forEach((criterion) => {
+            rubricSelections[item.id][criterion.id] = null;
+        });
     });
 }
 
@@ -468,38 +597,27 @@ function resetGradeState(): void {
         delete pointGrades[key];
     });
 
-    Object.keys(checklistGrades).forEach(
-        (key) => {
-            delete checklistGrades[key];
-        },
-    );
+    Object.keys(checklistGrades).forEach((key) => {
+        delete checklistGrades[key];
+    });
 
-    Object.keys(rubricSelections).forEach(
-        (key) => {
-            delete rubricSelections[key];
-        },
-    );
+    Object.keys(rubricSelections).forEach((key) => {
+        delete rubricSelections[key];
+    });
 }
 
-function handlePage(
-    event: DataTablePageEvent,
-): void {
+function handlePage(event: DataTablePageEvent): void {
     rows.value = event.rows;
+
     first.value = event.first;
 
     void loadAssessments(event.page + 1);
 }
 
-function handleSort(
-    event: DataTableSortEvent,
-): void {
-    sortField.value =
-        event.sortField || 'date_taken';
+function handleSort(event: DataTableSortEvent): void {
+    sortField.value = event.sortField || 'date_taken';
 
-    sortDirection.value =
-        event.sortOrder === -1
-            ? 'desc'
-            : 'asc';
+    sortDirection.value = event.sortOrder === -1 ? 'desc' : 'asc';
 
     first.value = 0;
 
@@ -508,6 +626,7 @@ function handleSort(
 
 function handleSearch(value: string): void {
     search.value = value;
+
     first.value = 0;
 
     void loadAssessments(1);
@@ -515,19 +634,17 @@ function handleSearch(value: string): void {
 
 function handleAction(
     action: string,
+
     assessment: DataTableRow,
 ): void {
     if (action !== 'grade') {
         return;
     }
 
-    const assessmentId = String(
-        assessment.id ?? '',
-    ).trim();
+    const assessmentId = String(assessment.id ?? '').trim();
 
     if (!assessmentId) {
-        errorMessage.value =
-            'The selected assessment ID is missing.';
+        errorMessage.value = 'The selected assessment ID is missing.';
 
         return;
     }
@@ -541,8 +658,11 @@ function closeGradingDialog(): void {
     }
 
     gradingDialogVisible.value = false;
+
     gradingError.value = '';
+
     selectedAssessment.value = null;
+
     resetGradeState();
 }
 
@@ -565,9 +685,7 @@ async function saveGrades(): Promise<void> {
         }
     }
 
-    const grades = buildGradePayload(
-        assessment,
-    );
+    const grades = buildGradePayload(assessment);
 
     saving.value = true;
 
@@ -577,22 +695,23 @@ async function saveGrades(): Promise<void> {
 
             data: {
                 total_points: number;
-                next_assessment_id:
-                    | string
-                    | null;
+
+                next_assessment_id: string | null;
             };
         }>(
             `/api/v1/dashboard/practical-internal/${encodeURIComponent(
                 assessment.id,
             )}/grade`,
+
             {
                 grades,
             },
+
             {
                 headers: {
                     Accept: 'application/json',
-                    'X-Requested-With':
-                        'XMLHttpRequest',
+
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
 
                 withCredentials: true,
@@ -603,12 +722,12 @@ async function saveGrades(): Promise<void> {
             response.data.message ||
             'The practical assessment was graded successfully.';
 
-        const nextAssessmentId =
-            response.data.data
-                .next_assessment_id;
+        const nextAssessmentId = response.data.data.next_assessment_id;
 
         gradingDialogVisible.value = false;
+
         selectedAssessment.value = null;
+
         resetGradeState();
 
         await reloadCurrentPage();
@@ -619,14 +738,13 @@ async function saveGrades(): Promise<void> {
             );
 
             if (openNext) {
-                await openAssessment(
-                    nextAssessmentId,
-                );
+                await openAssessment(nextAssessmentId);
             }
         }
     } catch (error: unknown) {
         gradingError.value = getErrorMessage(
             error,
+
             'The practical assessment could not be saved.',
         );
     } finally {
@@ -634,38 +752,30 @@ async function saveGrades(): Promise<void> {
     }
 }
 
-function buildGradePayload(
-    assessment: AssessmentDetails,
-): GradePayload[] {
+function buildGradePayload(assessment: AssessmentDetails): GradePayload[] {
     return assessment.items.map((item) => {
-        if (
-            normalizedGradeSystem.value ===
-            'points'
-        ) {
+        if (normalizedGradeSystem.value === 'points') {
             return {
                 item_id: item.id,
-                points:
-                    pointGrades[item.id] ?? 0,
+
+                points: pointGrades[item.id] ?? 0,
             };
         }
 
-        if (
-            normalizedGradeSystem.value ===
-            'checklist'
-        ) {
+        if (normalizedGradeSystem.value === 'checklist') {
             return {
                 item_id: item.id,
-                points: checklistGrades[item.id]
-                    ? 1
-                    : 0,
+
+                points: checklistGrades[item.id] ? 1 : 0,
             };
         }
 
         return {
             item_id: item.id,
+
             points: null,
-            rubric_selections:
-                rubricSelections[item.id] ?? {},
+
+            rubric_selections: rubricSelections[item.id] ?? {},
         };
     });
 }
@@ -685,31 +795,25 @@ function hasIncompleteGrades(): boolean {
         );
     }
 
-    if (
-        normalizedGradeSystem.value === 'rubrics'
-    ) {
+    if (normalizedGradeSystem.value === 'rubrics') {
         return assessment.items.some((item) => {
-            return assessment.rubric_criteria.some(
-                (criterion) => {
-                    return !rubricSelections[
-                        item.id
-                    ]?.[criterion.id];
-                },
-            );
+            return assessment.rubric_criteria.some((criterion) => {
+                return !rubricSelections[item.id]?.[criterion.id];
+            });
         });
     }
 
     return false;
 }
 
-function getPointOptions(
-    maximum: number,
-): Array<{
+function getPointOptions(maximum: number): Array<{
     label: string;
+
     value: number;
 }> {
     const maximumPoints = Math.max(
         0,
+
         Math.floor(Number(maximum)),
     );
 
@@ -717,8 +821,10 @@ function getPointOptions(
         {
             length: maximumPoints + 1,
         },
+
         (_, points) => ({
             label: String(points),
+
             value: points,
         }),
     );
@@ -726,41 +832,36 @@ function getPointOptions(
 
 function selectRubricOption(
     itemId: string,
+
     criterionId: string,
+
     optionId: string,
 ): void {
     if (!rubricSelections[itemId]) {
         rubricSelections[itemId] = {};
     }
 
-    rubricSelections[itemId][criterionId] =
-        optionId;
+    rubricSelections[itemId][criterionId] = optionId;
 }
 
 function isRubricOptionSelected(
     itemId: string,
+
     criterionId: string,
+
     optionId: string,
 ): boolean {
-    return (
-        rubricSelections[itemId]?.[
-            criterionId
-        ] === optionId
-    );
+    return rubricSelections[itemId]?.[criterionId] === optionId;
 }
 
-function getRubricOptionPoints(
-    optionId: string | null,
-): number {
+function getRubricOptionPoints(optionId: string | null): number {
     if (!optionId || !selectedAssessment.value) {
         return 0;
     }
 
-    for (const criterion of selectedAssessment.value
-        .rubric_criteria) {
+    for (const criterion of selectedAssessment.value.rubric_criteria) {
         const option = criterion.options.find(
-            (candidate) =>
-                candidate.id === optionId,
+            (candidate) => candidate.id === optionId,
         );
 
         if (option) {
@@ -774,54 +875,45 @@ function getRubricOptionPoints(
 async function reloadCurrentPage(): Promise<void> {
     await loadAssessments(currentPage.value);
 
-    if (
-        assessments.value.length === 0 &&
-        currentPage.value > 1
-    ) {
-        await loadAssessments(
-            currentPage.value - 1,
-        );
+    if (assessments.value.length === 0 && currentPage.value > 1) {
+        await loadAssessments(currentPage.value - 1);
     }
 }
 
 function getAvatarImage(
     row: DataTableRow,
-): string | undefined {
-    const gender = String(
-        row.gender ?? '',
-    )
-        .trim()
-        .toUpperCase();
-
+): string {
+    const gender = String(row.gender ?? '').trim().toUpperCase();
     if (gender === 'M' || gender === 'MALE') {
         return '/images/male-cadet.png';
     }
-
     if (gender === 'F' || gender === 'FEMALE') {
         return '/images/female-cadet.png';
     }
-
-    return undefined;
+    return '/images/default-cadet.png';
 }
 
-function getInitials(
-    row: DataTableRow,
-): string {
-    const name = String(
-        row.student_name ?? '',
-    )
+function getInitials(row: DataTableRow): string {
+    const name = String(row.student_name ?? '')
         .replace(',', ' ')
+
         .trim();
 
     const words = name
+
         .split(/\s+/)
+
         .filter(Boolean);
 
     return (
         words
+
             .slice(0, 2)
+
             .map((word) => word.charAt(0))
+
             .join('')
+
             .toUpperCase() || 'ST'
     );
 }
@@ -829,9 +921,7 @@ function getInitials(
 function getDepartmentSeverity(
     department: unknown,
 ): 'info' | 'success' | 'secondary' {
-    const value = String(
-        department ?? '',
-    ).toUpperCase();
+    const value = String(department ?? '').toUpperCase();
 
     if (value.includes('ENGINE')) {
         return 'info';
@@ -844,12 +934,8 @@ function getDepartmentSeverity(
     return 'secondary';
 }
 
-function getDepartmentIcon(
-    department: unknown,
-): string {
-    const value = String(
-        department ?? '',
-    ).toUpperCase();
+function getDepartmentIcon(department: unknown): string {
+    const value = String(department ?? '').toUpperCase();
 
     if (value.includes('ENGINE')) {
         return 'pi pi-cog';
@@ -865,9 +951,7 @@ function getDepartmentIcon(
 function getGradeSystemSeverity(
     gradeSystem: unknown,
 ): 'info' | 'success' | 'warn' {
-    const value = String(
-        gradeSystem ?? '',
-    ).toLowerCase();
+    const value = String(gradeSystem ?? '').toLowerCase();
 
     if (value === 'points') {
         return 'info';
@@ -880,25 +964,15 @@ function getGradeSystemSeverity(
     return 'warn';
 }
 
-function formatDate(
-    value: unknown,
-): string {
-    const rawValue = String(
-        value ?? '',
-    ).trim();
+function formatDate(value: unknown): string {
+    const rawValue = String(value ?? '').trim();
 
-    if (
-        !rawValue ||
-        rawValue === '1970-01-01' ||
-        rawValue === '0000-00-00'
-    ) {
+    if (!rawValue || rawValue === '1970-01-01' || rawValue === '0000-00-00') {
         return '—';
     }
 
     const date = new Date(
-        rawValue.includes('T')
-            ? rawValue
-            : rawValue.replace(' ', 'T'),
+        rawValue.includes('T') ? rawValue : rawValue.replace(' ', 'T'),
     );
 
     if (Number.isNaN(date.getTime())) {
@@ -907,53 +981,52 @@ function formatDate(
 
     return new Intl.DateTimeFormat(
         'en-PH',
+
         {
             timeZone: 'Asia/Manila',
+
             month: 'short',
+
             day: 'numeric',
+
             year: 'numeric',
         },
     ).format(date);
 }
 
-function openFile(
-    file: RemoteFile | null,
-): void {
+function openFile(file: RemoteFile | null): void {
     if (!file?.url) {
         return;
     }
 
     window.open(
         file.url,
+
         '_blank',
+
         'noopener,noreferrer',
     );
 }
 
-function getFileIcon(
-    filename: string,
-): string {
+function getFileIcon(filename: string): string {
     const extension =
         filename
+
             .split('.')
+
             .pop()
+
             ?.toLowerCase() ?? '';
 
     if (extension === 'pdf') {
         return 'pi pi-file-pdf';
     }
 
-    if (
-        extension === 'doc' ||
-        extension === 'docx'
-    ) {
+    if (extension === 'doc' || extension === 'docx') {
         return 'pi pi-file-word';
     }
 
-    if (
-        extension === 'xls' ||
-        extension === 'xlsx'
-    ) {
+    if (extension === 'xls' || extension === 'xlsx') {
         return 'pi pi-file-excel';
     }
 
@@ -971,36 +1044,26 @@ function getFileIcon(
 
 function getErrorMessage(
     error: unknown,
+
     fallback: string,
 ): string {
     if (!axios.isAxiosError(error)) {
         return fallback;
     }
 
-    const responseData =
-        error.response?.data as
-            | {
-                  message?: string;
+    const responseData = error.response?.data as
+        | {
+              message?: string;
 
-                  errors?: Record<
-                      string,
-                      string[]
-                  >;
-              }
-            | undefined;
+              errors?: Record<string, string[]>;
+          }
+        | undefined;
 
-    const validationMessage =
-        responseData?.errors
-            ? Object.values(
-                  responseData.errors,
-              )[0]?.[0]
-            : null;
+    const validationMessage = responseData?.errors
+        ? Object.values(responseData.errors)[0]?.[0]
+        : null;
 
-    return (
-        validationMessage ||
-        responseData?.message ||
-        fallback
-    );
+    return validationMessage || responseData?.message || fallback;
 }
 
 onMounted(() => {
@@ -1013,9 +1076,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <Head
-        title="Practical Assessments - Internal"
-    />
+    <Head title="Practical Assessments - Internal" />
 
     <div
         class="flex h-full min-h-0 flex-1 flex-col gap-4 overflow-y-auto bg-[#F8FAFC] p-4 lg:p-5"
@@ -1040,11 +1101,11 @@ onBeforeUnmount(() => {
 
         <Datatable
             title="Practical Assessments - Internal"
-            description="Review and grade practical assessments submitted by enrolled students."
+            description="Schedule and grade practical assessments for enrolled students."
             header-icon="pi pi-clipboard"
             search-placeholder="Search practical assessments..."
             empty-title="No assessments for grading"
-            empty-description="There are no enrolled practical assessments waiting to be graded."
+            empty-description="No practical assessments have been scheduled."
             empty-icon="pi pi-clipboard"
             table-min-width="1200px"
             actions-header="Actions"
@@ -1060,8 +1121,11 @@ onBeforeUnmount(() => {
             :rows="rows"
             :rows-per-page-options="[
                 10,
+
                 20,
+
                 50,
+
                 100,
             ]"
             @page="handlePage"
@@ -1069,20 +1133,21 @@ onBeforeUnmount(() => {
             @search="handleSearch"
             @action="handleAction"
         >
-            <template
-                #cell-student_name="{ data }"
-            >
-                <div
-                    class="flex items-center gap-3"
-                >
+            <template #header-actions>
+                <Button
+                    label="Add New Record"
+                    icon="pi pi-plus"
+                    severity="success"
+                    @click="openAdd"
+                />
+            </template>
+
+            <template #cell-student_name="{ data }">
+                <div class="flex items-center gap-3">
                     <Avatar
-                        :image="
-                            getAvatarImage(data)
-                        "
+                        :image="getAvatarImage(data)"
                         :label="
-                            getAvatarImage(data)
-                                ? undefined
-                                : getInitials(data)
+                            getAvatarImage(data) ? undefined : getInitials(data)
                         "
                         shape="circle"
                         size="large"
@@ -1093,20 +1158,12 @@ onBeforeUnmount(() => {
                         <p
                             class="truncate font-semibold text-slate-700 uppercase"
                         >
-                            {{
-                                data.student_name ||
-                                '—'
-                            }}
+                            {{ data.student_name || '—' }}
                         </p>
 
-                        <div
-                            class="mt-1 flex flex-nowrap items-center gap-1.5"
-                        >
+                        <div class="mt-1 flex flex-nowrap items-center gap-1.5">
                             <PrimeTag
-                                :value="
-                                    data.school_id_no ||
-                                    'No School ID'
-                                "
+                                :value="data.school_id_no || 'No School ID'"
                                 icon="pi pi-id-card"
                                 severity="info"
                                 rounded
@@ -1115,21 +1172,9 @@ onBeforeUnmount(() => {
 
                             <PrimeTag
                                 v-if="data.dept"
-                                :value="
-                                    String(
-                                        data.dept,
-                                    ).toUpperCase()
-                                "
-                                :icon="
-                                    getDepartmentIcon(
-                                        data.dept,
-                                    )
-                                "
-                                :severity="
-                                    getDepartmentSeverity(
-                                        data.dept,
-                                    )
-                                "
+                                :value="String(data.dept).toUpperCase()"
+                                :icon="getDepartmentIcon(data.dept)"
+                                :severity="getDepartmentSeverity(data.dept)"
                                 rounded
                                 class="shrink-0 !px-2 !py-0.5 !text-xs !font-semibold !whitespace-nowrap"
                             />
@@ -1138,21 +1183,12 @@ onBeforeUnmount(() => {
                 </div>
             </template>
 
-            <template
-                #cell-title_assess="{ data }"
-            >
+            <template #cell-title_assess="{ data }">
                 <div class="space-y-1.5">
-                    <p
-                        class="font-semibold text-slate-700"
-                    >
-                        <i
-                            class="pi pi-clipboard mr-1 text-blue-500"
-                        ></i>
+                    <p class="font-semibold text-slate-700">
+                        <i class="pi pi-clipboard mr-1 text-blue-500"></i>
 
-                        {{
-                            data.title_assess ||
-                            'Untitled Assessment'
-                        }}
+                        {{ data.title_assess || 'Untitled Assessment' }}
                     </p>
 
                     <PrimeTag
@@ -1165,77 +1201,151 @@ onBeforeUnmount(() => {
                 </div>
             </template>
 
-            <template
-                #cell-date_taken="{ data }"
-            >
+            <template #cell-date_taken="{ data }">
                 <div class="space-y-2">
-                    <div
-                        class="flex items-center gap-2"
-                    >
+                    <div class="flex items-center gap-2">
                         <PrimeTag
                             value="Taken"
                             severity="info"
                             class="w-14 !justify-center !px-2 !py-0.5 !text-xs"
                         />
 
-                        <span
-                            class="whitespace-nowrap text-sm text-slate-600"
-                        >
-                            {{
-                                formatDate(
-                                    data.date_taken,
-                                )
-                            }}
+                        <span class="text-sm whitespace-nowrap text-slate-600">
+                            {{ formatDate(data.date_taken) }}
                         </span>
                     </div>
 
-                    <div
-                        class="flex items-center gap-2"
-                    >
+                    <div class="flex items-center gap-2">
                         <PrimeTag
                             value="Due"
                             severity="warn"
                             class="w-14 !justify-center !px-2 !py-0.5 !text-xs"
                         />
 
-                        <span
-                            class="whitespace-nowrap text-sm text-slate-600"
-                        >
-                            {{
-                                formatDate(
-                                    data.due_date,
-                                )
-                            }}
+                        <span class="text-sm whitespace-nowrap text-slate-600">
+                            {{ formatDate(data.due_date) }}
                         </span>
                     </div>
                 </div>
             </template>
 
-            <template
-                #cell-grade_system="{ value }"
-            >
+            <template #cell-grade_system="{ value }">
                 <PrimeTag
-                    :value="
-                        String(
-                            value ||
-                            'Checklist',
-                        ).toUpperCase()
-                    "
+                    :value="String(value || 'Checklist').toUpperCase()"
                     icon="pi pi-star"
-                    :severity="
-                        getGradeSystemSeverity(
-                            value,
-                        )
-                    "
+                    :severity="getGradeSystemSeverity(value)"
                     rounded
                 />
             </template>
         </Datatable>
 
         <Dialog
-            v-model:visible="
-                gradingDialogVisible
-            "
+            v-model:visible="addVisible"
+            modal
+            :draggable="false"
+            header="Add Practical Assessment"
+            class="w-[95vw] max-w-2xl"
+        >
+
+                    <div
+                class="mb-4 flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900"
+                role="note"
+            >
+                <i class="pi pi-info-circle" aria-hidden="true"></i>
+                <span
+                    >Note: Fields marked with
+                    <span class="font-semibold text-red-500">*</span> are
+                    required fields.</span
+                >
+            </div>
+            <form
+                class="grid grid-cols-1 gap-4 md:grid-cols-2"
+                @submit.prevent="saveAdd"
+            >
+                <Message
+                    v-if="addError"
+                    severity="error"
+                    class="md:col-span-2"
+                    >{{ addError }}</Message
+                >
+                <div class="md:col-span-2">
+                    <label class="mb-2 block text-sm font-semibold"
+                        >Student Name <span class="text-red-500">*</span></label
+                    >
+                    <Select
+                        v-model="addForm.person_id"
+                        :options="studentChoices"
+                        option-label="label"
+                        option-value="id"
+                        filter
+                        :filter-input-props="{ autocomplete: 'off' }"
+                        placeholder="Search student name or school ID"
+                        required
+                        class="w-full"
+                        @filter="searchStudents"
+                    />
+                </div>
+                <div class="md:col-span-2">
+                    <label class="mb-2 block text-sm font-semibold"
+                        >Practical Assessment
+                        <span class="text-red-500">*</span></label
+                    >
+                    <Select
+                        v-model="addForm.p_assess_h_id"
+                        :options="assessmentChoices"
+                        option-label="label"
+                        option-value="id"
+                        filter
+                        placeholder="Select an assessment"
+                        required
+                        class="w-full"
+                    />
+                </div>
+                <div>
+                    <label class="mb-2 block text-sm font-semibold"
+                        >From Date</label
+                    ><input
+                        v-model="addForm.from_date"
+                        type="date"
+                        class="w-full rounded-md border border-slate-300 px-3 py-2"
+                    />
+                </div>
+                <div>
+                    <label class="mb-2 block text-sm font-semibold"
+                        >Due Date</label
+                    ><input
+                        v-model="addForm.due_date"
+                        type="date"
+                        class="w-full rounded-md border border-slate-300 px-3 py-2"
+                    />
+                </div>
+                <div class="md:col-span-2">
+                    <label class="mb-2 block text-sm font-semibold"
+                        >Assessor</label
+                    ><InputText
+                        v-model="addForm.assessor"
+                        class="w-full uppercase"
+                        placeholder="First, Middle, Last Name"
+                    />
+                </div>
+                <div class="flex justify-end gap-2 md:col-span-2">
+                    <Button
+                        type="button"
+                        label="Cancel"
+                        severity="secondary"
+                        @click="addVisible = false"
+                    /><Button
+                        type="submit"
+                        label="Save"
+                        icon="pi pi-check"
+                        :loading="addSaving"
+                    />
+                </div>
+            </form>
+        </Dialog>
+
+        <Dialog
+            v-model:visible="gradingDialogVisible"
             modal
             maximizable
             header="Practical Assessment Grading"
@@ -1248,15 +1358,10 @@ onBeforeUnmount(() => {
                 v-if="detailsLoading"
                 class="flex min-h-64 items-center justify-center"
             >
-                <i
-                    class="pi pi-spin pi-spinner text-3xl text-blue-500"
-                ></i>
+                <i class="pi pi-spin pi-spinner text-3xl text-blue-500"></i>
             </div>
 
-            <div
-                v-else-if="selectedAssessment"
-                class="space-y-5"
-            >
+            <div v-else-if="selectedAssessment" class="space-y-5">
                 <Message
                     v-if="gradingError"
                     severity="error"
@@ -1276,23 +1381,14 @@ onBeforeUnmount(() => {
                             Student
                         </p>
 
-                        <p
-                            class="mt-1 font-bold text-slate-700 uppercase"
-                        >
-                            {{
-                                selectedAssessment
-                                    .student.name
-                            }}
+                        <p class="mt-1 font-bold text-slate-700 uppercase">
+                            {{ selectedAssessment.student.name }}
                         </p>
 
-                        <div
-                            class="mt-2 flex flex-nowrap items-center gap-1.5"
-                        >
+                        <div class="mt-2 flex flex-nowrap items-center gap-1.5">
                             <PrimeTag
                                 :value="
-                                    selectedAssessment
-                                        .student
-                                        .school_id_no ||
+                                    selectedAssessment.student.school_id_no ||
                                     'No School ID'
                                 "
                                 icon="pi pi-id-card"
@@ -1301,29 +1397,20 @@ onBeforeUnmount(() => {
                             />
 
                             <PrimeTag
-                                v-if="
-                                    selectedAssessment
-                                        .student.dept
-                                "
+                                v-if="selectedAssessment.student.dept"
                                 :value="
                                     String(
-                                        selectedAssessment
-                                            .student
-                                            .dept,
+                                        selectedAssessment.student.dept,
                                     ).toUpperCase()
                                 "
                                 :icon="
                                     getDepartmentIcon(
-                                        selectedAssessment
-                                            .student
-                                            .dept,
+                                        selectedAssessment.student.dept,
                                     )
                                 "
                                 :severity="
                                     getDepartmentSeverity(
-                                        selectedAssessment
-                                            .student
-                                            .dept,
+                                        selectedAssessment.student.dept,
                                     )
                                 "
                                 rounded
@@ -1331,23 +1418,15 @@ onBeforeUnmount(() => {
                         </div>
                     </div>
 
-                    <div
-                        class="md:text-right"
-                    >
+                    <div class="md:text-right">
                         <p
                             class="text-xs font-semibold text-slate-400 uppercase"
                         >
                             Due Date
                         </p>
 
-                        <p
-                            class="mt-1 font-semibold text-slate-700"
-                        >
-                            {{
-                                formatDate(
-                                    selectedAssessment.due_date,
-                                )
-                            }}
+                        <p class="mt-1 font-semibold text-slate-700">
+                            {{ formatDate(selectedAssessment.due_date) }}
                         </p>
 
                         <PrimeTag
@@ -1372,21 +1451,13 @@ onBeforeUnmount(() => {
                     </div>
                 </div>
 
-                <div
-                    class="rounded-xl border border-slate-200 p-4"
-                >
-                    <p
-                        class="text-xs font-semibold text-slate-400 uppercase"
-                    >
+                <div class="rounded-xl border border-slate-200 p-4">
+                    <p class="text-xs font-semibold text-slate-400 uppercase">
                         Practical Assessment
                     </p>
 
-                    <p
-                        class="mt-1 text-lg font-bold text-slate-700"
-                    >
-                        {{
-                            selectedAssessment.title
-                        }}
+                    <p class="mt-1 text-lg font-bold text-slate-700">
+                        {{ selectedAssessment.title }}
                     </p>
 
                     <p
@@ -1396,7 +1467,7 @@ onBeforeUnmount(() => {
                     </p>
 
                     <p
-                        class="mt-1 whitespace-pre-line text-sm leading-6 text-slate-600"
+                        class="mt-1 text-sm leading-6 whitespace-pre-line text-slate-600"
                     >
                         {{
                             selectedAssessment.instructions ||
@@ -1406,98 +1477,63 @@ onBeforeUnmount(() => {
                 </div>
 
                 <div
-                    v-if="
-                        selectedAssessment
-                            .reference_files.length
-                    "
+                    v-if="selectedAssessment.reference_files.length"
                     class="rounded-xl border border-slate-200 p-4"
                 >
-                    <p
-                        class="mb-3 text-sm font-semibold text-slate-700"
-                    >
+                    <p class="mb-3 text-sm font-semibold text-slate-700">
                         Assessment Reference Files
                     </p>
 
-                    <div
-                        class="flex flex-wrap gap-2"
-                    >
+                    <div class="flex flex-wrap gap-2">
                         <Button
                             v-for="file in selectedAssessment.reference_files"
                             :key="file.name"
                             type="button"
                             :label="file.name"
-                            :icon="
-                                getFileIcon(
-                                    file.name,
-                                )
-                            "
+                            :icon="getFileIcon(file.name)"
                             severity="info"
                             size="small"
                             outlined
-                            @click="
-                                openFile(file)
-                            "
+                            @click="openFile(file)"
                         />
                     </div>
                 </div>
 
-                <div
-                    class="overflow-x-auto rounded-xl border border-slate-200"
-                >
-                    <table
-                        class="w-full min-w-[980px] border-collapse"
-                    >
+                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                    <table class="w-full min-w-[980px] border-collapse">
                         <thead
                             class="bg-slate-700 text-left text-sm text-white"
                         >
                             <tr>
-                                <th class="w-14 p-3">
-                                    #
-                                </th>
+                                <th class="w-14 p-3">#</th>
 
-                                <th
-                                    class="min-w-[250px] p-3"
-                                >
-                                    Graded Item
-                                </th>
+                                <th class="min-w-[250px] p-3">Graded Item</th>
 
-                                <th
-                                    class="min-w-[300px] p-3"
-                                >
+                                <th class="min-w-[300px] p-3">
                                     Student Answer
                                 </th>
 
-                                <th
-                                    class="min-w-[320px] p-3"
-                                >
-                                    Grade
-                                </th>
+                                <th class="min-w-[320px] p-3">Grade</th>
                             </tr>
                         </thead>
 
                         <tbody>
                             <tr
                                 v-for="(
-                                    item,
-                                    index
+                                    item, index
                                 ) in selectedAssessment.items"
                                 :key="item.id"
                                 class="border-t border-slate-200 align-top"
                             >
-                                <td
-                                    class="p-3 font-semibold text-slate-500"
-                                >
+                                <td class="p-3 font-semibold text-slate-500">
                                     {{ index + 1 }}
                                 </td>
 
                                 <td class="p-3">
                                     <p
-                                        class="whitespace-pre-line font-medium text-slate-700"
+                                        class="font-medium whitespace-pre-line text-slate-700"
                                     >
-                                        {{
-                                            item.description ||
-                                            '—'
-                                        }}
+                                        {{ item.description || '—' }}
                                     </p>
 
                                     <Button
@@ -1510,9 +1546,7 @@ onBeforeUnmount(() => {
                                         :icon="
                                             item.reference_file
                                                 ? getFileIcon(
-                                                      item
-                                                          .reference_file
-                                                          .name,
+                                                      item.reference_file.name,
                                                   )
                                                 : 'pi pi-file'
                                         "
@@ -1524,24 +1558,17 @@ onBeforeUnmount(() => {
                                         size="small"
                                         outlined
                                         class="mt-3"
-                                        :disabled="
-                                            !item.reference_file
-                                        "
-                                        @click="
-                                            openFile(
-                                                item.reference_file,
-                                            )
-                                        "
+                                        :disabled="!item.reference_file"
+                                        @click="openFile(item.reference_file)"
                                     />
                                 </td>
 
                                 <td class="p-3">
                                     <p
-                                        class="whitespace-pre-line text-sm leading-6 text-slate-600"
+                                        class="text-sm leading-6 whitespace-pre-line text-slate-600"
                                     >
                                         {{
-                                            item.answer ||
-                                            'No written answer.'
+                                            item.answer || 'No written answer.'
                                         }}
                                     </p>
 
@@ -1555,9 +1582,7 @@ onBeforeUnmount(() => {
                                         :icon="
                                             item.evidence_file
                                                 ? getFileIcon(
-                                                      item
-                                                          .evidence_file
-                                                          .name,
+                                                      item.evidence_file.name,
                                                   )
                                                 : 'pi pi-download'
                                         "
@@ -1569,22 +1594,14 @@ onBeforeUnmount(() => {
                                         size="small"
                                         outlined
                                         class="mt-3"
-                                        :disabled="
-                                            !item.evidence_file
-                                        "
-                                        @click="
-                                            openFile(
-                                                item.evidence_file,
-                                            )
-                                        "
+                                        :disabled="!item.evidence_file"
+                                        @click="openFile(item.evidence_file)"
                                     />
                                 </td>
 
                                 <td class="p-3">
                                     <template
-                                        v-if="
-                                            selectedAssessment.is_completed
-                                        "
+                                        v-if="selectedAssessment.is_completed"
                                     >
                                         <div
                                             class="flex min-h-20 items-center justify-center"
@@ -1600,8 +1617,7 @@ onBeforeUnmount(() => {
 
                                     <template
                                         v-else-if="
-                                            normalizedGradeSystem ===
-                                            'points'
+                                            normalizedGradeSystem === 'points'
                                         "
                                     >
                                         <label
@@ -1609,18 +1625,13 @@ onBeforeUnmount(() => {
                                             class="mb-2 block text-xs font-semibold text-slate-500"
                                         >
                                             Maximum points:
-                                            {{
-                                                item.maximum_points
-                                            }}
+
+                                            {{ item.maximum_points }}
                                         </label>
 
                                         <Select
                                             :id="`points-${item.id}`"
-                                            v-model="
-                                                pointGrades[
-                                                    item.id
-                                                ]
-                                            "
+                                            v-model="pointGrades[item.id]"
                                             :options="
                                                 getPointOptions(
                                                     item.maximum_points,
@@ -1644,9 +1655,7 @@ onBeforeUnmount(() => {
                                         >
                                             <Checkbox
                                                 v-model="
-                                                    checklistGrades[
-                                                        item.id
-                                                    ]
+                                                    checklistGrades[item.id]
                                                 "
                                                 binary
                                             />
@@ -1654,39 +1663,28 @@ onBeforeUnmount(() => {
                                             <span
                                                 class="font-medium text-slate-700"
                                             >
-                                                Mark item as
-                                                completed
+                                                Mark item as completed
                                             </span>
                                         </label>
                                     </template>
 
                                     <template v-else>
-                                        <div
-                                            class="space-y-4"
-                                        >
+                                        <div class="space-y-4">
                                             <div
                                                 v-for="criterion in selectedAssessment.rubric_criteria"
-                                                :key="
-                                                    criterion.id
-                                                "
+                                                :key="criterion.id"
                                             >
                                                 <p
                                                     class="font-semibold text-slate-700"
                                                 >
-                                                    {{
-                                                        criterion.title
-                                                    }}
+                                                    {{ criterion.title }}
                                                 </p>
 
                                                 <p
-                                                    v-if="
-                                                        criterion.description
-                                                    "
+                                                    v-if="criterion.description"
                                                     class="mt-1 text-xs text-slate-500"
                                                 >
-                                                    {{
-                                                        criterion.description
-                                                    }}
+                                                    {{ criterion.description }}
                                                 </p>
 
                                                 <div
@@ -1694,15 +1692,15 @@ onBeforeUnmount(() => {
                                                 >
                                                     <Button
                                                         v-for="option in criterion.options"
-                                                        :key="
-                                                            option.id
-                                                        "
+                                                        :key="option.id"
                                                         type="button"
                                                         :label="`${option.title} (${option.points})`"
                                                         :severity="
                                                             isRubricOptionSelected(
                                                                 item.id,
+
                                                                 criterion.id,
+
                                                                 option.id,
                                                             )
                                                                 ? 'success'
@@ -1712,14 +1710,18 @@ onBeforeUnmount(() => {
                                                         :outlined="
                                                             !isRubricOptionSelected(
                                                                 item.id,
+
                                                                 criterion.id,
+
                                                                 option.id,
                                                             )
                                                         "
                                                         @click="
                                                             selectRubricOption(
                                                                 item.id,
+
                                                                 criterion.id,
+
                                                                 option.id,
                                                             )
                                                         "
@@ -1731,18 +1733,12 @@ onBeforeUnmount(() => {
                                 </td>
                             </tr>
 
-                            <tr
-                                v-if="
-                                    selectedAssessment
-                                        .items.length === 0
-                                "
-                            >
+                            <tr v-if="selectedAssessment.items.length === 0">
                                 <td
                                     colspan="4"
                                     class="p-8 text-center text-slate-500"
                                 >
-                                    No grading items
-                                    were found.
+                                    No grading items were found.
                                 </td>
                             </tr>
                         </tbody>
@@ -1759,16 +1755,12 @@ onBeforeUnmount(() => {
                             Total Points
                         </p>
 
-                        <p
-                            class="mt-1 font-bold text-slate-700"
-                        >
-                            {{
-                                displayedEarnedPoints
-                            }}
+                        <p class="mt-1 font-bold text-slate-700">
+                            {{ displayedEarnedPoints }}
+
                             /
-                            {{
-                                displayedMaximumPoints
-                            }}
+
+                            {{ displayedMaximumPoints }}
                         </p>
                     </div>
 
@@ -1779,12 +1771,8 @@ onBeforeUnmount(() => {
                             Percentage
                         </p>
 
-                        <p
-                            class="mt-1 font-bold text-slate-700"
-                        >
-                            {{
-                                displayedPercentage
-                            }}%
+                        <p class="mt-1 font-bold text-slate-700">
+                            {{ displayedPercentage }}%
                         </p>
                     </div>
 
@@ -1795,12 +1783,8 @@ onBeforeUnmount(() => {
                             Passing Mark
                         </p>
 
-                        <p
-                            class="mt-1 font-bold text-slate-700"
-                        >
-                            {{
-                                selectedAssessment.passing_mark
-                            }}%
+                        <p class="mt-1 font-bold text-slate-700">
+                            {{ selectedAssessment.passing_mark }}%
                         </p>
                     </div>
 
@@ -1812,12 +1796,9 @@ onBeforeUnmount(() => {
                         </p>
 
                         <PrimeTag
-                            :value="
-                                displayedRemarks
-                            "
+                            :value="displayedRemarks"
                             :severity="
-                                displayedRemarks ===
-                                'PASS'
+                                displayedRemarks === 'PASS'
                                     ? 'success'
                                     : 'danger'
                             "
@@ -1836,26 +1817,19 @@ onBeforeUnmount(() => {
                     severity="secondary"
                     outlined
                     :disabled="saving"
-                    @click="
-                        closeGradingDialog
-                    "
+                    @click="closeGradingDialog"
                 />
 
                 <Button
                     v-if="
-                        selectedAssessment &&
-                        !selectedAssessment.is_completed
+                        selectedAssessment && !selectedAssessment.is_completed
                     "
                     type="button"
                     label="Save Assessment"
                     icon="pi pi-save"
                     severity="success"
                     :loading="saving"
-                    :disabled="
-                        saving ||
-                        selectedAssessment.items
-                            .length === 0
-                    "
+                    :disabled="saving || selectedAssessment.items.length === 0"
                     @click="saveGrades"
                 />
             </template>

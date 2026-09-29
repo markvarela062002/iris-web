@@ -13,6 +13,11 @@ use Mpdf\Mpdf;
 use Mpdf\Output\Destination;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class TheoreticalAssessmentsController extends Controller
 {
@@ -573,6 +578,276 @@ class TheoreticalAssessmentsController extends Controller
             urldecode((string) $value),
         );
     }
+
+/**
+ * Schedule one enrolled student's theoretical assessment.
+ */
+public function store(Request $request): JsonResponse
+{
+    $db = $this->resolveSchoolConnection($request);
+
+    if ($db instanceof JsonResponse) {
+        return $db;
+    }
+
+    $data = $request->validate([
+        'person_id' => ['required', 'string', 'max:100'],
+        'bs_course_id' => ['required', 'string', 'max:100'],
+        'bs_exam_session_id' => ['required', 'string', 'max:100'],
+        'exam_type' => ['required', 'in:New,Resit'],
+        'duration' => ['nullable', 'integer', 'min:0', 'max:1440'],
+        'proctor_name' => ['nullable', 'string', 'max:255'],
+        'access_exp_date' => ['required', 'date_format:Y-m-d'],
+        'access_exp_time' => ['required', 'date_format:H:i'],
+        'access_exp_date_to' => ['required', 'date_format:Y-m-d'],
+        'access_exp_time_to' => ['required', 'date_format:H:i'],
+    ]);
+
+    $start = strtotime(
+        $data['access_exp_date'].' '.$data['access_exp_time']
+    );
+    $end = strtotime(
+        $data['access_exp_date_to'].' '.$data['access_exp_time_to']
+    );
+
+    if ($start === false || $end === false || $end <= $start) {
+        throw ValidationException::withMessages([
+            'access_exp_date_to' => [
+                'The access end date and time must be after the start date and time.',
+            ],
+        ]);
+    }
+
+    $student = $db->table('person')
+        ->where('id', $data['person_id'])
+        ->first(['id', 'fname', 'mname', 'lname', 'email']);
+
+    if (! $student) {
+        throw ValidationException::withMessages([
+            'person_id' => ['The selected student is invalid.'],
+        ]);
+    }
+
+    $course = $db->table('bs_course')
+        ->where('id', $data['bs_course_id'])
+        ->first(['id', 'name_course']);
+
+    if (! $course) {
+        throw ValidationException::withMessages([
+            'bs_course_id' => ['The selected exam package is invalid.'],
+        ]);
+    }
+
+    if (! $db->table('bs_exam_session')
+        ->where('id', $data['bs_exam_session_id'])
+        ->exists()) {
+        throw ValidationException::withMessages([
+            'bs_exam_session_id' => ['The selected exam session is invalid.'],
+        ]);
+    }
+
+    // Check the selected access date rather than today's date.
+    $hasPendingExam = $db->table('bs_person_exam')
+        ->where('person_id', $data['person_id'])
+        ->where('access_exp_date', $data['access_exp_date'])
+        ->where(function (Builder $query): void {
+            $query->whereNull('started')
+                ->orWhere('started', '');
+        })
+        ->exists();
+
+    if ($hasPendingExam) {
+        throw ValidationException::withMessages([
+            'person_id' => [
+                'The student already has a pending exam on the selected access date.',
+            ],
+        ]);
+    }
+
+    if ($data['exam_type'] === 'New') {
+        $topics = $db->table('bs_topic')
+            ->where('bs_course_id', $data['bs_course_id'])
+            ->orderBy('order_no')
+            ->get(['id as bs_topic_id', 'no_quest as quest_cnt', 'order_no']);
+    } else {
+        $previousExam = $db->table('bs_person_exam')
+            ->where('person_id', $data['person_id'])
+            ->where('bs_course_id', $data['bs_course_id'])
+            ->whereNotNull('ended')
+            ->where('ended', '<>', '')
+            ->orderByDesc('ended')
+            ->first(['id']);
+
+        if (! $previousExam) {
+            throw ValidationException::withMessages([
+                'exam_type' => [
+                    'No completed exam was found for this student and package.',
+                ],
+            ]);
+        }
+
+        $topics = $db->table('bs_person_exam_topic')
+            ->where('bs_person_exam_id', $previousExam->id)
+            ->where('passed', 'N')
+            ->orderBy('order_no')
+            ->get(['bs_topic_id', 'quest_cnt', 'order_no'])
+            ->values()
+            ->map(function ($topic, int $index) {
+                $topic->order_no = $index + 1;
+
+                return $topic;
+            });
+    }
+
+    if ($topics->isEmpty()) {
+        throw ValidationException::withMessages([
+            'exam_type' => [
+                $data['exam_type'] === 'Resit'
+                    ? 'No failed subjects were found for the latest completed exam.'
+                    : 'The selected exam package has no subjects.',
+            ],
+        ]);
+    }
+
+    $duration = (int) ($data['duration'] ?? 0);
+
+    if ($duration === 0) {
+        $duration = (int) $topics->sum(
+            fn ($topic) => (int) $topic->quest_cnt
+        );
+    }
+
+    $examId = (string) Str::uuid();
+    $loginId = (string) ($request->user()?->getAuthIdentifier() ?? '');
+
+    if ($loginId === '') {
+        return response()->json([
+            'message' => 'Your login session could not be identified.',
+        ], Response::HTTP_UNAUTHORIZED);
+    }
+
+    $now = now();
+    $studentName = trim(
+        $student->lname.', '.$student->fname.' '.$student->mname
+    );
+    $until = date('M d, Y', strtotime($data['access_exp_date_to']));
+    $loginUrl = (string) config('app.url');
+
+    $content = 'Hi '.e($studentName).',<br><br>'
+        .'You have a scheduled Theoretical Assessment with the following details:<br><br>'
+        .'Exam to take: <b>'.e($course->name_course).'</b><br>'
+        .'You have until: <b>'.e($until.' '.$data['access_exp_time_to'])
+        .'</b> to take the exam.<br><br>'
+        .'Login to your IRIS-SAM account here: <b>'.e($loginUrl).'</b>';
+
+    try {
+        $db->transaction(function () use (
+            $db,
+            $data,
+            $topics,
+            $duration,
+            $examId,
+            $loginId,
+            $now,
+            $content
+        ): void {
+            $db->table('bs_person_exam')->insert([
+                'id' => $examId,
+                'bs_course_id' => $data['bs_course_id'],
+                'person_id' => $data['person_id'],
+                'started' => '',
+                'ended' => '',
+                'score' => 0,
+                'passed' => '',
+                'access_exp_date' => $data['access_exp_date'],
+                'access_exp_time' => $data['access_exp_time'],
+                'access_exp_date_to' => $data['access_exp_date_to'],
+                'access_exp_time_to' => $data['access_exp_time_to'],
+                'or_no' => '',
+                'amount_paid' => 0,
+                'payment_date' => '1970-01-01',
+                'proctor_name' => $data['proctor_name'] ?? '',
+                'login_id' => $loginId,
+                'last_update' => $now,
+                'duration' => $duration,
+                'exam_type' => $data['exam_type'],
+                'exam_permit_no' => '',
+                'date_issued' => $now->toDateString(),
+                'issued_by' => '',
+                'bs_exam_session_id' => $data['bs_exam_session_id'],
+            ]);
+
+            foreach ($topics as $topic) {
+                $db->table('bs_person_exam_topic')->insert([
+                    'id' => (string) Str::uuid(),
+                    'bs_person_exam_id' => $examId,
+                    'bs_topic_id' => $topic->bs_topic_id,
+                    'quest_cnt' => (int) $topic->quest_cnt,
+                    'order_no' => $topic->order_no,
+                ]);
+            }
+
+            $db->table('person')
+                ->where('id', $data['person_id'])
+                ->update([
+                    'exam_id' => $data['bs_course_id'],
+                    // Matches the legacy single-student insert.
+                    'access_exp' => $data['access_exp_date']
+                        .' '.$data['access_exp_time'],
+                    'for_item' => 'Y',
+                ]);
+
+            $db->table('inbox')->insert([
+                'id' => (string) Str::uuid(),
+                'subj_inbox' => 'Scheduled Theoretical Assessment on IRIS-SAM',
+                'date_inbox' => $now,
+                'date_read' => '',
+                'recipient_type' => 'Cadet',
+                'recipient_id' => $data['person_id'],
+                'sender_id' => $loginId,
+                'content_inbox' => $content,
+                'login_id' => $loginId,
+                'last_update' => $now,
+                'draft' => 'N',
+            ]);
+        });
+    } catch (Throwable $exception) {
+        report($exception);
+
+        return response()->json([
+            'message' => 'The theoretical assessment could not be saved.',
+        ], Response::HTTP_INTERNAL_SERVER_ERROR);
+    }
+
+    $emailSent = false;
+    $email = trim((string) ($student->email ?? ''));
+
+    if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        try {
+            Mail::html(
+                $content,
+                function ($message) use ($email, $studentName): void {
+                    $message->to($email, $studentName)
+                        ->subject(
+                            'You have a scheduled Theoretical Assessment on IRIS-SAM'
+                        );
+                }
+            );
+
+            $emailSent = true;
+        } catch (Throwable $exception) {
+            report($exception);
+        }
+    }
+
+    return response()->json([
+        'message' => 'The theoretical assessment has been saved.',
+        'data' => [
+            'id' => $examId,
+            'email_sent' => $emailSent,
+        ],
+    ], Response::HTTP_CREATED);
+}
 
     private function resolveSchoolCode(Request $request): string
     {
