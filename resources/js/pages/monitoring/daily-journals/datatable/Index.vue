@@ -228,30 +228,20 @@ const studentInitials = computed(() => {
     );
 });
 
-const defaultAvatarUrl = computed<
-    string | null
->(() => {
-    const gender = String(
-        journal.value?.gender ?? '',
-    )
+const defaultAvatarUrl = computed<string>(() => {
+    const gender = String(journal.value?.gender ?? '')
         .trim()
         .toUpperCase();
 
-    if (
-        gender === 'MALE' ||
-        gender === 'M'
-    ) {
+    if (gender === 'MALE' || gender === 'M') {
         return '/images/male-cadet.png';
     }
 
-    if (
-        gender === 'FEMALE' ||
-        gender === 'F'
-    ) {
+    if (gender === 'FEMALE' || gender === 'F') {
         return '/images/female-cadet.png';
     }
 
-    return null;
+    return '/images/defaul-cadet.png';
 });
 
 const activityLabel = computed(() => {

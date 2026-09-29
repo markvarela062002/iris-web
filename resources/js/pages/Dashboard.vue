@@ -183,7 +183,6 @@ const dashboardCardsLoading = ref(true);
 const dashboardCardsLoaded = ref(false);
 const dashboardCardsError = ref('');
 
-
 const dashboardTotals = ref({
     activityVerification: 0,
     documentsUpload: 0,
@@ -228,61 +227,46 @@ const dashboardCards = computed<DashboardCard[]>(() => [
         buttonTextClass: '!text-blue-500',
         href: '/dashboard/daily-journals',
     },
-{
-    label: 'Theoretical Assessments (Enrolled)',
-    value: dashboardTotals.value.theoreticalEnrolled,
-    icon: 'pi pi-graduation-cap',
-    cardBg: '!bg-amber-500',
-    buttonTextClass: '!text-amber-500',
-    href: '/dashboard/theoretical-internal',
-    batchHref:
-        '/dashboard/theoretical-internal/batch',
-    canCreateBatch: true,
-},
-{
-    label: 'Theoretical Assessments (External)',
-    value:
-        dashboardTotals.value
-            .theoreticalNotEnrolled,
-    icon: 'pi pi-question-circle',
-    cardBg: '!bg-yellow-500',
-    buttonTextClass: '!text-yellow-600',
-    href: '/dashboard/theoretical-external',
-    batchHref:
-        '/dashboard/theoretical-external/batch',
-    canCreateBatch: true,
-},
-{
-    label: 'Practical Assessments (Enrolled)',
-    value:
-        dashboardTotals.value
-            .practicalEnrolled,
-    icon: 'pi pi-clipboard',
-    cardBg: '!bg-violet-500',
-    buttonTextClass:
-        '!text-violet-500',
-    href:
-        '/dashboard/practical-internal',
-    batchHref:
-        '/dashboard/practical-internal/batch',
-    canCreateBatch: true,
-},
-{
-    label:
-        'Practical Assessments (External)',
-    value:
-        dashboardTotals.value
-            .practicalNotEnrolled,
-    icon: 'pi pi-wrench',
-    cardBg: '!bg-purple-500',
-    buttonTextClass:
-        '!text-purple-500',
-    href:
-        '/dashboard/practical-external',
-    batchHref:
-        '/dashboard/practical-external/batch',
-    canCreateBatch: true,
-},
+    {
+        label: 'Theoretical Assessments (Enrolled)',
+        value: dashboardTotals.value.theoreticalEnrolled,
+        icon: 'pi pi-graduation-cap',
+        cardBg: '!bg-amber-500',
+        buttonTextClass: '!text-amber-500',
+        href: '/dashboard/theoretical-internal',
+        batchHref: '/dashboard/theoretical-internal/batch',
+        canCreateBatch: true,
+    },
+    {
+        label: 'Theoretical Assessments (External)',
+        value: dashboardTotals.value.theoreticalNotEnrolled,
+        icon: 'pi pi-question-circle',
+        cardBg: '!bg-yellow-500',
+        buttonTextClass: '!text-yellow-600',
+        href: '/dashboard/theoretical-external',
+        batchHref: '/dashboard/theoretical-external/batch',
+        canCreateBatch: true,
+    },
+    {
+        label: 'Practical Assessments (Enrolled)',
+        value: dashboardTotals.value.practicalEnrolled,
+        icon: 'pi pi-clipboard',
+        cardBg: '!bg-violet-500',
+        buttonTextClass: '!text-violet-500',
+        href: '/dashboard/practical-internal',
+        batchHref: '/dashboard/practical-internal/batch',
+        canCreateBatch: true,
+    },
+    {
+        label: 'Practical Assessments (External)',
+        value: dashboardTotals.value.practicalNotEnrolled,
+        icon: 'pi pi-wrench',
+        cardBg: '!bg-purple-500',
+        buttonTextClass: '!text-purple-500',
+        href: '/dashboard/practical-external',
+        batchHref: '/dashboard/practical-external/batch',
+        canCreateBatch: true,
+    },
 ]);
 
 /*
@@ -305,28 +289,28 @@ const studentColumns: DataTableColumn[] = [
         field: 'company',
         header: 'Vessel Type / Company',
         sortable: false,
-        searchable: true,
+        searchable: false,
         class: 'w-[280px] min-w-[280px] whitespace-normal',
     },
     {
         field: 'total_activities',
         header: 'Activities',
         sortable: false,
-        searchable: true,
+        searchable: false,
         class: 'min-w-[130px] text-center',
     },
     {
         field: 'total_file_upload',
         header: 'Files',
         sortable: false,
-        searchable: true,
+        searchable: false,
         class: 'min-w-[130px] text-center',
     },
     {
         field: 'total_daily_journal',
         header: 'Journals',
         sortable: false,
-        searchable: true,
+        searchable: false,
         class: 'min-w-[130px] text-center',
     },
     {
@@ -390,7 +374,6 @@ function navigateTo(href?: string): void {
     router.visit(href);
 }
 
-
 /*
 |--------------------------------------------------------------------------
 | Student API
@@ -445,28 +428,20 @@ async function loadStudents(
 
         if (requestTotals) {
             const totals = {
-                activityVerification:
-                    response.data.activity_verification_total,
-                documentsUpload:
-                    response.data.documents_upload_total,
-                otgUpdates:
-                    response.data.otg_updates_total,
-                dailyJournals:
-                    response.data.daily_journals_total,
-                theoreticalEnrolled:
-                    response.data.theoretical_enrolled_total,
+                activityVerification: response.data.activity_verification_total,
+                documentsUpload: response.data.documents_upload_total,
+                otgUpdates: response.data.otg_updates_total,
+                dailyJournals: response.data.daily_journals_total,
+                theoreticalEnrolled: response.data.theoretical_enrolled_total,
                 theoreticalNotEnrolled:
                     response.data.theoretical_not_enrolled_total,
-                practicalEnrolled:
-                    response.data.practical_enrolled_total,
+                practicalEnrolled: response.data.practical_enrolled_total,
                 practicalNotEnrolled:
                     response.data.practical_not_enrolled_total,
             };
 
             const validTotals = Object.values(totals).every(
-                (value) =>
-                    typeof value === 'number' &&
-                    Number.isFinite(value),
+                (value) => typeof value === 'number' && Number.isFinite(value),
             );
 
             if (validTotals) {
@@ -491,13 +466,11 @@ async function loadStudents(
         studentsPerPage.value = response.data.meta.perPage;
 
         studentsFirst.value =
-            (response.data.meta.currentPage - 1) *
-            response.data.meta.perPage;
+            (response.data.meta.currentPage - 1) * response.data.meta.perPage;
     } catch (error: unknown) {
         if (
             axios.isCancel(error) ||
-            (axios.isAxiosError(error) &&
-                error.code === 'ERR_CANCELED')
+            (axios.isAxiosError(error) && error.code === 'ERR_CANCELED')
         ) {
             return;
         }
@@ -542,8 +515,7 @@ function handleStudentPage(event: StudentPageEvent): void {
 function handleStudentSort(event: StudentSortEvent): void {
     studentsSortField.value = event.sortField || 'lname';
 
-    studentsSortDirection.value =
-        event.sortOrder === -1 ? 'desc' : 'asc';
+    studentsSortDirection.value = event.sortOrder === -1 ? 'desc' : 'asc';
 
     studentsFirst.value = 0;
 
@@ -617,10 +589,7 @@ onBeforeUnmount(() => {
 function getStudentFullName(student: DataTableRow): string {
     return [student.lname, student.fname, student.mname]
         .filter((name) => {
-            return (
-                typeof name === 'string' &&
-                name.trim() !== ''
-            );
+            return typeof name === 'string' && name.trim() !== '';
         })
         .map((name) => String(name).trim())
         .join(', ')
@@ -632,8 +601,7 @@ function getStudentInitials(student: DataTableRow): string {
     const firstName = String(student.fname ?? '').trim();
     const lastName = String(student.lname ?? '').trim();
 
-    const initials =
-        `${firstName.charAt(0)}${lastName.charAt(0)}`;
+    const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`;
 
     return initials.toUpperCase() || 'ST';
 }
@@ -643,26 +611,18 @@ function getStudentAvatar(gender: unknown): string | undefined {
         .trim()
         .toUpperCase();
 
-    if (
-        normalizedGender === 'M' ||
-        normalizedGender === 'MALE'
-    ) {
+    if (normalizedGender === 'M' || normalizedGender === 'MALE') {
         return '/images/male-cadet.png';
     }
 
-    if (
-        normalizedGender === 'F' ||
-        normalizedGender === 'FEMALE'
-    ) {
+    if (normalizedGender === 'F' || normalizedGender === 'FEMALE') {
         return '/images/female-cadet.png';
     }
 
     return undefined;
 }
 
-function getDepartmentSeverity(
-    department: unknown,
-): DepartmentSeverity {
+function getDepartmentSeverity(department: unknown): DepartmentSeverity {
     const firstLetter = String(department ?? '')
         .trim()
         .charAt(0)
@@ -715,9 +675,7 @@ function getNumber(value: unknown): number {
 }
 
 function formatTaskCount(value: unknown): string {
-    return new Intl.NumberFormat('en-PH').format(
-        getNumber(value),
-    );
+    return new Intl.NumberFormat('en-PH').format(getNumber(value));
 }
 
 function formatTaskPercentage(value: unknown): string {
@@ -725,10 +683,7 @@ function formatTaskPercentage(value: unknown): string {
 }
 
 function getTaskPercentage(value: unknown): number {
-    return Math.min(
-        100,
-        Math.max(0, getNumber(value)),
-    );
+    return Math.min(100, Math.max(0, getNumber(value)));
 }
 
 function formatFirstSignOn(value: unknown): string {
@@ -756,10 +711,7 @@ function formatFirstSignOn(value: unknown): string {
     }).format(date);
 }
 
-function handleStudentAction(
-    action: string,
-    student: DataTableRow,
-): void {
+function handleStudentAction(action: string, student: DataTableRow): void {
     if (action !== 'print-otg') {
         return;
     }
@@ -767,9 +719,7 @@ function handleStudentAction(
     const personId = String(student.id ?? '').trim();
 
     if (!personId) {
-        console.error(
-            'Unable to print OTG: student ID is missing.',
-        );
+        console.error('Unable to print OTG: student ID is missing.');
 
         return;
     }
@@ -790,359 +740,351 @@ function handleStudentAction(
     >
         <!-- School hero -->
 
-<section
-    class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#07182D] via-[#123A63] to-[#377EC0] shadow-xl shadow-[#123A63]/15"
->
-    <!-- Decorative background -->
-
-    <div
-        class="pointer-events-none absolute -top-32 -right-20 size-80 rounded-full bg-cyan-300/ blur-3xl"
-    ></div>
-
-    <div
-        class="pointer-events-none absolute -bottom-40 -left-20 size-96 rounded-full bg-blue-900/40 blur-3xl"
-    ></div>
-
-    <div
-        class="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.025] to-white/[0.08]"
-    ></div>
-
-    <div
-        class="pointer-events-none absolute top-0 right-[28%] h-full w-px bg-gradient-to-b from-transparent via-white/15 to-transparent"
-    ></div>
-
-    <!-- Content -->
-
-    <div
-        class="relative z-10 flex min-h-[190px] flex-col justify-between gap-8 px-6 py-7 md:flex-row md:items-center lg:px-9 lg:py-8"
-    >
-        <!-- School Identity -->
-
-        <div
-            class="flex min-w-0 items-center gap-5 lg:gap-8"
+        <section
+            class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#07182D] via-[#123A63] to-[#377EC0] shadow-xl shadow-[#123A63]/15"
         >
-            <!-- School Logo -->
-
-<div
-    class="
-        flex
-        size-24
-        shrink-0
-        items-center
-        justify-center
-        overflow-hidden
-        rounded-2xl
-        bg-white
-        p-3
-        shadow-lg
-        sm:size-28
-        lg:size-32
-    "
->
-    <img
-        :src="school.logo"
-        :alt="school.name"
-        class="h-full w-full object-contain"
-    />
-</div>
-
-            <!-- School Information -->
-
-            <div class="min-w-0">
-                <div
-                    class="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-bold tracking-[0.16em] text-blue-100 uppercase uppercase backdrop-blur-sm"
-                >
-                    <span
-                        class="size-1.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400"
-                    ></span>
-
-                    ADMIN PANNEL
-                </div>
-
-                <h1
-                    class="text-2xl leading-tight font-bold tracking-tight text-white sm:text-3xl lg:text-4xl"
-                >
-                    {{ school.name }}
-                </h1>
-
-                <p
-                    class="mt-2 text-sm font-medium text-blue-100 sm:text-base"
-                >
-                    IRIS — Student Activity
-                    Monitoring System
-                </p>
-
-                <p
-                    class="mt-2 hidden max-w-[650px] text-sm leading-6 text-blue-100/65 lg:block"
-                >
-                    A centralized platform for
-                    monitoring, organizing, and
-                    managing student activities.
-                </p>
-            </div>
-        </div>
-
-        <!-- Current Date and Time -->
-
-        <div
-            class="flex shrink-0 items-center gap-4 rounded-2xl border border-white/15 bg-white/10 px-5 py-4 backdrop-blur-md"
-        >
-            <!-- Calendar Icon -->
+            <!-- Decorative background -->
 
             <div
-                class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white ring-1 ring-white/15"
+                class="bg-cyan-300/ pointer-events-none absolute -top-32 -right-20 size-80 rounded-full blur-3xl"
+            ></div>
+
+            <div
+                class="pointer-events-none absolute -bottom-40 -left-20 size-96 rounded-full bg-blue-900/40 blur-3xl"
+            ></div>
+
+            <div
+                class="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.025] to-white/[0.08]"
+            ></div>
+
+            <div
+                class="pointer-events-none absolute top-0 right-[28%] h-full w-px bg-gradient-to-b from-transparent via-white/15 to-transparent"
+            ></div>
+
+            <!-- Content -->
+
+            <div
+                class="relative z-10 flex min-h-[190px] flex-col justify-between gap-8 px-6 py-7 md:flex-row md:items-center lg:px-9 lg:py-8"
             >
-                <i
-                    class="pi pi-calendar text-lg"
-                ></i>
-            </div>
+                <!-- School Identity -->
 
-            <!-- Time Information -->
+                <div class="flex min-w-0 items-center gap-5 lg:gap-8">
+                    <!-- School Logo -->
 
-            <div>
-                <div
-                    class="flex items-baseline gap-3"
-                >
-                    <span
-                        class="font-mono text-2xl font-bold tracking-tight whitespace-nowrap text-white lg:text-[28px]"
+                    <div
+                        class="flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-3 shadow-lg sm:size-28 lg:size-32"
                     >
-                        {{ currentTime }}
-                    </span>
+                        <img
+                            :src="school.logo"
+                            :alt="school.name"
+                            class="h-full w-full object-contain"
+                        />
+                    </div>
 
-                    <span
-                        class="rounded-full bg-emerald-400/15 px-2 py-0.5 text-[10px] font-bold tracking-[0.14em] text-emerald-300 uppercase"
-                    >
-                        PST
-                    </span>
+                    <!-- School Information -->
+
+                    <div class="min-w-0">
+                        <div
+                            class="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-bold tracking-[0.16em] text-blue-100 uppercase backdrop-blur-sm"
+                        >
+                            <span
+                                class="size-1.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400"
+                            ></span>
+
+                            ADMIN PANNEL
+                        </div>
+
+                        <h1
+                            class="text-2xl leading-tight font-bold tracking-tight text-white sm:text-3xl lg:text-4xl"
+                        >
+                            {{ school.name }}
+                        </h1>
+
+                        <p
+                            class="mt-2 text-sm font-medium text-blue-100 sm:text-base"
+                        >
+                            IRIS — Student Activity Monitoring System
+                        </p>
+
+                        <p
+                            class="mt-2 hidden max-w-[650px] text-sm leading-6 text-blue-100/65 lg:block"
+                        >
+                            A centralized platform for monitoring, organizing,
+                            and managing student activities.
+                        </p>
+                    </div>
                 </div>
 
+                <!-- Current Date and Time -->
+
                 <div
-                    class="mt-1 flex items-center gap-2 text-sm font-medium text-blue-100/75"
+                    class="flex shrink-0 items-center gap-4 rounded-2xl border border-white/15 bg-white/10 px-5 py-4 backdrop-blur-md"
                 >
-                    <span>
-                        {{ currentDate }}
-                    </span>
+                    <!-- Calendar Icon -->
 
-                    <span
-                        class="size-1 rounded-full bg-cyan-300"
-                    ></span>
-
-                    <span
-                        class="hidden text-xs text-blue-100/50 xl:inline"
+                    <div
+                        class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white ring-1 ring-white/15"
                     >
-                        Philippine Standard Time
-                    </span>
+                        <i class="pi pi-calendar text-lg"></i>
+                    </div>
+
+                    <!-- Time Information -->
+
+                    <div>
+                        <div class="flex items-baseline gap-3">
+                            <span
+                                class="font-mono text-2xl font-bold tracking-tight whitespace-nowrap text-white lg:text-[28px]"
+                            >
+                                {{ currentTime }}
+                            </span>
+
+                            <span
+                                class="rounded-full bg-emerald-400/15 px-2 py-0.5 text-[10px] font-bold tracking-[0.14em] text-emerald-300 uppercase"
+                            >
+                                PST
+                            </span>
+                        </div>
+
+                        <div
+                            class="mt-1 flex items-center gap-2 text-sm font-medium text-blue-100/75"
+                        >
+                            <span>
+                                {{ currentDate }}
+                            </span>
+
+                            <span
+                                class="size-1 rounded-full bg-cyan-300"
+                            ></span>
+
+                            <span
+                                class="hidden text-xs text-blue-100/50 xl:inline"
+                            >
+                                Philippine Standard Time
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
-</section>
+        </section>
 
         <!-- Summary Cards -->
 
-<div
-    class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4"
->
-    <Card
-        v-for="item in dashboardCards"
-        :key="item.label"
-        :class="[
-            'dashboard-card group relative overflow-hidden !rounded-3xl !border-0 !text-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl',
-            '[&_.p-card-body]:!p-0',
-            '[&_.p-card-content]:!p-0',
-            item.cardBg,
-        ]"
-    >
-<template #content>
-    <!-- Loading Overlay -->
-    <div
-        v-if="dashboardCardsLoading"
-        class="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-black/15 text-white backdrop-blur-sm"
-        role="status"
-    >
-        <i
-            class="pi pi-spin pi-spinner !text-3xl"
-            aria-hidden="true"
-        ></i>
-        <span class="text-sm font-semibold">Loading…</span>
-    </div>
-
-    <!-- Decorative Elements -->
-    <div
-        class="pointer-events-none absolute -top-14 -right-14 size-40 rounded-full bg-white/10 transition-transform duration-500 group-hover:scale-125"
-    ></div>
-
-    <div
-        class="pointer-events-none absolute -right-8 -bottom-16 size-32 rounded-full border-[18px] border-white/[0.07]"
-    ></div>
-
-    <div
-        class="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.12] via-transparent to-black/[0.08]"
-    ></div>
-
-    <!-- Card Content -->
-    <div
-        class="relative z-10 flex h-full min-h-[220px] flex-col p-5 transition-opacity duration-200"
-        :class="{ 'pointer-events-none opacity-30': dashboardCardsLoading }"
-        :inert="dashboardCardsLoading"
-        :aria-busy="dashboardCardsLoading"
-    >
-        <!-- Header -->
-        <div class="flex items-start justify-between gap-4">
-            <div
-                class="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/15 text-white shadow-sm backdrop-blur-sm"
-            >
-                <i :class="[item.icon, 'text-xl']"></i>
-            </div>
-
-            <div
-                class="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] text-white/80 uppercase backdrop-blur-sm"
-            >
-                <span class="size-1.5 rounded-full bg-emerald-300"></span>
-                Live
-            </div>
-        </div>
-
-        <!-- Total -->
-        <div class="mt-5">
-            <p
-                class="text-[11px] font-bold tracking-[0.14em] text-white/70 uppercase"
-            >
-                Total Records
-            </p>
-
-            <div
-                class="mt-1 flex min-h-10 items-center"
-                aria-live="polite"
-            >
-                <span
-                    v-if="!dashboardCardsLoading && dashboardCardsError"
-                    class="text-sm text-white/90"
-                >
-                    {{ dashboardCardsError }}
-                </span>
-
-                <h2
-                    v-else-if="!dashboardCardsLoading"
-                    class="text-4xl leading-none font-bold tracking-tight text-white"
-                >
-                    {{ item.value }}
-                </h2>
-            </div>
-
-            <p
-                class="mt-2 min-h-10 text-sm leading-5 font-semibold text-white/90"
-            >
-                {{ item.label }}
-            </p>
-        </div>
-
-        <!-- Actions -->
-        <div
-            :class="[
-                'mt-auto grid w-full gap-2.5 pt-5',
-                item.canCreateBatch && item.batchHref
-                    ? 'grid-cols-2'
-                    : 'grid-cols-1',
-            ]"
-        >
-            <Button
-                type="button"
-                label="View Details"
-                icon="pi pi-arrow-right"
-                icon-pos="right"
-                severity="secondary"
-                :disabled="dashboardCardsLoading || !item.href"
+        <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            <Card
+                v-for="item in dashboardCards"
+                :key="item.label"
                 :class="[
-                    'group/button !w-full !rounded-xl !border-0 !bg-white !px-3 !py-2.5 !text-xs !font-bold shadow-sm transition-all hover:!bg-white/90',
-                    item.buttonTextClass,
+                    'dashboard-card group relative overflow-hidden !rounded-3xl !border-0 !text-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl',
+                    '[&_.p-card-body]:!p-0',
+                    '[&_.p-card-content]:!p-0',
+                    item.cardBg,
                 ]"
-                @click="navigateTo(item.href)"
-            />
+            >
+                <template #content>
+                    <!-- Loading Overlay -->
+                    <div
+                        v-if="dashboardCardsLoading"
+                        class="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-black/15 text-white backdrop-blur-sm"
+                        role="status"
+                    >
+                        <i
+                            class="pi pi-spin pi-spinner !text-3xl"
+                            aria-hidden="true"
+                        ></i>
+                        <span class="text-sm font-semibold">Loading…</span>
+                    </div>
 
-            <Button
-                v-if="item.canCreateBatch && item.batchHref"
-                as="a"
-                :href="dashboardCardsLoading ? undefined : item.batchHref"
-                :aria-disabled="dashboardCardsLoading"
-                label="Create Batch"
-                icon="pi pi-plus"
-                severity="secondary"
-                variant="outlined"
-                class="!w-full !rounded-xl !border-white/30 !bg-white/10 !px-3 !py-2.5 !text-xs !font-bold !text-white backdrop-blur-sm transition-all hover:!border-white/50 hover:!bg-white/20"
-            />
+                    <!-- Decorative Elements -->
+                    <div
+                        class="pointer-events-none absolute -top-14 -right-14 size-40 rounded-full bg-white/10 transition-transform duration-500 group-hover:scale-125"
+                    ></div>
+
+                    <div
+                        class="pointer-events-none absolute -right-8 -bottom-16 size-32 rounded-full border-[18px] border-white/[0.07]"
+                    ></div>
+
+                    <div
+                        class="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.12] via-transparent to-black/[0.08]"
+                    ></div>
+
+                    <!-- Card Content -->
+                    <div
+                        class="relative z-10 flex h-full min-h-[220px] flex-col p-5 transition-opacity duration-200"
+                        :class="{
+                            'pointer-events-none opacity-30':
+                                dashboardCardsLoading,
+                        }"
+                        :inert="dashboardCardsLoading"
+                        :aria-busy="dashboardCardsLoading"
+                    >
+                        <!-- Header -->
+                        <div class="flex items-start justify-between gap-4">
+                            <div
+                                class="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/15 text-white shadow-sm backdrop-blur-sm"
+                            >
+                                <i :class="[item.icon, 'text-xl']"></i>
+                            </div>
+
+                            <div
+                                class="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] text-white/80 uppercase backdrop-blur-sm"
+                            >
+                                <span
+                                    class="size-1.5 rounded-full bg-emerald-300"
+                                ></span>
+                                Live
+                            </div>
+                        </div>
+
+                        <!-- Total -->
+                        <div class="mt-5">
+                            <p
+                                class="text-[11px] font-bold tracking-[0.14em] text-white/70 uppercase"
+                            >
+                                Total Records
+                            </p>
+
+                            <div
+                                class="mt-1 flex min-h-10 items-center"
+                                aria-live="polite"
+                            >
+                                <span
+                                    v-if="
+                                        !dashboardCardsLoading &&
+                                        dashboardCardsError
+                                    "
+                                    class="text-sm text-white/90"
+                                >
+                                    {{ dashboardCardsError }}
+                                </span>
+
+                                <h2
+                                    v-else-if="!dashboardCardsLoading"
+                                    class="text-4xl leading-none font-bold tracking-tight text-white"
+                                >
+                                    {{ item.value }}
+                                </h2>
+                            </div>
+
+                            <p
+                                class="mt-2 min-h-10 text-sm leading-5 font-semibold text-white/90"
+                            >
+                                {{ item.label }}
+                            </p>
+                        </div>
+
+                        <!-- Actions -->
+                        <div
+                            :class="[
+                                'mt-auto grid w-full gap-2.5 pt-5',
+                                item.canCreateBatch && item.batchHref
+                                    ? 'grid-cols-2'
+                                    : 'grid-cols-1',
+                            ]"
+                        >
+                            <Button
+                                type="button"
+                                label="View Details"
+                                icon="pi pi-arrow-right"
+                                icon-pos="right"
+                                severity="secondary"
+                                :disabled="dashboardCardsLoading || !item.href"
+                                :class="[
+                                    'group/button !w-full !rounded-xl !border-0 !bg-white !px-3 !py-2.5 !text-xs !font-bold shadow-sm transition-all hover:!bg-white/90',
+                                    item.buttonTextClass,
+                                ]"
+                                @click="navigateTo(item.href)"
+                            />
+
+                            <Button
+                                v-if="item.canCreateBatch && item.batchHref"
+                                as="a"
+                                :href="
+                                    dashboardCardsLoading
+                                        ? undefined
+                                        : item.batchHref
+                                "
+                                :aria-disabled="dashboardCardsLoading"
+                                label="Create Batch"
+                                icon="pi pi-plus"
+                                severity="secondary"
+                                variant="outlined"
+                                class="!w-full !rounded-xl !border-white/30 !bg-white/10 !px-3 !py-2.5 !text-xs !font-bold !text-white backdrop-blur-sm transition-all hover:!border-white/50 hover:!bg-white/20"
+                            />
+                        </div>
+                    </div>
+                </template>
+            </Card>
         </div>
-    </div>
-</template>
-    </Card>
-</div>
 
-<Card>
-    <template #content>
-        <div
-            class="mb-6 flex flex-wrap items-center justify-between gap-4"
-        >
-            <div class="flex items-center gap-3">
+        <Card>
+            <template #content>
                 <div
-                    class="flex size-14 shrink-0 items-center justify-center rounded-xl bg-[#21365A] text-white"
+                    class="mb-6 flex flex-wrap items-center justify-between gap-4"
                 >
-                    <i class="pi pi-chart-bar text-2xl" />
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="relative flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-[#123A63] to-[#377EC0] text-white shadow-lg shadow-[#377EC0]/20"
+                        >
+                            <div
+                                class="pointer-events-none absolute -top-3 -right-3 size-8 rounded-full bg-white/15"
+                            ></div>
+                            <i
+                                class="pi pi-chart-bar relative z-10 !text-[1.65rem] !leading-none !text-white"
+                            ></i>
+                        </div>
+
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-800">
+                                Yearly Activity Report
+                            </h2>
+                            <p class="text-sm text-slate-500">
+                                Monthly activities, uploaded documents, OTG and
+                                daily journals.
+                            </p>
+                        </div>
+                    </div>
+                    <Select
+                        v-model="reportYear"
+                        :options="reportYears"
+                        :disabled="reportLoading"
+                        class="w-32"
+                        aria-label="Report year"
+                        @change="loadYearlyReport"
+                    />
                 </div>
 
-                <div>
-                    <h2 class="text-lg font-bold text-slate-800">
-                        Yearly Activity Report
-                    </h2>
-
-                    <p class="text-sm text-slate-500">
-                        Monthly activities, uploaded documents, otg
-                        and daily journals.
-                    </p>
+                <div
+                    v-if="reportLoading"
+                    class="flex h-96 items-center justify-center gap-2 text-slate-500"
+                >
+                    <i class="pi pi-spin pi-spinner" />
+                    Loading yearly report…
                 </div>
-            </div>
 
-            <Select
-                v-model="reportYear"
-                :options="reportYears"
-                :disabled="reportLoading"
-                class="w-32"
-                aria-label="Report year"
-                @change="loadYearlyReport"
-            />
-        </div>
+                <div
+                    v-else-if="reportError"
+                    class="rounded-xl bg-red-50 p-4 text-red-700"
+                >
+                    {{ reportError }}
 
-        <div
-            v-if="reportLoading"
-            class="flex h-96 items-center justify-center gap-2 text-slate-500"
-        >
-            <i class="pi pi-spin pi-spinner" />
-            Loading yearly report…
-        </div>
+                    <Button
+                        label="Retry"
+                        icon="pi pi-refresh"
+                        severity="danger"
+                        text
+                        @click="loadYearlyReport"
+                    />
+                </div>
 
-        <div
-            v-else-if="reportError"
-            class="rounded-xl bg-red-50 p-4 text-red-700"
-        >
-            {{ reportError }}
-
-            <Button
-                label="Retry"
-                icon="pi pi-refresh"
-                severity="danger"
-                text
-                @click="loadYearlyReport"
-            />
-        </div>
-
-        <Chart
-            v-else
-            type="bar"
-            :data="yearlyChartData"
-            :options="yearlyChartOptions"
-            class="h-96"
-        />
-    </template>
-</Card>
+                <Chart
+                    v-else
+                    type="bar"
+                    :data="yearlyChartData"
+                    :options="yearlyChartOptions"
+                    class="h-96"
+                />
+            </template>
+        </Card>
 
         <!-- Student monitoring table -->
 
@@ -1175,9 +1117,7 @@ function handleStudentAction(
             @action="handleStudentAction"
         >
             <template #header-actions>
-                <div
-                    class="flex w-full items-center gap-2 sm:w-auto"
-                >
+                <div class="flex w-full items-center gap-2 sm:w-auto">
                     <label
                         for="student-list-filter"
                         class="text-sm font-semibold whitespace-nowrap text-slate-600"
@@ -1194,9 +1134,7 @@ function handleStudentAction(
                         placeholder="Select student list"
                         class="w-full sm:w-56"
                         aria-label="Student list filter"
-                        @update:model-value="
-                            handleStudentListTypeChange
-                        "
+                        @update:model-value="handleStudentListTypeChange"
                     />
                 </div>
             </template>
@@ -1223,37 +1161,21 @@ function handleStudentAction(
                     />
 
                     <div class="min-w-0">
-                        <p
-                            class="truncate font-semibold text-slate-700"
-                        >
-                            {{
-                                getStudentFullName(data) || '—'
-                            }}
+                        <p class="truncate font-semibold text-slate-700">
+                            {{ getStudentFullName(data) || '—' }}
                         </p>
 
-                        <div
-                            class="mt-1 flex flex-wrap items-center gap-1.5"
-                        >
+                        <div class="mt-1 flex flex-wrap items-center gap-1.5">
                             <Tag
-                                :value="
-                                    getDepartmentLabel(data.dept)
-                                "
-                                :severity="
-                                    getDepartmentSeverity(data.dept)
-                                "
-                                :icon="
-                                    getDepartmentIcon(data.dept)
-                                "
+                                :value="getDepartmentLabel(data.dept)"
+                                :severity="getDepartmentSeverity(data.dept)"
+                                :icon="getDepartmentIcon(data.dept)"
                                 rounded
                                 class="!px-2 !py-0.5 !text-sm !font-semibold"
                             />
 
                             <Tag
-                                :value="
-                                    getSchoolIdLabel(
-                                        data.school_id_no,
-                                    )
-                                "
+                                :value="getSchoolIdLabel(data.school_id_no)"
                                 severity="info"
                                 icon="pi pi-id-card"
                                 rounded
@@ -1261,12 +1183,7 @@ function handleStudentAction(
                             />
 
                             <Tag
-                                :value="
-                                    String(
-                                        data.batch_no ||
-                                            'No CCI Year',
-                                    )
-                                "
+                                :value="String(data.batch_no || 'No CCI Year')"
                                 severity="secondary"
                                 icon="pi pi-calendar"
                                 rounded
@@ -1280,32 +1197,26 @@ function handleStudentAction(
             <!-- Vessel and company -->
 
             <template #cell-company="{ data }">
-                <div
-                    class="w-full min-w-0 space-y-1.5 whitespace-normal"
-                >
-                    <div
-                        class="flex min-w-0 items-start gap-2"
-                    >
+                <div class="w-full min-w-0 space-y-1.5 whitespace-normal">
+                    <div class="flex min-w-0 items-start gap-2">
                         <i
                             class="pi pi-compass mt-0.5 shrink-0 text-sm font-bold text-[#377EC0]"
                         />
 
                         <span
-                            class="min-w-0 flex-1 text-sm leading-5 font-semibold break-words whitespace-normal text-slate-700 uppercase [overflow-wrap:anywhere]"
+                            class="min-w-0 flex-1 text-sm leading-5 font-semibold [overflow-wrap:anywhere] break-words whitespace-normal text-slate-700 uppercase"
                         >
                             {{ data.vessel_type || '—' }}
                         </span>
                     </div>
 
-                    <div
-                        class="flex min-w-0 items-start gap-2"
-                    >
+                    <div class="flex min-w-0 items-start gap-2">
                         <i
                             class="pi pi-building mt-0.5 shrink-0 text-sm font-bold text-slate-400"
                         />
 
                         <span
-                            class="min-w-0 flex-1 text-xs leading-4 font-medium break-words whitespace-normal text-slate-500 uppercase [overflow-wrap:anywhere]"
+                            class="min-w-0 flex-1 text-xs leading-4 font-medium [overflow-wrap:anywhere] break-words whitespace-normal text-slate-500 uppercase"
                         >
                             {{ data.company || '—' }}
                         </span>
@@ -1339,9 +1250,7 @@ function handleStudentAction(
                 </div>
             </template>
 
-            <template
-                #cell-total_daily_journal="{ value }"
-            >
+            <template #cell-total_daily_journal="{ value }">
                 <div class="flex justify-center">
                     <Tag
                         :value="String(getNumber(value))"
@@ -1357,67 +1266,39 @@ function handleStudentAction(
 
             <template #cell-task_completed="{ data }">
                 <div class="w-full min-w-0 space-y-2">
-                    <div
-                        class="flex items-baseline justify-between gap-3"
-                    >
+                    <div class="flex items-baseline justify-between gap-3">
                         <span
                             class="text-sm font-semibold whitespace-nowrap text-slate-700"
                         >
-                            {{
-                                formatTaskCount(
-                                    data.task_completed,
-                                )
-                            }}
+                            {{ formatTaskCount(data.task_completed) }}
                             of
-                            {{
-                                formatTaskCount(
-                                    data.total_task,
-                                )
-                            }}
+                            {{ formatTaskCount(data.total_task) }}
                             tasks
                         </span>
 
                         <span
                             class="text-sm font-bold whitespace-nowrap text-green-600"
                         >
-                            {{
-                                formatTaskPercentage(
-                                    data.task_percentage,
-                                )
-                            }}%
+                            {{ formatTaskPercentage(data.task_percentage) }}%
                         </span>
                     </div>
 
                     <ProgressBar
-                        :value="
-                            getTaskPercentage(
-                                data.task_percentage,
-                            )
-                        "
+                        :value="getTaskPercentage(data.task_percentage)"
                         :show-value="false"
                         class="!h-2"
                     />
 
-                    <p
-                        class="text-xs font-medium text-slate-500"
-                    >
-                        {{
-                            formatTaskCount(
-                                data.task_completed,
-                            )
-                        }}
+                    <p class="text-xs font-medium text-slate-500">
+                        {{ formatTaskCount(data.task_completed) }}
                         completed,
 
                         {{
                             formatTaskCount(
                                 Math.max(
                                     0,
-                                    getNumber(
-                                        data.total_task,
-                                    ) -
-                                        getNumber(
-                                            data.task_completed,
-                                        ),
+                                    getNumber(data.total_task) -
+                                        getNumber(data.task_completed),
                                 ),
                             )
                         }}
@@ -1429,12 +1310,8 @@ function handleStudentAction(
             <!-- First sign on -->
 
             <template #cell-first_sign_on="{ value }">
-                <div
-                    class="flex items-center gap-2 whitespace-nowrap"
-                >
-                    <i
-                        class="pi pi-clock text-sm font-bold text-yellow-500"
-                    />
+                <div class="flex items-center gap-2 whitespace-nowrap">
+                    <i class="pi pi-clock text-sm font-bold text-yellow-500" />
 
                     <span class="text-sm text-slate-500">
                         {{ formatFirstSignOn(value) }}

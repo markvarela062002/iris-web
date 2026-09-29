@@ -1,13 +1,23 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
+
 import axios from 'axios';
+
 import Avatar from 'primevue/avatar';
+
 import Button from 'primevue/button';
+import DatePicker from 'primevue/datepicker';
+
 import InputNumber from 'primevue/inputnumber';
+
 import InputText from 'primevue/inputtext';
+
 import Message from 'primevue/message';
+
 import PrimeTag from 'primevue/tag';
+
 import Select from 'primevue/select';
+
 import {
     computed,
     onBeforeUnmount,
@@ -18,13 +28,10 @@ import {
 } from 'vue';
 
 import Datatable from '@/components/Datatable.vue';
+
 import { dashboard } from '@/routes';
 
-import type {
-    DataTableAction,
-    DataTableColumn,
-    DataTableRow,
-} from '@/types';
+import type { DataTableAction, DataTableColumn, DataTableRow } from '@/types';
 
 defineOptions({
     inheritAttrs: false,
@@ -33,10 +40,13 @@ defineOptions({
         breadcrumbs: [
             {
                 title: 'Dashboard',
+
                 href: dashboard(),
             },
+
             {
                 title: 'Theoretical External Batch',
+
                 href: '/dashboard/theoretical-external/batch',
             },
         ],
@@ -45,39 +55,61 @@ defineOptions({
 
 type CourseOption = {
     id: string;
+
     label: string;
+
     duration: number;
 };
 
 type SessionOption = {
     id: string;
+
     label: string;
 };
 
 type Examinee = {
     id: string;
+
     email: string;
+
     fname: string;
+
     mname: string;
+
     lname: string;
+
     name: string;
+
     email_sent: boolean;
 };
 
 type BatchDetails = {
     id: string;
+
     bs_course_id: string;
+
     bs_exam_session_id: string;
+
     name_course: string;
+
     session_code: string;
+
     exam_type: string;
+
     duration: number;
+
     proctor_name: string;
+
     access_exp_date_from: string;
+
     access_exp_time_from: string;
+
     access_exp_date_to: string;
+
     access_exp_time_to: string;
+
     examinees: Examinee[];
+
     examinees_locked: boolean;
 };
 
@@ -86,120 +118,209 @@ type BatchApiResponse = {
 
     meta: {
         currentPage: number;
+
         lastPage: number;
+
         perPage: number;
+
         total: number;
+
         from: number | null;
+
         to: number | null;
     };
 
     links: {
         first: string | null;
+
         last: string | null;
+
         previous: string | null;
+
         next: string | null;
     };
 };
 
 type DataTablePageEvent = {
     page: number;
+
     rows: number;
+
     first: number;
 };
 
 type DataTableSortEvent = {
     sortField: string;
+
     sortOrder: number;
 };
 
 const form = reactive({
     id: '',
+
     bs_course_id: '',
+
     bs_exam_session_id: '',
+
     duration: 0,
+
     proctor_name: '',
+
     access_exp_date_from: '',
+
     access_exp_time_from: '08:00',
+
     access_exp_date_to: '',
+
     access_exp_time_to: '23:30',
 });
 
 const examineeForm = reactive({
     email: '',
+
     fname: '',
+
     mname: '',
+
     lname: '',
 });
 
 const courses = ref<CourseOption[]>([]);
+
 const sessions = ref<SessionOption[]>([]);
+
 const timeOptions = ref<string[]>([]);
 
+const amPmTimeOptions = computed(() =>
+    timeOptions.value.map((time) => {
+        const [hour, minute] = time.split(':').map(Number);
+        return {
+            label: `${hour % 12 || 12}:${String(minute).padStart(2, '0')} ${hour >= 12 ? 'PM' : 'AM'}`,
+            value: time,
+        };
+    }),
+);
+
+const dateRange = computed<Date[] | null>({
+    get() {
+        if (!form.access_exp_date_from) return null;
+        const parse = (value: string): Date => {
+            const [year, month, day] = value.split('-').map(Number);
+            return new Date(year, month - 1, day);
+        };
+        return [
+            parse(form.access_exp_date_from),
+            ...(form.access_exp_date_to
+                ? [parse(form.access_exp_date_to)]
+                : []),
+        ];
+    },
+    set(value) {
+        const format = (date?: Date | null): string =>
+            date
+                ? [
+                      date.getFullYear(),
+                      String(date.getMonth() + 1).padStart(2, '0'),
+                      String(date.getDate()).padStart(2, '0'),
+                  ].join('-')
+                : '';
+        form.access_exp_date_from = format(value?.[0]);
+        form.access_exp_date_to = format(value?.[1]);
+    },
+});
+
 const examinees = ref<Examinee[]>([]);
+
 const examineesLocked = ref(false);
 
 const batches = ref<DataTableRow[]>([]);
 
 const loading = ref(false);
+
 const optionsLoading = ref(false);
+
 const detailsLoading = ref(false);
+
 const saving = ref(false);
 
 const totalRecords = ref(0);
+
 const first = ref(0);
+
 const rows = ref(10);
+
 const search = ref('');
 
 const sortField = ref('last_update');
-const sortDirection = ref<'asc' | 'desc'>(
-    'desc',
-);
+
+const sortDirection = ref<'asc' | 'desc'>('desc');
 
 const successMessage = ref('');
+
 const errorMessage = ref('');
 
-const formErrors = ref<
-    Record<string, string>
->({});
+const formErrors = ref<Record<string, string>>({});
 
-let requestController:
-    | AbortController
-    | null = null;
+let requestController: AbortController | null = null;
 
 const columns: DataTableColumn[] = [
     {
         field: 'name_course',
+
         header: 'Exam Package',
+
         sortable: true,
+
         searchable: true,
+
         class: 'min-w-[300px] whitespace-normal',
     },
+
     {
         field: 'session_code',
+
         header: 'Session and Schedule',
+
         sortable: true,
+
         searchable: true,
+
         class: 'min-w-[300px]',
     },
+
     {
         field: 'proctor_name',
+
         header: 'Proctor',
+
         sortable: true,
+
         searchable: true,
+
         class: 'min-w-[220px]',
     },
+
     {
         field: 'duration',
+
         header: 'Duration',
+
         sortable: true,
+
         searchable: false,
+
         class: 'min-w-[130px]',
     },
+
     {
         field: 'examinee_count',
+
         header: 'Examinees',
+
         sortable: false,
+
         searchable: false,
+
         class: 'min-w-[130px]',
     },
 ];
@@ -207,8 +328,11 @@ const columns: DataTableColumn[] = [
 const actions: DataTableAction[] = [
     {
         key: 'view',
+
         label: 'View batch',
+
         icon: 'pi pi-eye',
+
         severity: 'info',
     },
 ];
@@ -218,18 +342,15 @@ const isViewing = computed(() => {
 });
 
 const selectedCourse = computed(() => {
-    return courses.value.find(
-        (course) =>
-            course.id === form.bs_course_id,
-    );
+    return courses.value.find((course) => course.id === form.bs_course_id);
 });
 
 watch(
     () => form.bs_course_id,
+
     () => {
         if (!isViewing.value) {
-            form.duration =
-                selectedCourse.value?.duration ?? 0;
+            form.duration = selectedCourse.value?.duration ?? 0;
         }
     },
 );
@@ -241,110 +362,98 @@ async function loadOptions(): Promise<void> {
         const response = await axios.get<{
             data: {
                 courses: CourseOption[];
+
                 sessions: SessionOption[];
+
                 times: string[];
             };
         }>(
             '/api/v1/dashboard/theoretical-external/batch/options',
+
             {
                 headers: jsonHeaders(),
+
                 withCredentials: true,
             },
         );
 
-        courses.value =
-            response.data.data.courses;
+        courses.value = response.data.data.courses;
 
-        sessions.value =
-            response.data.data.sessions;
+        sessions.value = response.data.data.sessions;
 
-        timeOptions.value =
-            response.data.data.times;
+        timeOptions.value = response.data.data.times;
     } catch (error: unknown) {
-        errorMessage.value =
-            getErrorMessage(
-                error,
-                'Unable to load batch options.',
-            );
+        errorMessage.value = getErrorMessage(
+            error,
+
+            'Unable to load batch options.',
+        );
     } finally {
         optionsLoading.value = false;
     }
 }
 
-async function loadBatches(
-    pageNumber = 1,
-): Promise<void> {
+async function loadBatches(pageNumber = 1): Promise<void> {
     requestController?.abort();
 
-    const controller =
-        new AbortController();
+    const controller = new AbortController();
 
     requestController = controller;
+
     loading.value = true;
 
     try {
-        const response =
-            await axios.get<BatchApiResponse>(
-                '/api/v1/dashboard/datatable/theoretical-external-batches',
-                {
-                    signal:
-                        controller.signal,
+        const response = await axios.get<BatchApiResponse>(
+            '/api/v1/dashboard/datatable/theoretical-external-batches',
 
-                    params: {
-                        page: pageNumber,
-                        per_page: rows.value,
-                        search: search.value,
-                        sort_field:
-                            sortField.value,
-                        sort_direction:
-                            sortDirection.value,
-                    },
+            {
+                signal: controller.signal,
 
-                    headers: jsonHeaders(),
-                    withCredentials: true,
+                params: {
+                    page: pageNumber,
+
+                    per_page: rows.value,
+
+                    search: search.value,
+
+                    sort_field: sortField.value,
+
+                    sort_direction: sortDirection.value,
                 },
-            );
 
-        batches.value =
-            response.data.data;
+                headers: jsonHeaders(),
 
-        totalRecords.value =
-            response.data.meta.total;
+                withCredentials: true,
+            },
+        );
 
-        rows.value =
-            response.data.meta.perPage;
+        batches.value = response.data.data;
+
+        totalRecords.value = response.data.meta.total;
+
+        rows.value = response.data.meta.perPage;
 
         first.value =
-            (
-                response.data.meta
-                    .currentPage - 1
-            ) *
-            response.data.meta.perPage;
+            (response.data.meta.currentPage - 1) * response.data.meta.perPage;
     } catch (error: unknown) {
         if (
             axios.isCancel(error) ||
-            (
-                axios.isAxiosError(error) &&
-                error.code ===
-                    'ERR_CANCELED'
-            )
+            (axios.isAxiosError(error) && error.code === 'ERR_CANCELED')
         ) {
             return;
         }
 
         batches.value = [];
+
         totalRecords.value = 0;
 
-        errorMessage.value =
-            getErrorMessage(
-                error,
-                'Unable to load External batches.',
-            );
+        errorMessage.value = getErrorMessage(
+            error,
+
+            'Unable to load External batches.',
+        );
     } finally {
-        if (
-            requestController ===
-            controller
-        ) {
+        if (requestController === controller) {
             loading.value = false;
         }
     }
@@ -352,54 +461,43 @@ async function loadBatches(
 
 function addExaminee(): void {
     errorMessage.value = '';
+
     formErrors.value = {};
 
     if (examineesLocked.value) {
         return;
     }
 
-    const email =
-        examineeForm.email
-            .trim()
-            .toLowerCase();
+    const email = examineeForm.email
+
+        .trim()
+
+        .toLowerCase();
 
     if (!email) {
-        formErrors.value.email =
-            'Email is required.';
+        formErrors.value.email = 'Email is required.';
 
         return;
     }
 
-    if (
-        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
-            email,
-        )
-    ) {
-        formErrors.value.email =
-            'Enter a valid email address.';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        formErrors.value.email = 'Enter a valid email address.';
 
         return;
     }
 
-    if (
-        !form.bs_course_id ||
-        !form.bs_exam_session_id
-    ) {
-        errorMessage.value =
-            'Select an Exam Package and Exam Session first.';
+    if (!form.bs_course_id || !form.bs_exam_session_id) {
+        errorMessage.value = 'Select an Exam Package and Exam Session first.';
 
         return;
     }
 
     if (
         examinees.value.some(
-            (examinee) =>
-                examinee.email
-                    .toLowerCase() === email,
+            (examinee) => examinee.email.toLowerCase() === email,
         )
     ) {
-        errorMessage.value =
-            'This examinee is already in the batch.';
+        errorMessage.value = 'This examinee is already in the batch.';
 
         return;
     }
@@ -411,67 +509,68 @@ function addExaminee(): void {
         return;
     }
 
-    const fname =
-        examineeForm.fname.trim();
+    const fname = examineeForm.fname.trim();
 
-    const mname =
-        examineeForm.mname.trim();
+    const mname = examineeForm.mname.trim();
 
-    const lname =
-        examineeForm.lname.trim();
+    const lname = examineeForm.lname.trim();
 
-    const otherNames = [
-        fname,
-        mname,
-    ]
+    const otherNames = [fname, mname]
+
         .filter(Boolean)
+
         .join(' ');
 
     const name = (
         lname && otherNames
             ? `${lname}, ${otherNames}`
-            : lname ||
-              otherNames ||
-              'EXAMINEE'
+            : lname || otherNames || 'EXAMINEE'
     ).toUpperCase();
 
     examinees.value.push({
         id: crypto.randomUUID(),
+
         email,
+
         fname,
+
         mname,
+
         lname,
+
         name,
+
         email_sent: false,
     });
 
     resetExamineeForm();
 }
 
-function removeExaminee(
-    examineeId: string,
-): void {
+function removeExaminee(examineeId: string): void {
     if (examineesLocked.value) {
         return;
     }
 
-    examinees.value =
-        examinees.value.filter(
-            (examinee) =>
-                examinee.id !== examineeId,
-        );
+    examinees.value = examinees.value.filter(
+        (examinee) => examinee.id !== examineeId,
+    );
 }
 
 function resetExamineeForm(): void {
     examineeForm.email = '';
+
     examineeForm.fname = '';
+
     examineeForm.mname = '';
+
     examineeForm.lname = '';
 }
 
 async function saveBatch(): Promise<void> {
     successMessage.value = '';
+
     errorMessage.value = '';
+
     formErrors.value = {};
 
     if (!validateForm()) {
@@ -486,82 +585,68 @@ async function saveBatch(): Promise<void> {
 
             data: {
                 id: string;
+
                 emails_sent: number;
+
                 emails_failed: number;
             };
         }>(
             '/api/v1/dashboard/theoretical-external/batch',
-            {
-                bs_course_id:
-                    form.bs_course_id,
 
-                bs_exam_session_id:
-                    form.bs_exam_session_id,
+            {
+                bs_course_id: form.bs_course_id,
+
+                bs_exam_session_id: form.bs_exam_session_id,
 
                 duration: form.duration,
 
-                proctor_name:
-                    form.proctor_name.trim(),
+                proctor_name: form.proctor_name.trim(),
 
-                access_exp_date_from:
-                    form.access_exp_date_from,
+                access_exp_date_from: form.access_exp_date_from,
 
-                access_exp_time_from:
-                    form.access_exp_time_from,
+                access_exp_time_from: form.access_exp_time_from,
 
-                access_exp_date_to:
-                    form.access_exp_date_to,
+                access_exp_date_to: form.access_exp_date_to,
 
-                access_exp_time_to:
-                    form.access_exp_time_to,
+                access_exp_time_to: form.access_exp_time_to,
 
-                examinees:
-                    examinees.value.map(
-                        (examinee) => ({
-                            email:
-                                examinee.email,
+                examinees: examinees.value.map((examinee) => ({
+                    email: examinee.email,
 
-                            fname:
-                                examinee.fname,
+                    fname: examinee.fname,
 
-                            mname:
-                                examinee.mname,
+                    mname: examinee.mname,
 
-                            lname:
-                                examinee.lname,
-                        }),
-                    ),
+                    lname: examinee.lname,
+                })),
             },
+
             {
                 headers: jsonHeaders(),
+
                 withCredentials: true,
             },
         );
 
-        successMessage.value =
-            response.data.message;
+        successMessage.value = response.data.message;
 
         await loadBatches(1);
 
-        await openBatch(
-            response.data.data.id,
-        );
+        await openBatch(response.data.data.id);
     } catch (error: unknown) {
         setValidationErrors(error);
 
-        errorMessage.value =
-            getErrorMessage(
-                error,
-                'The External batch could not be created.',
-            );
+        errorMessage.value = getErrorMessage(
+            error,
+
+            'The External batch could not be created.',
+        );
     } finally {
         saving.value = false;
     }
 }
 
-async function openBatch(
-    batchId: string,
-): Promise<void> {
+async function openBatch(batchId: string): Promise<void> {
     detailsLoading.value = true;
 
     try {
@@ -571,57 +656,49 @@ async function openBatch(
             `/api/v1/dashboard/theoretical-external/batch/${encodeURIComponent(
                 batchId,
             )}`,
+
             {
                 headers: jsonHeaders(),
+
                 withCredentials: true,
             },
         );
 
-        const batch =
-            response.data.data;
+        const batch = response.data.data;
 
         form.id = batch.id;
 
-        form.bs_course_id =
-            batch.bs_course_id;
+        form.bs_course_id = batch.bs_course_id;
 
-        form.bs_exam_session_id =
-            batch.bs_exam_session_id;
+        form.bs_exam_session_id = batch.bs_exam_session_id;
 
-        form.duration =
-            batch.duration;
+        form.duration = batch.duration;
 
-        form.proctor_name =
-            batch.proctor_name;
+        form.proctor_name = batch.proctor_name;
 
-        form.access_exp_date_from =
-            batch.access_exp_date_from;
+        form.access_exp_date_from = batch.access_exp_date_from;
 
-        form.access_exp_time_from =
-            batch.access_exp_time_from;
+        form.access_exp_time_from = batch.access_exp_time_from;
 
-        form.access_exp_date_to =
-            batch.access_exp_date_to;
+        form.access_exp_date_to = batch.access_exp_date_to;
 
-        form.access_exp_time_to =
-            batch.access_exp_time_to;
+        form.access_exp_time_to = batch.access_exp_time_to;
 
-        examinees.value =
-            batch.examinees;
+        examinees.value = batch.examinees;
 
-        examineesLocked.value =
-            batch.examinees_locked;
+        examineesLocked.value = batch.examinees_locked;
 
         window.scrollTo({
             top: 0,
+
             behavior: 'smooth',
         });
     } catch (error: unknown) {
-        errorMessage.value =
-            getErrorMessage(
-                error,
-                'Unable to load the selected batch.',
-            );
+        errorMessage.value = getErrorMessage(
+            error,
+
+            'Unable to load the selected batch.',
+        );
     } finally {
         detailsLoading.value = false;
     }
@@ -629,56 +706,59 @@ async function openBatch(
 
 function newBatch(): void {
     form.id = '';
+
     form.bs_course_id = '';
+
     form.bs_exam_session_id = '';
+
     form.duration = 0;
+
     form.proctor_name = '';
+
     form.access_exp_date_from = '';
+
     form.access_exp_time_from = '08:00';
+
     form.access_exp_date_to = '';
+
     form.access_exp_time_to = '23:30';
 
     examinees.value = [];
+
     examineesLocked.value = false;
 
     resetExamineeForm();
 
     formErrors.value = {};
+
     errorMessage.value = '';
 }
 
 function validateForm(): boolean {
-    const errors: Record<string, string> =
-        {};
+    const errors: Record<string, string> = {};
 
     if (!form.bs_course_id) {
-        errors.bs_course_id =
-            'Exam Package is required.';
+        errors.bs_course_id = 'Exam Package is required.';
     }
 
     if (!form.bs_exam_session_id) {
-        errors.bs_exam_session_id =
-            'Exam Session is required.';
+        errors.bs_exam_session_id = 'Exam Session is required.';
     }
 
     if (!form.access_exp_date_from) {
-        errors.access_exp_date_from =
-            'Access Date From is required.';
+        errors.access_exp_date_from = 'Access Date From is required.';
     }
 
     if (!form.access_exp_time_from) {
-        errors.access_exp_time_from =
-            'Access Start Time is required.';
+        errors.access_exp_time_from = 'Access Start Time is required.';
     }
 
     if (!form.access_exp_date_to) {
-        errors.access_exp_date_to =
-            'Access Until Date is required.';
+        errors.access_exp_date_to = 'Access Until Date is required.';
     }
 
     if (!form.access_exp_time_to) {
-        errors.access_exp_time_to =
-            'Access End Time is required.';
+        errors.access_exp_time_to = 'Access End Time is required.';
     }
 
     const from = new Date(
@@ -699,8 +779,7 @@ function validateForm(): boolean {
     }
 
     if (examinees.value.length === 0) {
-        errors.examinees =
-            'Add at least one examinee.';
+        errors.examinees = 'Add at least one examinee.';
     }
 
     formErrors.value = errors;
@@ -708,36 +787,27 @@ function validateForm(): boolean {
     return Object.keys(errors).length === 0;
 }
 
-function handlePage(
-    event: DataTablePageEvent,
-): void {
+function handlePage(event: DataTablePageEvent): void {
     rows.value = event.rows;
+
     first.value = event.first;
 
     void loadBatches(event.page + 1);
 }
 
-function handleSort(
-    event: DataTableSortEvent,
-): void {
-    sortField.value =
-        event.sortField ||
-        'last_update';
+function handleSort(event: DataTableSortEvent): void {
+    sortField.value = event.sortField || 'last_update';
 
-    sortDirection.value =
-        event.sortOrder === -1
-            ? 'desc'
-            : 'asc';
+    sortDirection.value = event.sortOrder === -1 ? 'desc' : 'asc';
 
     first.value = 0;
 
     void loadBatches(1);
 }
 
-function handleSearch(
-    value: string,
-): void {
+function handleSearch(value: string): void {
     search.value = value;
+
     first.value = 0;
 
     void loadBatches(1);
@@ -745,49 +815,48 @@ function handleSearch(
 
 function handleAction(
     action: string,
+
     batch: DataTableRow,
 ): void {
     if (action !== 'view') {
         return;
     }
 
-    const batchId = String(
-        batch.id ?? '',
-    ).trim();
+    const batchId = String(batch.id ?? '').trim();
 
     if (batchId) {
         void openBatch(batchId);
     }
 }
 
-function getInitials(
-    examinee: Examinee,
-): string {
+function getInitials(examinee: Examinee): string {
     return (
         examinee.name
+
             .replace(',', ' ')
+
             .split(/\s+/)
+
             .filter(Boolean)
+
             .slice(0, 2)
-            .map((word) =>
-                word.charAt(0),
-            )
+
+            .map((word) => word.charAt(0))
+
             .join('')
+
             .toUpperCase() || 'EX'
     );
 }
 
 function formatSchedule(
     date: unknown,
+
     time: unknown,
 ): string {
-    const dateValue = String(
-        date ?? '',
-    ).trim();
+    const dateValue = String(date ?? '').trim();
 
-    const timeValue = String(
-        time ?? '',
-    ).substring(0, 5);
+    const timeValue = String(time ?? '').substring(0, 5);
 
     if (!dateValue) {
         return '—';
@@ -796,20 +865,14 @@ function formatSchedule(
     return `${dateValue} ${timeValue}`;
 }
 
-function formatLastUpdate(
-    value: unknown,
-): string {
-    const rawValue = String(
-        value ?? '',
-    ).trim();
+function formatLastUpdate(value: unknown): string {
+    const rawValue = String(value ?? '').trim();
 
     if (!rawValue) {
         return '—';
     }
 
-    const date = new Date(
-        rawValue.replace(' ', 'T'),
-    );
+    const date = new Date(rawValue.replace(' ', 'T'));
 
     if (Number.isNaN(date.getTime())) {
         return rawValue;
@@ -817,42 +880,41 @@ function formatLastUpdate(
 
     return new Intl.DateTimeFormat(
         'en-PH',
+
         {
             timeZone: 'Asia/Manila',
+
             month: 'short',
+
             day: 'numeric',
+
             year: 'numeric',
+
             hour: '2-digit',
+
             minute: '2-digit',
+
             hour12: true,
         },
     ).format(date);
 }
 
-function jsonHeaders(): Record<
-    string,
-    string
-> {
+function jsonHeaders(): Record<string, string> {
     return {
         Accept: 'application/json',
-        'X-Requested-With':
-            'XMLHttpRequest',
+
+        'X-Requested-With': 'XMLHttpRequest',
     };
 }
 
-function setValidationErrors(
-    error: unknown,
-): void {
+function setValidationErrors(error: unknown): void {
     if (!axios.isAxiosError(error)) {
         return;
     }
 
     const errors = (
         error.response?.data as {
-            errors?: Record<
-                string,
-                string[]
-            >;
+            errors?: Record<string, string[]>;
         }
     )?.errors;
 
@@ -860,19 +922,18 @@ function setValidationErrors(
         return;
     }
 
-    formErrors.value =
-        Object.fromEntries(
-            Object.entries(errors).map(
-                ([field, messages]) => [
-                    field,
-                    messages[0] ?? '',
-                ],
-            ),
-        );
+    formErrors.value = Object.fromEntries(
+        Object.entries(errors).map(([field, messages]) => [
+            field,
+
+            messages[0] ?? '',
+        ]),
+    );
 }
 
 function getErrorMessage(
     error: unknown,
+
     fallback: string,
 ): string {
     if (!axios.isAxiosError(error)) {
@@ -883,32 +944,19 @@ function getErrorMessage(
         | {
               message?: string;
 
-              errors?: Record<
-                  string,
-                  string[]
-              >;
+              errors?: Record<string, string[]>;
           }
         | undefined;
 
-    const firstValidationError =
-        data?.errors
-            ? Object.values(
-                  data.errors,
-              )[0]?.[0]
-            : null;
+    const firstValidationError = data?.errors
+        ? Object.values(data.errors)[0]?.[0]
+        : null;
 
-    return (
-        firstValidationError ||
-        data?.message ||
-        fallback
-    );
+    return firstValidationError || data?.message || fallback;
 }
 
 onMounted(() => {
-    void Promise.all([
-        loadOptions(),
-        loadBatches(1),
-    ]);
+    void Promise.all([loadOptions(), loadBatches(1)]);
 });
 
 onBeforeUnmount(() => {
@@ -917,9 +965,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <Head
-        title="Theoretical External Batch"
-    />
+    <Head title="Theoretical External Batch" />
 
     <div
         class="flex h-full min-h-0 flex-1 flex-col gap-4 overflow-y-auto bg-[#F8FAFC] p-4 lg:p-5"
@@ -942,36 +988,29 @@ onBeforeUnmount(() => {
             {{ errorMessage }}
         </Message>
 
-        <section
-            class="rounded-2xl border border-slate-200 bg-white shadow-sm"
-        >
+        <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div
                 class="flex flex-col gap-4 border-b border-slate-200 p-5 lg:flex-row lg:items-center lg:justify-between"
             >
-                <div
-                    class="flex items-center gap-4"
-                >
+                <div class="flex items-center gap-4">
                     <div
-                        class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-yellow-500 text-white shadow-md"
+                        class="relative flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-[#123A63] to-[#377EC0] text-white shadow-lg shadow-[#377EC0]/20"
                     >
+                        <div
+                            class="pointer-events-none absolute -top-3 -right-3 size-8 rounded-full bg-white/15"
+                        ></div>
                         <i
-                            class="pi pi-question-circle text-2xl"
+                            class="pi pi-question-circle relative z-10 !text-[1.65rem] !leading-none !text-white"
                         ></i>
                     </div>
 
                     <div>
-                        <h1
-                            class="text-xl font-bold text-slate-800"
-                        >
-                            Theoretical Assessment
-                            – External Batch
+                        <h1 class="text-xl font-bold text-slate-800">
+                            Theoretical Assessment – External Batch
                         </h1>
 
-                        <p
-                            class="mt-1 text-sm text-slate-500"
-                        >
-                            Schedule examinations for
-                            External examinees.
+                        <p class="mt-1 text-sm text-slate-500">
+                            Schedule examinations for External examinees.
                         </p>
                     </div>
                 </div>
@@ -986,55 +1025,48 @@ onBeforeUnmount(() => {
             </div>
 
             <div
-                v-if="
-                    detailsLoading ||
-                    optionsLoading
-                "
-                class="flex min-h-52 items-center justify-center"
+                class="mx-5 mt-5 flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900"
+                role="note"
             >
-                <i
-                    class="pi pi-spin pi-spinner text-3xl text-blue-500"
-                ></i>
+                <i class="pi pi-info-circle" aria-hidden="true"></i>
+                <span
+                    >Note: Fields marked with
+                    <span class="font-semibold text-red-500">*</span> are
+                    required fields.</span
+                >
             </div>
 
             <div
-                v-else
-                class="space-y-5 p-5"
+                v-if="detailsLoading || optionsLoading"
+                class="flex min-h-52 items-center justify-center"
             >
-                <Message
-                    v-if="isViewing"
-                    severity="info"
-                    :closable="false"
-                >
-                    This saved batch is read-only.
-                    Create a new batch to schedule
-                    additional examinees.
+                <i class="pi pi-spin pi-spinner text-3xl text-blue-500"></i>
+            </div>
+
+            <div v-else class="space-y-5 p-5">
+                <Message v-if="isViewing" severity="info" :closable="false">
+                    This saved batch is read-only. Create a new batch to
+                    schedule additional examinees.
                 </Message>
 
-                <div
-                    class="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
-                >
+                <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                     <div>
                         <label
                             class="mb-2 block text-sm font-semibold text-slate-700"
                         >
-                            Exam Package *
+                            Exam Package <span class="text-red-500">*</span>
                         </label>
 
                         <Select
-                            v-model="
-                                form.bs_course_id
-                            "
+                            v-model="form.bs_course_id"
                             :options="courses"
                             option-label="label"
                             option-value="id"
                             placeholder="Select package"
                             filter
                             fluid
-                            :disabled="
-                                isViewing ||
-                                saving
-                            "
+                            :disabled="isViewing || saving"
+                            showClear
                         />
                     </div>
 
@@ -1042,23 +1074,19 @@ onBeforeUnmount(() => {
                         <label
                             class="mb-2 block text-sm font-semibold text-slate-700"
                         >
-                            Exam Session *
+                            Exam Session <span class="text-red-500">*</span>
                         </label>
 
                         <Select
-                            v-model="
-                                form.bs_exam_session_id
-                            "
+                            v-model="form.bs_exam_session_id"
                             :options="sessions"
                             option-label="label"
                             option-value="id"
                             placeholder="Select session"
                             filter
                             fluid
-                            :disabled="
-                                isViewing ||
-                                saving
-                            "
+                            :disabled="isViewing || saving"
+                            showClear
                         />
                     </div>
 
@@ -1066,7 +1094,8 @@ onBeforeUnmount(() => {
                         <label
                             class="mb-2 block text-sm font-semibold text-slate-700"
                         >
-                            Duration in minutes *
+                            Duration in minutes
+                            <span class="text-red-500">*</span>
                         </label>
 
                         <InputNumber
@@ -1074,10 +1103,8 @@ onBeforeUnmount(() => {
                             :min="0"
                             :max="1440"
                             fluid
-                            :disabled="
-                                isViewing ||
-                                saving
-                            "
+                            :disabled="isViewing || saving"
+                            showClear
                         />
                     </div>
 
@@ -1089,96 +1116,89 @@ onBeforeUnmount(() => {
                         </label>
 
                         <InputText
-                            v-model="
-                                form.proctor_name
-                            "
+                            v-model="form.proctor_name"
                             fluid
                             placeholder="Enter proctor name"
-                            :disabled="
-                                isViewing ||
-                                saving
-                            "
+                            :disabled="isViewing || saving"
                         />
                     </div>
 
-                    <div>
+                    <div class="md:col-span-2 xl:col-span-2">
                         <label
                             class="mb-2 block text-sm font-semibold text-slate-700"
                         >
-                            Access Date From *
+                            Access Date Range
+                            <span class="text-red-500">*</span>
                         </label>
-
-                        <input
-                            v-model="
-                                form.access_exp_date_from
-                            "
-                            type="date"
-                            :disabled="
-                                isViewing ||
-                                saving
-                            "
-                            class="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500 disabled:bg-slate-100"
-                        />
-                    </div>
-
-                    <div>
-                        <label
-                            class="mb-2 block text-sm font-semibold text-slate-700"
-                        >
-                            Access Start Time *
-                        </label>
-
-                        <Select
-                            v-model="
-                                form.access_exp_time_from
-                            "
-                            :options="timeOptions"
+                        <DatePicker
+                            v-model="dateRange"
+                            selectionMode="range"
+                            dateFormat="mm/dd/yy"
+                            placeholder="Select start and end dates"
+                            :manualInput="false"
+                            showIcon
                             fluid
-                            :disabled="
-                                isViewing ||
-                                saving
-                            "
+                            :disabled="isViewing || saving"
+                            showClear
                         />
+                        <small
+                            v-if="
+                                formErrors.access_exp_date_from ||
+                                formErrors.access_exp_date_to
+                            "
+                            class="mt-1 block text-red-500"
+                        >
+                            {{
+                                formErrors.access_exp_date_from ||
+                                formErrors.access_exp_date_to
+                            }}
+                        </small>
                     </div>
 
-                    <div>
+                    <div class="md:col-span-2 xl:col-span-2">
                         <label
                             class="mb-2 block text-sm font-semibold text-slate-700"
                         >
-                            Access Until Date *
+                            Access Time Range
+                            <span class="text-red-500">*</span>
                         </label>
-
-                        <input
-                            v-model="
-                                form.access_exp_date_to
+                        <div class="flex items-center gap-3">
+                            <Select
+                                v-model="form.access_exp_time_from"
+                                :options="amPmTimeOptions"
+                                optionLabel="label"
+                                optionValue="value"
+                                placeholder="Start time"
+                                aria-label="Access start time"
+                                fluid
+                                :disabled="isViewing || saving"
+                                showClear
+                            />
+                            <span class="shrink-0 text-slate-400">–</span>
+                            <Select
+                                v-model="form.access_exp_time_to"
+                                :options="amPmTimeOptions"
+                                optionLabel="label"
+                                optionValue="value"
+                                placeholder="End time"
+                                aria-label="Access end time"
+                                fluid
+                                :disabled="isViewing || saving"
+                                showClear
+                            />
+                        </div>
+                        <small
+                            v-if="
+                                formErrors.access_exp_time_from ||
+                                formErrors.access_exp_time_to
                             "
-                            type="date"
-                            :disabled="
-                                isViewing ||
-                                saving
-                            "
-                            class="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500 disabled:bg-slate-100"
-                        />
-                    </div>
-
-                    <div>
-                        <label
-                            class="mb-2 block text-sm font-semibold text-slate-700"
+                            class="mt-1 block text-red-500"
                         >
-                            Access End Time *
-                        </label>
-
-                        <Select
-                            v-model="
-                                form.access_exp_time_to
-                            "
-                            :options="timeOptions"
-                            fluid
-                            :disabled="
-                                isViewing ||
-                                saving
-                            "
-                        />
+                            {{
+                                formErrors.access_exp_time_from ||
+                                formErrors.access_exp_time_to
+                            }}
+                        </small>
                     </div>
                 </div>
 
@@ -1186,46 +1206,30 @@ onBeforeUnmount(() => {
                     v-if="!examineesLocked"
                     class="rounded-xl border border-yellow-200 bg-yellow-50/50 p-4"
                 >
-                    <h2
-                        class="mb-3 font-semibold text-slate-700"
-                    >
+                    <h2 class="mb-3 font-semibold text-slate-700">
                         Add External Examinee
                     </h2>
 
-                    <div
-                        class="grid gap-3 md:grid-cols-2 xl:grid-cols-5"
-                    >
+                    <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
                         <InputText
-                            v-model="
-                                examineeForm.email
-                            "
+                            v-model="examineeForm.email"
                             type="email"
                             placeholder="Email address *"
-                            :invalid="
-                                Boolean(
-                                    formErrors.email,
-                                )
-                            "
+                            :invalid="Boolean(formErrors.email)"
                         />
 
                         <InputText
-                            v-model="
-                                examineeForm.fname
-                            "
+                            v-model="examineeForm.fname"
                             placeholder="First name"
                         />
 
                         <InputText
-                            v-model="
-                                examineeForm.mname
-                            "
+                            v-model="examineeForm.mname"
                             placeholder="Middle name"
                         />
 
                         <InputText
-                            v-model="
-                                examineeForm.lname
-                            "
+                            v-model="examineeForm.lname"
                             placeholder="Last name"
                         />
 
@@ -1246,24 +1250,17 @@ onBeforeUnmount(() => {
                     </small>
                 </div>
 
-                <div
-                    class="rounded-xl border border-slate-200"
-                >
+                <div class="rounded-xl border border-slate-200">
                     <div
                         class="flex items-center justify-between border-b border-slate-200 p-4"
                     >
                         <div>
-                            <h2
-                                class="font-semibold text-slate-700"
-                            >
+                            <h2 class="font-semibold text-slate-700">
                                 Examinees
                             </h2>
 
-                            <p
-                                class="text-sm text-slate-500"
-                            >
-                                Maximum of 40
-                                examinees per batch.
+                            <p class="text-sm text-slate-500">
+                                Maximum of 40 examinees per batch.
                             </p>
                         </div>
 
@@ -1284,30 +1281,20 @@ onBeforeUnmount(() => {
                             class="flex items-center gap-3 p-4"
                         >
                             <Avatar
-                                :label="
-                                    getInitials(
-                                        examinee,
-                                    )
-                                "
+                                :label="getInitials(examinee)"
                                 shape="circle"
                                 class="shrink-0 !bg-yellow-50 !text-yellow-600"
                             />
 
-                            <div
-                                class="min-w-0 flex-1"
-                            >
+                            <div class="min-w-0 flex-1">
                                 <p
                                     class="truncate font-semibold text-slate-700 uppercase"
                                 >
-                                    {{
-                                        examinee.name
-                                    }}
+                                    {{ examinee.name }}
                                 </p>
 
                                 <PrimeTag
-                                    :value="
-                                        examinee.email
-                                    "
+                                    :value="examinee.email"
                                     icon="pi pi-envelope"
                                     severity="info"
                                     rounded
@@ -1316,9 +1303,7 @@ onBeforeUnmount(() => {
                             </div>
 
                             <PrimeTag
-                                v-if="
-                                    examineesLocked
-                                "
+                                v-if="examineesLocked"
                                 :value="
                                     examinee.email_sent
                                         ? 'Email Sent'
@@ -1330,9 +1315,7 @@ onBeforeUnmount(() => {
                                         : 'pi pi-times-circle'
                                 "
                                 :severity="
-                                    examinee.email_sent
-                                        ? 'success'
-                                        : 'danger'
+                                    examinee.email_sent ? 'success' : 'danger'
                                 "
                                 rounded
                             />
@@ -1344,42 +1327,30 @@ onBeforeUnmount(() => {
                                 severity="danger"
                                 rounded
                                 aria-label="Remove examinee"
-                                @click="
-                                    removeExaminee(
-                                        examinee.id,
-                                    )
-                                "
+                                @click="removeExaminee(examinee.id)"
                             />
                         </div>
                     </div>
 
-                    <div
-                        v-else
-                        class="p-8 text-center text-slate-500"
-                    >
+                    <div v-else class="p-8 text-center text-slate-500">
                         No examinees have been added.
                     </div>
                 </div>
 
                 <Message
-                    v-if="
-                        formErrors.examinees
-                    "
+                    v-if="formErrors.examinees"
                     severity="error"
                     :closable="false"
                 >
                     {{ formErrors.examinees }}
                 </Message>
 
-                <div
-                    class="flex justify-end gap-2"
-                >
+                <div class="flex justify-end gap-2">
                     <Button
                         type="button"
                         label="Reset"
                         icon="pi pi-refresh"
-                        severity="secondary"
-                        outlined
+                        severity="warn"
                         :disabled="saving"
                         @click="newBatch"
                     />
@@ -1391,10 +1362,7 @@ onBeforeUnmount(() => {
                         icon="pi pi-send"
                         severity="success"
                         :loading="saving"
-                        :disabled="
-                            saving ||
-                            examinees.length === 0
-                        "
+                        :disabled="saving || examinees.length === 0"
                         @click="saveBatch"
                     />
                 </div>
@@ -1423,8 +1391,11 @@ onBeforeUnmount(() => {
             :rows="rows"
             :rows-per-page-options="[
                 10,
+
                 20,
+
                 50,
+
                 100,
             ]"
             @page="handlePage"
@@ -1432,59 +1403,46 @@ onBeforeUnmount(() => {
             @search="handleSearch"
             @action="handleAction"
         >
-            <template
-                #cell-name_course="{ data }"
-            >
+            <template #cell-name_course="{ data }">
                 <div class="space-y-1">
-                    <p
-                        class="font-semibold text-slate-700"
-                    >
-                        <i
-                            class="pi pi-graduation-cap mr-1 text-blue-500"
-                        ></i>
+                    <p class="font-semibold text-slate-700">
+                        <i class="pi pi-graduation-cap mr-1 text-blue-500"></i>
 
                         {{ data.name_course }}
                     </p>
 
-                    <p
-                        class="text-xs text-slate-500"
-                    >
+                    <p class="text-xs text-slate-500">
                         Created
-                        {{
-                            formatLastUpdate(
-                                data.last_update,
-                            )
-                        }}
+
+                        {{ formatLastUpdate(data.last_update) }}
                     </p>
                 </div>
             </template>
 
-            <template
-                #cell-session_code="{ data }"
-            >
+            <template #cell-session_code="{ data }">
                 <div class="space-y-1.5">
                     <PrimeTag
-                        :value="
-                            data.session_code
-                        "
+                        :value="data.session_code"
                         icon="pi pi-calendar"
                         severity="info"
                         rounded
                     />
 
-                    <p
-                        class="text-xs text-slate-500"
-                    >
+                    <p class="text-xs text-slate-500">
                         {{
                             formatSchedule(
                                 data.access_exp_date_from,
+
                                 data.access_exp_time_from,
                             )
                         }}
+
                         –
+
                         {{
                             formatSchedule(
                                 data.access_exp_date_to,
+
                                 data.access_exp_time_to,
                             )
                         }}
@@ -1492,23 +1450,15 @@ onBeforeUnmount(() => {
                 </div>
             </template>
 
-            <template
-                #cell-proctor_name="{ value }"
-            >
-                <p
-                    class="font-semibold text-slate-700 uppercase"
-                >
-                    <i
-                        class="pi pi-user mr-1 text-violet-500"
-                    ></i>
+            <template #cell-proctor_name="{ value }">
+                <p class="font-semibold text-slate-700 uppercase">
+                    <i class="pi pi-user mr-1 text-violet-500"></i>
 
                     {{ value || 'NO PROCTOR' }}
                 </p>
             </template>
 
-            <template
-                #cell-duration="{ value }"
-            >
+            <template #cell-duration="{ value }">
                 <PrimeTag
                     :value="`${value || 0} min`"
                     icon="pi pi-clock"
@@ -1517,9 +1467,7 @@ onBeforeUnmount(() => {
                 />
             </template>
 
-            <template
-                #cell-examinee_count="{ value }"
-            >
+            <template #cell-examinee_count="{ value }">
                 <PrimeTag
                     :value="String(value || 0)"
                     icon="pi pi-users"

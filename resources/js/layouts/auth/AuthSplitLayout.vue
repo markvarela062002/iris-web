@@ -81,12 +81,18 @@ defineProps<{
             </div>
 
             <!-- FOOTER -->
-            <div
-                class="absolute bottom-6 left-8 z-20 text-xs text-[#64748B] xl:left-12 xl:text-sm"
-            >
-                © {{ new Date().getFullYear() }} Powered by Elosoft. All rights
-                reserved.
-            </div>
+<div
+    class="absolute bottom-6 left-8 z-20 text-xs text-[#64748B] xl:left-12 xl:text-sm"
+>
+    © {{ new Date().getFullYear() }} Powered by
+    <span class="font-bold text-[#B82C32]">E</span><span
+        class="font-bold text-[#21365A]"
+    >LO</span><span
+        class="font-bold text-[#38A0DE]"
+    >SOFT</span>.
+    All rights reserved.
+</div>
+
         </div>
 
         <!-- RIGHT SIDE -->

@@ -484,27 +484,19 @@ const defaultAvatarUrl = computed<string | null>(() => {
         return null;
     }
 
-    const gender = String(
-        form.value.gender ?? '',
-    )
+    const gender = String(form.value.gender ?? '')
         .trim()
         .toUpperCase();
 
-    if (
-        gender === 'MALE' ||
-        gender === 'M'
-    ) {
+    if (gender === 'MALE' || gender === 'M') {
         return '/images/male-cadet.png';
     }
 
-    if (
-        gender === 'FEMALE' ||
-        gender === 'F'
-    ) {
+    if (gender === 'FEMALE' || gender === 'F') {
         return '/images/female-cadet.png';
     }
 
-    return null;
+    return '/images/defaul-cadet.png';
 });
 
 

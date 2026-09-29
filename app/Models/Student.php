@@ -150,14 +150,14 @@ class Student extends Authenticatable
         );
 
         if ($gender === 'F') {
-            return '/images/female.png';
+            return '/images/female-cadet.png';
         }
 
         if ($gender === 'M') {
-            return '/images/male.png';
+            return '/images/male-cadet.png';
         }
 
-        return '/images/default-user.png';
+        return '/images/default-cadet.png';
     }
 
     /**

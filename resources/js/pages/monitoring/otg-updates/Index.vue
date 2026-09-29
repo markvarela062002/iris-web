@@ -444,32 +444,20 @@ function getStudentInitials(
     );
 }
 
-function getStudentAvatar(
-    gender: unknown,
-): string | null {
-    const normalizedGender =
-        String(
-            gender ?? '',
-        )
-            .trim()
-            .toUpperCase();
+function getStudentAvatar(gender: unknown): string {
+    const normalizedGender = String(gender ?? '')
+        .trim()
+        .toUpperCase();
 
-    if (
-        normalizedGender === 'M' ||
-        normalizedGender === 'MALE'
-    ) {
+    if (normalizedGender === 'M' || normalizedGender === 'MALE') {
         return '/images/male-cadet.png';
     }
 
-    if (
-        normalizedGender === 'F' ||
-        normalizedGender ===
-            'FEMALE'
-    ) {
+    if (normalizedGender === 'F' || normalizedGender === 'FEMALE') {
         return '/images/female-cadet.png';
     }
 
-    return null;
+    return '/images/defaul-cadet.png';
 }
 
 function getDepartmentSeverity(

@@ -113,7 +113,7 @@ const columns: DataTableColumn[] = [
     {
         field: 'score',
         header: 'Score',
-        sortable: true,
+        sortable: false,
         searchable: false,
         class: 'min-w-[100px]',
         headerClass: '!text-left',
@@ -358,28 +358,18 @@ function getInitials(
 
 function getAvatarImage(
     row: DataTableRow | StudentOption,
-): string | undefined {
-    const gender = String(
-        row.gender ?? '',
-    )
-        .trim()
-        .toUpperCase();
+): string {
+    const gender = String(row.gender ?? '').trim().toUpperCase();
 
-    if (
-        gender === 'M' ||
-        gender === 'MALE'
-    ) {
+    if (gender === 'M' || gender === 'MALE') {
         return '/images/male-cadet.png';
     }
 
-    if (
-        gender === 'F' ||
-        gender === 'FEMALE'
-    ) {
+    if (gender === 'F' || gender === 'FEMALE') {
         return '/images/female-cadet.png';
     }
 
-    return undefined;
+    return '/images/default-cadet.png';
 }
 
 /*

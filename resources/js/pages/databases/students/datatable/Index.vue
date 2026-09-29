@@ -419,30 +419,20 @@ function getStudentInitials(
     );
 }
 
-function getStudentAvatar(
-    gender: unknown,
-): string | undefined {
-    const value = String(
-        gender ?? '',
-    )
+function getStudentAvatar(gender: unknown): string {
+    const normalizedGender = String(gender ?? '')
         .trim()
         .toUpperCase();
 
-    if (
-        value === 'M' ||
-        value === 'MALE'
-    ) {
+    if (normalizedGender === 'M' || normalizedGender === 'MALE') {
         return '/images/male-cadet.png';
     }
 
-    if (
-        value === 'F' ||
-        value === 'FEMALE'
-    ) {
+    if (normalizedGender === 'F' || normalizedGender === 'FEMALE') {
         return '/images/female-cadet.png';
     }
 
-    return undefined;
+    return '/images/defaul-cadet.png';
 }
 
 function getSchoolId(
