@@ -373,7 +373,7 @@ const actions: DataTableAction[] = [
         key: 'edit',
         label: 'Open Journal',
         icon: 'pi pi-pencil',
-        severity: 'info',
+        severity: 'warn',
     },
     {
         key: 'delete',
@@ -573,11 +573,11 @@ function statusSeverity(
     value: unknown,
 ):
     | 'success'
-    | 'secondary' {
+    | 'warn' {
     return String(value) ===
         'Validated'
         ? 'success'
-        : 'secondary';
+        : 'warn';
 }
 
 function loadIntoForm(
@@ -2105,7 +2105,7 @@ onBeforeUnmount(() => {
                     :severity="
                         isValidated
                             ? 'success'
-                            : 'secondary'
+                            : 'warn'
                     "
                     :icon="
                         isValidated

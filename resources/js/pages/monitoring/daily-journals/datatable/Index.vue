@@ -22,14 +22,12 @@ import {
     onMounted,
     ref,
 } from 'vue';
-
 const props = defineProps<{
     journalId: string;
 }>();
 
 defineOptions({
     inheritAttrs: false,
-
     layout: {
         breadcrumbs: [
             {
@@ -134,9 +132,13 @@ const API =
 const toast = useToast();
 
 const loading = ref(false);
+
 const saving = ref(false);
+
 const evidenceUploading = ref(false);
+
 const signing = ref(false);
+
 const pageError = ref('');
 
 const journal =
@@ -155,7 +157,9 @@ const signatureCanvas =
     ref<HTMLCanvasElement | null>(null);
 
 const signatureDrawing = ref(false);
+
 const signatureHasInk = ref(false);
+
 const signaturePointerId =
     ref<number | null>(null);
 
@@ -215,13 +219,11 @@ const studentInitials = computed(() => {
     )
         .trim()
         .charAt(0);
-
     const last = String(
         journal.value?.lname ?? '',
     )
         .trim()
         .charAt(0);
-
     return (
         `${first}${last}`.toUpperCase() ||
         'ST'
@@ -232,15 +234,12 @@ const defaultAvatarUrl = computed<string>(() => {
     const gender = String(journal.value?.gender ?? '')
         .trim()
         .toUpperCase();
-
     if (gender === 'MALE' || gender === 'M') {
         return '/images/male-cadet.png';
     }
-
     if (gender === 'FEMALE' || gender === 'F') {
         return '/images/female-cadet.png';
     }
-
     return '/images/defaul-cadet.png';
 });
 
@@ -256,7 +255,6 @@ const isEvidenceImage = computed(() => {
     )
         .trim()
         .toLowerCase();
-
     return /\.(jpg|jpeg|png|gif|webp)$/i.test(
         filename,
     );
@@ -268,15 +266,12 @@ function departmentSeverity(): DepartmentSeverity {
     )
         .trim()
         .toUpperCase();
-
     if (department === 'DECK') {
         return 'success';
     }
-
     if (department === 'ENGINE') {
         return 'info';
     }
-
     return 'secondary';
 }
 
@@ -286,15 +281,12 @@ function departmentIcon(): string {
     )
         .trim()
         .toUpperCase();
-
     if (department === 'DECK') {
         return 'pi pi-compass';
     }
-
     if (department === 'ENGINE') {
         return 'pi pi-cog';
     }
-
     return 'pi pi-building';
 }
 
@@ -308,15 +300,12 @@ function parseDate(
     value: unknown,
 ): Date | null {
     const text = stringValue(value);
-
     if (!text) {
         return null;
     }
-
     const date = new Date(
         `${text.substring(0, 10)}T00:00:00`,
     );
-
     return Number.isNaN(date.getTime())
         ? null
         : date;
@@ -326,24 +315,19 @@ function parseTime(
     value: unknown,
 ): Date | null {
     const text = stringValue(value);
-
     if (!text) {
         return null;
     }
-
     const [hours, minutes] =
         text.split(':').map(Number);
-
     if (
         !Number.isFinite(hours) ||
         !Number.isFinite(minutes)
     ) {
         return null;
     }
-
     const date = new Date();
     date.setHours(hours, minutes, 0, 0);
-
     return date;
 }
 
@@ -353,7 +337,6 @@ function formatDateParameter(
     if (!value) {
         return null;
     }
-
     const year = value.getFullYear();
     const month = String(
         value.getMonth() + 1,
@@ -361,7 +344,6 @@ function formatDateParameter(
     const day = String(
         value.getDate(),
     ).padStart(2, '0');
-
     return `${year}-${month}-${day}`;
 }
 
@@ -371,15 +353,12 @@ function formatTimeParameter(
     if (!value) {
         return null;
     }
-
     const hours = String(
         value.getHours(),
     ).padStart(2, '0');
-
     const minutes = String(
         value.getMinutes(),
     ).padStart(2, '0');
-
     return `${hours}:${minutes}`;
 }
 
@@ -434,14 +413,11 @@ function loadIntoForm(
 
 async function loadJournal(): Promise<void> {
     requestController?.abort();
-
     const controller =
         new AbortController();
-
     requestController = controller;
     loading.value = true;
     pageError.value = '';
-
     try {
         const response =
             await axios.get<JournalResponse>(
@@ -460,14 +436,11 @@ async function loadJournal(): Promise<void> {
                     withCredentials: true,
                 },
             );
-
         journal.value =
             response.data.data;
-
         loadIntoForm(
             response.data.data,
         );
-
         selectedEvidence.value = null;
         evidenceUploadKey.value += 1;
         clearSignature();
@@ -482,7 +455,6 @@ async function loadJournal(): Promise<void> {
         ) {
             return;
         }
-
         pageError.value =
             getErrorMessage(
                 error,
@@ -557,10 +529,8 @@ async function saveJournal(
     if (!journal.value) {
         return false;
     }
-
     saving.value = true;
     pageError.value = '';
-
     try {
         const response =
             await axios.put<JournalResponse>(
@@ -578,14 +548,11 @@ async function saveJournal(
                     withCredentials: true,
                 },
             );
-
         journal.value =
             response.data.data;
-
         loadIntoForm(
             response.data.data,
         );
-
         if (showSuccessToast) {
             toast.add({
                 severity: 'success',
@@ -596,7 +563,6 @@ async function saveJournal(
                 life: 3500,
             });
         }
-
         return true;
     } catch (error: unknown) {
         pageError.value =
@@ -604,7 +570,6 @@ async function saveJournal(
                 error,
                 'Unable to save the daily journal.',
             );
-
         return false;
     } finally {
         saving.value = false;
@@ -622,16 +587,13 @@ async function uploadEvidence(): Promise<void> {
     if (!selectedEvidence.value) {
         return;
     }
-
     evidenceUploading.value = true;
     pageError.value = '';
-
     const formData = new FormData();
     formData.append(
         'evidence',
         selectedEvidence.value,
     );
-
     try {
         const response =
             await axios.post<JournalResponse>(
@@ -649,17 +611,13 @@ async function uploadEvidence(): Promise<void> {
                     withCredentials: true,
                 },
             );
-
         journal.value =
             response.data.data;
-
         loadIntoForm(
             response.data.data,
         );
-
         selectedEvidence.value = null;
         evidenceUploadKey.value += 1;
-
         toast.add({
             severity: 'success',
             summary: 'Evidence Updated',
@@ -683,11 +641,9 @@ function openEvidence(): void {
     const url = String(
         journal.value?.evidence_url ?? '',
     ).trim();
-
     if (!url) {
         return;
     }
-
     window.open(
         url,
         '_blank',
@@ -699,11 +655,9 @@ function openOfficerSignature(): void {
     const url = String(
         journal.value?.officer_signature_url ?? '',
     ).trim();
-
     if (!url) {
         return;
     }
-
     window.open(
         url,
         '_blank',
@@ -719,14 +673,11 @@ function pointerPosition(
 } | null {
     const canvas =
         signatureCanvas.value;
-
     if (!canvas) {
         return null;
     }
-
     const rectangle =
         canvas.getBoundingClientRect();
-
     return {
         x:
             (event.clientX -
@@ -747,32 +698,24 @@ function beginSignature(
     if (isValidated.value) {
         return;
     }
-
     const canvas =
         signatureCanvas.value;
-
     const position =
         pointerPosition(event);
-
     if (!canvas || !position) {
         return;
     }
-
     signatureDrawing.value = true;
     signaturePointerId.value =
         event.pointerId;
-
     canvas.setPointerCapture(
         event.pointerId,
     );
-
     const context =
         canvas.getContext('2d');
-
     if (!context) {
         return;
     }
-
     context.beginPath();
     context.moveTo(
         position.x,
@@ -790,24 +733,18 @@ function drawSignature(
     ) {
         return;
     }
-
     const canvas =
         signatureCanvas.value;
-
     const position =
         pointerPosition(event);
-
     if (!canvas || !position) {
         return;
     }
-
     const context =
         canvas.getContext('2d');
-
     if (!context) {
         return;
     }
-
     context.lineWidth = 4;
     context.lineCap = 'round';
     context.lineJoin = 'round';
@@ -817,7 +754,6 @@ function drawSignature(
         position.y,
     );
     context.stroke();
-
     signatureHasInk.value = true;
 }
 
@@ -830,13 +766,10 @@ function endSignature(
     ) {
         return;
     }
-
     const canvas =
         signatureCanvas.value;
-
     signatureDrawing.value = false;
     signaturePointerId.value = null;
-
     if (
         canvas?.hasPointerCapture(
             event.pointerId,
@@ -851,11 +784,9 @@ function endSignature(
 function clearSignature(): void {
     const canvas =
         signatureCanvas.value;
-
     if (canvas) {
         const context =
             canvas.getContext('2d');
-
         context?.clearRect(
             0,
             0,
@@ -863,7 +794,6 @@ function clearSignature(): void {
             canvas.height,
         );
     }
-
     signatureHasInk.value = false;
     signatureDrawing.value = false;
     signaturePointerId.value = null;
@@ -877,17 +807,14 @@ function signatureBlob(): Promise<Blob> {
         ) => {
             const canvas =
                 signatureCanvas.value;
-
             if (!canvas) {
                 reject(
                     new Error(
                         'Signature canvas is unavailable.',
                     ),
                 );
-
                 return;
             }
-
             canvas.toBlob(
                 (blob) => {
                     if (!blob) {
@@ -896,10 +823,8 @@ function signatureBlob(): Promise<Blob> {
                                 'Unable to create the STO signature image.',
                             ),
                         );
-
                         return;
                     }
-
                     resolve(blob);
                 },
                 'image/png',
@@ -916,35 +841,26 @@ async function signJournal(): Promise<void> {
     ) {
         return;
     }
-
     if (!form.value.sto_name.trim()) {
         pageError.value =
             'Enter the Supervising Officer name before signing.';
-
         return;
     }
-
     if (!signatureHasInk.value) {
         pageError.value =
             'The Supervising Officer signature is required.';
-
         return;
     }
-
     pageError.value = '';
     signing.value = true;
-
     try {
         const saved =
             await saveJournal(false);
-
         if (!saved) {
             return;
         }
-
         const blob =
             await signatureBlob();
-
         const signatureFile =
             new File(
                 [blob],
@@ -955,20 +871,16 @@ async function signJournal(): Promise<void> {
                         Date.now(),
                 },
             );
-
         const formData =
             new FormData();
-
         formData.append(
             'sto_name',
             form.value.sto_name.trim(),
         );
-
         formData.append(
             'signature',
             signatureFile,
         );
-
         const response =
             await axios.post<JournalResponse>(
                 `${API}/${encodeURIComponent(
@@ -985,16 +897,12 @@ async function signJournal(): Promise<void> {
                     withCredentials: true,
                 },
             );
-
         journal.value =
             response.data.data;
-
         loadIntoForm(
             response.data.data,
         );
-
         clearSignature();
-
         toast.add({
             severity: 'success',
             summary: 'Journal Signed',
@@ -1027,7 +935,6 @@ function getErrorMessage(
     if (!axios.isAxiosError(error)) {
         return fallback;
     }
-
     const responseData =
         error.response?.data as
             | {
@@ -1038,14 +945,12 @@ function getErrorMessage(
                   >;
               }
             | undefined;
-
     const firstValidationError =
         responseData?.errors
             ? Object.values(
                   responseData.errors,
               )[0]?.[0]
             : undefined;
-
     return (
         firstValidationError ||
         responseData?.message ||
@@ -1060,13 +965,12 @@ onMounted(() => {
 onBeforeUnmount(() => {
     requestController?.abort();
 });
+
 </script>
 
 <template>
     <Head title="Edit Daily Journal" />
-
     <Toast position="top-right" />
-
     <div
         class="flex h-full min-h-0 flex-1 flex-col gap-4 overflow-y-auto bg-[#F8FAFC] p-4 lg:p-5"
     >
@@ -1078,7 +982,6 @@ onBeforeUnmount(() => {
         >
             {{ pageError }}
         </Message>
-
         <Card
             class="!rounded-2xl !border !border-slate-200 !shadow-sm [&_.p-card-body]:!p-5 [&_.p-card-content]:!p-0"
         >
@@ -1097,7 +1000,6 @@ onBeforeUnmount(() => {
                             size="xlarge"
                             class="shrink-0"
                         />
-
                         <Avatar
                             v-else
                             :label="studentInitials"
@@ -1105,20 +1007,17 @@ onBeforeUnmount(() => {
                             size="xlarge"
                             class="shrink-0 !bg-blue-50 !font-bold !text-blue-600"
                         />
-
                         <div class="min-w-0">
                             <p
                                 class="text-xs font-semibold tracking-wide text-slate-400 uppercase"
                             >
                                 Daily Journal
                             </p>
-
                             <h1
                                 class="mt-1 truncate text-xl font-bold text-slate-800"
                             >
                                 {{ studentName }}
                             </h1>
-
                             <div
                                 class="mt-2 flex flex-wrap items-center gap-2"
                             >
@@ -1128,21 +1027,18 @@ onBeforeUnmount(() => {
                                     severity="info"
                                     rounded
                                 />
-
                                 <PrimeTag
                                     :value="journal?.department || 'No Department'"
                                     :severity="departmentSeverity()"
                                     :icon="departmentIcon()"
                                     rounded
                                 />
-
                                 <PrimeTag
                                     :value="isValidated ? 'Signed' : 'Pending'"
                                     :severity="isValidated ? 'success' : 'secondary'"
                                     :icon="isValidated ? 'pi pi-check-circle' : 'pi pi-clock'"
                                     rounded
                                 />
-
                                 <PrimeTag
                                     :value="journal?.duty_hours || '0 hr 0 min'"
                                     icon="pi pi-clock"
@@ -1152,7 +1048,6 @@ onBeforeUnmount(() => {
                             </div>
                         </div>
                     </div>
-
                     <div
                         class="flex flex-wrap items-center gap-2"
                     >
@@ -1165,7 +1060,6 @@ onBeforeUnmount(() => {
                             :disabled="saving || signing"
                             @click="goBack"
                         />
-
                         <Button
                             type="button"
                             label="Save Changes"
@@ -1179,7 +1073,6 @@ onBeforeUnmount(() => {
                 </div>
             </template>
         </Card>
-
         <div
             v-if="loading"
             class="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm font-medium text-slate-500 shadow-sm"
@@ -1187,7 +1080,6 @@ onBeforeUnmount(() => {
             <i class="pi pi-spin pi-spinner mr-2"></i>
             Loading daily journal...
         </div>
-
         <template v-else-if="journal">
             <Card
                 class="!rounded-2xl !border !border-slate-200 !shadow-sm [&_.p-card-body]:!p-5 [&_.p-card-content]:!p-0"
@@ -1200,7 +1092,6 @@ onBeforeUnmount(() => {
                         Journal Details
                     </div>
                 </template>
-
                 <template #content>
                     <div
                         class="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
@@ -1210,7 +1101,6 @@ onBeforeUnmount(() => {
                                 Journal Date
                                 <span class="text-red-500">*</span>
                             </label>
-
                             <DatePicker
                                 v-model="form.date_journal"
                                 date-format="M d, yy"
@@ -1222,13 +1112,11 @@ onBeforeUnmount(() => {
                                 input-class="w-full"
                             />
                         </div>
-
                         <div class="flex flex-col gap-2">
                             <label class="text-sm font-semibold text-slate-700">
                                 From Time
                                 <span class="text-red-500">*</span>
                             </label>
-
                             <DatePicker
                                 v-model="form.journal_time"
                                 time-only
@@ -1241,13 +1129,11 @@ onBeforeUnmount(() => {
                                 input-class="w-full"
                             />
                         </div>
-
                         <div class="flex flex-col gap-2">
                             <label class="text-sm font-semibold text-slate-700">
                                 To Time
                                 <span class="text-red-500">*</span>
                             </label>
-
                             <DatePicker
                                 v-model="form.journal_time_to"
                                 time-only
@@ -1260,13 +1146,11 @@ onBeforeUnmount(() => {
                                 input-class="w-full"
                             />
                         </div>
-
                         <div class="flex flex-col gap-2">
                             <label class="text-sm font-semibold text-slate-700">
                                 Name of Vessel
                                 <span class="text-red-500">*</span>
                             </label>
-
                             <InputText
                                 v-model="form.vessel_name"
                                 class="w-full"
@@ -1276,7 +1160,6 @@ onBeforeUnmount(() => {
                     </div>
                 </template>
             </Card>
-
             <Card
                 class="!rounded-2xl !border !border-slate-200 !shadow-sm [&_.p-card-body]:!p-5 [&_.p-card-content]:!p-0"
             >
@@ -1288,7 +1171,6 @@ onBeforeUnmount(() => {
                         {{ isDeck ? 'Navigation & Vessel Information' : 'Engine & Vessel Information' }}
                     </div>
                 </template>
-
                 <template #content>
                     <template v-if="isDeck">
                         <div class="space-y-4">
@@ -1306,7 +1188,6 @@ onBeforeUnmount(() => {
                                     <InputText v-model="form.ship_vicinity" :disabled="saving || signing" class="w-full" />
                                 </div>
                             </div>
-
                             <div class="grid gap-4 md:grid-cols-2">
                                 <div class="flex flex-col gap-2">
                                     <label class="text-sm font-semibold text-slate-700">Port Departure</label>
@@ -1317,7 +1198,6 @@ onBeforeUnmount(() => {
                                     <InputText v-model="form.port_dest" :disabled="saving || signing" class="w-full" />
                                 </div>
                             </div>
-
                             <div class="grid gap-4 md:grid-cols-2">
                                 <div class="flex flex-col gap-2">
                                     <label class="text-sm font-semibold text-slate-700">Position-Fixing Method</label>
@@ -1328,7 +1208,6 @@ onBeforeUnmount(() => {
                                     <InputText v-model="form.course_speed" :disabled="saving || signing" class="w-full" />
                                 </div>
                             </div>
-
                             <div class="grid gap-4 md:grid-cols-3">
                                 <div class="flex flex-col gap-2">
                                     <label class="text-sm font-semibold text-slate-700">F.O ROB</label>
@@ -1345,7 +1224,6 @@ onBeforeUnmount(() => {
                             </div>
                         </div>
                     </template>
-
                     <template v-else>
                         <div class="space-y-4">
                             <div class="grid gap-4 md:grid-cols-2">
@@ -1358,7 +1236,6 @@ onBeforeUnmount(() => {
                                     <InputText v-model="form.port_dest" :disabled="saving || signing" class="w-full" />
                                 </div>
                             </div>
-
                             <div class="grid gap-4 md:grid-cols-2">
                                 <div class="flex flex-col gap-2">
                                     <label class="text-sm font-semibold text-slate-700">F.O. Consumption</label>
@@ -1369,7 +1246,6 @@ onBeforeUnmount(() => {
                                     <InputText v-model="form.do_cons" :disabled="saving || signing" class="w-full" />
                                 </div>
                             </div>
-
                             <div class="grid gap-4 md:grid-cols-2">
                                 <div class="flex flex-col gap-2">
                                     <label class="text-sm font-semibold text-slate-700">Average RPM</label>
@@ -1384,7 +1260,6 @@ onBeforeUnmount(() => {
                     </template>
                 </template>
             </Card>
-
             <Card
                 class="!rounded-2xl !border !border-slate-200 !shadow-sm [&_.p-card-body]:!p-5 [&_.p-card-content]:!p-0"
             >
@@ -1396,7 +1271,6 @@ onBeforeUnmount(() => {
                         Watchkeeping Record
                     </div>
                 </template>
-
                 <template #content>
                     <div class="grid gap-4">
                         <div class="flex flex-col gap-2">
@@ -1404,7 +1278,6 @@ onBeforeUnmount(() => {
                                 {{ activityLabel }}
                                 <span class="text-red-500">*</span>
                             </label>
-
                             <Textarea
                                 v-model="form.activities"
                                 rows="5"
@@ -1413,12 +1286,10 @@ onBeforeUnmount(() => {
                                 :disabled="saving || signing"
                             />
                         </div>
-
                         <div class="flex flex-col gap-2">
                             <label class="text-sm font-semibold text-slate-700">
                                 Key Areas Learned During the Watch
                             </label>
-
                             <Textarea
                                 v-model="form.key_areas"
                                 rows="4"
@@ -1430,7 +1301,6 @@ onBeforeUnmount(() => {
                     </div>
                 </template>
             </Card>
-
             <Card
                 class="!rounded-2xl !border !border-slate-200 !shadow-sm [&_.p-card-body]:!p-5 [&_.p-card-content]:!p-0"
             >
@@ -1442,7 +1312,6 @@ onBeforeUnmount(() => {
                         Objective Evidence
                     </div>
                 </template>
-
                 <template #content>
                     <div
                         class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]"
@@ -1459,7 +1328,6 @@ onBeforeUnmount(() => {
                                     image-class="max-h-[360px] w-full rounded-xl object-contain"
                                     class="block w-full"
                                 />
-
                                 <div
                                     v-else
                                     class="flex min-h-[220px] flex-col items-center justify-center gap-3 text-center"
@@ -1469,7 +1337,6 @@ onBeforeUnmount(() => {
                                         {{ journal.file_name || 'Objective Evidence' }}
                                     </p>
                                 </div>
-
                                 <div
                                     class="mt-4 flex flex-wrap items-center gap-2"
                                 >
@@ -1483,7 +1350,6 @@ onBeforeUnmount(() => {
                                     />
                                 </div>
                             </template>
-
                             <div
                                 v-else
                                 class="flex min-h-[220px] flex-col items-center justify-center gap-2 text-center text-slate-500"
@@ -1492,18 +1358,15 @@ onBeforeUnmount(() => {
                                 <p class="font-semibold">No objective evidence uploaded</p>
                             </div>
                         </div>
-
                         <div
                             class="rounded-2xl border border-slate-200 bg-white p-4"
                         >
                             <p class="font-semibold text-slate-800">
                                 {{ journal.evidence_url ? 'Replace Evidence' : 'Upload Evidence' }}
                             </p>
-
                             <p class="mt-1 text-xs text-slate-500">
                                 Administrators may correct objective evidence even after STO validation.
                             </p>
-
                             <div class="mt-4 space-y-3">
                                 <FileUpload
                                     :key="evidenceUploadKey"
@@ -1519,14 +1382,12 @@ onBeforeUnmount(() => {
                                     class="w-full"
                                     @select="handleEvidenceSelect"
                                 />
-
                                 <p
                                     v-if="selectedEvidence"
                                     class="break-all text-sm font-medium text-slate-600"
                                 >
                                     Selected: {{ selectedEvidence.name }}
                                 </p>
-
                                 <Button
                                     type="button"
                                     label="Upload Evidence"
@@ -1542,7 +1403,6 @@ onBeforeUnmount(() => {
                     </div>
                 </template>
             </Card>
-
             <Card
                 class="!rounded-2xl !border !border-slate-200 !shadow-sm [&_.p-card-body]:!p-5 [&_.p-card-content]:!p-0"
             >
@@ -1552,7 +1412,6 @@ onBeforeUnmount(() => {
                         Supervising Officer Signature
                     </div>
                 </template>
-
                 <template #content>
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
                         <div class="flex flex-wrap items-center justify-between gap-3">
@@ -1564,7 +1423,6 @@ onBeforeUnmount(() => {
                                     The stored STO signature validates this journal.
                                 </p>
                             </div>
-
                             <PrimeTag
                                 :value="isValidated ? 'Signed' : 'Signature Required'"
                                 :severity="isValidated ? 'success' : 'warn'"
@@ -1572,7 +1430,6 @@ onBeforeUnmount(() => {
                                 rounded
                             />
                         </div>
-
                         <div class="mt-4 flex flex-col gap-2">
                             <label
                                 for="journal-sto-name"
@@ -1581,7 +1438,6 @@ onBeforeUnmount(() => {
                                 Supervising Officer Name
                                 <span v-if="!isValidated" class="text-red-500">*</span>
                             </label>
-
                             <InputText
                                 id="journal-sto-name"
                                 v-model="form.sto_name"
@@ -1590,7 +1446,6 @@ onBeforeUnmount(() => {
                                 placeholder="Enter Master or Qualified Officer name"
                             />
                         </div>
-
                         <template v-if="isValidated">
                             <div
                                 class="mt-4 flex min-h-[180px] items-center justify-center rounded-xl border border-slate-200 bg-white p-4"
@@ -1602,7 +1457,6 @@ onBeforeUnmount(() => {
                                     preview
                                     image-class="max-h-[140px] max-w-full object-contain"
                                 />
-
                                 <div
                                     v-else
                                     class="text-center text-sm text-slate-400"
@@ -1619,7 +1473,6 @@ onBeforeUnmount(() => {
                                     </p>
                                 </div>
                             </div>
-
                             <div
                                 v-if="journal.officer_signature_url"
                                 class="mt-3 flex justify-end"
@@ -1635,12 +1488,10 @@ onBeforeUnmount(() => {
                                 />
                             </div>
                         </template>
-
                         <template v-else>
                             <Message severity="warn" :closable="false" class="mt-4">
                                 Review the journal information before saving the STO signature.
                             </Message>
-
                             <div
                                 class="mt-4 overflow-hidden rounded-xl border border-slate-300 bg-white"
                             >
@@ -1656,7 +1507,6 @@ onBeforeUnmount(() => {
                                     @pointerleave="endSignature"
                                 ></canvas>
                             </div>
-
                             <div class="mt-3 flex flex-wrap justify-between gap-2">
                                 <Button
                                     type="button"
@@ -1667,7 +1517,6 @@ onBeforeUnmount(() => {
                                     :disabled="signing"
                                     @click="clearSignature"
                                 />
-
                                 <Button
                                     type="button"
                                     label="Save STO Signature & Validate"
@@ -1682,7 +1531,6 @@ onBeforeUnmount(() => {
                     </div>
                 </template>
             </Card>
-
             <div
                 class="flex justify-end gap-2 pb-2"
             >
@@ -1695,7 +1543,6 @@ onBeforeUnmount(() => {
                     :disabled="saving || signing"
                     @click="goBack"
                 />
-
                 <Button
                     type="button"
                     label="Save Changes"
