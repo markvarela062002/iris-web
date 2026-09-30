@@ -1,61 +1,30 @@
 <script setup lang="ts">
+import { Link, usePage } from '@inertiajs/vue3';
 
 import {
-
-    Link,
-
-    usePage,
-
-} from '@inertiajs/vue3';
-
-import {
-
     Activity,
-
     BarChart3,
-
     Bell,
-
     BookOpen,
-
     Calendar,
-
     CheckCircle,
-
     CircleHelp,
-
     ClipboardCheck,
-
     Database,
-
     FileText,
-
     History,
-
     LayoutGrid,
-
     List,
-
     Megaphone,
-
     MessageSquare,
-
     Monitor,
-
     Notebook,
-
     Package,
-
     RefreshCw,
-
     Settings,
-
     Upload,
-
     User,
-
     Users,
-
 } from '@lucide/vue';
 
 import { computed } from 'vue';
@@ -67,81 +36,50 @@ import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 
 import {
-
     Sidebar,
-
     SidebarContent,
-
     SidebarFooter,
-
     SidebarHeader,
-
     SidebarMenu,
-
     SidebarMenuButton,
-
     SidebarMenuItem,
-
 } from '@/components/ui/sidebar';
 
 import { dashboard } from '@/routes';
 
-import type {
+import type { NavItem, SharedData } from '@/types';
 
-    NavItem,
+type AuthenticatedAccount = SharedData['auth']['user'] & {
+    account_type?: string | null;
 
-    SharedData,
-
-} from '@/types';
-
-type AuthenticatedAccount =
-
-    SharedData['auth']['user'] & {
-
-        account_type?: string | null;
-
-        role?: string | null;
-
-    };
+    role?: string | null;
+};
 
 const page = usePage<SharedData>();
 
 const authenticatedAccount = computed(() => {
-
-    return page.props.auth
-
-        .user as AuthenticatedAccount;
-
+    return page.props.auth.user as AuthenticatedAccount;
 });
 
 const isCadet = computed(() => {
+    return (
+        String(authenticatedAccount.value?.role ?? '')
+            .trim()
 
-    return String(
-
-        authenticatedAccount.value?.role ?? '',
-
-    )
-
-        .trim()
-
-        .toLowerCase() === 'cadet';
-
+            .toLowerCase() === 'cadet'
+    );
 });
 
 const mainNavItems: NavItem[] = [
-
     {
-
         title: 'Dashboard',
 
         href: dashboard(),
 
         icon: LayoutGrid,
-
     },
 
     {
-
         title: 'Alerts',
 
         href: '#',
@@ -149,43 +87,33 @@ const mainNavItems: NavItem[] = [
         icon: Bell,
 
         items: [
-
             {
-
                 title: 'Calendar',
 
                 href: '/alerts/calendar/datatable',
 
                 icon: Calendar,
-
             },
 
             {
-
                 title: 'Announcements',
 
                 href: '/alerts/announcements/datatable',
 
                 icon: Megaphone,
-
             },
 
             {
-
                 title: 'Messages',
 
                 href: '/alerts/messages',
 
                 icon: MessageSquare,
-
             },
-
         ],
-
     },
 
     {
-
         title: 'Assessments',
 
         href: '#',
@@ -193,53 +121,41 @@ const mainNavItems: NavItem[] = [
         icon: ClipboardCheck,
 
         items: [
-
             {
-
                 title: 'Theoretical - Internal',
 
                 href: '/dashboard/theoretical-internal',
 
                 icon: BookOpen,
-
             },
 
             {
-
                 title: 'Theoretical - External',
 
                 href: '/dashboard/theoretical-external',
 
                 icon: CircleHelp,
-
             },
 
             {
-
                 title: 'Practical - Internal',
 
                 href: '/dashboard/practical-internal',
 
                 icon: ClipboardCheck,
-
             },
 
             {
-
                 title: 'Practical - External',
 
                 href: '/dashboard/practical-external',
 
                 icon: ClipboardCheck,
-
             },
-
         ],
-
     },
 
     {
-
         title: 'Monitoring',
 
         href: '#',
@@ -247,63 +163,49 @@ const mainNavItems: NavItem[] = [
         icon: Monitor,
 
         items: [
-
             {
-
                 title: 'Activity Updates',
 
                 href: '/monitoring/activity-updates',
 
                 icon: Activity,
-
             },
 
             {
-
                 title: 'Uploaded Documents',
 
                 href: '/monitoring/uploaded-documents',
 
                 icon: Upload,
-
             },
 
             {
-
                 title: 'Training Record Book (OTG)',
 
                 href: '/monitoring/otg-updates',
 
                 icon: BookOpen,
-
             },
 
             {
-
                 title: 'Daily Journal',
 
                 href: '/monitoring/daily-journals',
 
                 icon: Notebook,
-
             },
 
             {
-
                 title: 'Reports',
 
                 href: '/monitoring/reports',
 
                 icon: FileText,
-
             },
-
         ],
-
     },
 
     {
-
         title: 'Databases',
 
         href: '#',
@@ -311,43 +213,33 @@ const mainNavItems: NavItem[] = [
         icon: Database,
 
         items: [
-
             {
-
                 title: 'Students',
 
                 href: '/databases/students/datatable',
 
                 icon: User,
-
             },
 
             {
-
                 title: 'Batch Upload',
 
                 href: '/databases/batch-upload/datatable',
 
                 icon: Upload,
-
             },
 
             {
-
                 title: 'Student List Report',
 
                 href: '/databases/student-list-report/datatable',
 
                 icon: Users,
-
             },
-
         ],
-
     },
 
     {
-
         title: 'Setup',
 
         href: '#',
@@ -355,49 +247,39 @@ const mainNavItems: NavItem[] = [
         icon: Settings,
 
         items: [
-
             {
-            title: 'Alerts Setup',
-            href: '/setup/alert-setup/datatable',
-            icon: Bell,
+                title: 'Alerts Setup',
+                href: '/setup/alert-setup/datatable',
+                icon: Bell,
             },
 
             {
-
                 title: 'Activity Types Setup',
 
                 href: '/setup/activity-types/datatable',
 
                 icon: Activity,
-
             },
 
             {
-
                 title: 'Requirement Types Setup',
 
                 href: '/setup/requirement-types/datatable',
 
                 icon: List,
-
             },
 
             {
-
                 title: 'TRB - OTG Content Setup',
 
                 href: '/setup/trb-otg-content/datatable',
 
                 icon: BookOpen,
-
             },
-
         ],
-
     },
 
     {
-
         title: 'Assessment Setup',
 
         href: '#',
@@ -405,103 +287,73 @@ const mainNavItems: NavItem[] = [
         icon: Settings,
 
         items: [
-
             {
-
                 title: 'Exam Sessions',
 
                 href: '/assessment-setup/exam-session',
 
                 icon: ClipboardCheck,
-
             },
 
             {
-
                 title: 'Exam Packages',
 
                 href: '/assessment-setup/exam-package',
 
                 icon: Package,
-
             },
 
             {
-
                 title: 'Question Bank',
 
                 href: '/assessment-setup/question-bank',
 
                 icon: CircleHelp,
-
             },
 
             {
-
                 title: 'Question Upload',
 
-                href:
-
-                    '/assessment-setup/question-bank-upload',
+                href: '/assessment-setup/question-bank-upload',
 
                 icon: Upload,
-
             },
 
             {
-
                 title: 'Question Activation',
 
-                href:
-
-                    '/assessment-setup/question-bank-activation',
+                href: '/assessment-setup/question-bank-activation',
 
                 icon: CheckCircle,
-
             },
 
             {
-
                 title: 'Subject Batch Update',
 
-                href:
-
-                    '/assessment-setup/subject-batch',
+                href: '/assessment-setup/subject-batch',
 
                 icon: RefreshCw,
-
             },
 
             {
-
                 title: 'Rubric Setup',
 
-                href:
-
-                    '/assessment-setup/rubric-setup',
+                href: '/assessment-setup/rubric-setup',
 
                 icon: List,
-
             },
 
             {
-
                 title: 'Practical Assessment Setup',
 
-                href:
-
-                    '/assessment-setup/practical-assessment-setup',
+                href: '/assessment-setup/practical-assessment-setup',
 
                 icon: ClipboardCheck,
-
             },
-
         ],
-
     },
 
     {
-
         title: 'Assessment Reports',
 
         href: '#',
@@ -509,107 +361,71 @@ const mainNavItems: NavItem[] = [
         icon: FileText,
 
         items: [
-
             {
-
                 title: 'Exam Packages Summary',
 
-                href:
-
-                    '/assessment-reports/exam-packages-summary',
+                href: '/assessment-reports/exam-packages-summary',
 
                 icon: Package,
-
             },
 
             {
-
                 title: 'Exam Results Summary',
 
-                href:
-
-                    '/assessment-reports/exam-results-summary',
+                href: '/assessment-reports/exam-results-summary',
 
                 icon: BarChart3,
-
             },
 
             {
-
                 title: 'Correct Answer Frequency',
 
-                href:
-
-                    '/assessment-reports/correct-answer-frequency',
+                href: '/assessment-reports/correct-answer-frequency',
 
                 icon: CheckCircle,
-
             },
 
             {
-
                 title: 'Difficulty Level',
 
-                href:
-
-                    '/assessment-reports/difficulty-level',
+                href: '/assessment-reports/difficulty-level',
 
                 icon: BarChart3,
-
             },
 
             {
-
                 title: 'Discriminability Index',
 
-                href:
-
-                    '/assessment-reports/discriminability-index',
+                href: '/assessment-reports/discriminability-index',
 
                 icon: BarChart3,
-
             },
 
             {
-
                 title: 'Item Analysis',
 
-                href:
-
-                    '/assessment-reports/item-analysis',
+                href: '/assessment-reports/item-analysis',
 
                 icon: ClipboardCheck,
-
             },
 
             {
-
                 title: 'Question List',
 
-                href:
-
-                    '/assessment-reports/question-list',
+                href: '/assessment-reports/question-list',
 
                 icon: List,
-
             },
 
             {
-
                 title: 'Item Analysis History',
 
-                href:
-
-                    '/assessment-reports/item-analysis-history',
+                href: '/assessment-reports/item-analysis-history',
 
                 icon: History,
-
             },
-
         ],
-
     },
-
 ];
 
 /*
@@ -621,22 +437,16 @@ const mainNavItems: NavItem[] = [
  */
 
 const visibleNavItems = computed<NavItem[]>(() => {
-
     if (isCadet.value) {
-
         return [
-
             {
-
                 title: 'Dashboard',
 
                 href: '/student-dashboard',
 
                 icon: LayoutGrid,
-
             },
             {
-
                 title: 'Alerts',
 
                 href: '#',
@@ -644,356 +454,155 @@ const visibleNavItems = computed<NavItem[]>(() => {
                 icon: Bell,
 
                 items: [
-
                     {
-
                         title: 'Calendar',
 
                         href: '/alerts/calendar/student/datatable',
 
                         icon: Calendar,
-
                     },
 
                     {
-
                         title: 'Announcements',
 
                         href: '/alerts/announcements/student/datatable',
 
                         icon: Megaphone,
-
                     },
 
                     {
-
                         title: 'Messages',
 
                         href: '/alerts/messages/student',
 
                         icon: MessageSquare,
-
                     },
-
                 ],
-
             },
 
-            
-            {   title: 'Updates',
+            {
+                title: 'Assessments',
+                href: '#',
+                icon: ClipboardCheck,
+                items: [
+                    {
+                        title: 'Theoretical Assessments',
+                        href: '/assessments/theoretical-internal/student/datatable',
+                        icon: BookOpen,
+                    },
+
+                    {
+                        title: 'Practical Assessments',
+                        href: '/assessments/practical-internal/student/datatable',
+                        icon: ClipboardCheck,
+                    },
+                ],
+            },
+
+            {
+                title: 'Updates',
 
                 href: '#',
 
                 icon: Monitor,
 
                 items: [
+                    {
+                        title: 'Activity Updates',
 
-                {
+                        href: '/monitoring/activity-updates/student/datatable',
 
-                    title: 'Activity Updates',
+                        icon: Activity,
+                    },
 
-                    href: '/monitoring/activity-updates/student/datatable',
+                    {
+                        title: 'Uploaded Documents',
 
-                    icon: Activity,
+                        href: '/monitoring/uploaded-documents/student/datatable',
 
-                },
+                        icon: Upload,
+                    },
 
-                {
+                    {
+                        title: 'Training Record Book (OTG)',
 
-                    title: 'Uploaded Documents',
+                        href: '/monitoring/otg-updates/student/datatable',
 
-                    href: '/monitoring/uploaded-documents/student/datatable',
+                        icon: BookOpen,
+                    },
 
-                    icon: Upload,
+                    {
+                        title: 'Daily Journal',
 
-                },
+                        href: '/monitoring/daily-journals/student/datatable',
 
-                {
-
-                    title: 'Training Record Book (OTG)',
-
-                    href: '/monitoring/otg-updates/student/datatable',
-
-                    icon: BookOpen,
-
-                },
-
-                {
-
-                    title: 'Daily Journal',
-
-                    href: '/monitoring/daily-journals/student/datatable',
-
-                    icon: Notebook,
-
-                },
-            ],
-            }
-
+                        icon: Notebook,
+                    },
+                ],
+            },
         ];
-
     }
 
     return mainNavItems;
-
 });
 
 const logoDestination = computed(() => {
-
-    return isCadet.value
-
-        ? '/student-dashboard'
-
-        : dashboard();
-
+    return isCadet.value ? '/student-dashboard' : dashboard();
 });
-
 </script>
 
 <template>
-
     <Sidebar
-
         collapsible="icon"
-
         variant="sidebar"
-
-        class="
-
-            overflow-hidden
-
-            rounded-r-2xl
-
-            border-r-0
-
-            [&_[data-sidebar=sidebar]]:!border-0
-
-            [&_[data-sidebar=sidebar]]:!bg-[#0B223D]
-
-            [&_[data-sidebar=sidebar]]:!text-white
-
-            [&_[data-sidebar=group-label]]:!text-[10px]
-
-            [&_[data-sidebar=group-label]]:!font-bold
-
-            [&_[data-sidebar=group-label]]:!tracking-[0.15em]
-
-            [&_[data-sidebar=group-label]]:!text-slate-400
-
-            [&_[data-sidebar=group-label]]:uppercase
-
-            [&_[data-sidebar=menu-button]]:!rounded-xl
-
-            [&_[data-sidebar=menu-button]]:!text-slate-200
-
-            [&_[data-sidebar=menu-button]]:transition-all
-
-            [&_[data-sidebar=menu-button]]:duration-200
-
-            [&_[data-sidebar=menu-button]:hover]:!bg-white/10
-
-            [&_[data-sidebar=menu-button]:hover]:!text-white
-
-            [&_[data-sidebar=menu-button][data-active=true]]:!bg-[#377EC0]
-
-            [&_[data-sidebar=menu-button][data-active=true]]:!font-semibold
-
-            [&_[data-sidebar=menu-button][data-active=true]]:!text-white
-
-            [&_[data-sidebar=menu-sub]]:!border-white/15
-
-            [&_[data-sidebar=menu-sub-button]]:!rounded-lg
-
-            [&_[data-sidebar=menu-sub-button]]:!text-slate-300
-
-            [&_[data-sidebar=menu-sub-button]]:transition-all
-
-            [&_[data-sidebar=menu-sub-button]]:duration-200
-
-            [&_[data-sidebar=menu-sub-button]:hover]:!bg-white/10
-
-            [&_[data-sidebar=menu-sub-button]:hover]:!text-white
-
-            [&_[data-sidebar=menu-sub-button][data-active=true]]:!bg-[#377EC0]/25
-
-            [&_[data-sidebar=menu-sub-button][data-active=true]]:!font-semibold
-
-            [&_[data-sidebar=menu-sub-button][data-active=true]]:!text-blue-200
-
-            [&_[data-sidebar=menu-sub-button]_svg]:!text-current
-
-            [&_[data-sidebar=menu-button]_svg]:!text-current
-
-            [&_[data-sidebar=separator]]:!bg-white/10
-
-        "
-
+        class="overflow-hidden rounded-r-2xl border-r-0 [&_[data-sidebar=group-label]]:!text-[10px] [&_[data-sidebar=group-label]]:!font-bold [&_[data-sidebar=group-label]]:!tracking-[0.15em] [&_[data-sidebar=group-label]]:!text-slate-400 [&_[data-sidebar=group-label]]:uppercase [&_[data-sidebar=menu-button]]:!rounded-xl [&_[data-sidebar=menu-button]]:!text-slate-200 [&_[data-sidebar=menu-button]]:transition-all [&_[data-sidebar=menu-button]]:duration-200 [&_[data-sidebar=menu-button]_svg]:!text-current [&_[data-sidebar=menu-button]:hover]:!bg-white/10 [&_[data-sidebar=menu-button]:hover]:!text-white [&_[data-sidebar=menu-button][data-active=true]]:!bg-[#377EC0] [&_[data-sidebar=menu-button][data-active=true]]:!font-semibold [&_[data-sidebar=menu-button][data-active=true]]:!text-white [&_[data-sidebar=menu-sub-button]]:!rounded-lg [&_[data-sidebar=menu-sub-button]]:!text-slate-300 [&_[data-sidebar=menu-sub-button]]:transition-all [&_[data-sidebar=menu-sub-button]]:duration-200 [&_[data-sidebar=menu-sub-button]_svg]:!text-current [&_[data-sidebar=menu-sub-button]:hover]:!bg-white/10 [&_[data-sidebar=menu-sub-button]:hover]:!text-white [&_[data-sidebar=menu-sub-button][data-active=true]]:!bg-[#377EC0]/25 [&_[data-sidebar=menu-sub-button][data-active=true]]:!font-semibold [&_[data-sidebar=menu-sub-button][data-active=true]]:!text-blue-200 [&_[data-sidebar=menu-sub]]:!border-white/15 [&_[data-sidebar=separator]]:!bg-white/10 [&_[data-sidebar=sidebar]]:!border-0 [&_[data-sidebar=sidebar]]:!bg-[#0B223D] [&_[data-sidebar=sidebar]]:!text-white"
     >
-
         <!-- Logo Header -->
 
-        <SidebarHeader
-
-            class="border-b border-white/10 p-3"
-
-        >
-
+        <SidebarHeader class="border-b border-white/10 p-3">
             <SidebarMenu>
-
                 <SidebarMenuItem>
-
                     <SidebarMenuButton
-
                         size="lg"
-
                         as-child
-
                         tooltip="Student Activity Monitoring"
-
-                        class="
-
-                            h-28
-
-                            justify-center
-
-                            rounded-xl
-
-                            bg-transparent
-
-                            p-2
-
-                            hover:bg-white/5
-
-                            group-data-[collapsible=icon]:h-14
-
-                            group-data-[collapsible=icon]:p-1
-
-                        "
-
+                        class="h-28 justify-center rounded-xl bg-transparent p-2 group-data-[collapsible=icon]:h-14 group-data-[collapsible=icon]:p-1 hover:bg-white/5"
                     >
-
                         <Link
-
                             :href="logoDestination"
-
-                            class="
-
-                                flex
-
-                                h-full
-
-                                w-full
-
-                                flex-col
-
-                                items-center
-
-                                justify-center
-
-                                gap-2
-
-                            "
-
+                            class="flex h-full w-full flex-col items-center justify-center gap-2"
                         >
-
                             <div
-
-                                class="
-
-                                    flex
-
-                                    size-20
-
-                                    shrink-0
-
-                                    items-center
-
-                                    justify-center
-
-                                    group-data-[collapsible=icon]:size-11
-
-                                "
-
+                                class="flex size-20 shrink-0 items-center justify-center group-data-[collapsible=icon]:size-11"
                             >
-
                                 <AppLogo />
-
                             </div>
 
                             <p
-
-                                class="
-
-                                    text-center
-
-                                    text-[10px]
-
-                                    font-semibold
-
-                                    tracking-[0.16em]
-
-                                    whitespace-nowrap
-
-                                    text-blue-100/70
-
-                                    uppercase
-
-                                    group-data-[collapsible=icon]:hidden
-
-                                "
-
+                                class="text-center text-[10px] font-semibold tracking-[0.16em] whitespace-nowrap text-blue-100/70 uppercase group-data-[collapsible=icon]:hidden"
                             >
-
                                 Student Activity Monitoring
-
                             </p>
-
                         </Link>
-
                     </SidebarMenuButton>
-
                 </SidebarMenuItem>
-
             </SidebarMenu>
-
         </SidebarHeader>
 
         <!-- Navigation -->
 
         <SidebarContent
-
-            class="
-
-                px-2
-
-                py-3
-
-                [scrollbar-color:rgba(255,255,255,0.12)_transparent]
-
-                [scrollbar-width:thin]
-
-            "
-
+            class="[scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.12)_transparent] px-2 py-3"
         >
-
             <NavMain :items="visibleNavItems" />
-
         </SidebarContent>
 
         <!-- User Footer -->
 
-        <SidebarFooter
-
-            class="border-t border-white/10 bg-white/[0.025] p-2"
-
-        >
-
+        <SidebarFooter class="border-t border-white/10 bg-white/[0.025] p-2">
             <NavUser />
-
         </SidebarFooter>
-
     </Sidebar>
 
     <slot />
-
 </template>
