@@ -1105,7 +1105,7 @@ onBeforeUnmount(() => {
 
                     [&_.p-datatable-thead>tr>th]:!border-slate-200
 
-                    [&_.p-datatable-thead>tr>th]:!bg-slate-50/80
+                    [&_.p-datatable-thead>tr>th]:!bg-slate-50
 
                     [&_.p-datatable-thead>tr>th]:!px-4
 
@@ -1139,8 +1139,7 @@ onBeforeUnmount(() => {
 
                     [&_.p-datatable-tbody>tr>td]:duration-200
 
-                    [&_.p-datatable-tbody>tr:hover>td]:!bg-blue-50/60
-
+                    [&_.p-datatable-tbody>tr:hover>td]:!bg-blue-50
                 "
 
                 @sort="handleSort"
