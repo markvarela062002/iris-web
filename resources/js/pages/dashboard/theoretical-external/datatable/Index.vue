@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 
 import axios from 'axios';
 
@@ -296,6 +296,9 @@ const courses = ref<Option[]>([]);
 const sessions = ref<Option[]>([]);
 
 const createVisible = ref(false);
+const editingId = ref<string | null>(null);
+const editLoading = ref(false);
+let editRequestId = 0;
 const creating = ref(false);
 const createError = ref('');
 const createSuccess = ref('');
@@ -318,29 +321,8 @@ const timeOptions = Array.from({ length: 32 }, (_, index) => {
     const hour = 8 + Math.floor(index / 2);
     return `${String(hour).padStart(2, '0')}:${index % 2 ? '30' : '00'}`;
 }).filter((value) => value <= '23:30');
-function openCreate(): void {
-    createError.value = '';
-    createVisible.value = true;
-}
-async function saveCreate(): Promise<void> {
-    createError.value = '';
-    creating.value = true;
-    try {
-        const { data } = await axios.post(
-            '/api/v1/dashboard/theoretical-external',
-            {
-                ...createForm.value,
-                access_exp_date: formatLocalDate(
-                    createForm.value.access_exp_date,
-                ),
-                access_exp_date_to: formatLocalDate(
-                    createForm.value.access_exp_date_to,
-                ),
-            },
-        );
-        createVisible.value = false;
-        createSuccess.value = data.message ?? 'The record has been saved.';
-        createForm.value = {
+function resetForm(): void {
+createForm.value = {
             email: '',
             fname: '',
             mname: '',
@@ -355,6 +337,93 @@ async function saveCreate(): Promise<void> {
             access_exp_date_to: new Date(),
             access_exp_time_to: '23:30',
         };
+}
+
+function parseAccessDate(value: unknown): Date {
+    const parts = String(value ?? '').slice(0, 10).split('-').map(Number);
+    const date = new Date(parts[0], parts[1] - 1, parts[2]);
+    if (!parts[0] || Number.isNaN(date.getTime())) {
+        throw new Error('This assessment has an invalid access date.');
+    }
+    return date;
+}
+
+async function openEdit(row: DataTableRow): Promise<void> {
+    if (creating.value) return;
+    const requestId = ++editRequestId;
+    editingId.value = String(row.id);
+    resetForm();
+    createError.value = '';
+    createVisible.value = true;
+    editLoading.value = true;
+    try {
+        const { data } = await axios.get(
+            `/api/v1/dashboard/theoretical-external/${encodeURIComponent(String(row.id))}/edit`,
+        );
+        if (requestId !== editRequestId || !createVisible.value) return;
+        const record = data.assessment;
+        createForm.value = {
+            email: String(record.email ?? ''),
+            fname: String(record.fname ?? ''),
+            mname: String(record.mname ?? ''),
+            lname: String(record.lname ?? ''),
+            bs_course_id: String(record.bs_course_id ?? ''),
+            bs_exam_session_id: String(record.bs_exam_session_id ?? ''),
+            exam_type: String(record.exam_type ?? 'New'),
+            duration: Number(record.duration ?? 0),
+            proctor_name: String(record.proctor_name ?? ''),
+            access_exp_date: parseAccessDate(record.access_exp_date),
+            access_exp_time: String(record.access_exp_time ?? '').slice(0, 5),
+            access_exp_date_to: parseAccessDate(record.access_exp_date_to),
+            access_exp_time_to: String(record.access_exp_time_to ?? '').slice(0, 5),
+        };
+    } catch (error: unknown) {
+        if (requestId !== editRequestId) return;
+        createError.value = axios.isAxiosError(error)
+            ? (error.response?.data?.message ?? 'Unable to load the assessment.')
+            : (error instanceof Error ? error.message : 'Unable to load the assessment.');
+        createVisible.value = false;
+        createSuccess.value = '';
+        window.alert(createError.value);
+    } finally {
+        if (requestId === editRequestId) editLoading.value = false;
+    }
+}
+
+function openCreate(): void {
+    if (creating.value) return;
+    editRequestId++;
+    editingId.value = null;
+    editLoading.value = false;
+    resetForm();
+    createError.value = '';
+    createVisible.value = true;
+}
+async function saveCreate(): Promise<void> {
+    if (editLoading.value || creating.value) return;
+    createError.value = '';
+    creating.value = true;
+    try {
+        const { data } = await axios.request({
+            method: editingId.value ? 'put' : 'post',
+            url: editingId.value
+                ? `/api/v1/dashboard/theoretical-external/${encodeURIComponent(editingId.value)}`
+                : '/api/v1/dashboard/theoretical-external',
+            data:
+            {
+                ...createForm.value,
+                access_exp_date: formatLocalDate(
+                    createForm.value.access_exp_date,
+                ),
+                access_exp_date_to: formatLocalDate(
+                    createForm.value.access_exp_date_to,
+                ),
+            },
+        });
+        createVisible.value = false;
+        createSuccess.value = data.message ?? 'The record has been saved.';
+        resetForm();
+        editingId.value = null;
         first.value = 0;
         await loadAssessments(1);
     } catch (error: unknown) {
@@ -740,15 +809,7 @@ function handleAction(
     }
 
     if (action === 'edit') {
-        /*
-
-         * Temporary destination until the
-
-         * External edit page is migrated.
-
-         */
-
-        router.visit('/dashboard');
+        void openEdit(assessment);
     }
 }
 
@@ -976,7 +1037,9 @@ onMounted(() => {
             v-model:visible="createVisible"
             modal
             :draggable="false"
-            header="Add External Assessment"
+            :header="editingId ? 'Edit External Assessment' : 'Add External Assessment'"
+            :closable="!creating"
+            :close-on-escape="!creating"
             class="w-[95vw] max-w-3xl"
         >
                     <div
@@ -990,7 +1053,11 @@ onMounted(() => {
                     required fields.</span
                 >
             </div>  
+            <div v-if="editLoading" class="flex items-center justify-center gap-2 py-8">
+                <i class="pi pi-spin pi-spinner"></i> Loading assessment…
+            </div>
             <form
+                v-else
                 class="grid grid-cols-1 gap-4 md:grid-cols-2"
                 @submit.prevent="saveCreate"
             >
@@ -1129,12 +1196,14 @@ onMounted(() => {
                         type="button"
                         label="Cancel"
                         severity="secondary"
+                        :disabled="creating"
                         @click="createVisible = false"
                     /><Button
                         type="submit"
                         label="Save"
                         icon="pi pi-check"
                         :loading="creating"
+                        :disabled="editLoading"
                     />
                 </div>
             </form>

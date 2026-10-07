@@ -1183,6 +1183,16 @@ class TheoreticalAssessmentsController extends Controller
             ->where('bs_person_exam.id', $assessmentId)
             ->select([
                 'bs_person_exam.id',
+                'bs_person_exam.person_id',
+                'bs_person_exam.bs_course_id',
+                'bs_person_exam.bs_exam_session_id',
+                'bs_person_exam.duration',
+                'bs_person_exam.proctor_name',
+                'bs_person_exam.access_exp_date',
+                'bs_person_exam.access_exp_time',
+                'bs_person_exam.access_exp_date_to',
+                'bs_person_exam.access_exp_time_to',
+                'bs_person_exam.ended',
                 'bs_person_exam.exam_type',
                 'bs_person_exam.started',
                 'bs_person_exam.score',
@@ -2418,6 +2428,187 @@ class TheoreticalAssessmentsController extends Controller
                 'email_sent' => $emailSent,
             ],
         ], Response::HTTP_CREATED);
+    }
+
+
+    /**
+     * Update an unstarted enrolled assessment and its topic assignments.
+     * Payment, permit and result fields are preserved.
+     */
+    public function update(Request $request, string $assessmentId): JsonResponse
+    {
+        $db = $this->resolveSchoolConnection($request);
+        if ($db instanceof JsonResponse) {
+            return $db;
+        }
+
+        $loginId = (string) ($request->user()?->getAuthIdentifier() ?? '');
+        if ($loginId === '' || $request->user() instanceof Student) {
+            return response()->json([
+                'message' => 'Only staff accounts may update an assessment.',
+            ], Response::HTTP_FORBIDDEN);
+        }
+
+        $data = $request->validate([
+            'person_id' => ['required', 'string', 'max:100'],
+            'bs_course_id' => ['required', 'string', 'max:100'],
+            'bs_exam_session_id' => ['required', 'string', 'max:100'],
+            'exam_type' => ['required', 'in:New,Resit'],
+            'duration' => ['nullable', 'integer', 'min:0', 'max:1440'],
+            'proctor_name' => ['nullable', 'string', 'max:255'],
+            'access_exp_date' => ['required', 'date_format:Y-m-d'],
+            'access_exp_time' => ['required', 'date_format:H:i'],
+            'access_exp_date_to' => ['required', 'date_format:Y-m-d'],
+            'access_exp_time_to' => ['required', 'date_format:H:i'],
+        ]);
+        $start = strtotime($data['access_exp_date'].' '.$data['access_exp_time']);
+        $end = strtotime($data['access_exp_date_to'].' '.$data['access_exp_time_to']);
+        if ($start === false || $end === false || $end <= $start) {
+            throw ValidationException::withMessages([
+                'access_exp_date_to' => ['The access end date and time must be after the start date and time.'],
+            ]);
+        }
+
+        return $db->transaction(function () use ($db, $data, $assessmentId, $loginId): JsonResponse {
+            // Student start also locks this row, so an edit cannot reset a running exam.
+            $assessment = $db->table('bs_person_exam')
+                ->where('id', $assessmentId)
+                ->lockForUpdate()
+                ->first();
+            if (! $assessment) {
+                return response()->json([
+                    'message' => 'The assessment could not be found.',
+                ], Response::HTTP_NOT_FOUND);
+            }
+            if (trim((string) ($assessment->started ?? '')) !== ''
+                || trim((string) ($assessment->ended ?? '')) !== ''
+                || ($assessment->done ?? '') === 'Y') {
+                return response()->json([
+                    'message' => 'An assessment that has started cannot be edited.',
+                ], Response::HTTP_CONFLICT);
+            }
+            if ((string) $assessment->person_id !== $data['person_id']) {
+                throw ValidationException::withMessages([
+                    'person_id' => ['The student cannot be changed on an existing assessment.'],
+                ]);
+            }
+            $student = $db->table('person')
+                ->where('id', $assessment->person_id)
+                ->lockForUpdate()
+                ->first(['id']);
+            if (! $student) {
+                throw ValidationException::withMessages([
+                    'person_id' => ['The selected student is invalid.'],
+                ]);
+            }
+            if (! $db->table('bs_course')->where('id', $data['bs_course_id'])->exists()) {
+                throw ValidationException::withMessages([
+                    'bs_course_id' => ['The selected exam package is invalid.'],
+                ]);
+            }
+            if (! $db->table('bs_exam_session')->where('id', $data['bs_exam_session_id'])->exists()) {
+                throw ValidationException::withMessages([
+                    'bs_exam_session_id' => ['The selected exam session is invalid.'],
+                ]);
+            }
+            $hasPendingExam = $db->table('bs_person_exam')
+                ->where('id', '<>', $assessmentId)
+                ->where('person_id', $assessment->person_id)
+                ->where('access_exp_date', $data['access_exp_date'])
+                ->where(function (Builder $query): void {
+                    $query->whereNull('started')->orWhere('started', '');
+                })
+                ->exists();
+            if ($hasPendingExam) {
+                throw ValidationException::withMessages([
+                    'access_exp_date' => ['The student already has another pending exam on the selected access date.'],
+                ]);
+            }
+
+            $rebuildTopics = (string) $assessment->bs_course_id !== $data['bs_course_id']
+                || (string) $assessment->exam_type !== $data['exam_type'];
+            if ($rebuildTopics && $data['exam_type'] === 'New') {
+                $topics = $db->table('bs_topic')
+                    ->where('bs_course_id', $data['bs_course_id'])
+                    ->orderBy('order_no')
+                    ->get(['id as bs_topic_id', 'no_quest as quest_cnt', 'order_no']);
+            } elseif ($rebuildTopics) {
+                $previousExam = $db->table('bs_person_exam')
+                    ->where('id', '<>', $assessmentId)
+                    ->where('person_id', $assessment->person_id)
+                    ->where('bs_course_id', $data['bs_course_id'])
+                    ->whereNotNull('ended')->where('ended', '<>', '')
+                    ->orderByDesc('ended')->first(['id']);
+                if (! $previousExam) {
+                    throw ValidationException::withMessages([
+                        'exam_type' => ['No completed exam was found for this student and package.'],
+                    ]);
+                }
+                $topics = $db->table('bs_person_exam_topic')
+                    ->where('bs_person_exam_id', $previousExam->id)
+                    ->where('passed', 'N')->orderBy('order_no')
+                    ->get(['bs_topic_id', 'quest_cnt', 'order_no'])
+                    ->values()->map(function ($topic, int $index) {
+                        $topic->order_no = $index + 1;
+                        return $topic;
+                    });
+            } else {
+                $topics = $db->table('bs_person_exam_topic')
+                    ->where('bs_person_exam_id', $assessmentId)
+                    ->get(['bs_topic_id', 'quest_cnt', 'order_no']);
+            }
+            if ($topics->isEmpty()) {
+                throw ValidationException::withMessages([
+                    'exam_type' => [$data['exam_type'] === 'Resit'
+                        ? 'No failed subjects were found for the latest completed exam.'
+                        : 'The selected exam package has no subjects.'],
+                ]);
+            }
+            $duration = (int) ($data['duration'] ?? 0);
+            if ($duration === 0) {
+                $duration = (int) $topics->sum(fn ($topic) => (int) $topic->quest_cnt);
+            }
+
+            if ($rebuildTopics) {
+                $oldTopicIds = $db->table('bs_person_exam_topic')
+                    ->where('bs_person_exam_id', $assessmentId)->pluck('id');
+                $db->table('bs_person_exam_topic_quest')
+                    ->whereIn('bs_person_exam_topic_id', $oldTopicIds)->delete();
+                $db->table('bs_person_exam_topic')
+                    ->where('bs_person_exam_id', $assessmentId)->delete();
+                foreach ($topics as $topic) {
+                    $db->table('bs_person_exam_topic')->insert([
+                        'id' => (string) Str::uuid(),
+                        'bs_person_exam_id' => $assessmentId,
+                        'bs_topic_id' => $topic->bs_topic_id,
+                        'quest_cnt' => (int) $topic->quest_cnt,
+                        'order_no' => $topic->order_no,
+                    ]);
+                }
+            }
+            $db->table('bs_person_exam')->where('id', $assessmentId)->update([
+                'bs_course_id' => $data['bs_course_id'],
+                'bs_exam_session_id' => $data['bs_exam_session_id'],
+                'exam_type' => $data['exam_type'],
+                'duration' => $duration,
+                'proctor_name' => $data['proctor_name'] ?? '',
+                'access_exp_date' => $data['access_exp_date'],
+                'access_exp_time' => $data['access_exp_time'],
+                'access_exp_date_to' => $data['access_exp_date_to'],
+                'access_exp_time_to' => $data['access_exp_time_to'],
+                'login_id' => $loginId,
+                'last_update' => now(),
+            ]);
+            $db->table('person')->where('id', $assessment->person_id)->update([
+                'exam_id' => $data['bs_course_id'],
+                'access_exp' => $data['access_exp_date'].' '.$data['access_exp_time'],
+            ]);
+
+            return response()->json([
+                'message' => 'The theoretical assessment has been updated.',
+                'data' => ['id' => $assessmentId],
+            ]);
+        });
     }
 
     private function resolveSchoolCode(Request $request): string

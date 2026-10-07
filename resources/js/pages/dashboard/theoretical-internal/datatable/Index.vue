@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import axios from 'axios';
 import AutoComplete from 'primevue/autocomplete';
 import Avatar from 'primevue/avatar';
@@ -167,7 +167,7 @@ const actions: DataTableAction[] = [
         disabled: () => true,
     },
     /*
-     * Edit is always available.
+     * Edit is available for every assessment.
      */
     {
         key: 'edit',
@@ -571,7 +571,7 @@ function handleAction(
         return;
     }
     if (action === 'edit') {
-        router.visit('/dashboard');
+        void openEdit(assessment);
     }
 }
 /*
@@ -591,7 +591,31 @@ type CreateForm = {
     accessDateTo: string;
     accessTimeTo: string;
 };
+type EditableAssessment = {
+    id: string;
+    person_id: string;
+    student_name: string;
+    school_id_no?: string | null;
+    bs_course_id: string;
+    name_course: string;
+    bs_exam_session_id: string;
+    exam_type: 'New' | 'Resit';
+    duration: number | string | null;
+    proctor_name: string | null;
+    access_exp_date: string | null;
+    access_exp_time: string | null;
+    access_exp_date_to: string | null;
+    access_exp_time_to: string | null;
+    started: string | null;
+    ended: string | null;
+    done: string | null;
+};
+
+const editingId = ref<string | null>(null);
+const editLoading = ref(false);
+const editLoadFailed = ref(false);
 const createVisible = ref(false);
+
 const createSaving = ref(false);
 const createError = ref('');
 const createSuccess = ref('');
@@ -614,6 +638,10 @@ const createForm = ref<CreateForm>({
     accessTimeTo: '23:30',
 });
 function openCreate(): void {
+    editingId.value = null;
+    editLoading.value = false;
+    editLoadFailed.value = false;
+    createSuccess.value = '';
     createForm.value = {
         student: null,
         course: null,
@@ -631,6 +659,53 @@ function openCreate(): void {
     createError.value = '';
     createVisible.value = true;
 }
+async function openEdit(assessment: DataTableRow): Promise<void> {
+    if (createSaving.value) return;
+
+    openCreate();
+    const id = String(assessment.id);
+    editingId.value = id;
+    editLoading.value = true;
+
+    try {
+        if (!courses.value.length || !sessions.value.length) {
+            await loadOptions();
+        }
+        const response = await axios.get<{ assessment: EditableAssessment }>(
+            `/api/v1/dashboard/theoretical-assessments/${encodeURIComponent(id)}`,
+            { withCredentials: true },
+        );
+        if (!createVisible.value || editingId.value !== id) return;
+        const record = response.data.assessment;
+
+        createForm.value = {
+            student: {
+                id: record.person_id,
+                student_name: record.student_name,
+                school_id_no: record.school_id_no,
+            },
+            course: courses.value.find((option) => option.id === record.bs_course_id)
+                ?? { id: record.bs_course_id, label: record.name_course },
+            session: sessions.value.find((option) => option.id === record.bs_exam_session_id) ?? null,
+            examType: record.exam_type,
+            duration: Number(record.duration ?? 0),
+            proctorName: record.proctor_name ?? '',
+            accessDate: (record.access_exp_date ?? '').slice(0, 10),
+            accessTime: (record.access_exp_time ?? '').slice(0, 5),
+            accessDateTo: (record.access_exp_date_to ?? '').slice(0, 10),
+            accessTimeTo: (record.access_exp_time_to ?? '').slice(0, 5),
+        };
+    } catch (error: unknown) {
+        if (!createVisible.value || editingId.value !== id) return;
+        editLoadFailed.value = true;
+        createError.value = axios.isAxiosError(error)
+            ? error.response?.data?.message ?? 'The assessment could not be loaded.'
+            : error instanceof Error ? error.message : 'The assessment could not be loaded.';
+    } finally {
+        if (editingId.value === id) editLoading.value = false;
+    }
+}
+
 async function searchCreateStudents(event: { query: string }): Promise<void> {
     const query = event.query.trim();
     if (query.length < 2) {
@@ -651,6 +726,7 @@ async function searchCreateStudents(event: { query: string }): Promise<void> {
     }
 }
 async function saveAssessment(): Promise<void> {
+    if (createSaving.value || editLoading.value || editLoadFailed.value) return;
     createError.value = '';
     createErrors.value = {};
     const form = createForm.value;
@@ -683,9 +759,12 @@ async function saveAssessment(): Promise<void> {
     }
     createSaving.value = true;
     try {
-        const response = await axios.post(
-            '/api/v1/dashboard/theoretical-assessments',
-            {
+        const response = await axios.request({
+            method: editingId.value ? 'put' : 'post',
+            url: editingId.value
+                ? `/api/v1/dashboard/theoretical-assessments/${encodeURIComponent(editingId.value)}`
+                : '/api/v1/dashboard/theoretical-assessments',
+            data: {
                 person_id: form.student!.id,
                 bs_course_id: form.course!.id,
                 bs_exam_session_id: form.session!.id,
@@ -697,8 +776,8 @@ async function saveAssessment(): Promise<void> {
                 access_exp_date_to: form.accessDateTo,
                 access_exp_time_to: form.accessTimeTo,
             },
-            { withCredentials: true },
-        );
+            withCredentials: true,
+        });
         createVisible.value = false;
         createSuccess.value =
             response.data.message ?? 'The assessment has been saved.';
@@ -1050,12 +1129,14 @@ onMounted(() => {
                 />
             </template>
         </Datatable>
-<!-- ADD NEW RECORD DIALOG -->
+<!-- ADD / EDIT ASSESSMENT DIALOG -->
 <Dialog
     v-model:visible="createVisible"
     modal
     :draggable="false"
-    header="Add Theoretical Assessment"
+    :header="editingId ? 'Edit Theoretical Assessment' : 'Add Theoretical Assessment'"
+    :closable="!createSaving"
+    :close-on-escape="!createSaving"
     class="w-[95vw] max-w-3xl"
 >
             <div
@@ -1069,13 +1150,18 @@ onMounted(() => {
                     required fields.</span
                 >
             </div>
-    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+    <div v-if="editLoading" class="flex items-center justify-center gap-2 py-8" role="status">
+        <i class="pi pi-spinner pi-spin" aria-hidden="true"></i>
+        <span>Loading assessment...</span>
+    </div>
+    <div v-else-if="!editLoadFailed" class="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div class="md:col-span-2">
             <label class="mb-2 block text-sm font-semibold text-slate-700">
                 Student Name <span class="text-red-500">*</span>
             </label>
             <AutoComplete
                 v-model="createForm.student"
+                :disabled="editingId !== null"
                 :suggestions="createStudentSuggestions"
                 option-label="student_name"
                 placeholder="Search student..."
@@ -1235,7 +1321,8 @@ onMounted(() => {
         />
         <Button
             type="button"
-            label="Save Assessment"
+            :label="editingId ? 'Save Changes' : 'Save Assessment'"
+            :disabled="editLoading || editLoadFailed"
             icon="pi pi-save"
             :loading="createSaving"
             @click="saveAssessment"

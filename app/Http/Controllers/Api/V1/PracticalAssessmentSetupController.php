@@ -132,7 +132,6 @@ class PracticalAssessmentSetupController extends Controller
             'passing_mark' => $validated['passing_mark'],
             'login_id' => $this->resolveLoginId($request),
             'last_update' => now()->format('Y-m-d H:i:s'),
-            'prio_file' => now()->format('Y-m-d H:i:s'),
         ]);
 
         return response()->json(
@@ -344,8 +343,8 @@ class PracticalAssessmentSetupController extends Controller
         $baseUrl = $this->uploadsBaseUrl($this->schoolCode($request));
         $attachments = $db->table('p_assess_h_file')
             ->where('p_assess_h_id', $assessmentId)
-            ->orderBy('prio_file')
-            ->get(['id', 'p_assess_h_id', 'assess_h_file', 'prio_file'])
+            ->orderBy('id')
+            ->get(['id', 'p_assess_h_id', 'assess_h_file'])
             ->map(function ($attachment) use ($baseUrl): object {
                 $attachment->file_url = $this->fileUrl(
                     $baseUrl,
@@ -378,7 +377,6 @@ class PracticalAssessmentSetupController extends Controller
             'id' => $id,
             'p_assess_h_id' => $assessmentId,
             'assess_h_file' => $filename,
-            'prio_file' => now()->format('Y-m-d H:i:s'),
         ]);
 
         return response()->json(

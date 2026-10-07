@@ -669,6 +669,108 @@ class TheoreticalExternalAssessmentsController extends Controller
 
      */
 
+    /** Load editable values without querying exam answers. */
+    public function edit(Request $request, string $assessmentId): JsonResponse
+    {
+        $db = $this->resolveSchoolConnection($request);
+        if ($db instanceof JsonResponse) return $db;
+        $assessment = $db->table('bs_person_exam_ext')->where('id', $assessmentId)
+            ->first(['id', 'email', 'fname', 'mname', 'lname', 'bs_course_id',
+                'bs_exam_session_id', 'exam_type', 'duration', 'proctor_name',
+                'access_exp_date', 'access_exp_time', 'access_exp_date_to', 'access_exp_time_to']);
+        if (! $assessment) return response()->json(['message' => 'Assessment not found.'], 404);
+        return response()->json(['assessment' => $assessment]);
+    }
+
+    /** Update the existing record; rebuild topics only when its package changes. */
+    public function update(Request $request, string $assessmentId): JsonResponse
+    {
+        $db = $this->resolveSchoolConnection($request);
+        if ($db instanceof JsonResponse) return $db;
+        $data = $request->validate([
+            'email' => ['required', 'email:rfc', 'max:255'],
+            'fname' => ['nullable', 'string', 'max:100'],
+            'mname' => ['nullable', 'string', 'max:100'],
+            'lname' => ['nullable', 'string', 'max:100'],
+            'bs_course_id' => ['required', 'string', 'max:100'],
+            'bs_exam_session_id' => ['required', 'string', 'max:100'],
+            'exam_type' => ['required', 'in:New,Resit'],
+            'duration' => ['nullable', 'integer', 'min:0', 'max:1440'],
+            'proctor_name' => ['nullable', 'string', 'max:100'],
+            'access_exp_date' => ['required', 'date_format:Y-m-d'],
+            'access_exp_time' => ['required', 'date_format:H:i'],
+            'access_exp_date_to' => ['required', 'date_format:Y-m-d'],
+            'access_exp_time_to' => ['required', 'date_format:H:i'],
+        ]);
+
+        $data['email'] = strtolower(trim($data['email']));
+        $start = \Illuminate\Support\Carbon::createFromFormat('!Y-m-d H:i', $data['access_exp_date'].' '.$data['access_exp_time']);
+        $end = \Illuminate\Support\Carbon::createFromFormat('!Y-m-d H:i', $data['access_exp_date_to'].' '.$data['access_exp_time_to']);
+        if ($end->lessThanOrEqualTo($start)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'access_exp_date_to' => 'The access end must be after the access start.',
+            ]);
+        }
+        $courseName = $db->table('bs_course')->where('id', $data['bs_course_id'])->value('name_course');
+        if ($courseName === null || ! $db->table('bs_exam_session')->where('id', $data['bs_exam_session_id'])->exists()) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'bs_course_id' => 'Select an existing exam package and session.',
+            ]);
+        }
+
+
+        $db->transaction(function () use ($db, $data, $assessmentId, $request): void {
+            $record = $db->table('bs_person_exam_ext')->where('id', $assessmentId)->lockForUpdate()->first();
+            abort_if(! $record, 404, 'Assessment not found.');
+            $packageChanged = (string) $record->bs_course_id !== $data['bs_course_id'];
+            $duration = (int) ($data['duration'] ?? 0);
+            if ($packageChanged) {
+                $topics = $db->table('bs_topic')->where('bs_course_id', $data['bs_course_id'])
+                    ->orderBy('order_no')->get(['id', 'no_quest', 'order_no']);
+                if ($topics->isEmpty()) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'bs_course_id' => 'This exam package has no topics.',
+                    ]);
+                }
+                $topicIds = $db->table('bs_person_exam_topic_ext')
+                    ->where('bs_person_exam_id', $assessmentId)->pluck('id');
+                $db->table('bs_person_exam_topic_quest_ext')->whereIn('bs_person_exam_topic_id', $topicIds)->delete();
+                $db->table('bs_person_exam_topic_ext')->where('bs_person_exam_id', $assessmentId)->delete();
+                foreach ($topics as $topic) {
+                    $db->table('bs_person_exam_topic_ext')->insert([
+                        'id' => (string) \Illuminate\Support\Str::uuid(),
+                        'bs_person_exam_id' => $assessmentId,
+                        'bs_topic_id' => $topic->id,
+                        'quest_cnt' => (int) $topic->no_quest,
+                        'order_no' => $topic->order_no,
+                    ]);
+                }
+            }
+            if ($duration === 0) {
+                $duration = (int) $db->table('bs_person_exam_topic_ext')
+                    ->where('bs_person_exam_id', $assessmentId)->sum('quest_cnt');
+            }
+            $db->table('bs_person_exam_ext')->where('id', $assessmentId)->update([
+                'email' => $data['email'],
+                'fname' => trim($data['fname'] ?? ''),
+                'mname' => trim($data['mname'] ?? ''),
+                'lname' => trim($data['lname'] ?? ''),
+                'bs_course_id' => $data['bs_course_id'],
+                'bs_exam_session_id' => $data['bs_exam_session_id'],
+                'exam_type' => $data['exam_type'],
+                'proctor_name' => trim($data['proctor_name'] ?? ''),
+                'duration' => $duration,
+                'access_exp_date' => $data['access_exp_date'],
+                'access_exp_time' => $data['access_exp_time'],
+                'access_exp_date_to' => $data['access_exp_date_to'],
+                'access_exp_time_to' => $data['access_exp_time_to'],
+                'login_id' => (string) ($request->user()?->getAuthIdentifier() ?? ''),
+                'last_update' => now()->format('Y-m-d H:i:s'),
+            ]);
+        });
+        return response()->json(['id' => $assessmentId, 'message' => 'The record has been saved.']);
+    }
+
     public function show(
 
         Request $request,

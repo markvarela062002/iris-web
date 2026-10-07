@@ -157,6 +157,10 @@ Route::get(
         Route::get('/api/v1/student/theoretical-assessments',[TheoreticalAssessmentsController::class,'studentIndex'])->name('api.v1.student.theoretical-assessments.index');
         Route::get('/assessments/theoretical-internal/student/{assessmentId}/certificate',[TheoreticalAssessmentsController::class,'studentCertificate'])->whereUuid('assessmentId')->name('student.assessments.theoretical-internal.certificate');
         Route::get('/assessments/theoretical-internal/student/{assessmentId}/exam',[TheoreticalAssessmentsController::class,'studentExamPage'])->whereUuid('assessmentId')->name('student.assessments.theoretical-internal.exam');
+        Route::put(
+            '/api/v1/dashboard/theoretical-assessments/{assessmentId}',
+            [TheoreticalAssessmentsController::class, 'update'],
+        )->name('api.v1.dashboard.theoretical-assessments.update');
         Route::get('/api/v1/student/theoretical-assessments/{assessmentId}/exam',[TheoreticalAssessmentsController::class,'studentExamState'])->whereUuid('assessmentId')->name('api.v1.student.theoretical-assessments.exam.state');
         Route::post('/api/v1/student/theoretical-assessments/{assessmentId}/exam/start',[TheoreticalAssessmentsController::class,'studentStartExam'])->whereUuid('assessmentId')->name('api.v1.student.theoretical-assessments.exam.start');
         Route::patch('/api/v1/student/theoretical-assessments/{assessmentId}/exam/questions/{questionAttemptId}',[TheoreticalAssessmentsController::class,'studentSaveExamAnswer'])->whereUuid('assessmentId')->whereUuid('questionAttemptId')->name('api.v1.student.theoretical-assessments.exam.answer');
@@ -480,4 +484,11 @@ Route::prefix('/api/v1/assessment-setup/subject-batch')->group(function (): void
     Route::get('/packages/{courseId}/subjects', [SubjectBatchUpdateController::class, 'subjects']);
     Route::patch('/packages/{courseId}/subjects', [SubjectBatchUpdateController::class, 'update']);
 });
+Route::get('/api/v1/dashboard/theoretical-external/{assessmentId}/edit',
+    [TheoreticalExternalAssessmentsController::class, 'edit'])
+    ->name('api.v1.dashboard.theoretical-external.edit');
+
+Route::put('/api/v1/dashboard/theoretical-external/{assessmentId}',
+    [TheoreticalExternalAssessmentsController::class, 'update'])
+    ->name('api.v1.dashboard.theoretical-external.update');
 require __DIR__.'/settings.php';

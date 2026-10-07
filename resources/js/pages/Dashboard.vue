@@ -102,7 +102,7 @@ const reportYears = Array.from(
     (_, index) => new Date().getFullYear() - index,
 );
 
-const reportLoading = ref(false);
+const reportLoading = ref(true);
 const reportError = ref('');
 
 const yearlyChartData = ref<ChartData<'bar'>>({
