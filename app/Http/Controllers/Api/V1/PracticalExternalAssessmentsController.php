@@ -317,6 +317,9 @@ class PracticalExternalAssessmentsController extends Controller
 
 
 
+                    'can_edit' => strtoupper((string) $row->for_assess) !== 'Y'
+                        && strtoupper((string) $row->done) === 'N',
+
                     'is_completed' =>
 
                         strtoupper(
@@ -455,6 +458,92 @@ class PracticalExternalAssessmentsController extends Controller
             }
         });
         return response()->json(['id' => $id, 'message' => 'Record saved.'], 201);
+    }
+
+    /** Editable header values, separate from the grading response. */
+    public function edit(Request $request, string $assessmentId): JsonResponse
+    {
+        $database = $this->database($request);
+        $record = $database->table('assess_h_ext')->where('id', $assessmentId)->first();
+        abort_if(! $record, 404, 'Assessment not found.');
+        $this->ensureEditable($record);
+        return response()->json(['assessment' => [
+            'id' => (string) $record->id,
+            'email' => $record->email,
+            'fname' => $record->fname,
+            'mname' => $record->mname,
+            'lname' => $record->lname,
+            'p_assess_h_id' => $record->p_assess_h_id,
+            'from_date' => $record->from_date,
+            'due_date' => $record->due_date,
+            'assessor' => $record->assessor,
+        ]]);
+    }
+
+    public function update(Request $request, string $assessmentId): JsonResponse
+    {
+        $database = $this->database($request);
+        $data = $request->validate([
+            'email' => ['required', 'email:rfc', 'max:255'],
+            'fname' => ['nullable', 'string', 'max:100'],
+            'mname' => ['nullable', 'string', 'max:100'],
+            'lname' => ['nullable', 'string', 'max:100'],
+            'p_assess_h_id' => ['required', 'string', 'max:100'],
+            'from_date' => ['nullable', 'date_format:Y-m-d'],
+            'due_date' => ['nullable', 'date_format:Y-m-d'],
+            'assessor' => ['nullable', 'string', 'max:255'],
+        ]);
+        if (! empty($data['from_date']) && ! empty($data['due_date']) && $data['due_date'] < $data['from_date']) {
+            throw ValidationException::withMessages(['due_date' => 'Due date must be on or after the start date.']);
+        }
+        if (! $database->table('p_assess_h')->where('id', $data['p_assess_h_id'])->exists()) {
+            throw ValidationException::withMessages(['p_assess_h_id' => 'Select an existing practical assessment.']);
+        }
+
+        $database->transaction(function () use ($database, $data, $assessmentId, $request): void {
+            $record = $database->table('assess_h_ext')->where('id', $assessmentId)->lockForUpdate()->first();
+            abort_if(! $record, 404, 'Assessment not found.');
+            $this->ensureEditable($record);
+            if ((string) $record->p_assess_h_id !== $data['p_assess_h_id']) {
+                $items = $database->table('p_assess_d')->where('p_assess_h_id', $data['p_assess_h_id'])
+                    ->orderBy('prio')->get(['id']);
+                // External detail rows belong to assess_d_ext, not person_assess_d.
+                $database->table('assess_d_ext')->where('assess_h_ext_id', $assessmentId)->delete();
+                foreach ($items as $item) {
+                    $database->table('assess_d_ext')->insert([
+                        'id' => (string) Str::uuid(),
+                        'assess_d_id' => $item->id,
+                        'assess_h_ext_id' => $assessmentId,
+                        'points' => 0,
+                        'remarks' => '',
+                        'filename_d' => '',
+                    ]);
+                }
+            }
+            $database->table('assess_h_ext')->where('id', $assessmentId)->update([
+                'email' => strtolower(trim($data['email'])),
+                'fname' => trim($data['fname'] ?? ''),
+                'mname' => trim($data['mname'] ?? ''),
+                'lname' => trim($data['lname'] ?? ''),
+                'p_assess_h_id' => $data['p_assess_h_id'],
+                'from_date' => $data['from_date'] ?? '1970-01-01',
+                'due_date' => $data['due_date'] ?? '1970-01-01',
+                'assessor' => strtoupper(trim($data['assessor'] ?? '')),
+                'login_id' => (string) ($request->user()?->getAuthIdentifier() ?? ''),
+                'last_update' => now()->format('Y-m-d H:i:s'),
+            ]);
+        });
+        return response()->json(['id' => $assessmentId, 'message' => 'Record saved.']);
+    }
+
+    private function ensureEditable(object $record): void
+    {
+        if (strtoupper((string) ($record->for_assess ?? '')) === 'Y'
+            || strtoupper((string) ($record->done ?? '')) !== 'N') {
+            throw ValidationException::withMessages([
+                'assessment' => 'Only assessments that have not been submitted or graded can be edited.',
+            ]);
+        }
     }
 
     public function show(

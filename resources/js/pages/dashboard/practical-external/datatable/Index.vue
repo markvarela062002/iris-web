@@ -195,6 +195,9 @@ const saving = ref(false);
 
 type Choice = { id: string; label: string };
 const addVisible = ref(false);
+const editingId = ref<string | null>(null);
+const editLoading = ref(false);
+let formRequestId = 0;
 const addSaving = ref(false);
 const addError = ref('');
 const assessmentChoices = ref<Choice[]>([]);
@@ -208,35 +211,8 @@ const addForm = ref({
     due_date: '',
     assessor: '',
 });
-async function openAdd(): Promise<void> {
-    addError.value = '';
-    addVisible.value = true;
-    try {
-        const response = await axios.get(
-            '/api/v1/dashboard/practical-external/options',
-        );
-        assessmentChoices.value = response.data.assessments ?? [];
-    } catch (error: unknown) {
-        addError.value = getErrorMessage(
-            error,
-            'Unable to load practical assessments.',
-        );
-    }
-}
-async function saveAdd(): Promise<void> {
-    addError.value = '';
-    addSaving.value = true;
-    try {
-        const response = await axios.post(
-            '/api/v1/dashboard/practical-external',
-            {
-                ...addForm.value,
-                from_date: addForm.value.from_date || null,
-                due_date: addForm.value.due_date || null,
-            },
-        );
-        addVisible.value = false;
-        addForm.value = {
+function resetAddForm(): void {
+addForm.value = {
             email: '',
             fname: '',
             mname: '',
@@ -246,6 +222,89 @@ async function saveAdd(): Promise<void> {
             due_date: '',
             assessor: '',
         };
+}
+
+function editableDate(value: unknown): string {
+    const date = String(value ?? '').slice(0, 10);
+    return !date || date === '1970-01-01' || date === '0000-00-00' ? '' : date;
+}
+
+async function openEdit(assessmentId: string): Promise<void> {
+    if (addSaving.value) return;
+    const requestId = ++formRequestId;
+    editingId.value = assessmentId;
+    resetAddForm();
+    addError.value = '';
+    addVisible.value = true;
+    editLoading.value = true;
+    try {
+        const [options, response] = await Promise.all([
+            axios.get('/api/v1/dashboard/practical-external/options'),
+            axios.get(`/api/v1/dashboard/practical-external/${encodeURIComponent(assessmentId)}/edit`),
+        ]);
+        if (requestId !== formRequestId || !addVisible.value) return;
+        const record = response.data.assessment;
+        assessmentChoices.value = options.data.assessments ?? [];
+        addForm.value = {
+            email: String(record.email ?? ''),
+            fname: String(record.fname ?? ''),
+            mname: String(record.mname ?? ''),
+            lname: String(record.lname ?? ''),
+            p_assess_h_id: String(record.p_assess_h_id ?? ''),
+            from_date: editableDate(record.from_date),
+            due_date: editableDate(record.due_date),
+            assessor: String(record.assessor ?? ''),
+        };
+    } catch (error: unknown) {
+        if (requestId !== formRequestId) return;
+        errorMessage.value = getErrorMessage(error, 'Unable to load the assessment for editing.');
+        addVisible.value = false;
+    } finally {
+        if (requestId === formRequestId) editLoading.value = false;
+    }
+}
+
+async function openAdd(): Promise<void> {
+    if (addSaving.value) return;
+    const requestId = ++formRequestId;
+    editingId.value = null;
+    editLoading.value = false;
+    resetAddForm();
+    addError.value = '';
+    addVisible.value = true;
+    try {
+        const response = await axios.get(
+            '/api/v1/dashboard/practical-external/options',
+        );
+        if (requestId !== formRequestId) return;
+        assessmentChoices.value = response.data.assessments ?? [];
+    } catch (error: unknown) {
+        addError.value = getErrorMessage(
+            error,
+            'Unable to load practical assessments.',
+        );
+    }
+}
+async function saveAdd(): Promise<void> {
+    if (editLoading.value || addSaving.value) return;
+    addError.value = '';
+    addSaving.value = true;
+    try {
+        const response = await axios.request({
+            method: editingId.value ? 'put' : 'post',
+            url: editingId.value
+                ? `/api/v1/dashboard/practical-external/${encodeURIComponent(editingId.value)}`
+                : '/api/v1/dashboard/practical-external',
+            data:
+            {
+                ...addForm.value,
+                from_date: addForm.value.from_date || null,
+                due_date: addForm.value.due_date || null,
+            },
+        });
+        addVisible.value = false;
+        resetAddForm();
+        editingId.value = null;
         successMessage.value = response.data.message ?? 'Record saved.';
         await reloadCurrentPage();
     } catch (error: unknown) {
@@ -351,12 +410,27 @@ const columns: DataTableColumn[] = [
 ];
 
 const actions: DataTableAction[] = [
+{
+    key: 'edit',
+    label: 'Edit Assessment',
+    icon: 'pi pi-pencil',
+    severity: 'warn',
+    visible: (row) => row.can_edit === true,
+},
+{
+    key: 'edit-unavailable',
+    label: 'Edit Unavailable',
+    icon: 'pi pi-pencil',
+    severity: 'secondary',
+    visible: (row) => row.can_edit !== true,
+    disabled: () => true,
+},
     {
         key: 'grade',
 
         label: 'View and grade assessment',
 
-        icon: 'pi pi-pencil',
+        icon: 'pi pi-check-square',
 
         severity: 'warn',
     },
@@ -620,6 +694,11 @@ function handleAction(
 
     assessment: DataTableRow,
 ): void {
+    if (action === 'edit') {
+        const assessmentId = String(assessment.id ?? '').trim();
+        if (assessmentId) void openEdit(assessmentId);
+        return;
+    }
     if (action !== 'grade') {
         return;
     }
@@ -1137,7 +1216,9 @@ onBeforeUnmount(() => {
             v-model:visible="addVisible"
             modal
             :draggable="false"
-            header="Add External Practical Assessment"
+            :header="editingId ? 'Edit External Practical Assessment' : 'Add External Practical Assessment'"
+            :closable="!addSaving"
+            :close-on-escape="!addSaving"
             class="w-[95vw] max-w-2xl"
         >
 
@@ -1152,7 +1233,14 @@ onBeforeUnmount(() => {
                     required fields.</span
                 >
             </div>  
+            <Message severity="warn" class="mb-4">
+                Leaving From Date and Due Date blank keeps the assessment open for submissions anytime.
+            </Message>
+            <div v-if="editLoading" class="flex items-center justify-center gap-2 py-8">
+                <i class="pi pi-spin pi-spinner"></i> Loading assessment…
+            </div>
             <form
+                v-else
                 class="grid grid-cols-1 gap-4 md:grid-cols-2"
                 @submit.prevent="saveAdd"
             >
@@ -1234,6 +1322,7 @@ onBeforeUnmount(() => {
                         type="button"
                         label="Cancel"
                         severity="secondary"
+                        :disabled="addSaving"
                         @click="addVisible = false"
                     /><Button
                         type="submit"
