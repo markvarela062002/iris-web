@@ -619,6 +619,10 @@ function getStudentAvatar(gender: unknown): string | undefined {
         return '/images/female-cadet.png';
     }
 
+    if (normalizedGender === '' || normalizedGender === null || normalizedGender === undefined) {
+        return '/images/default-cadet.png';
+    }
+
     return undefined;
 }
 

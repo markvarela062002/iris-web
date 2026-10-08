@@ -432,7 +432,7 @@ const actions: DataTableAction[] = [
 
         icon: 'pi pi-check-square',
 
-        severity: 'warn',
+        severity: 'help',
     },
 ];
 
