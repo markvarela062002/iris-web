@@ -671,6 +671,7 @@ onBeforeUnmount(
             modal
             header="Edit Alert Setup"
             :closable="!saving"
+            :draggable="false"
             class="w-[min(94vw,620px)]"
         >
             <div

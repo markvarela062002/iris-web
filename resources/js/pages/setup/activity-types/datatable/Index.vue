@@ -768,6 +768,7 @@ onBeforeUnmount(
             modal
             :header="dialogTitle"
             :closable="!saving"
+            :draggable="false"
             class="w-[min(96vw,820px)]"
         >
             <div
@@ -932,6 +933,7 @@ onBeforeUnmount(
             v-model:visible="deleteVisible"
             modal
             header="Delete Activity Type"
+            :draggable="false"
             class="w-[min(92vw,520px)]"
         >
                 <div
