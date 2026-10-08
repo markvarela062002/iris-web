@@ -180,7 +180,7 @@ const mainNavItems: NavItem[] = [
             },
 
             {
-                title: 'Training Record Book (OTG)',
+                title: 'Training Records',
 
                 href: '/monitoring/otg-updates',
 
@@ -524,7 +524,7 @@ const visibleNavItems = computed<NavItem[]>(() => {
                     },
 
                     {
-                        title: 'Training Record Book (OTG)',
+                        title: 'Training Records',
 
                         href: '/monitoring/otg-updates/student/datatable',
 

@@ -212,7 +212,7 @@ const dashboardCards = computed<DashboardCard[]>(() => [
         href: '/dashboard/uploaded-documents',
     },
     {
-        label: 'OTG Updates (Current Month)',
+        label: 'Training Records Updates (Current Month)',
         value: dashboardTotals.value.otgUpdates,
         icon: 'pi pi-bookmark',
         cardBg: '!bg-red-500',
@@ -791,7 +791,7 @@ function handleStudentAction(action: string, student: DataTableRow): void {
                                 class="size-1.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400"
                             ></span>
 
-                            ADMIN PANNEL
+                            ADMIN PANEL
                         </div>
 
                         <h1

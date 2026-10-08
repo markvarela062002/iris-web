@@ -1,13 +1,9 @@
 <?php
 
-
-
 namespace App\Http\Controllers\Api\V1;
 
-
-
 use App\Http\Controllers\Controller;
-
+use App\Services\ExternalAssessmentAccessService;
 use Illuminate\Database\ConnectionInterface;
 
 use Illuminate\Database\Query\Builder;
@@ -19,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 use Illuminate\Validation\ValidationException;
@@ -27,11 +24,13 @@ use Symfony\Component\HttpFoundation\Response;
 
 use Throwable;
 
-
-
 class PracticalExternalAssessmentsController extends Controller
-
 {
+    public function __construct(
+        private readonly ExternalAssessmentAccessService $externalAssessmentAccessService,
+    ) {
+    }
+
 
     public function index(Request $request): JsonResponse
 
@@ -39,11 +38,7 @@ class PracticalExternalAssessmentsController extends Controller
 
         $database = $this->database($request);
 
-
-
         $perPage = (int) $request->integer('per_page', 10);
-
-
 
         if (! in_array($perPage, [10, 20, 50, 100], true)) {
 
@@ -51,15 +46,11 @@ class PracticalExternalAssessmentsController extends Controller
 
         }
 
-
-
         $search = trim(
 
             (string) $request->input('search', ''),
 
         );
-
-
 
         $sortField = (string) $request->input(
 
@@ -68,8 +59,6 @@ class PracticalExternalAssessmentsController extends Controller
             'date_taken',
 
         );
-
-
 
         $sortDirection = strtolower(
 
@@ -83,15 +72,11 @@ class PracticalExternalAssessmentsController extends Controller
 
         );
 
-
-
         if (! in_array($sortDirection, ['asc', 'desc'], true)) {
 
             $sortDirection = 'desc';
 
         }
-
-
 
         $sortableColumns = [
 
@@ -107,13 +92,9 @@ class PracticalExternalAssessmentsController extends Controller
 
         ];
 
-
-
         $sortColumn = $sortableColumns[$sortField]
 
             ?? 'assess_h_ext.date_taken';
-
-
 
         $query = $database
 
@@ -157,8 +138,6 @@ class PracticalExternalAssessmentsController extends Controller
 
                 'assess_h_ext.done',
 
-
-
                 'p_assess_h.title_assess',
 
                 'p_assess_h.grade_system',
@@ -167,8 +146,6 @@ class PracticalExternalAssessmentsController extends Controller
 
             ]);
 
-
-
         if ($search !== '') {
 
             $query->where(
@@ -176,8 +153,6 @@ class PracticalExternalAssessmentsController extends Controller
                 function (Builder $builder) use ($search): void {
 
                     $value = "%{$search}%";
-
-
 
                     $builder
 
@@ -247,8 +222,6 @@ class PracticalExternalAssessmentsController extends Controller
 
         }
 
-
-
         $paginator = $query
 
             ->orderBy($sortColumn, $sortDirection)
@@ -256,8 +229,6 @@ class PracticalExternalAssessmentsController extends Controller
             ->paginate($perPage)
 
             ->withQueryString();
-
-
 
         $records = collect($paginator->items())
 
@@ -267,15 +238,11 @@ class PracticalExternalAssessmentsController extends Controller
 
                     'id' => (string) $row->id,
 
-
-
                     'examinee_name' => $this->examineeName(
 
                         $row,
 
                     ),
-
-
 
                     'email' => trim(
 
@@ -283,15 +250,11 @@ class PracticalExternalAssessmentsController extends Controller
 
                     ),
 
-
-
                     'title_assess' =>
 
                         $row->title_assess
 
                         ?: 'Untitled Practical Assessment',
-
-
 
                     'grade_system' =>
 
@@ -299,15 +262,11 @@ class PracticalExternalAssessmentsController extends Controller
 
                         ?: 'Checklist',
 
-
-
                     'date_taken' => $row->date_taken,
 
                     'due_date' => $row->due_date,
 
                     'date_assessed' => $row->date_assessed,
-
-
 
                     'total_points' => (float) (
 
@@ -315,9 +274,8 @@ class PracticalExternalAssessmentsController extends Controller
 
                     ),
 
-
-
                     'can_edit' => strtoupper((string) $row->for_assess) !== 'Y'
+
                         && strtoupper((string) $row->done) === 'N',
 
                     'is_completed' =>
@@ -327,8 +285,6 @@ class PracticalExternalAssessmentsController extends Controller
                             (string) $row->done,
 
                         ) === 'Y',
-
-
 
                     'is_pending' =>
 
@@ -344,13 +300,9 @@ class PracticalExternalAssessmentsController extends Controller
 
             ->values();
 
-
-
         return response()->json([
 
             'data' => $records,
-
-
 
             'meta' => [
 
@@ -367,8 +319,6 @@ class PracticalExternalAssessmentsController extends Controller
                 'to' => $paginator->lastItem(),
 
             ],
-
-
 
             'links' => [
 
@@ -390,160 +340,368 @@ class PracticalExternalAssessmentsController extends Controller
 
     }
 
-
-
     /** Available practical assessment templates for one external examinee. */
+
     public function options(Request $request): JsonResponse
+
     {
+
         $database = $this->database($request);
+
         return response()->json([
+
             'assessments' => $database->table('p_assess_h')
+
                 ->orderBy('title_assess')->get(['id', 'title_assess'])
+
                 ->map(fn (object $assessment): array => [
+
                     'id' => (string) $assessment->id,
+
                     'label' => $this->decodeLegacyText($assessment->title_assess),
+
                 ]),
+
         ]);
+
     }
 
     /** Schedule one external practical assessment and copy its grading items. */
+
     public function store(Request $request): JsonResponse
+
     {
+
         $database = $this->database($request);
+
         $data = $request->validate([
+
             'email' => ['required', 'email:rfc', 'max:255'],
+
             'fname' => ['nullable', 'string', 'max:100'],
+
             'mname' => ['nullable', 'string', 'max:100'],
+
             'lname' => ['nullable', 'string', 'max:100'],
+
             'p_assess_h_id' => ['required', 'string', 'max:100'],
+
             'from_date' => ['nullable', 'date_format:Y-m-d'],
+
             'due_date' => ['nullable', 'date_format:Y-m-d'],
+
             'assessor' => ['nullable', 'string', 'max:255'],
+
         ]);
+
         if (! empty($data['from_date']) && ! empty($data['due_date']) && $data['due_date'] < $data['from_date']) {
+
             throw ValidationException::withMessages(['due_date' => 'Due date must be on or after the start date.']);
+
         }
+
         if (! $database->table('p_assess_h')->where('id', $data['p_assess_h_id'])->exists()) {
+
             throw ValidationException::withMessages(['p_assess_h_id' => 'Select an existing practical assessment.']);
+
         }
+
         $id = (string) Str::uuid();
+
         $loginId = (string) ($request->user()?->getAuthIdentifier() ?? '');
+
         $database->transaction(function () use ($database, $data, $id, $loginId): void {
+
             $database->table('assess_h_ext')->insert([
+
                 'id' => $id,
+
                 'email' => strtolower(trim($data['email'])),
+
                 'fname' => trim($data['fname'] ?? ''),
+
                 'mname' => trim($data['mname'] ?? ''),
+
                 'lname' => trim($data['lname'] ?? ''),
+
                 'p_assess_h_id' => $data['p_assess_h_id'],
+
                 'from_date' => $data['from_date'] ?? '1970-01-01',
+
                 'due_date' => $data['due_date'] ?? '1970-01-01',
+
                 'assessor' => strtoupper(trim($data['assessor'] ?? '')),
+
                 'for_assess' => 'N',
+
                 'login_id' => $loginId,
+
                 'last_update' => now()->format('Y-m-d H:i:s'),
+
             ]);
+
             $items = $database->table('p_assess_d')
+
                 ->where('p_assess_h_id', $data['p_assess_h_id'])
+
                 ->orderBy('prio')->get(['id']);
+
             foreach ($items as $item) {
+
                 $database->table('assess_d_ext')->insert([
+
                     'id' => (string) Str::uuid(),
+
                     'assess_d_id' => $item->id,
+
                     'assess_h_ext_id' => $id,
+
                     'points' => 0,
+
                     'remarks' => '',
+
                     'filename_d' => '',
+
                 ]);
+
             }
+
         });
-        return response()->json(['id' => $id, 'message' => 'Record saved.'], 201);
+
+        $schoolCode = strtoupper(
+            trim((string) $request->session()->get('school_code', '')),
+        );
+
+        $tokenExpiry = $this->externalAssessmentAccessService
+            ->assessmentTokenExpiry(
+                $data['due_date'] ?? null,
+                null,
+                0,
+            );
+
+        $examUrl = $this->externalAssessmentAccessService
+            ->practicalUrl(
+                $schoolCode,
+                $id,
+                $tokenExpiry,
+            );
+
+        $assessmentTitle = (string) (
+            $database->table('p_assess_h')
+                ->where('id', $data['p_assess_h_id'])
+                ->value('title_assess')
+            ?? 'Practical Assessment'
+        );
+
+        $name = $this->examineeName((object) $data) ?: 'Examinee';
+
+        $validity = trim(implode(' to ', array_filter([
+            ! empty($data['from_date']) && $data['from_date'] !== '1970-01-01'
+                ? $data['from_date']
+                : null,
+            ! empty($data['due_date']) && $data['due_date'] !== '1970-01-01'
+                ? $data['due_date']
+                : null,
+        ])));
+
+        $emailSent = true;
+
+        try {
+            Mail::html(
+                implode('', [
+                    '<html><body>',
+                    'Hi '.e($name).',<br><br>',
+                    'You have a scheduled Practical Assessment with the following details:<br><br>',
+                    'Assessment: <b>'.e($assessmentTitle).'</b><br>',
+                    $validity !== ''
+                        ? 'Validity: <b>'.e($validity).'</b><br><br>'
+                        : '<br>',
+                    'Click this <a href="'.e($examUrl).'" target="_blank" rel="noopener noreferrer">link</a> to start your assessment.<br><br>',
+                    'If the link does not work, copy this URL:<br>'.e($examUrl),
+                    '</body></html>',
+                ]),
+                function ($message) use ($data, $name): void {
+                    $message
+                        ->to(strtolower(trim($data['email'])), $name)
+                        ->subject('You have a scheduled Practical Assessment');
+                },
+            );
+        } catch (Throwable $exception) {
+            report($exception);
+            $emailSent = false;
+        }
+
+        return response()->json([
+            'id' => $id,
+            'email_sent' => $emailSent,
+            'message' => $emailSent
+                ? 'Record saved and assessment email sent.'
+                : 'Record saved, but the assessment email could not be sent.',
+        ], 201);
     }
 
     /** Editable header values, separate from the grading response. */
+
     public function edit(Request $request, string $assessmentId): JsonResponse
+
     {
+
         $database = $this->database($request);
+
         $record = $database->table('assess_h_ext')->where('id', $assessmentId)->first();
+
         abort_if(! $record, 404, 'Assessment not found.');
+
         $this->ensureEditable($record);
+
         return response()->json(['assessment' => [
+
             'id' => (string) $record->id,
+
             'email' => $record->email,
+
             'fname' => $record->fname,
+
             'mname' => $record->mname,
+
             'lname' => $record->lname,
+
             'p_assess_h_id' => $record->p_assess_h_id,
+
             'from_date' => $record->from_date,
+
             'due_date' => $record->due_date,
+
             'assessor' => $record->assessor,
+
         ]]);
+
     }
 
     public function update(Request $request, string $assessmentId): JsonResponse
+
     {
+
         $database = $this->database($request);
+
         $data = $request->validate([
+
             'email' => ['required', 'email:rfc', 'max:255'],
+
             'fname' => ['nullable', 'string', 'max:100'],
+
             'mname' => ['nullable', 'string', 'max:100'],
+
             'lname' => ['nullable', 'string', 'max:100'],
+
             'p_assess_h_id' => ['required', 'string', 'max:100'],
+
             'from_date' => ['nullable', 'date_format:Y-m-d'],
+
             'due_date' => ['nullable', 'date_format:Y-m-d'],
+
             'assessor' => ['nullable', 'string', 'max:255'],
+
         ]);
+
         if (! empty($data['from_date']) && ! empty($data['due_date']) && $data['due_date'] < $data['from_date']) {
+
             throw ValidationException::withMessages(['due_date' => 'Due date must be on or after the start date.']);
+
         }
+
         if (! $database->table('p_assess_h')->where('id', $data['p_assess_h_id'])->exists()) {
+
             throw ValidationException::withMessages(['p_assess_h_id' => 'Select an existing practical assessment.']);
+
         }
 
         $database->transaction(function () use ($database, $data, $assessmentId, $request): void {
+
             $record = $database->table('assess_h_ext')->where('id', $assessmentId)->lockForUpdate()->first();
+
             abort_if(! $record, 404, 'Assessment not found.');
+
             $this->ensureEditable($record);
+
             if ((string) $record->p_assess_h_id !== $data['p_assess_h_id']) {
+
                 $items = $database->table('p_assess_d')->where('p_assess_h_id', $data['p_assess_h_id'])
+
                     ->orderBy('prio')->get(['id']);
+
                 // External detail rows belong to assess_d_ext, not person_assess_d.
+
                 $database->table('assess_d_ext')->where('assess_h_ext_id', $assessmentId)->delete();
+
                 foreach ($items as $item) {
+
                     $database->table('assess_d_ext')->insert([
+
                         'id' => (string) Str::uuid(),
+
                         'assess_d_id' => $item->id,
+
                         'assess_h_ext_id' => $assessmentId,
+
                         'points' => 0,
+
                         'remarks' => '',
+
                         'filename_d' => '',
+
                     ]);
+
                 }
+
             }
+
             $database->table('assess_h_ext')->where('id', $assessmentId)->update([
+
                 'email' => strtolower(trim($data['email'])),
+
                 'fname' => trim($data['fname'] ?? ''),
+
                 'mname' => trim($data['mname'] ?? ''),
+
                 'lname' => trim($data['lname'] ?? ''),
+
                 'p_assess_h_id' => $data['p_assess_h_id'],
+
                 'from_date' => $data['from_date'] ?? '1970-01-01',
+
                 'due_date' => $data['due_date'] ?? '1970-01-01',
+
                 'assessor' => strtoupper(trim($data['assessor'] ?? '')),
+
                 'login_id' => (string) ($request->user()?->getAuthIdentifier() ?? ''),
+
                 'last_update' => now()->format('Y-m-d H:i:s'),
+
             ]);
+
         });
+
         return response()->json(['id' => $assessmentId, 'message' => 'Record saved.']);
+
     }
 
     private function ensureEditable(object $record): void
+
     {
+
         if (strtoupper((string) ($record->for_assess ?? '')) === 'Y'
+
             || strtoupper((string) ($record->done ?? '')) !== 'N') {
+
             throw ValidationException::withMessages([
+
                 'assessment' => 'Only assessments that have not been submitted or graded can be edited.',
+
             ]);
+
         }
+
     }
 
     public function show(
@@ -555,8 +713,6 @@ class PracticalExternalAssessmentsController extends Controller
     ): JsonResponse {
 
         $database = $this->database($request);
-
-
 
         $assessment = $database
 
@@ -594,8 +750,6 @@ class PracticalExternalAssessmentsController extends Controller
 
             ->first();
 
-
-
         abort_unless(
 
             $assessment !== null,
@@ -605,8 +759,6 @@ class PracticalExternalAssessmentsController extends Controller
             'The selected external practical assessment was not found.',
 
         );
-
-
 
         $items = $database
 
@@ -646,8 +798,6 @@ class PracticalExternalAssessmentsController extends Controller
 
                 'assess_d_ext.points',
 
-
-
                 'p_assess_d.item_d',
 
                 'p_assess_d.filename_d as item_file',
@@ -660,11 +810,7 @@ class PracticalExternalAssessmentsController extends Controller
 
             ->get();
 
-
-
         $rubricCriteria = collect();
-
-
 
         if (
 
@@ -689,8 +835,6 @@ class PracticalExternalAssessmentsController extends Controller
             );
 
         }
-
-
 
         $referenceFiles = $database
 
@@ -722,8 +866,6 @@ class PracticalExternalAssessmentsController extends Controller
 
                     'id' => (string) $file->id,
 
-
-
                     'name' => basename(
 
                         trim(
@@ -733,8 +875,6 @@ class PracticalExternalAssessmentsController extends Controller
                         ),
 
                     ),
-
-
 
                     'url' => $this->remoteFileUrl(
 
@@ -758,8 +898,6 @@ class PracticalExternalAssessmentsController extends Controller
 
             ->values();
 
-
-
         $normalizedItems = $items
 
             ->map(function (object $item): array {
@@ -768,13 +906,9 @@ class PracticalExternalAssessmentsController extends Controller
 
                     'id' => (string) $item->id,
 
-
-
                     'assessment_item_id' =>
 
                         (string) $item->assess_d_id,
-
-
 
                     'description' => $this->decodeLegacyText(
 
@@ -782,23 +916,17 @@ class PracticalExternalAssessmentsController extends Controller
 
                     ),
 
-
-
                     'answer' => $this->decodeLegacyText(
 
                         $item->remarks,
 
                     ),
 
-
-
                     'points' => is_numeric($item->points)
 
                         ? (float) $item->points
 
                         : 0,
-
-
 
                     'maximum_points' =>
 
@@ -808,8 +936,6 @@ class PracticalExternalAssessmentsController extends Controller
 
                             : 0,
 
-
-
                     'reference_file' => $this->fileData(
 
                         $item->item_file,
@@ -817,8 +943,6 @@ class PracticalExternalAssessmentsController extends Controller
                         'dashboard.files.upload',
 
                     ),
-
-
 
                     'evidence_file' => $this->fileData(
 
@@ -834,8 +958,6 @@ class PracticalExternalAssessmentsController extends Controller
 
             ->values();
 
-
-
         $maximumPoints = $this->maximumPoints(
 
             (string) $assessment->grade_system,
@@ -846,8 +968,6 @@ class PracticalExternalAssessmentsController extends Controller
 
         );
 
-
-
         $earnedPoints = (float) $normalizedItems->sum(
 
             fn (array $item): float =>
@@ -855,8 +975,6 @@ class PracticalExternalAssessmentsController extends Controller
                 (float) $item['points'],
 
         );
-
-
 
         $percentage = $maximumPoints > 0
 
@@ -870,23 +988,17 @@ class PracticalExternalAssessmentsController extends Controller
 
             : 0;
 
-
-
         $passingMark = (float) (
 
             $assessment->passing_mark ?? 0
 
         );
 
-
-
         return response()->json([
 
             'data' => [
 
                 'id' => (string) $assessment->id,
-
-
 
                 'examinee' => [
 
@@ -895,8 +1007,6 @@ class PracticalExternalAssessmentsController extends Controller
                         $assessment,
 
                     ),
-
-
 
                     'email' => trim(
 
@@ -910,15 +1020,11 @@ class PracticalExternalAssessmentsController extends Controller
 
                 ],
 
-
-
                 'title' =>
 
                     $assessment->title_assess
 
                     ?: 'Untitled Practical Assessment',
-
-
 
                 'instructions' => $this->decodeLegacyText(
 
@@ -926,23 +1032,17 @@ class PracticalExternalAssessmentsController extends Controller
 
                 ),
 
-
-
                 'grade_system' =>
 
                     $assessment->grade_system
 
                     ?: 'Checklist',
 
-
-
                 'passing_mark' => $passingMark,
 
                 'date_taken' => $assessment->date_taken,
 
                 'due_date' => $assessment->due_date,
-
-
 
                 'is_completed' =>
 
@@ -952,8 +1052,6 @@ class PracticalExternalAssessmentsController extends Controller
 
                     ) === 'Y',
 
-
-
                 'is_pending' =>
 
                     strtoupper(
@@ -962,15 +1060,11 @@ class PracticalExternalAssessmentsController extends Controller
 
                     ) === 'Y',
 
-
-
                 'items' => $normalizedItems,
 
                 'rubric_criteria' => $rubricCriteria,
 
                 'reference_files' => $referenceFiles,
-
-
 
                 'result' => [
 
@@ -981,8 +1075,6 @@ class PracticalExternalAssessmentsController extends Controller
                     'percentage' => $percentage,
 
                     'passing_mark' => $passingMark,
-
-
 
                     'remarks' =>
 
@@ -1000,8 +1092,6 @@ class PracticalExternalAssessmentsController extends Controller
 
     }
 
-
-
     public function grade(
 
         Request $request,
@@ -1011,8 +1101,6 @@ class PracticalExternalAssessmentsController extends Controller
     ): JsonResponse {
 
         $database = $this->database($request);
-
-
 
         $validated = $request->validate([
 
@@ -1053,8 +1141,6 @@ class PracticalExternalAssessmentsController extends Controller
             ],
 
         ]);
-
-
 
         try {
 
@@ -1112,8 +1198,6 @@ class PracticalExternalAssessmentsController extends Controller
 
                         ->first();
 
-
-
                     abort_unless(
 
                         $assessment !== null,
@@ -1123,8 +1207,6 @@ class PracticalExternalAssessmentsController extends Controller
                         'The selected external practical assessment was not found.',
 
                     );
-
-
 
                     if (
 
@@ -1147,8 +1229,6 @@ class PracticalExternalAssessmentsController extends Controller
                         ]);
 
                     }
-
-
 
                     $items = $database
 
@@ -1194,8 +1274,6 @@ class PracticalExternalAssessmentsController extends Controller
 
                         );
 
-
-
                     if ($items->isEmpty()) {
 
                         throw ValidationException::withMessages([
@@ -1210,8 +1288,6 @@ class PracticalExternalAssessmentsController extends Controller
 
                     }
 
-
-
                     $submittedGrades = collect(
 
                         $validated['grades'],
@@ -1224,8 +1300,6 @@ class PracticalExternalAssessmentsController extends Controller
 
                     );
 
-
-
                     $submittedItemIds = $submittedGrades
 
                         ->keys()
@@ -1234,8 +1308,6 @@ class PracticalExternalAssessmentsController extends Controller
 
                         ->values();
 
-
-
                     $actualItemIds = $items
 
                         ->keys()
@@ -1243,8 +1315,6 @@ class PracticalExternalAssessmentsController extends Controller
                         ->sort()
 
                         ->values();
-
-
 
                     if (
 
@@ -1266,8 +1336,6 @@ class PracticalExternalAssessmentsController extends Controller
 
                     }
 
-
-
                     $gradeSystem = strtolower(
 
                         trim(
@@ -1278,11 +1346,7 @@ class PracticalExternalAssessmentsController extends Controller
 
                     );
 
-
-
                     $rubricOptions = collect();
-
-
 
                     if ($gradeSystem === 'rubrics') {
 
@@ -1332,11 +1396,7 @@ class PracticalExternalAssessmentsController extends Controller
 
                     }
 
-
-
                     $totalPoints = 0.0;
-
-
 
                     foreach ($items as $itemId => $item) {
 
@@ -1346,11 +1406,7 @@ class PracticalExternalAssessmentsController extends Controller
 
                         );
 
-
-
                         $points = 0.0;
-
-
 
                         if ($gradeSystem === 'points') {
 
@@ -1359,8 +1415,6 @@ class PracticalExternalAssessmentsController extends Controller
                                 $submitted['points'] ?? 0
 
                             );
-
-
 
                             $maximum = max(
 
@@ -1373,8 +1427,6 @@ class PracticalExternalAssessmentsController extends Controller
                                 ),
 
                             );
-
-
 
                             if ($points > $maximum) {
 
@@ -1414,11 +1466,7 @@ class PracticalExternalAssessmentsController extends Controller
 
                             );
 
-
-
                             $criterionIds = [];
-
-
 
                             foreach (
 
@@ -1434,15 +1482,11 @@ class PracticalExternalAssessmentsController extends Controller
 
                                 }
 
-
-
                                 $rubricOption = $rubricOptions->get(
 
                                     (string) $optionId,
 
                                 );
-
-
 
                                 if (
 
@@ -1467,8 +1511,6 @@ class PracticalExternalAssessmentsController extends Controller
                                     ]);
 
                                 }
-
-
 
                                 if (
 
@@ -1496,13 +1538,9 @@ class PracticalExternalAssessmentsController extends Controller
 
                                 }
 
-
-
                                 $criterionIds[] =
 
                                     (string) $criterionId;
-
-
 
                                 $points += (float) (
 
@@ -1513,8 +1551,6 @@ class PracticalExternalAssessmentsController extends Controller
                             }
 
                         }
-
-
 
                         $database
 
@@ -1536,13 +1572,9 @@ class PracticalExternalAssessmentsController extends Controller
 
                             ]);
 
-
-
                         $totalPoints += $points;
 
                     }
-
-
 
                     $database
 
@@ -1556,8 +1588,6 @@ class PracticalExternalAssessmentsController extends Controller
 
                                 now()->toDateString(),
 
-
-
                             'total_pts' => $totalPoints,
 
                             'for_assess' => 'N',
@@ -1565,8 +1595,6 @@ class PracticalExternalAssessmentsController extends Controller
                             'done' => 'Y',
 
                         ]);
-
-
 
                     $nextAssessmentId = $database
 
@@ -1580,13 +1608,9 @@ class PracticalExternalAssessmentsController extends Controller
 
                         ->value('id');
 
-
-
                     return [
 
                         'total_points' => $totalPoints,
-
-
 
                         'next_assessment_id' =>
 
@@ -1610,8 +1634,6 @@ class PracticalExternalAssessmentsController extends Controller
 
             report($exception);
 
-
-
             return response()->json([
 
                 'message' =>
@@ -1622,23 +1644,17 @@ class PracticalExternalAssessmentsController extends Controller
 
         }
 
-
-
         return response()->json([
 
             'message' =>
 
                 'The external practical assessment was graded successfully.',
 
-
-
             'data' => $result,
 
         ]);
 
     }
-
-
 
     private function database(
 
@@ -1660,8 +1676,6 @@ class PracticalExternalAssessmentsController extends Controller
 
         );
 
-
-
         abort_if(
 
             $schoolCode === '',
@@ -1672,15 +1686,11 @@ class PracticalExternalAssessmentsController extends Controller
 
         );
 
-
-
         $school = config(
 
             "schools.schools.{$schoolCode}",
 
         );
-
-
 
         abort_unless(
 
@@ -1692,11 +1702,7 @@ class PracticalExternalAssessmentsController extends Controller
 
         );
 
-
-
         $connection = $school['connection'] ?? null;
-
-
 
         abort_unless(
 
@@ -1709,8 +1715,6 @@ class PracticalExternalAssessmentsController extends Controller
             'The school database connection is missing.',
 
         );
-
-
 
         abort_unless(
 
@@ -1730,13 +1734,9 @@ class PracticalExternalAssessmentsController extends Controller
 
         );
 
-
-
         return DB::connection($connection);
 
     }
-
-
 
     private function rubricCriteria(
 
@@ -1766,8 +1766,6 @@ class PracticalExternalAssessmentsController extends Controller
 
             ]);
 
-
-
         $criterionIds = $criteria
 
             ->pluck('id')
@@ -1775,8 +1773,6 @@ class PracticalExternalAssessmentsController extends Controller
             ->filter()
 
             ->all();
-
-
 
         $options = empty($criterionIds)
 
@@ -1820,8 +1816,6 @@ class PracticalExternalAssessmentsController extends Controller
 
                 );
 
-
-
         return $criteria
 
             ->map(
@@ -1844,8 +1838,6 @@ class PracticalExternalAssessmentsController extends Controller
 
                             $criterion->criterion_desc,
 
-
-
                         'options' => collect(
 
                             $options->get(
@@ -1866,13 +1858,9 @@ class PracticalExternalAssessmentsController extends Controller
 
                                         (string) $option->id,
 
-
-
                                     'title' =>
 
                                         $option->item_title,
-
-
 
                                     'points' =>
 
@@ -1896,8 +1884,6 @@ class PracticalExternalAssessmentsController extends Controller
 
     }
 
-
-
     private function maximumPoints(
 
         string $gradeSystem,
@@ -1913,8 +1899,6 @@ class PracticalExternalAssessmentsController extends Controller
             trim($gradeSystem),
 
         );
-
-
 
         if ($system === 'points') {
 
@@ -1932,15 +1916,11 @@ class PracticalExternalAssessmentsController extends Controller
 
         }
 
-
-
         if ($system === 'checklist') {
 
             return (float) $items->count();
 
         }
-
-
 
         $rubricMaximum = (float) $criteria->sum(
 
@@ -1956,13 +1936,9 @@ class PracticalExternalAssessmentsController extends Controller
 
         );
 
-
-
         return $rubricMaximum * $items->count();
 
     }
-
-
 
     private function examineeName(
 
@@ -1975,8 +1951,6 @@ class PracticalExternalAssessmentsController extends Controller
             (string) ($record->lname ?? ''),
 
         );
-
-
 
         $otherNames = collect([
 
@@ -1998,8 +1972,6 @@ class PracticalExternalAssessmentsController extends Controller
 
             ->implode(' ');
 
-
-
         if ($lastName !== '' && $otherNames !== '') {
 
             return strtoupper(
@@ -2010,8 +1982,6 @@ class PracticalExternalAssessmentsController extends Controller
 
         }
 
-
-
         return strtoupper(
 
             $lastName ?: $otherNames,
@@ -2019,8 +1989,6 @@ class PracticalExternalAssessmentsController extends Controller
         );
 
     }
-
-
 
     private function decodeLegacyText(
 
@@ -2034,8 +2002,6 @@ class PracticalExternalAssessmentsController extends Controller
 
         );
 
-
-
         return str_replace(
 
             ['andxx', 'apostrophexx', '%0A'],
@@ -2047,8 +2013,6 @@ class PracticalExternalAssessmentsController extends Controller
         );
 
     }
-
-
 
     private function fileData(
 
@@ -2064,21 +2028,15 @@ class PracticalExternalAssessmentsController extends Controller
 
         );
 
-
-
         if ($name === '') {
 
             return null;
 
         }
 
-
-
         return [
 
             'name' => $name,
-
-
 
             'url' => $this->remoteFileUrl(
 
@@ -2091,8 +2049,6 @@ class PracticalExternalAssessmentsController extends Controller
         ];
 
     }
-
-
 
     private function remoteFileUrl(
 
@@ -2108,15 +2064,11 @@ class PracticalExternalAssessmentsController extends Controller
 
         );
 
-
-
         if ($name === '') {
 
             return '';
 
         }
-
-
 
         return route(
 
