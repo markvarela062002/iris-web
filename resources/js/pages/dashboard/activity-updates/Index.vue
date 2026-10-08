@@ -997,6 +997,7 @@ onBeforeUnmount(() => {
             modal
             header="Notice of Verification"
             :closable="!actionLoading"
+            :draggable="false"
             :dismissable-mask="!actionLoading"
             class="w-[min(92vw,560px)]"
         >
@@ -1076,6 +1077,7 @@ onBeforeUnmount(() => {
             modal
             header="Revision Details"
             :closable="!actionLoading"
+            :draggable="false"  
             :dismissable-mask="!actionLoading"
             class="w-[min(92vw,560px)]"
         >

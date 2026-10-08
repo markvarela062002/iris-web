@@ -794,6 +794,7 @@ onBeforeUnmount(() => requestController?.abort());
             modal
             :header="dialogTitle"
             :closable="!saving"
+            :draggable="false"
             class="w-[min(96vw,900px)]"
             @hide="resetForm"
         >
@@ -922,7 +923,7 @@ onBeforeUnmount(() => requestController?.abort());
             v-model:visible="deleteDialogVisible"
             modal
             header="Delete Announcement"
-            class="w-[min(92vw,520px)]"
+            class="w-[min(92vw,520px)]"xw
         >
             <Message severity="warn" :closable="false">
                 Delete

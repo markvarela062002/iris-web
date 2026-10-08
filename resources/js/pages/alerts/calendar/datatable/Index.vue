@@ -220,6 +220,7 @@ onMounted(() => void loadEvents());
             modal
             :header="detailsTitle"
             class="w-[min(96vw,1000px)]"
+            :draggable="false"
         >
             <Message
                 v-if="detailsError"

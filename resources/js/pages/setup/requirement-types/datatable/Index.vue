@@ -1085,6 +1085,7 @@ onBeforeUnmount(() => {
             :header="dialogTitle"
             :closable="!saving"
             class="w-[min(96vw,940px)]"
+            :draggable="false"
         >
             <div
                 class="grid gap-4 md:grid-cols-2"

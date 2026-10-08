@@ -922,6 +922,7 @@ onBeforeUnmount(() => {
             modal
             header="Uploaded Files"
             class="w-[min(92vw,560px)]"
+            :draggable="false"
             @hide="closeFilesDialog"
         >
             <div class="space-y-3">

@@ -1315,6 +1315,7 @@ onBeforeUnmount(() => {
             "
             modal
             header="Notice of Verification"
+            :draggable="false"
             :closable="!actionLoading"
             :dismissable-mask="
                 !actionLoading
@@ -1403,6 +1404,7 @@ onBeforeUnmount(() => {
             "
             modal
             header="Revision Details"
+            :draggable="false"
             :closable="!actionLoading"
             :dismissable-mask="
                 !actionLoading

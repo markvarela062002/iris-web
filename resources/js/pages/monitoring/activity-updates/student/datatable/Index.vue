@@ -1574,6 +1574,7 @@ onBeforeUnmount(() => {
                 outlined
                 :disabled="deleting"
                 @click="deleteDialogVisible = false"
+                :draggable="false"
             />
 
             <Button

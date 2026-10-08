@@ -499,7 +499,7 @@ onBeforeUnmount(() => requestController?.abort());
             <template #cell-total_attachments="{ value }"><PrimeTag :value="String(value ?? 0)" severity="secondary" icon="pi pi-paperclip" rounded /></template>
         </Datatable>
 
-        <Dialog v-model:visible="assessmentDialogVisible" modal :header="dialogTitle" :closable="!saving" class="w-[min(97vw,1100px)]">
+        <Dialog v-model:visible="assessmentDialogVisible" modal :header="dialogTitle" :draggable="false" :closable="!saving" class="w-[min(97vw,1100px)]">
             <div class="grid gap-4 md:grid-cols-2">
                 <div class="md:col-span-2">
                     <label class="mb-2 block text-sm font-semibold">Title</label>
@@ -581,7 +581,7 @@ onBeforeUnmount(() => requestController?.abort());
             <template #footer><Button label="Cancel" severity="secondary" outlined @click="itemDialogVisible = false" /><Button label="Save" icon="pi pi-save" severity="success" :loading="childLoading" @click="saveItem" /></template>
         </Dialog>
 
-        <Dialog v-model:visible="assessmentDeleteVisible" modal header="Delete Practical Assessment" class="w-[min(92vw,520px)]"><Message severity="warn" :closable="false">Delete <strong>{{ selectedAssessment?.title_assess || 'this assessment' }}</strong>? Remove all items and attachments first.</Message><template #footer><Button label="Cancel" severity="secondary" outlined @click="assessmentDeleteVisible = false" /><Button label="Delete" icon="pi pi-trash" severity="danger" :loading="saving" @click="deleteAssessment" /></template></Dialog>
+        <Dialog v-model:visible="assessmentDeleteVisible" modal header="Delete Practical Assessment" :draggable="false" class="w-[min(92vw,520px)]"><Message severity="warn" :closable="false">Delete <strong>{{ selectedAssessment?.title_assess || 'this assessment' }}</strong>? Remove all items and attachments first.</Message><template #footer><Button label="Cancel" severity="secondary" outlined @click="assessmentDeleteVisible = false" /><Button label="Delete" icon="pi pi-trash" severity="danger" :loading="saving" @click="deleteAssessment" /></template></Dialog>
         <Dialog v-model:visible="itemDeleteVisible" modal header="Delete Assessment Item" class="w-[min(92vw,520px)]"><Message severity="warn" :closable="false">Delete this assessment item?</Message><template #footer><Button label="Cancel" severity="secondary" outlined @click="itemDeleteVisible = false" /><Button label="Delete" icon="pi pi-trash" severity="danger" :loading="childLoading" @click="deleteItem" /></template></Dialog>
         <Dialog v-model:visible="attachmentDeleteVisible" modal header="Remove Attachment" class="w-[min(92vw,520px)]"><Message severity="warn" :closable="false">Remove <strong>{{ selectedAttachment?.assess_h_file || 'this attachment' }}</strong> from the assessment?</Message><template #footer><Button label="Cancel" severity="secondary" outlined @click="attachmentDeleteVisible = false" /><Button label="Remove" icon="pi pi-trash" severity="danger" :loading="childLoading" @click="deleteAttachment" /></template></Dialog>
     </div>

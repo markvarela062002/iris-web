@@ -587,6 +587,7 @@ onBeforeUnmount(() => {
             :closable="!saving"
             :dismissable-mask="!saving"
             class="w-[min(92vw,620px)]"
+            :draggable="false"
         >
             <div class="grid gap-5 py-2 sm:grid-cols-2">
                 <div class="sm:col-span-2">
@@ -687,6 +688,7 @@ onBeforeUnmount(() => {
             :closable="!deleting"
             :dismissable-mask="!deleting"
             class="w-[min(92vw,520px)]"
+            :draggable="false"
         >
             <Message severity="warn" :closable="false">
                 Are you sure you want to delete

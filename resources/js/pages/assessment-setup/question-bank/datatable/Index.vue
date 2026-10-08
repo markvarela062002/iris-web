@@ -514,7 +514,7 @@ onBeforeUnmount(() => requestController?.abort());
         </Datatable>
     </div>
 
-    <Dialog v-model:visible="questionDialogVisible" modal :header="questionDialogTitle" class="w-[min(960px,96vw)]">
+    <Dialog v-model:visible="questionDialogVisible" modal :header="questionDialogTitle" :draggable="false" class="w-[min(960px,96vw)]">
         <div class="space-y-5">
             <div>
                 <label class="mb-1 block font-medium">Question *</label>
@@ -589,7 +589,7 @@ onBeforeUnmount(() => requestController?.abort());
         </template>
     </Dialog>
 
-    <Dialog v-model:visible="answerDialogVisible" modal :header="answerDialogTitle" class="w-[min(620px,94vw)]">
+    <Dialog v-model:visible="answerDialogVisible" modal :header="answerDialogTitle" :draggable="false" class="w-[min(620px,94vw)]">
         <div class="space-y-4">
             <div>
                 <label class="mb-1 block font-medium">Option Description</label>
@@ -615,7 +615,7 @@ onBeforeUnmount(() => requestController?.abort());
         </template>
     </Dialog>
 
-    <Dialog v-model:visible="questionDeleteVisible" modal header="Delete Question" class="w-[min(480px,92vw)]">
+    <Dialog v-model:visible="questionDeleteVisible" modal header="Delete Question" :draggable="false" class="w-[min(480px,92vw)]">
         <p>Delete this question and all of its options? This action cannot be undone.</p>
         <template #footer>
             <Button label="Cancel" severity="secondary" text @click="questionDeleteVisible = false" />
@@ -623,7 +623,7 @@ onBeforeUnmount(() => requestController?.abort());
         </template>
     </Dialog>
 
-    <Dialog v-model:visible="answerDeleteVisible" modal header="Delete Option" class="w-[min(460px,92vw)]">
+    <Dialog v-model:visible="answerDeleteVisible" modal header="Delete Option" :draggable="false" class="w-[min(460px,92vw)]">
         <p>Delete this option?</p>
         <template #footer>
             <Button label="Cancel" severity="secondary" text @click="answerDeleteVisible = false" />

@@ -531,7 +531,7 @@ onBeforeUnmount(() => requestController?.abort());
             </template>
         </Datatable>
 
-        <Dialog v-model:visible="packageDialogVisible" modal :header="packageDialogTitle" :closable="!saving" class="w-[min(96vw,920px)]">
+        <Dialog v-model:visible="packageDialogVisible" modal :header="packageDialogTitle" :draggable="false" :closable="!saving" class="w-[min(96vw,920px)]">
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
                     <label class="mb-2 block text-sm font-semibold text-slate-700">Code</label>
@@ -597,7 +597,7 @@ onBeforeUnmount(() => requestController?.abort());
             </template>
         </Dialog>
 
-        <Dialog v-model:visible="subjectDialogVisible" modal :header="subjectDialogTitle" class="w-[min(92vw,620px)]">
+        <Dialog v-model:visible="subjectDialogVisible" modal :header="subjectDialogTitle" :draggable="false" class="w-[min(92vw,620px)]">
             <div class="grid gap-4 sm:grid-cols-2">
                 <div class="sm:col-span-2">
                     <label class="mb-2 block text-sm font-semibold">Description</label>
@@ -626,7 +626,7 @@ onBeforeUnmount(() => requestController?.abort());
             </template>
         </Dialog>
 
-        <Dialog v-model:visible="packageDeleteVisible" modal header="Delete Exam Package" class="w-[min(92vw,520px)]">
+        <Dialog v-model:visible="packageDeleteVisible" modal header="Delete Exam Package" :draggable="false" class="w-[min(92vw,520px)]">
             <Message severity="warn" :closable="false">Delete <strong>{{ selectedPackage?.name_course || 'this exam package' }}</strong>? All subjects must be removed first.</Message>
             <template #footer>
                 <Button label="Cancel" severity="secondary" outlined @click="packageDeleteVisible = false" />
