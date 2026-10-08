@@ -41,6 +41,7 @@ use App\Http\Controllers\Api\V1\AlertCalendarController;
 use App\Http\Controllers\Api\V1\AnnouncementsController;
 use App\Http\Controllers\Api\V1\MessageController;
 use App\Http\Controllers\Api\V1\TrbOtgContentController;
+use App\Http\Controllers\Api\V1\TheoreticalExternalExamController;
 use Illuminate\Support\Facades\Route;
 Route::redirect( '/', '/login')->name('home');
 
@@ -131,6 +132,25 @@ Route::middleware([ 'auth', 'account.type:student'])->group(function (): void {
     Route::post('/api/v1/student/practical-internal/{assessmentId}/items/{itemId}',[PracticalInternalAssessmentsController::class,'studentSaveItem'])->whereUuid('assessmentId')->whereUuid('itemId')->name('api.v1.student.practical-internal.items.update');
     Route::post('/api/v1/student/practical-internal/{assessmentId}/submit',[PracticalInternalAssessmentsController::class,'studentSubmit'])->whereUuid('assessmentId')->name('api.v1.student.practical-internal.submit');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Public External Theoretical Assessment Routes
+|--------------------------------------------------------------------------
+|
+| External theoretical examinees do not have authenticated IRIS-SAM
+| accounts. Access is authorized by the encrypted capability token
+| generated for the assessment.
+|
+*/
+
+// Public External Theoretical Assessment Routes
+Route::get('/external/theoretical/{accessToken}', [TheoreticalExternalExamController::class, 'page'])->where('accessToken', '[A-Za-z0-9_-]+')->name('external.theoretical.exam');
+Route::get('/api/v1/external/theoretical/{accessToken}/exam', [TheoreticalExternalExamController::class, 'state'])->where('accessToken', '[A-Za-z0-9_-]+')->name('api.v1.external.theoretical.exam.state');
+Route::post('/api/v1/external/theoretical/{accessToken}/exam/start', [TheoreticalExternalExamController::class, 'start'])->where('accessToken', '[A-Za-z0-9_-]+')->name('api.v1.external.theoretical.exam.start');
+Route::patch('/api/v1/external/theoretical/{accessToken}/exam/questions/{questionAttemptId}', [TheoreticalExternalExamController::class, 'saveAnswer'])->where('accessToken', '[A-Za-z0-9_-]+')->whereUuid('questionAttemptId')->name('api.v1.external.theoretical.exam.answer');
+Route::post('/api/v1/external/theoretical/{accessToken}/exam/topics/{topicAttemptId}/submit', [TheoreticalExternalExamController::class, 'submitTopic'])->where('accessToken', '[A-Za-z0-9_-]+')->whereUuid('topicAttemptId')->name('api.v1.external.theoretical.exam.topic.submit');
+Route::post('/api/v1/external/theoretical/{accessToken}/exam/timeout', [TheoreticalExternalExamController::class, 'timeout'])->where('accessToken', '[A-Za-z0-9_-]+')->name('api.v1.external.theoretical.exam.timeout');
 
 // Administrator and Staff Routes
 Route::middleware([ 'auth', 'account.type:administrator'])->group(function (): void {

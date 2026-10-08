@@ -422,9 +422,7 @@ onMounted(() => {
             <template #cell-done="{ data }">
                 <PrimeTag
                     :value="data.is_completed ? 'Completed' : 'Pending'"
-                    :icon="
-                        data.is_completed ? 'pi pi-check' : 'pi pi-clock'
-                    "
+                    :icon="data.is_completed ? 'pi pi-check' : 'pi pi-clock'"
                     :severity="data.is_completed ? 'success' : 'warn'"
                     rounded
                     class="!px-2 !py-0.5 !text-xs !font-semibold"

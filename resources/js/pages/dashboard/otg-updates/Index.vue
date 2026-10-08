@@ -345,7 +345,7 @@ function handleSearch(value: string): void {
 */
 
 function navigateToDashboard(): void {
-    router.visit('/dashboard');
+    router.visit('/monitoring/otg-updates');
 }
 
 /*

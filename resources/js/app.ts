@@ -45,6 +45,9 @@ createInertiaApp({
             case name === 'Welcome':
                 return null;
 
+            case name.startsWith('assessments/theoretical-external/exam/'):
+                return null;
+
             case name.startsWith('auth/'):
                 return AuthLayout;
 

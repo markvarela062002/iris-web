@@ -9,12 +9,7 @@ import ProgressBar from 'primevue/progressbar';
 import RadioButton from 'primevue/radiobutton';
 import Tag from 'primevue/tag';
 
-import {
-    computed,
-    onBeforeUnmount,
-    onMounted,
-    ref,
-} from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
 const props = defineProps<{
     assessmentId: string;
@@ -31,8 +26,7 @@ defineOptions({
             },
             {
                 title: 'Theoretical Assessments',
-                href:
-                    '/assessments/theoretical-internal/student/datatable',
+                href: '/assessments/theoretical-internal/student/datatable',
             },
             {
                 title: 'Exam',
@@ -136,57 +130,35 @@ const serverOffsetMs = ref(0);
 const remainingSeconds = ref(0);
 let timerId: number | null = null;
 
-const answeredCount = computed(() =>
-    questions.value.filter(
-        (question) =>
-            question.answer.trim() !== '',
-    ).length,
+const answeredCount = computed(
+    () =>
+        questions.value.filter((question) => question.answer.trim() !== '')
+            .length,
 );
 
-const totalQuestions = computed(
-    () => questions.value.length,
-);
+const totalQuestions = computed(() => questions.value.length);
 
 const progressValue = computed(() => {
     if (totalQuestions.value <= 0) {
         return 0;
     }
 
-    return Math.round(
-        (answeredCount.value /
-            totalQuestions.value) *
-            100,
-    );
+    return Math.round((answeredCount.value / totalQuestions.value) * 100);
 });
 
 const timerText = computed(() => {
-    const total = Math.max(
-        0,
-        remainingSeconds.value,
-    );
-    const hours = Math.floor(
-        total / 3600,
-    );
-    const minutes = Math.floor(
-        (total % 3600) / 60,
-    );
+    const total = Math.max(0, remainingSeconds.value);
+    const hours = Math.floor(total / 3600);
+    const minutes = Math.floor((total % 3600) / 60);
     const seconds = total % 60;
 
     return [hours, minutes, seconds]
-        .map((value) =>
-            String(value).padStart(2, '0'),
-        )
+        .map((value) => String(value).padStart(2, '0'))
         .join(':');
 });
 
 const timerPercentage = computed(() => {
-    const durationSeconds =
-        Math.max(
-            0,
-            Number(
-                exam.value?.duration ?? 0,
-            ),
-        ) * 60;
+    const durationSeconds = Math.max(0, Number(exam.value?.duration ?? 0)) * 60;
 
     if (durationSeconds <= 0) {
         return 0;
@@ -196,18 +168,13 @@ const timerPercentage = computed(() => {
         0,
         Math.min(
             100,
-            Math.round(
-                (remainingSeconds.value /
-                    durationSeconds) *
-                    100,
-            ),
+            Math.round((remainingSeconds.value / durationSeconds) * 100),
         ),
     );
 });
 
 const timerContainerClass = computed(() => {
-    const percentage =
-        timerPercentage.value;
+    const percentage = timerPercentage.value;
 
     if (percentage >= 50) {
         return 'border-emerald-300 bg-emerald-50/95 text-emerald-800 shadow-emerald-100/70';
@@ -225,8 +192,7 @@ const timerContainerClass = computed(() => {
 });
 
 const timerProgressClass = computed(() => {
-    const percentage =
-        timerPercentage.value;
+    const percentage = timerPercentage.value;
 
     if (percentage >= 50) {
         return 'bg-emerald-500';
@@ -243,17 +209,11 @@ const timerProgressClass = computed(() => {
     return 'bg-red-500';
 });
 
-function isQuestionSaving(
-    questionId: string,
-): boolean {
-    return savingQuestionIds.value.includes(
-        questionId,
-    );
+function isQuestionSaving(questionId: string): boolean {
+    return savingQuestionIds.value.includes(questionId);
 }
 
-function formatDateTime(
-    value: string | null,
-): string {
+function formatDateTime(value: string | null): string {
     if (!value) {
         return 'Not available';
     }
@@ -264,43 +224,31 @@ function formatDateTime(
         return value;
     }
 
-    return new Intl.DateTimeFormat(
-        'en-PH',
-        {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-        },
-    ).format(date);
+    return new Intl.DateTimeFormat('en-PH', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+    }).format(date);
 }
 
-function formatResultNumber(
-    value: number,
-): string {
+function formatResultNumber(value: number): string {
     const numeric = Number(value);
 
     if (!Number.isFinite(numeric)) {
         return '0';
     }
 
-    return Number.isInteger(numeric)
-        ? String(numeric)
-        : numeric.toFixed(1);
+    return Number.isInteger(numeric) ? String(numeric) : numeric.toFixed(1);
 }
 
-function syncServerClock(
-    metadata: ExamMetadata,
-): void {
-    const serverTime = Date.parse(
-        metadata.server_time,
-    );
+function syncServerClock(metadata: ExamMetadata): void {
+    const serverTime = Date.parse(metadata.server_time);
 
-    serverOffsetMs.value =
-        Number.isNaN(serverTime)
-            ? 0
-            : serverTime - Date.now();
+    serverOffsetMs.value = Number.isNaN(serverTime)
+        ? 0
+        : serverTime - Date.now();
 
     updateRemainingTime();
 }
@@ -311,24 +259,18 @@ function updateRemainingTime(): void {
         return;
     }
 
-    const expiry = Date.parse(
-        exam.value.expires_at,
-    );
+    const expiry = Date.parse(exam.value.expires_at);
 
     if (Number.isNaN(expiry)) {
         remainingSeconds.value = 0;
         return;
     }
 
-    const serverNow =
-        Date.now() +
-        serverOffsetMs.value;
+    const serverNow = Date.now() + serverOffsetMs.value;
 
     remainingSeconds.value = Math.max(
         0,
-        Math.ceil(
-            (expiry - serverNow) / 1000,
-        ),
+        Math.ceil((expiry - serverNow) / 1000),
     );
 
     if (
@@ -345,10 +287,7 @@ function startLocalTimer(): void {
     stopLocalTimer();
     updateRemainingTime();
 
-    timerId = window.setInterval(
-        updateRemainingTime,
-        1000,
-    );
+    timerId = window.setInterval(updateRemainingTime, 1000);
 }
 
 function stopLocalTimer(): void {
@@ -358,13 +297,10 @@ function stopLocalTimer(): void {
     }
 }
 
-function applyActivePayload(
-    data: Record<string, any>,
-): void {
+function applyActivePayload(data: Record<string, any>): void {
     exam.value = data.exam;
     topic.value = data.topic;
-    questions.value =
-        data.questions ?? [];
+    questions.value = data.questions ?? [];
     topicResult.value = null;
     nextCompetence.value = null;
     examCompleted.value = false;
@@ -391,21 +327,15 @@ async function loadState(): Promise<void> {
         );
 
         exam.value = response.data.exam;
-        examCompleted.value =
-            response.data.exam?.done === true;
+        examCompleted.value = response.data.exam?.done === true;
 
-        finalResult.value =
-            response.data.exam?.final_result ??
-            null;
+        finalResult.value = response.data.exam?.final_result ?? null;
 
         if (exam.value) {
             syncServerClock(exam.value);
         }
 
-        if (
-            exam.value?.exam_action_state ===
-            'resume'
-        ) {
+        if (exam.value?.exam_action_state === 'resume') {
             await startOrResumeExam();
         }
 
@@ -453,8 +383,7 @@ async function startOrResumeExam(): Promise<void> {
     } catch (error: unknown) {
         if (
             axios.isAxiosError(error) &&
-            error.response?.data
-                ?.time_expired === true
+            error.response?.data?.time_expired === true
         ) {
             await loadState();
             return;
@@ -473,11 +402,7 @@ async function saveAnswer(
     question: ExamQuestion,
     answer: string,
 ): Promise<void> {
-    if (
-        examCompleted.value ||
-        submitting.value ||
-        timeoutSubmitting.value
-    ) {
+    if (examCompleted.value || submitting.value || timeoutSubmitting.value) {
         return;
     }
 
@@ -485,14 +410,8 @@ async function saveAnswer(
     question.answer = answer;
     saveError.value = '';
 
-    if (
-        !savingQuestionIds.value.includes(
-            question.id,
-        )
-    ) {
-        savingQuestionIds.value.push(
-            question.id,
-        );
+    if (!savingQuestionIds.value.includes(question.id)) {
+        savingQuestionIds.value.push(question.id);
     }
 
     try {
@@ -510,8 +429,7 @@ async function saveAnswer(
 
         if (
             axios.isAxiosError(error) &&
-            error.response?.data
-                ?.time_expired === true
+            error.response?.data?.time_expired === true
         ) {
             await finalizeTimeout();
             return;
@@ -522,20 +440,14 @@ async function saveAnswer(
             `Unable to save answer ${question.index}.`,
         );
     } finally {
-        savingQuestionIds.value =
-            savingQuestionIds.value.filter(
-                (id) =>
-                    id !== question.id,
-            );
+        savingQuestionIds.value = savingQuestionIds.value.filter(
+            (id) => id !== question.id,
+        );
     }
 }
 
 function requestSubmitTopic(): void {
-    if (
-        !topic.value ||
-        submitting.value ||
-        timeoutSubmitting.value
-    ) {
+    if (!topic.value || submitting.value || timeoutSubmitting.value) {
         return;
     }
 
@@ -551,10 +463,7 @@ function closeSubmitModal(): void {
 }
 
 function confirmSubmitTopic(): void {
-    if (
-        submitting.value ||
-        timeoutSubmitting.value
-    ) {
+    if (submitting.value || timeoutSubmitting.value) {
         return;
     }
 
@@ -580,43 +489,31 @@ async function submitTopic(): Promise<void> {
             },
         );
 
-        topicResult.value =
-            response.data.topic_result;
+        topicResult.value = response.data.topic_result;
 
         nextCompetence.value =
-            response.data.done !== 'Y'
-                ? response.data.next_topic
-                : null;
+            response.data.done !== 'Y' ? response.data.next_topic : null;
 
         if (response.data.done === 'Y') {
-            finalResult.value =
-                response.data.final_result ??
-                null;
+            finalResult.value = response.data.final_result ?? null;
             examCompleted.value = true;
             stopLocalTimer();
         }
     } catch (error: unknown) {
         if (
             axios.isAxiosError(error) &&
-            error.response?.data
-                ?.time_expired === true
+            error.response?.data?.time_expired === true
         ) {
             await finalizeTimeout();
             return;
         }
 
-        const unanswered =
-            axios.isAxiosError(error)
-                ? error.response?.data
-                      ?.unanswered_numbers
-                : null;
+        const unanswered = axios.isAxiosError(error)
+            ? error.response?.data?.unanswered_numbers
+            : null;
 
-        if (
-            Array.isArray(unanswered) &&
-            unanswered.length > 0
-        ) {
-            pageError.value =
-                `Please answer question${unanswered.length > 1 ? 's' : ''} ${unanswered.join(', ')} before submitting.`;
+        if (Array.isArray(unanswered) && unanswered.length > 0) {
+            pageError.value = `Please answer question${unanswered.length > 1 ? 's' : ''} ${unanswered.join(', ')} before submitting.`;
         } else {
             pageError.value = getErrorMessage(
                 error,
@@ -638,10 +535,7 @@ async function continueNextTopic(): Promise<void> {
 }
 
 async function finalizeTimeout(): Promise<void> {
-    if (
-        timeoutSubmitting.value ||
-        examCompleted.value
-    ) {
+    if (timeoutSubmitting.value || examCompleted.value) {
         return;
     }
 
@@ -649,19 +543,16 @@ async function finalizeTimeout(): Promise<void> {
     stopLocalTimer();
 
     try {
-        const response =
-            await axios.post(
-                `/api/v1/student/theoretical-assessments/${props.assessmentId}/exam/timeout`,
-                {},
-                {
-                    withCredentials: true,
-                },
-            );
+        const response = await axios.post(
+            `/api/v1/student/theoretical-assessments/${props.assessmentId}/exam/timeout`,
+            {},
+            {
+                withCredentials: true,
+            },
+        );
 
         examCompleted.value = true;
-        finalResult.value =
-            response.data.final_result ??
-            null;
+        finalResult.value = response.data.final_result ?? null;
         topicResult.value = null;
         nextCompetence.value = null;
         pageError.value = '';
@@ -675,15 +566,9 @@ async function finalizeTimeout(): Promise<void> {
     }
 }
 
-function getErrorMessage(
-    error: unknown,
-    fallback: string,
-): string {
+function getErrorMessage(error: unknown, fallback: string): string {
     if (axios.isAxiosError(error)) {
-        return (
-            error.response?.data?.message ??
-            fallback
-        );
+        return error.response?.data?.message ?? fallback;
     }
 
     return fallback;
@@ -722,11 +607,7 @@ onBeforeUnmount(() => {
         </div>
 
         <template v-else>
-            <Message
-                v-if="pageError"
-                severity="error"
-                :closable="false"
-            >
+            <Message v-if="pageError" severity="error" :closable="false">
                 {{ pageError }}
             </Message>
 
@@ -741,26 +622,17 @@ onBeforeUnmount(() => {
 
             <!-- FIXED EXAM TIMER -->
             <div
-                v-if="
-                    exam?.started_at &&
-                    !examCompleted
-                "
+                v-if="exam?.started_at && !examCompleted"
                 class="pointer-events-none fixed top-[84px] right-3 z-[80] flex justify-end sm:right-4 lg:right-6"
             >
                 <div
-                    class="w-fit min-w-[190px] max-w-[calc(100vw-1.5rem)] rounded-2xl border-2 px-3 py-2.5 shadow-lg backdrop-blur transition-colors duration-300 sm:max-w-none"
+                    class="w-fit max-w-[calc(100vw-1.5rem)] min-w-[190px] rounded-2xl border-2 px-3 py-2.5 shadow-lg backdrop-blur transition-colors duration-300 sm:max-w-none"
                     :class="timerContainerClass"
                     aria-live="polite"
                 >
-                    <div
-                        class="flex items-center justify-between gap-3"
-                    >
-                        <div
-                            class="flex items-center gap-2"
-                        >
-                            <i
-                                class="pi pi-clock text-sm"
-                            ></i>
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-2">
+                            <i class="pi pi-clock text-sm"></i>
                             <span
                                 class="text-[11px] font-bold tracking-wide uppercase"
                             >
@@ -768,16 +640,12 @@ onBeforeUnmount(() => {
                             </span>
                         </div>
 
-                        <span
-                            class="font-mono text-sm font-bold tabular-nums"
-                        >
+                        <span class="font-mono text-sm font-bold tabular-nums">
                             {{ timerText }}
                         </span>
                     </div>
 
-                    <div
-                        class="mt-2 flex items-center gap-2"
-                    >
+                    <div class="mt-2 flex items-center gap-2">
                         <div
                             class="h-1.5 flex-1 overflow-hidden rounded-full bg-black/10"
                         >
@@ -790,9 +658,7 @@ onBeforeUnmount(() => {
                             ></div>
                         </div>
 
-                        <span
-                            class="min-w-9 text-right text-[10px] font-bold"
-                        >
+                        <span class="min-w-9 text-right text-[10px] font-bold">
                             {{ timerPercentage }}%
                         </span>
                     </div>
@@ -819,20 +685,16 @@ onBeforeUnmount(() => {
                         </div>
 
                         <div class="min-w-0">
-                            <h1
-                                class="text-xl font-bold text-slate-900"
-                            >
+                            <h1 class="text-xl font-bold text-slate-900">
                                 Theoretical Assessment
                             </h1>
                             <p
-                                class="mt-1 break-words text-sm font-medium text-slate-600"
+                                class="mt-1 text-sm font-medium break-words text-slate-600"
                             >
                                 {{ exam.name_course }}
                             </p>
 
-                            <div
-                                class="mt-2 flex flex-wrap gap-2"
-                            >
+                            <div class="mt-2 flex flex-wrap gap-2">
                                 <Tag
                                     v-if="exam.session_code"
                                     :value="exam.session_code"
@@ -848,47 +710,36 @@ onBeforeUnmount(() => {
                             </div>
                         </div>
                     </div>
-
                 </div>
             </section>
 
             <section
                 v-if="
                     exam &&
-                    exam.exam_action_state ===
-                        'start' &&
+                    exam.exam_action_state === 'start' &&
                     !topic &&
                     !examCompleted
                 "
                 class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
             >
-                <div
-                    class="mx-auto max-w-2xl space-y-4 text-center"
-                >
+                <div class="mx-auto max-w-2xl space-y-4 text-center">
                     <div
                         class="mx-auto flex size-14 items-center justify-center rounded-full bg-blue-50 text-[#377EC0]"
                     >
-                        <i
-                            class="pi pi-play text-xl"
-                        ></i>
+                        <i class="pi pi-play text-xl"></i>
                     </div>
 
                     <div>
-                        <h2
-                            class="text-lg font-bold text-slate-900"
-                        >
+                        <h2 class="text-lg font-bold text-slate-900">
                             Ready to begin?
                         </h2>
-                        <p
-                            class="mt-2 text-sm leading-6 text-slate-600"
-                        >
-                            Your timer starts when you press Start Exam. Closing or refreshing the page will not reset the timer.
+                        <p class="mt-2 text-sm leading-6 text-slate-600">
+                            Your timer starts when you press Start Exam. Closing
+                            or refreshing the page will not reset the timer.
                         </p>
                     </div>
 
-                    <div
-                        class="grid gap-3 text-left sm:grid-cols-2"
-                    >
+                    <div class="grid gap-3 text-left sm:grid-cols-2">
                         <div
                             class="rounded-xl border border-slate-200 bg-slate-50 p-3"
                         >
@@ -897,9 +748,7 @@ onBeforeUnmount(() => {
                             >
                                 Duration
                             </p>
-                            <p
-                                class="mt-1 font-semibold text-slate-800"
-                            >
+                            <p class="mt-1 font-semibold text-slate-800">
                                 {{ exam.duration }} minutes
                             </p>
                         </div>
@@ -911,14 +760,8 @@ onBeforeUnmount(() => {
                             >
                                 Access Until
                             </p>
-                            <p
-                                class="mt-1 font-semibold text-slate-800"
-                            >
-                                {{
-                                    formatDateTime(
-                                        exam.access_end,
-                                    )
-                                }}
+                            <p class="mt-1 font-semibold text-slate-800">
+                                {{ formatDateTime(exam.access_end) }}
                             </p>
                         </div>
                     </div>
@@ -937,34 +780,27 @@ onBeforeUnmount(() => {
             <section
                 v-else-if="
                     exam &&
-                    exam.exam_action_state ===
-                        'time_expired' &&
+                    exam.exam_action_state === 'time_expired' &&
                     !topic &&
                     !examCompleted
                 "
                 class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
             >
-                <div
-                    class="mx-auto max-w-2xl text-center"
-                >
+                <div class="mx-auto max-w-2xl text-center">
                     <div
                         class="mx-auto flex size-14 items-center justify-center rounded-full bg-amber-50 text-amber-600"
                     >
-                        <i
-                            class="pi pi-clock text-xl"
-                        ></i>
+                        <i class="pi pi-clock text-xl"></i>
                     </div>
 
-                    <h2
-                        class="mt-4 text-lg font-bold text-slate-900"
-                    >
+                    <h2 class="mt-4 text-lg font-bold text-slate-900">
                         Assessment Time Expired
                     </h2>
 
-                    <p
-                        class="mt-2 text-sm leading-6 text-slate-600"
-                    >
-                        The allotted assessment time has ended. Your answers already saved in the system will be used when the assessment is finalized.
+                    <p class="mt-2 text-sm leading-6 text-slate-600">
+                        The allotted assessment time has ended. Your answers
+                        already saved in the system will be used when the
+                        assessment is finalized.
                     </p>
 
                     <div
@@ -994,10 +830,8 @@ onBeforeUnmount(() => {
             <section
                 v-else-if="
                     exam &&
-                    (exam.exam_action_state ===
-                        'not_available' ||
-                        exam.exam_action_state ===
-                            'expired') &&
+                    (exam.exam_action_state === 'not_available' ||
+                        exam.exam_action_state === 'expired') &&
                     !topic &&
                     !examCompleted
                 "
@@ -1005,26 +839,14 @@ onBeforeUnmount(() => {
             >
                 <Message
                     :severity="
-                        exam.exam_action_state ===
-                        'expired'
-                            ? 'warn'
-                            : 'info'
+                        exam.exam_action_state === 'expired' ? 'warn' : 'info'
                     "
                     :closable="false"
                 >
                     {{ exam.exam_action_label }}.
-                    <template
-                        v-if="
-                            exam.exam_action_state ===
-                            'not_available'
-                        "
-                    >
+                    <template v-if="exam.exam_action_state === 'not_available'">
                         Access begins
-                        {{
-                            formatDateTime(
-                                exam.access_start,
-                            )
-                        }}.
+                        {{ formatDateTime(exam.access_start) }}.
                     </template>
                 </Message>
 
@@ -1040,13 +862,7 @@ onBeforeUnmount(() => {
                 </div>
             </section>
 
-            <template
-                v-if="
-                    topic &&
-                    !topicResult &&
-                    !examCompleted
-                "
-            >
+            <template v-if="topic && !topicResult && !examCompleted">
                 <section
                     class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:p-5"
                 >
@@ -1060,9 +876,7 @@ onBeforeUnmount(() => {
                                 Competence {{ topic.order_no }} of
                                 {{ topic.total_competences }}
                             </p>
-                            <h2
-                                class="mt-1 text-lg font-bold text-slate-900"
-                            >
+                            <h2 class="mt-1 text-lg font-bold text-slate-900">
                                 {{
                                     topic.description ||
                                     'Theoretical Assessment Competence'
@@ -1073,8 +887,7 @@ onBeforeUnmount(() => {
                         <Tag
                             :value="`${answeredCount} / ${totalQuestions} answered`"
                             :severity="
-                                answeredCount ===
-                                totalQuestions
+                                answeredCount === totalQuestions
                                     ? 'success'
                                     : 'info'
                             "
@@ -1095,23 +908,19 @@ onBeforeUnmount(() => {
                         :key="question.id"
                         class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:p-5"
                     >
-                        <div
-                            class="flex items-start gap-3"
-                        >
+                        <div class="flex items-start gap-3">
                             <div
                                 class="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#377EC0]/10 text-sm font-bold text-[#377EC0]"
                             >
                                 {{ question.index }}
                             </div>
 
-                            <div
-                                class="min-w-0 flex-1"
-                            >
+                            <div class="min-w-0 flex-1">
                                 <div
                                     class="flex items-start justify-between gap-3"
                                 >
                                     <p
-                                        class="whitespace-pre-line text-base leading-7 font-semibold text-slate-800"
+                                        class="text-base leading-7 font-semibold whitespace-pre-line text-slate-800"
                                     >
                                         {{ question.question }}
                                     </p>
@@ -1123,16 +932,13 @@ onBeforeUnmount(() => {
                                     ></i>
                                 </div>
 
-                                <div
-                                    class="mt-4 space-y-2.5"
-                                >
+                                <div class="mt-4 space-y-2.5">
                                     <label
                                         v-for="choice in question.choices"
                                         :key="choice.key"
                                         class="flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition"
                                         :class="
-                                            question.answer ===
-                                            choice.key
+                                            question.answer === choice.key
                                                 ? 'border-[#377EC0] bg-blue-50/70 ring-1 ring-[#377EC0]/20'
                                                 : 'border-slate-200 bg-white hover:border-[#377EC0]/35 hover:bg-slate-50'
                                         "
@@ -1145,39 +951,28 @@ onBeforeUnmount(() => {
                                             :disabled="
                                                 submitting ||
                                                 timeoutSubmitting ||
-                                                remainingSeconds <=
-                                                    0
+                                                remainingSeconds <= 0
                                             "
                                             @update:model-value="
                                                 saveAnswer(
                                                     question,
-                                                    String(
-                                                        $event,
-                                                    ),
+                                                    String($event),
                                                 )
                                             "
                                         />
 
-                                        <div
-                                            class="min-w-0 flex-1"
-                                        >
-                                            <div
-                                                class="flex items-start gap-2"
-                                            >
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex items-start gap-2">
                                                 <span
                                                     class="font-bold text-slate-700"
                                                 >
-                                                    {{
-                                                        choice.key
-                                                    }}.
+                                                    {{ choice.key }}.
                                                 </span>
                                                 <span
                                                     v-if="choice.text"
-                                                    class="whitespace-pre-line text-sm leading-6 text-slate-700"
+                                                    class="text-sm leading-6 whitespace-pre-line text-slate-700"
                                                 >
-                                                    {{
-                                                        choice.text
-                                                    }}
+                                                    {{ choice.text }}
                                                 </span>
                                             </div>
 
@@ -1202,9 +997,7 @@ onBeforeUnmount(() => {
                         class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
                     >
                         <div>
-                            <p
-                                class="text-sm font-semibold text-slate-700"
-                            >
+                            <p class="text-sm font-semibold text-slate-700">
                                 {{ answeredCount }} of
                                 {{ totalQuestions }} questions answered
                             </p>
@@ -1212,7 +1005,8 @@ onBeforeUnmount(() => {
                                 v-if="answeredCount < totalQuestions"
                                 class="mt-0.5 text-xs text-slate-500"
                             >
-                                All questions must be answered before manual submission.
+                                All questions must be answered before manual
+                                submission.
                             </p>
                         </div>
 
@@ -1223,8 +1017,7 @@ onBeforeUnmount(() => {
                             severity="success"
                             :loading="submitting"
                             :disabled="
-                                timeoutSubmitting ||
-                                remainingSeconds <= 0
+                                timeoutSubmitting || remainingSeconds <= 0
                             "
                             @click="requestSubmitTopic"
                         />
@@ -1233,21 +1026,14 @@ onBeforeUnmount(() => {
             </template>
 
             <section
-                v-if="
-                    topicResult &&
-                    !examCompleted
-                "
+                v-if="topicResult && !examCompleted"
                 class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
             >
-                <div
-                    class="mx-auto max-w-2xl text-center"
-                >
+                <div class="mx-auto max-w-2xl text-center">
                     <div
                         class="mx-auto flex size-16 items-center justify-center rounded-full bg-emerald-50 text-emerald-600"
                     >
-                        <i
-                            class="pi pi-check-circle text-3xl"
-                        ></i>
+                        <i class="pi pi-check-circle text-3xl"></i>
                     </div>
 
                     <Tag
@@ -1257,24 +1043,17 @@ onBeforeUnmount(() => {
                         class="mt-4"
                     />
 
-                    <h2
-                        class="mt-3 text-xl font-bold text-slate-900"
-                    >
+                    <h2 class="mt-3 text-xl font-bold text-slate-900">
                         Competence
                         {{ topicResult.order_no }}
                         Completed
                     </h2>
 
-                    <p
-                        class="mt-2 text-sm leading-6 text-slate-600"
-                    >
+                    <p class="mt-2 text-sm leading-6 text-slate-600">
                         You have completed
                         <span class="font-semibold text-slate-800">
-                            {{
-                                topicResult.topic ||
-                                'this competence'
-                            }}
-                        </span>.
+                            {{ topicResult.topic || 'this competence' }} </span
+                        >.
                     </p>
 
                     <div
@@ -1288,7 +1067,7 @@ onBeforeUnmount(() => {
                         </p>
 
                         <p
-                            class="mt-1 text-sm font-semibold leading-6 text-slate-800"
+                            class="mt-1 text-sm leading-6 font-semibold text-slate-800"
                         >
                             {{
                                 nextCompetence.description ||
@@ -1296,10 +1075,9 @@ onBeforeUnmount(() => {
                             }}
                         </p>
 
-                        <p
-                            class="mt-1 text-xs leading-5 text-slate-600"
-                        >
-                            Proceed when you are ready. Your examination timer continues to run.
+                        <p class="mt-1 text-xs leading-5 text-slate-600">
+                            Proceed when you are ready. Your examination timer
+                            continues to run.
                         </p>
                     </div>
 
@@ -1321,27 +1099,20 @@ onBeforeUnmount(() => {
                 v-if="examCompleted"
                 class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
             >
-                <div
-                    class="mx-auto max-w-xl text-center"
-                >
+                <div class="mx-auto max-w-xl text-center">
                     <div
                         class="mx-auto flex size-16 items-center justify-center rounded-full bg-blue-50 text-[#377EC0]"
                     >
-                        <i
-                            class="pi pi-flag-fill text-2xl"
-                        ></i>
+                        <i class="pi pi-flag-fill text-2xl"></i>
                     </div>
 
-                    <h2
-                        class="mt-4 text-xl font-bold text-slate-900"
-                    >
+                    <h2 class="mt-4 text-xl font-bold text-slate-900">
                         Examination Complete
                     </h2>
 
-                    <p
-                        class="mt-2 text-sm leading-6 text-slate-600"
-                    >
-                        You have completed all assigned competences for this theoretical assessment.
+                    <p class="mt-2 text-sm leading-6 text-slate-600">
+                        You have completed all assigned competences for this
+                        theoretical assessment.
                     </p>
 
                     <div
@@ -1357,7 +1128,7 @@ onBeforeUnmount(() => {
                                 Exam Package
                             </p>
                             <p
-                                class="mt-1 text-sm font-bold leading-6 text-slate-900"
+                                class="mt-1 text-sm leading-6 font-bold text-slate-900"
                             >
                                 {{
                                     finalResult.exam_package ||
@@ -1367,12 +1138,8 @@ onBeforeUnmount(() => {
                             </p>
                         </div>
 
-                        <div
-                            class="grid gap-px bg-slate-200 sm:grid-cols-3"
-                        >
-                            <div
-                                class="bg-slate-50 px-4 py-4 text-center"
-                            >
+                        <div class="grid gap-px bg-slate-200 sm:grid-cols-3">
+                            <div class="bg-slate-50 px-4 py-4 text-center">
                                 <p
                                     class="text-xs font-bold tracking-wide text-slate-500 uppercase"
                                 >
@@ -1381,11 +1148,7 @@ onBeforeUnmount(() => {
                                 <p
                                     class="mt-2 text-xl font-bold text-slate-900"
                                 >
-                                    {{
-                                        formatResultNumber(
-                                            finalResult.score,
-                                        )
-                                    }}
+                                    {{ formatResultNumber(finalResult.score) }}
                                     /
                                     {{
                                         formatResultNumber(
@@ -1395,9 +1158,7 @@ onBeforeUnmount(() => {
                                 </p>
                             </div>
 
-                            <div
-                                class="bg-slate-50 px-4 py-4 text-center"
-                            >
+                            <div class="bg-slate-50 px-4 py-4 text-center">
                                 <p
                                     class="text-xs font-bold tracking-wide text-slate-500 uppercase"
                                 >
@@ -1414,9 +1175,7 @@ onBeforeUnmount(() => {
                                 </p>
                             </div>
 
-                            <div
-                                class="bg-slate-50 px-4 py-4 text-center"
-                            >
+                            <div class="bg-slate-50 px-4 py-4 text-center">
                                 <p
                                     class="text-xs font-bold tracking-wide text-slate-500 uppercase"
                                 >
@@ -1425,8 +1184,7 @@ onBeforeUnmount(() => {
                                 <Tag
                                     :value="finalResult.remarks"
                                     :severity="
-                                        finalResult.remarks ===
-                                        'PASSED'
+                                        finalResult.remarks === 'PASSED'
                                             ? 'success'
                                             : 'danger'
                                     "
@@ -1437,10 +1195,9 @@ onBeforeUnmount(() => {
                         </div>
                     </div>
 
-                    <p
-                        class="mt-4 text-xs leading-5 text-slate-500"
-                    >
-                        Your final result is also available from the Theoretical Assessments page.
+                    <p class="mt-4 text-xs leading-5 text-slate-500">
+                        Your final result is also available from the Theoretical
+                        Assessments page.
                     </p>
 
                     <Button
@@ -1464,12 +1221,8 @@ onBeforeUnmount(() => {
                     <div
                         class="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
                     >
-                        <div
-                            class="border-b border-slate-100 px-5 py-4"
-                        >
-                            <div
-                                class="flex items-start gap-3"
-                            >
+                        <div class="border-b border-slate-100 px-5 py-4">
+                            <div class="flex items-start gap-3">
                                 <div
                                     class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600"
                                 >
@@ -1478,9 +1231,7 @@ onBeforeUnmount(() => {
                                     ></i>
                                 </div>
 
-                                <div
-                                    class="min-w-0"
-                                >
+                                <div class="min-w-0">
                                     <h3
                                         class="text-base font-bold text-slate-900"
                                     >
@@ -1490,7 +1241,9 @@ onBeforeUnmount(() => {
                                     <p
                                         class="mt-1 text-sm leading-6 text-slate-600"
                                     >
-                                        You will not be able to change your answers after submitting this competence.
+                                        You will not be able to change your
+                                        answers after submitting this
+                                        competence.
                                     </p>
                                 </div>
                             </div>

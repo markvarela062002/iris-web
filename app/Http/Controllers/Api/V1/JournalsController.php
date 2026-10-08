@@ -2193,7 +2193,7 @@ class JournalsController extends Controller
             ),
             'sto_name' => $journal->sto_name,
             'file_name' => $fileName,
-            'gdrive_link' => $journal->gdrive_link,
+            'gdrive_link' => $journal->gdrive_link ?? null, 
             'evidence_url' => $evidenceUrl,
             'evidence_source' => $evidenceSource,
             'officer_signature_file' => $officerSignature,
