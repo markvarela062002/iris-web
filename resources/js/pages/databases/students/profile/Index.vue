@@ -496,7 +496,7 @@ const defaultAvatarUrl = computed<string | null>(() => {
         return '/images/female-cadet.png';
     }
 
-    return '/images/defaul-cadet.png';
+    return '/images/default-cadet.png';
 });
 
 

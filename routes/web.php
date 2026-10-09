@@ -107,11 +107,11 @@ Route::middleware([ 'auth', 'account.type:student'])->group(function (): void {
     Route::inertia('/monitoring/daily-journals/student/datatable','monitoring/daily-journals/student/datatable/Index')->name('student.monitoring.daily-journals');
     Route::get('/api/v1/student/daily-journals',[JournalsController::class,'studentIndex'])->name('api.v1.student.daily-journals.index');
     Route::post('/api/v1/student/daily-journals',[JournalsController::class,'studentStore'])->name('api.v1.student.daily-journals.store');
-    Route::get('/api/v1/student/daily-journals/{journalId}',[JournalsController::class,'studentShow'])->whereUuid('journalId')->name('api.v1.student.daily-journals.show');
-    Route::put('/api/v1/student/daily-journals/{journalId}',[JournalsController::class,'studentUpdate'])->whereUuid('journalId')->name('api.v1.student.daily-journals.update');
-    Route::post('/api/v1/student/daily-journals/{journalId}/evidence',[JournalsController::class,'studentUploadEvidence'])->whereUuid('journalId')->name('api.v1.student.daily-journals.evidence');
-    Route::post('/api/v1/student/daily-journals/{journalId}/signature',[JournalsController::class,'studentUploadSignature'])->middleware('throttle:10,1')->whereUuid('journalId')->name('api.v1.student.daily-journals.signature');
-    Route::delete('/api/v1/student/daily-journals/{journalId}',[JournalsController::class,'studentDestroy'])->whereUuid('journalId')->name('api.v1.student.daily-journals.destroy');
+    Route::get('/api/v1/student/daily-journals/{journalId}',[JournalsController::class,'studentShow'])->where('journalId', '[A-Za-z0-9-]+')->name('api.v1.student.daily-journals.show');
+    Route::put('/api/v1/student/daily-journals/{journalId}',[JournalsController::class,'studentUpdate'])->where('journalId', '[A-Za-z0-9-]+')->name('api.v1.student.daily-journals.update');
+    Route::post('/api/v1/student/daily-journals/{journalId}/evidence',[JournalsController::class,'studentUploadEvidence'])->where('journalId', '[A-Za-z0-9-]+')->name('api.v1.student.daily-journals.evidence');
+    Route::post('/api/v1/student/daily-journals/{journalId}/signature',[JournalsController::class,'studentUploadSignature'])->middleware('throttle:10,1')->where('journalId', '[A-Za-z0-9-]+')->name('api.v1.student.daily-journals.signature');
+    Route::delete('/api/v1/student/daily-journals/{journalId}',[JournalsController::class,'studentDestroy'])->where('journalId', '[A-Za-z0-9-]+')->name('api.v1.student.daily-journals.destroy');
     Route::get('/monitoring/daily-journals/student/print',[JournalsController::class,'studentDownload'])->name('student.monitoring.daily-journals.print');
 
     // Assessments — Student Theoretical Internal
@@ -349,12 +349,12 @@ Route::middleware([ 'auth', 'account.type:administrator'])->group(function (): v
     Route::get('/api/v1/monitoring/reports', [ReportsController::class, 'index'])->name('api.v1.monitoring.reports.index');
 
     // Monitoring — Daily Journals
-    Route::inertia('/monitoring/daily-journals/datatable/{journalId}','monitoring/daily-journals/datatable/Index',['journalId' => fn () => (string) request()->route('journalId')])->whereUuid('journalId')->name('monitoring.daily-journals.edit');
+    Route::inertia('/monitoring/daily-journals/datatable/{journalId}','monitoring/daily-journals/datatable/Index',['journalId' => fn () => (string) request()->route('journalId')])->where('journalId', '[A-Za-z0-9-]+')->name('monitoring.daily-journals.edit');
     Route::prefix('/api/v1/monitoring/daily-journals')->controller(JournalsController::class)->group(function (): void {
-        Route::get('/{journalId}', 'show')->whereUuid('journalId')->name('api.v1.monitoring.daily-journals.show');
-        Route::put('/{journalId}', 'update')->whereUuid('journalId')->name('api.v1.monitoring.daily-journals.update');
-        Route::post('/{journalId}/evidence', 'uploadEvidence')->whereUuid('journalId')->name('api.v1.monitoring.daily-journals.evidence');
-        Route::post('/{journalId}/signature', 'uploadSignature')->middleware('throttle:10,1')->whereUuid('journalId')->name('api.v1.monitoring.daily-journals.signature');
+        Route::get('/{journalId}', 'show')->where('journalId', '[A-Za-z0-9-]+')->name('api.v1.monitoring.daily-journals.show');
+        Route::put('/{journalId}', 'update')->where('journalId', '[A-Za-z0-9-]+')->name('api.v1.monitoring.daily-journals.update');
+        Route::post('/{journalId}/evidence', 'uploadEvidence')->where('journalId', '[A-Za-z0-9-]+')->name('api.v1.monitoring.daily-journals.evidence');
+        Route::post('/{journalId}/signature', 'uploadSignature')->middleware('throttle:10,1')->where('journalId', '[A-Za-z0-9-]+')->name('api.v1.monitoring.daily-journals.signature');
     });
 
     // Assessment Report — Item Analysis History API. Static routes precede {historyId}.

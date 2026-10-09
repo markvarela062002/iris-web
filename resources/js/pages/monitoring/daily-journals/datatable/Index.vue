@@ -240,7 +240,7 @@ const defaultAvatarUrl = computed<string>(() => {
     if (gender === 'FEMALE' || gender === 'F') {
         return '/images/female-cadet.png';
     }
-    return '/images/defaul-cadet.png';
+    return '/images/default-cadet.png';
 });
 
 const activityLabel = computed(() => {
