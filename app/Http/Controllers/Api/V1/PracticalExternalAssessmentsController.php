@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+
 use App\Services\ExternalAssessmentAccessService;
+use App\Services\IrisEmailService;
+
 use Illuminate\Database\ConnectionInterface;
 
 use Illuminate\Database\Query\Builder;
@@ -15,7 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
+
 use Illuminate\Support\Str;
 
 use Illuminate\Validation\ValidationException;
@@ -25,12 +28,17 @@ use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
 class PracticalExternalAssessmentsController extends Controller
-{
-    public function __construct(
-        private readonly ExternalAssessmentAccessService $externalAssessmentAccessService,
-    ) {
-    }
 
+{
+
+    public function __construct(
+
+        private readonly ExternalAssessmentAccessService $externalAssessmentAccessService,
+        private readonly IrisEmailService $irisEmailService,
+
+    ) {
+
+    }
 
     public function index(Request $request): JsonResponse
 
@@ -469,75 +477,103 @@ class PracticalExternalAssessmentsController extends Controller
         });
 
         $schoolCode = strtoupper(
+
             trim((string) $request->session()->get('school_code', '')),
+
         );
 
         $tokenExpiry = $this->externalAssessmentAccessService
+
             ->assessmentTokenExpiry(
+
                 $data['due_date'] ?? null,
+
                 null,
+
                 0,
+
             );
 
         $examUrl = $this->externalAssessmentAccessService
+
             ->practicalUrl(
+
                 $schoolCode,
+
                 $id,
+
                 $tokenExpiry,
+
             );
 
         $assessmentTitle = (string) (
+
             $database->table('p_assess_h')
+
                 ->where('id', $data['p_assess_h_id'])
+
                 ->value('title_assess')
+
             ?? 'Practical Assessment'
+
         );
 
         $name = $this->examineeName((object) $data) ?: 'Examinee';
 
         $validity = trim(implode(' to ', array_filter([
+
             ! empty($data['from_date']) && $data['from_date'] !== '1970-01-01'
+
                 ? $data['from_date']
+
                 : null,
+
             ! empty($data['due_date']) && $data['due_date'] !== '1970-01-01'
+
                 ? $data['due_date']
+
                 : null,
+
         ])));
 
         $emailSent = true;
 
         try {
-            Mail::html(
-                implode('', [
-                    '<html><body>',
-                    'Hi '.e($name).',<br><br>',
-                    'You have a scheduled Practical Assessment with the following details:<br><br>',
-                    'Assessment: <b>'.e($assessmentTitle).'</b><br>',
-                    $validity !== ''
-                        ? 'Validity: <b>'.e($validity).'</b><br><br>'
-                        : '<br>',
-                    'Click this <a href="'.e($examUrl).'" target="_blank" rel="noopener noreferrer">link</a> to start your assessment.<br><br>',
-                    'If the link does not work, copy this URL:<br>'.e($examUrl),
-                    '</body></html>',
-                ]),
-                function ($message) use ($data, $name): void {
-                    $message
-                        ->to(strtolower(trim($data['email'])), $name)
-                        ->subject('You have a scheduled Practical Assessment');
-                },
+            $this->irisEmailService->send(
+                view: 'emails.practical-external',
+                email: strtolower(trim((string) $data['email'])),
+                recipientName: $name,
+                schoolCode: $schoolCode,
+                subject: 'You have a scheduled Practical Assessment',
+                data: [
+                    'recipientName' => $name,
+                    'assessmentTitle' => $assessmentTitle,
+                    'validityText' => $validity,
+                    'assessmentUrl' => $examUrl,
+                ],
             );
         } catch (Throwable $exception) {
+
             report($exception);
+
             $emailSent = false;
+
         }
 
         return response()->json([
+
             'id' => $id,
+
             'email_sent' => $emailSent,
+
             'message' => $emailSent
+
                 ? 'Record saved and assessment email sent.'
+
                 : 'Record saved, but the assessment email could not be sent.',
+
         ], 201);
+
     }
 
     /** Editable header values, separate from the grading response. */

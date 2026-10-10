@@ -1,23 +1,9 @@
 <?php
 
 return [
-
-    /*
-    |--------------------------------------------------------------------------
-    | Default Mailer
-    |--------------------------------------------------------------------------
-    */
-
     'default' => env('MAIL_MAILER', 'log'),
 
-    /*
-    |--------------------------------------------------------------------------
-    | Mailer Configurations
-    |--------------------------------------------------------------------------
-    */
-
     'mailers' => [
-
         'smtp' => [
             'transport' => 'smtp',
             'scheme' => env('MAIL_SCHEME'),
@@ -30,27 +16,20 @@ return [
             'local_domain' => env(
                 'MAIL_EHLO_DOMAIN',
                 parse_url(
-                    (string) env(
-                        'APP_URL',
-                        'http://localhost',
-                    ),
+                    (string) env('APP_URL', 'http://localhost'),
                     PHP_URL_HOST,
                 ),
             ),
         ],
-
         'ses' => [
             'transport' => 'ses',
         ],
-
         'postmark' => [
             'transport' => 'postmark',
         ],
-
         'resend' => [
             'transport' => 'resend',
         ],
-
         'sendmail' => [
             'transport' => 'sendmail',
             'path' => env(
@@ -58,107 +37,63 @@ return [
                 '/usr/sbin/sendmail -bs -i',
             ),
         ],
-
         'log' => [
             'transport' => 'log',
-            'channel' => env(
-                'MAIL_LOG_CHANNEL',
-            ),
+            'channel' => env('MAIL_LOG_CHANNEL'),
         ],
-
         'array' => [
             'transport' => 'array',
         ],
-
         'failover' => [
             'transport' => 'failover',
-            'mailers' => [
-                'smtp',
-                'log',
-            ],
+            'mailers' => ['smtp', 'log'],
             'retry_after' => 60,
         ],
-
         'roundrobin' => [
             'transport' => 'roundrobin',
-            'mailers' => [
-                'ses',
-                'postmark',
-            ],
+            'mailers' => ['ses', 'postmark'],
             'retry_after' => 60,
         ],
-
     ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Global "From" Address
-    |--------------------------------------------------------------------------
-    */
 
     'from' => [
-        'address' => env(
-            'MAIL_FROM_ADDRESS',
-            'hello@example.com',
-        ),
+        'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
         'name' => env(
             'MAIL_FROM_NAME',
-            env(
-                'APP_NAME',
-                'Laravel',
-            ),
+            env('APP_NAME', 'Laravel'),
         ),
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | IRIS-SAM Student Credential Email
-    |--------------------------------------------------------------------------
-    |
-    | APP_URL is the one central web address for every school.
-    | The selected school is differentiated by the CODE placed in the email.
-    |
-    */
-
     'iris' => [
-
-        'web_url' => env(
-            'APP_URL',
-            'http://localhost',
+        'web_url' => env('APP_URL', 'http://localhost'),
+        'asset_url' => env(
+            'IRIS_MAIL_ASSET_URL',
+            'https://iris.trmfoundation.com',
         ),
-
+        'logo' => env(
+            'IRIS_MAIL_LOGO',
+            '/images/iris.png',
+        ),
+        'elosoft_logo' => env(
+            'IRIS_MAIL_ELOSOFT_LOGO',
+            '/images/es.png',
+        ),
         'android_url' => env(
             'IRIS_ANDROID_URL',
-            'https://play.google.com/store/apps/details?id=com.elosoftbiz.iris',
-        ),
-
-        /*
-         * Parked for now. Leave blank until the App Store listing is ready.
-         */
+        ) ?: 'https://play.google.com/store/apps/details?id=com.elosoftbiz.iris',
         'app_store_url' => env(
             'IRIS_APP_STORE_URL',
-            '',
-        ),
-
-        /*
-         * Comma-separated list, e.g.
-         * IRIS_MAIL_BCC=trmf.iris.sam@gmail.com,it@company.com
-         */
+        ) ?: 'https://apps.apple.com/ph/app/iris-sams/id6802582212',
         'bcc' => array_values(
             array_filter(
                 array_map(
                     'trim',
                     explode(
                         ',',
-                        (string) env(
-                            'IRIS_MAIL_BCC',
-                            '',
-                        ),
+                        (string) env('IRIS_MAIL_BCC', ''),
                     ),
                 ),
             ),
         ),
-
     ],
-
 ];
