@@ -40,6 +40,7 @@ use App\Http\Controllers\Api\V1\AlertSetupController;
 use App\Http\Controllers\Api\V1\AlertCalendarController;
 use App\Http\Controllers\Api\V1\AnnouncementsController;
 use App\Http\Controllers\Api\V1\MessageController;
+use App\Http\Controllers\EmailPreviewController;
 use App\Http\Controllers\Api\V1\TrbOtgContentController;
 use App\Http\Controllers\Api\V1\TheoreticalExternalExamController;
 use Illuminate\Support\Facades\Route;
@@ -479,4 +480,28 @@ Route::prefix('/api/v1/assessment-setup/subject-batch')->group(function (): void
     Route::get('/packages/{courseId}/subjects', [SubjectBatchUpdateController::class, 'subjects']);
     Route::patch('/packages/{courseId}/subjects', [SubjectBatchUpdateController::class, 'update']);
 });
+
+if (app()->environment('local')) {
+    Route::middleware([
+        'auth',
+        'account.type:administrator',
+    ])->group(function (): void {
+        Route::get(
+            '/email-preview',
+            [EmailPreviewController::class, 'index'],
+        )->name('email-preview.index');
+
+        Route::get(
+            '/email-preview/{template}',
+            [EmailPreviewController::class, 'preview'],
+        )->name('email-preview.preview');
+
+        Route::post(
+            '/email-preview/send',
+            [EmailPreviewController::class, 'send'],
+        )
+            ->middleware('throttle:10,1')
+            ->name('email-preview.send');
+    });
+}
 require __DIR__.'/settings.php';
