@@ -1,5 +1,4 @@
 <script setup lang="ts">
-
 import { Head } from '@inertiajs/vue3';
 
 import axios from 'axios';
@@ -8,72 +7,36 @@ import Message from 'primevue/message';
 
 import PrimeTag from 'primevue/tag';
 
-import {
-
-    onBeforeUnmount,
-
-    onMounted,
-
-    ref,
-
-} from 'vue';
-
-
+import { onBeforeUnmount, onMounted, ref } from 'vue';
 
 import Datatable from '@/components/Datatable.vue';
 
-import type {
-
-    DataTableColumn,
-
-    DataTableRow,
-
-} from '@/types';
-
-
+import type { DataTableColumn, DataTableRow } from '@/types';
 
 defineOptions({
-
     inheritAttrs: false,
 
-
-
     layout: {
-
         breadcrumbs: [
-
             {
-
                 title: 'Dashboard',
 
                 href: '/student-dashboard',
-
             },
 
             {
-
                 title: 'Announcements',
 
                 href: '/alerts/announcements/student/datatable',
-
             },
-
         ],
-
     },
-
 });
 
-
-
 type ApiListResponse = {
-
     data: DataTableRow[];
 
-
-
     meta: {
-
         currentPage: number;
 
         lastPage?: number;
@@ -85,46 +48,26 @@ type ApiListResponse = {
         from?: number | null;
 
         to?: number | null;
-
     };
-
 };
 
-
-
 type PageEvent = {
-
     page: number;
 
     rows: number;
 
     first: number;
-
 };
 
-
-
 type SortEvent = {
-
     sortField: string;
 
     sortOrder: number;
-
 };
 
+const DATATABLE_URL = '/api/v1/student/alerts/datatable/announcements';
 
-
-const DATATABLE_URL =
-
-    '/api/v1/student/alerts/datatable/announcements';
-
-
-
-const announcements =
-
-    ref<DataTableRow[]>([]);
-
-
+const announcements = ref<DataTableRow[]>([]);
 
 const loading = ref(false);
 
@@ -140,22 +83,12 @@ const search = ref('');
 
 const sortField = ref('post_by');
 
-const sortDirection =
+const sortDirection = ref<'asc' | 'desc'>('desc');
 
-    ref<'asc' | 'desc'>('desc');
-
-
-
-let requestController:
-
-    AbortController | null = null;
-
-
+let requestController: AbortController | null = null;
 
 const columns: DataTableColumn[] = [
-
     {
-
         field: 'subject',
 
         header: 'Announcement',
@@ -164,14 +97,10 @@ const columns: DataTableColumn[] = [
 
         searchable: true,
 
-        class:
-
-            'w-[340px] min-w-[340px] whitespace-normal',
-
+        class: 'w-[340px] min-w-[340px] whitespace-normal',
     },
 
     {
-
         field: 'details',
 
         header: 'Details',
@@ -180,14 +109,10 @@ const columns: DataTableColumn[] = [
 
         searchable: true,
 
-        class:
-
-            'w-[650px] min-w-[650px] whitespace-normal',
-
+        class: 'w-[650px] min-w-[650px] whitespace-normal',
     },
 
     {
-
         field: 'post_by',
 
         header: 'Schedule',
@@ -196,14 +121,10 @@ const columns: DataTableColumn[] = [
 
         searchable: false,
 
-        class:
-
-            'w-[300px] min-w-[300px]',
-
+        class: 'w-[300px] min-w-[300px]',
     },
 
     {
-
         field: 'status',
 
         header: 'Status',
@@ -212,517 +133,198 @@ const columns: DataTableColumn[] = [
 
         searchable: false,
 
-        class:
-
-            'w-[200px] min-w-[200px]',
-
+        class: 'w-[200px] min-w-[200px]',
     },
-
 ];
 
-
-
-async function loadAnnouncements(
-
-    page = 1,
-
-): Promise<void> {
-
+async function loadAnnouncements(page = 1): Promise<void> {
     requestController?.abort();
 
+    const controller = new AbortController();
 
-
-    const controller =
-
-        new AbortController();
-
-
-
-    requestController =
-
-        controller;
-
-
+    requestController = controller;
 
     loading.value = true;
 
     errorMessage.value = '';
 
-
-
     try {
+        const response = await axios.get<ApiListResponse>(
+            DATATABLE_URL,
 
-        const response =
+            {
+                signal: controller.signal,
 
-            await axios.get<ApiListResponse>(
+                params: {
+                    page,
 
-                DATATABLE_URL,
+                    per_page: perPage.value,
 
-                {
+                    search: search.value,
 
-                    signal:
+                    sort_field: sortField.value,
 
-                        controller.signal,
-
-
-
-                    params: {
-
-                        page,
-
-                        per_page:
-
-                            perPage.value,
-
-                        search:
-
-                            search.value,
-
-                        sort_field:
-
-                            sortField.value,
-
-                        sort_direction:
-
-                            sortDirection.value,
-
-                    },
-
-
-
-                    ...requestConfig(),
-
+                    sort_direction: sortDirection.value,
                 },
 
-            );
+                ...requestConfig(),
+            },
+        );
 
+        announcements.value = response.data.data;
 
+        totalRecords.value = response.data.meta.total;
 
-        announcements.value =
-
-            response.data.data;
-
-
-
-        totalRecords.value =
-
-            response.data.meta.total;
-
-
-
-        perPage.value =
-
-            response.data.meta.perPage;
-
-
+        perPage.value = response.data.meta.perPage;
 
         first.value =
-
-            (
-
-                response.data.meta
-
-                    .currentPage
-
-                - 1
-
-            )
-
-            *
-
-            response.data.meta
-
-                .perPage;
-
+            (response.data.meta.currentPage - 1) * response.data.meta.perPage;
     } catch (error: unknown) {
-
         if (isCanceled(error)) {
-
             return;
-
         }
-
-
 
         announcements.value = [];
 
         totalRecords.value = 0;
 
+        errorMessage.value = getErrorMessage(
+            error,
 
-
-        errorMessage.value =
-
-            getErrorMessage(
-
-                error,
-
-                'Unable to load announcements.',
-
-            );
-
+            'Unable to load announcements.',
+        );
     } finally {
-
-        if (
-
-            requestController
-
-            === controller
-
-        ) {
-
+        if (requestController === controller) {
             loading.value = false;
-
         }
-
     }
-
 }
 
-
-
-function handlePage(
-
-    event: PageEvent,
-
-): void {
-
+function handlePage(event: PageEvent): void {
     perPage.value = event.rows;
 
     first.value = event.first;
 
-
-
-    void loadAnnouncements(
-
-        event.page + 1,
-
-    );
-
+    void loadAnnouncements(event.page + 1);
 }
 
+function handleSort(event: SortEvent): void {
+    sortField.value = event.sortField || 'post_by';
 
-
-function handleSort(
-
-    event: SortEvent,
-
-): void {
-
-    sortField.value =
-
-        event.sortField
-
-        || 'post_by';
-
-
-
-    sortDirection.value =
-
-        event.sortOrder === -1
-
-            ? 'desc'
-
-            : 'asc';
-
-
+    sortDirection.value = event.sortOrder === -1 ? 'desc' : 'asc';
 
     first.value = 0;
 
-
-
     void loadAnnouncements(1);
-
 }
 
-
-
-function handleSearch(
-
-    value: string,
-
-): void {
-
+function handleSearch(value: string): void {
     search.value = value;
 
     first.value = 0;
 
-
-
     void loadAnnouncements(1);
-
 }
 
-
-
 function shortText(
-
     value: unknown,
 
     maximum = 170,
-
 ): string {
-
-    const text = String(
-
-        value
-
-        ?? '',
-
-    )
-
+    const text = String(value ?? '')
         .replace(/\s+/g, ' ')
 
         .trim();
 
-
-
-    if (
-
-        text.length
-
-        <= maximum
-
-    ) {
-
+    if (text.length <= maximum) {
         return text || '—';
-
     }
 
-
-
     return `${text.slice(
-
         0,
 
         maximum,
-
     )}…`;
-
 }
 
-
-
-function displayDate(
-
-    value: unknown,
-
-): string {
-
-    const date =
-
-        parseMysqlDate(
-
-            String(
-
-                value
-
-                ?? '',
-
-            ),
-
-        );
-
-
+function displayDate(value: unknown): string {
+    const date = parseMysqlDate(String(value ?? ''));
 
     if (!date) {
-
         return '—';
-
     }
 
-
-
     return new Intl.DateTimeFormat(
-
         'en-US',
 
         {
-
             month: 'short',
 
             day: 'numeric',
 
             year: 'numeric',
-
         },
-
     ).format(date);
-
 }
 
-
-
-function parseMysqlDate(
-
-    value: string,
-
-): Date | null {
-
-    const match =
-
-        /^(\d{4})-(\d{2})-(\d{2})$/.exec(
-
-            value,
-
-        );
-
-
+function parseMysqlDate(value: string): Date | null {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
 
     if (!match) {
-
         return null;
-
     }
 
-
-
     return new Date(
-
         Number(match[1]),
 
         Number(match[2]) - 1,
 
         Number(match[3]),
-
     );
-
 }
-
-
 
 function requestConfig() {
-
     return {
-
         headers: {
+            Accept: 'application/json',
 
-            Accept:
-
-                'application/json',
-
-            'X-Requested-With':
-
-                'XMLHttpRequest',
-
+            'X-Requested-With': 'XMLHttpRequest',
         },
 
-
-
         withCredentials: true,
-
     };
-
 }
 
-
-
-function isCanceled(
-
-    error: unknown,
-
-): boolean {
-
+function isCanceled(error: unknown): boolean {
     return (
-
-        axios.isCancel(error)
-
-        ||
-
-        (
-
-            axios.isAxiosError(
-
-                error,
-
-            )
-
-            &&
-
-            error.code
-
-                === 'ERR_CANCELED'
-
-        )
-
+        axios.isCancel(error) ||
+        (axios.isAxiosError(error) && error.code === 'ERR_CANCELED')
     );
-
 }
-
-
 
 function getErrorMessage(
-
     error: unknown,
 
     fallback: string,
-
 ): string {
-
-    if (
-
-        !axios.isAxiosError(
-
-            error,
-
-        )
-
-    ) {
-
+    if (!axios.isAxiosError(error)) {
         return fallback;
-
     }
 
-
-
     return (
-
         (
-
-            error.response
-
-                ?.data as
-
+            error.response?.data as
                 | {
-
                       message?: string;
-
                   }
-
                 | undefined
-
-        )?.message
-
-        ||
-
-        fallback
-
+        )?.message || fallback
     );
-
 }
 
+onMounted(() => void loadAnnouncements(1));
 
-
-onMounted(
-
-    () =>
-
-        void loadAnnouncements(
-
-            1,
-
-        ),
-
-);
-
-
-
-onBeforeUnmount(
-
-    () =>
-
-        requestController?.abort(),
-
-);
+onBeforeUnmount(() => requestController?.abort());
 </script>
 
 <template>

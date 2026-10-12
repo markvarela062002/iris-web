@@ -16,8 +16,7 @@ class ExamSessionController extends Controller
 {
     public function __construct(
         private readonly DatatableService $datatableService,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -207,8 +206,7 @@ class ExamSessionController extends Controller
         } catch (QueryException) {
             return response()->json(
                 [
-                    'message' =>
-                        'The exam session cannot be deleted because it is already in use.',
+                    'message' => 'The exam session cannot be deleted because it is already in use.',
                 ],
                 Response::HTTP_CONFLICT,
             );
@@ -245,8 +243,7 @@ class ExamSessionController extends Controller
                 'session_code.required' => 'Session code is required.',
                 'date_from.required' => 'Date from is required.',
                 'date_to.required' => 'Date to is required.',
-                'date_to.after_or_equal' =>
-                    'Date to must be the same as or later than date from.',
+                'date_to.after_or_equal' => 'Date to must be the same as or later than date from.',
             ],
         );
     }

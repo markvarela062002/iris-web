@@ -11,8 +11,6 @@ class EnsureAccountType
     /**
      * Ensure the authenticated account has one of the
      * permitted account types.
-     *
-     * @param string ...$types
      */
     public function handle(
         Request $request,

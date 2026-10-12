@@ -238,14 +238,12 @@ class IrisEmailService
         return array_values(
             array_filter(
                 array_map(
-                    static fn (mixed $address): string =>
-                        is_string($address)
+                    static fn (mixed $address): string => is_string($address)
                             ? trim($address)
                             : '',
                     $configured,
                 ),
-                static fn (string $address): bool =>
-                    $address !== ''
+                static fn (string $address): bool => $address !== ''
                     && filter_var(
                         $address,
                         FILTER_VALIDATE_EMAIL,

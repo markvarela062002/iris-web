@@ -109,8 +109,7 @@ type ValidationPayload = {
     issue_count?: number;
 };
 
-const API_BASE =
-    '/api/v1/setup/trb-otg-content';
+const API_BASE = '/api/v1/setup/trb-otg-content';
 
 const toast = useToast();
 
@@ -132,13 +131,12 @@ const importIssues = ref<ImportIssue[]>([]);
 
 const selectedTrbType = computed(
     () =>
-        trbTypes.value.find(
-            (item) => item.id === selectedTrbTypeId.value,
-        ) ?? null,
+        trbTypes.value.find((item) => item.id === selectedTrbTypeId.value) ??
+        null,
 );
 
-const hasContent = computed(
-    () => Boolean(content.value && content.value.functions.length > 0),
+const hasContent = computed(() =>
+    Boolean(content.value && content.value.functions.length > 0),
 );
 
 function requestConfig() {
@@ -267,13 +265,10 @@ async function downloadTemplate(): Promise<void> {
     errorMessage.value = '';
 
     try {
-        const response = await axios.get(
-            `${API_BASE}/template`,
-            {
-                responseType: 'blob',
-                ...requestConfig(),
-            },
-        );
+        const response = await axios.get(`${API_BASE}/template`, {
+            responseType: 'blob',
+            ...requestConfig(),
+        });
 
         const url = URL.createObjectURL(response.data);
         const anchor = document.createElement('a');
@@ -427,7 +422,8 @@ onMounted(() => void loadOptions());
                             TRB - OTG Content Setup
                         </div>
                         <div class="mt-1 text-sm font-normal text-slate-500">
-                            Upload and maintain the Function, Competence, Topic and Task hierarchy for each TRB Type.
+                            Upload and maintain the Function, Competence, Topic
+                            and Task hierarchy for each TRB Type.
                         </div>
                     </div>
                 </div>
@@ -497,8 +493,7 @@ onMounted(() => void loadOptions());
                     <div
                         v-if="selectedTrbType"
                         class="flex flex-wrap items-center gap-2"
-                    >
-                    </div>
+                    ></div>
 
                     <div class="flex flex-wrap gap-2">
                         <Button
@@ -516,9 +511,7 @@ onMounted(() => void loadOptions());
                             icon="pi pi-upload"
                             :loading="uploading"
                             :disabled="
-                                !selectedTrbTypeId ||
-                                !selectedFile ||
-                                deleting
+                                !selectedTrbTypeId || !selectedFile || deleting
                             "
                             @click="uploadContent"
                         />
@@ -529,9 +522,7 @@ onMounted(() => void loadOptions());
                             severity="info"
                             :loading="loadingContent"
                             :disabled="
-                                !selectedTrbTypeId ||
-                                uploading ||
-                                deleting
+                                !selectedTrbTypeId || uploading || deleting
                             "
                             @click="viewContent"
                         />
@@ -542,9 +533,7 @@ onMounted(() => void loadOptions());
                             severity="danger"
                             outlined
                             :disabled="
-                                !selectedTrbTypeId ||
-                                uploading ||
-                                deleting
+                                !selectedTrbTypeId || uploading || deleting
                             "
                             @click="requestDelete"
                         />
@@ -585,9 +574,7 @@ onMounted(() => void loadOptions());
 
         <Card v-if="content || loadingContent">
             <template #title>
-                <div
-                    class="flex flex-wrap items-center justify-between gap-3"
-                >
+                <div class="flex flex-wrap items-center justify-between gap-3">
                     <div>
                         <div class="text-xl font-semibold text-slate-800">
                             {{
@@ -597,7 +584,8 @@ onMounted(() => void loadOptions());
                             }}
                         </div>
                         <div class="mt-1 text-sm font-normal text-slate-500">
-                            Existing OTG content arranged in Function → Competence → Topic → Task hierarchy.
+                            Existing OTG content arranged in Function →
+                            Competence → Topic → Task hierarchy.
                         </div>
                     </div>
 
@@ -693,14 +681,10 @@ onMounted(() => void loadOptions());
                                     <div
                                         class="grid gap-2 bg-sky-50 px-4 py-3 md:grid-cols-[6rem_minmax(0,1fr)]"
                                     >
-                                        <div
-                                            class="font-semibold text-sky-700"
-                                        >
+                                        <div class="font-semibold text-sky-700">
                                             {{ topic.ref_no }}
                                         </div>
-                                        <div
-                                            class="font-medium text-slate-700"
-                                        >
+                                        <div class="font-medium text-slate-700">
                                             {{ topic.description }}
                                         </div>
                                     </div>
@@ -753,7 +737,8 @@ onMounted(() => void loadOptions());
                 </div>
 
                 <p class="text-sm text-slate-500">
-                    The TRB Type itself will remain available. Only its uploaded OTG content will be removed.
+                    The TRB Type itself will remain available. Only its uploaded
+                    OTG content will be removed.
                 </p>
             </div>
 

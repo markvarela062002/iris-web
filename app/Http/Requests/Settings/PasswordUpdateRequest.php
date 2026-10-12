@@ -44,6 +44,8 @@ class PasswordUpdateRequest extends FormRequest
 
     /**
      * Validate the current legacy ADMAPro password.
+     *
+     * @return array<\Closure(Validator): void>
      */
     public function after(): array
     {

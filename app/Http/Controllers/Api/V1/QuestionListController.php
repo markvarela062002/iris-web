@@ -51,7 +51,9 @@ class QuestionListController extends Controller
         $db = $this->connection($request);
         abort_unless($db->table('bs_course')->where('id', $courseId)->exists(), 404, 'Exam package not found.');
         $subjects = $db->table('bs_topic')->where('bs_course_id', $courseId)->orderBy('order_no')->orderBy('id')->get(['id', 'desc_topic']);
-        $subjects->each(function ($row): void { $row->desc_topic = $this->decode($row->desc_topic); });
+        $subjects->each(function ($row): void {
+            $row->desc_topic = $this->decode($row->desc_topic);
+        });
 
         return response()->json(['data' => $subjects]);
     }
@@ -171,12 +173,18 @@ class QuestionListController extends Controller
                         for ($n = 1; $n <= 5; $n++) {
                             $option = $row['option_'.$n];
                             $cells[] = $option['text'] ?? '';
-                            if ($option['correct'] ?? false) { $correct[] = (string) $n; }
+                            if ($option['correct'] ?? false) {
+                                $correct[] = (string) $n;
+                            }
                         }
                         foreach ($row['extra_options'] as $i => $option) {
-                            if ($option['correct']) { $correct[] = (string) ($i + 6); }
+                            if ($option['correct']) {
+                                $correct[] = (string) ($i + 6);
+                            }
                         }
-                        $cells[] = $row['marked']; $cells[] = $row['decision']; $cells[] = implode(', ', $correct);
+                        $cells[] = $row['marked'];
+                        $cells[] = $row['decision'];
+                        $cells[] = implode(', ', $correct);
                         $cells[] = $row['extra_options'] === [] ? '' : json_encode($row['extra_options'], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
                         $write($cells);
                     }

@@ -13,6 +13,7 @@ use Throwable;
 class ExternalAssessmentAccessService
 {
     public const TYPE_THEORETICAL = 'theoretical';
+
     public const TYPE_PRACTICAL = 'practical';
 
     public function issueToken(
@@ -213,8 +214,8 @@ class ExternalAssessmentAccessService
         ];
     }
 
-   public function databaseForSchool(
-    string $schoolCode,
+    public function databaseForSchool(
+        string $schoolCode,
     ): ConnectionInterface {
         $schoolCode = strtoupper(trim($schoolCode));
 

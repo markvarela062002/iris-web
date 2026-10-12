@@ -323,25 +323,28 @@ const timeOptions = Array.from({ length: 32 }, (_, index) => {
     return `${String(hour).padStart(2, '0')}:${index % 2 ? '30' : '00'}`;
 }).filter((value) => value <= '23:30');
 function resetForm(): void {
-createForm.value = {
-            email: '',
-            fname: '',
-            mname: '',
-            lname: '',
-            bs_course_id: '',
-            bs_exam_session_id: '',
-            exam_type: 'New',
-            duration: 0,
-            proctor_name: '',
-            access_exp_date: new Date(),
-            access_exp_time: '08:00',
-            access_exp_date_to: new Date(),
-            access_exp_time_to: '23:30',
-        };
+    createForm.value = {
+        email: '',
+        fname: '',
+        mname: '',
+        lname: '',
+        bs_course_id: '',
+        bs_exam_session_id: '',
+        exam_type: 'New',
+        duration: 0,
+        proctor_name: '',
+        access_exp_date: new Date(),
+        access_exp_time: '08:00',
+        access_exp_date_to: new Date(),
+        access_exp_time_to: '23:30',
+    };
 }
 
 function parseAccessDate(value: unknown): Date {
-    const parts = String(value ?? '').slice(0, 10).split('-').map(Number);
+    const parts = String(value ?? '')
+        .slice(0, 10)
+        .split('-')
+        .map(Number);
     const date = new Date(parts[0], parts[1] - 1, parts[2]);
 
     if (!parts[0] || Number.isNaN(date.getTime())) {
@@ -353,8 +356,8 @@ function parseAccessDate(value: unknown): Date {
 
 async function openEdit(row: DataTableRow): Promise<void> {
     if (creating.value) {
-return;
-}
+        return;
+    }
 
     const requestId = ++editRequestId;
     editingId.value = String(row.id);
@@ -369,8 +372,8 @@ return;
         );
 
         if (requestId !== editRequestId || !createVisible.value) {
-return;
-}
+            return;
+        }
 
         const record = data.assessment;
         createForm.value = {
@@ -386,30 +389,36 @@ return;
             access_exp_date: parseAccessDate(record.access_exp_date),
             access_exp_time: String(record.access_exp_time ?? '').slice(0, 5),
             access_exp_date_to: parseAccessDate(record.access_exp_date_to),
-            access_exp_time_to: String(record.access_exp_time_to ?? '').slice(0, 5),
+            access_exp_time_to: String(record.access_exp_time_to ?? '').slice(
+                0,
+                5,
+            ),
         };
     } catch (error: unknown) {
         if (requestId !== editRequestId) {
-return;
-}
+            return;
+        }
 
         createError.value = axios.isAxiosError(error)
-            ? (error.response?.data?.message ?? 'Unable to load the assessment.')
-            : (error instanceof Error ? error.message : 'Unable to load the assessment.');
+            ? (error.response?.data?.message ??
+              'Unable to load the assessment.')
+            : error instanceof Error
+              ? error.message
+              : 'Unable to load the assessment.';
         createVisible.value = false;
         createSuccess.value = '';
         window.alert(createError.value);
     } finally {
         if (requestId === editRequestId) {
-editLoading.value = false;
-}
+            editLoading.value = false;
+        }
     }
 }
 
 function openCreate(): void {
     if (creating.value) {
-return;
-}
+        return;
+    }
 
     editRequestId++;
     editingId.value = null;
@@ -420,8 +429,8 @@ return;
 }
 async function saveCreate(): Promise<void> {
     if (editLoading.value || creating.value) {
-return;
-}
+        return;
+    }
 
     createError.value = '';
     creating.value = true;
@@ -432,8 +441,7 @@ return;
             url: editingId.value
                 ? `/api/v1/dashboard/theoretical-external/${encodeURIComponent(editingId.value)}`
                 : '/api/v1/dashboard/theoretical-external',
-            data:
-            {
+            data: {
                 ...createForm.value,
                 access_exp_date: formatLocalDate(
                     createForm.value.access_exp_date,
@@ -557,7 +565,6 @@ function uppercaseValue(
 
     return normalized ? normalized.toUpperCase() : fallback;
 }
-
 
 /*
 
@@ -919,12 +926,14 @@ onMounted(() => {
             <template #cell-examinee_name="{ data }">
                 <div class="flex items-center gap-3">
                     <Avatar
-    image="/images/default-cadet.png"
-    :aria-label="uppercaseValue(data.examinee_name, 'Examinee')"
-    shape="circle"
-    size="large"
-    class="shrink-0"
-/>
+                        image="/images/default-cadet.png"
+                        :aria-label="
+                            uppercaseValue(data.examinee_name, 'Examinee')
+                        "
+                        shape="circle"
+                        size="large"
+                        class="shrink-0"
+                    />
 
                     <div class="min-w-0">
                         <p
@@ -1060,12 +1069,16 @@ onMounted(() => {
             v-model:visible="createVisible"
             modal
             :draggable="false"
-            :header="editingId ? 'Edit External Assessment' : 'Add External Assessment'"
+            :header="
+                editingId
+                    ? 'Edit External Assessment'
+                    : 'Add External Assessment'
+            "
             :closable="!creating"
             :close-on-escape="!creating"
             class="w-[95vw] max-w-3xl"
         >
-                    <div
+            <div
                 class="mb-4 flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900"
                 role="note"
             >
@@ -1075,8 +1088,11 @@ onMounted(() => {
                     <span class="font-semibold text-red-500">*</span> are
                     required fields.</span
                 >
-            </div>  
-            <div v-if="editLoading" class="flex items-center justify-center gap-2 py-8">
+            </div>
+            <div
+                v-if="editLoading"
+                class="flex items-center justify-center gap-2 py-8"
+            >
                 <i class="pi pi-spin pi-spinner"></i> Loading assessment…
             </div>
             <form

@@ -22,8 +22,8 @@ class SchoolUserProvider implements UserProvider
         );
 
         $model = match ($accountType) {
-            'administrator' => new User(),
-            'student' => new Student(),
+            'administrator' => new User,
+            'student' => new Student,
             default => null,
         };
 
@@ -72,7 +72,7 @@ class SchoolUserProvider implements UserProvider
      * Fortify uses authenticateUsing(), so credential
      * retrieval is handled in FortifyServiceProvider.
      *
-     * @param array<string, mixed> $credentials
+     * @param  array<string, mixed>  $credentials
      */
     public function retrieveByCredentials(
         array $credentials,
@@ -83,7 +83,7 @@ class SchoolUserProvider implements UserProvider
     /**
      * Validate the legacy plaintext password.
      *
-     * @param array<string, mixed> $credentials
+     * @param  array<string, mixed>  $credentials
      */
     public function validateCredentials(
         Authenticatable $user,
@@ -113,7 +113,7 @@ class SchoolUserProvider implements UserProvider
      * Legacy plaintext passwords are not automatically
      * rehashed at this time.
      *
-     * @param array<string, mixed> $credentials
+     * @param  array<string, mixed>  $credentials
      */
     public function rehashPasswordIfRequired(
         Authenticatable $user,

@@ -36,8 +36,7 @@ class AppServiceProvider extends ServiceProvider
          */
         Auth::provider(
             'school-users',
-            fn (): SchoolUserProvider =>
-                new SchoolUserProvider(),
+            fn (): SchoolUserProvider => new SchoolUserProvider,
         );
 
         $this->configureDefaults();
@@ -55,8 +54,7 @@ class AppServiceProvider extends ServiceProvider
         );
 
         Password::defaults(
-            fn (): ?Password =>
-                app()->isProduction()
+            fn (): ?Password => app()->isProduction()
                     ? Password::min(12)
                         ->mixedCase()
                         ->letters()

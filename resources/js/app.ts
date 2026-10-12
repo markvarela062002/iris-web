@@ -10,8 +10,7 @@ import AuthLayout from '@/layouts/AuthLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
 
-const appName =
-    import.meta.env.VITE_APP_NAME || 'IRIS - SAM';
+const appName = import.meta.env.VITE_APP_NAME || 'IRIS - SAM';
 
 /**
  * Force light mode in the browser.
@@ -35,9 +34,7 @@ if (typeof window !== 'undefined') {
 
 createInertiaApp({
     title: (title) => {
-        return title
-            ? `${title} - ${appName}`
-            : appName;
+        return title ? `${title} - ${appName}` : appName;
     },
 
     layout: (name) => {

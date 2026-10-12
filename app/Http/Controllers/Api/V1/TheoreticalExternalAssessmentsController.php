@@ -9,7 +9,10 @@ use App\Services\IrisEmailService;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Mpdf\Mpdf;
 use Mpdf\Output\Destination;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,8 +24,7 @@ class TheoreticalExternalAssessmentsController extends Controller
         private readonly DatatableService $datatableService,
         private readonly ExternalAssessmentAccessService $externalAssessmentAccessService,
         private readonly IrisEmailService $irisEmailService,
-    ) {
-    }
+    ) {}
 
     /**
      * Return External theoretical assessments.
@@ -176,8 +178,7 @@ class TheoreticalExternalAssessmentsController extends Controller
             ],
             sortableColumns: [
                 'started' => 'bs_person_exam_ext.started',
-                'access_exp_date' =>
-                    'bs_person_exam_ext.access_exp_date',
+                'access_exp_date' => 'bs_person_exam_ext.access_exp_date',
                 'email' => 'bs_person_exam_ext.email',
                 'examinee_name' => 'bs_person_exam_ext.lname',
                 'name_course' => 'bs_course.name_course',
@@ -208,10 +209,12 @@ class TheoreticalExternalAssessmentsController extends Controller
                     : 0;
                 $record['is_completed'] =
                     ($record['done'] ?? '') === 'Y';
+
                 return $record;
             })
             ->values()
             ->all();
+
         return response()->json($result);
     }
 
@@ -224,6 +227,7 @@ class TheoreticalExternalAssessmentsController extends Controller
         if ($db instanceof JsonResponse) {
             return $db;
         }
+
         return response()->json([
             'courses' => $db
                 ->table('bs_course')
@@ -267,20 +271,20 @@ class TheoreticalExternalAssessmentsController extends Controller
             'access_exp_time_to' => ['required', 'date_format:H:i'],
         ]);
         $data['email'] = strtolower(trim($data['email']));
-        $start = \Illuminate\Support\Carbon::createFromFormat('!Y-m-d H:i', $data['access_exp_date'].' '.$data['access_exp_time']);
-        $end = \Illuminate\Support\Carbon::createFromFormat('!Y-m-d H:i', $data['access_exp_date_to'].' '.$data['access_exp_time_to']);
+        $start = Carbon::createFromFormat('!Y-m-d H:i', $data['access_exp_date'].' '.$data['access_exp_time']);
+        $end = Carbon::createFromFormat('!Y-m-d H:i', $data['access_exp_date_to'].' '.$data['access_exp_time_to']);
         if ($end->lessThanOrEqualTo($start)) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
+            throw ValidationException::withMessages([
                 'access_exp_date_to' => 'The access end must be after the access start.',
             ]);
         }
         $courseName = $db->table('bs_course')->where('id', $data['bs_course_id'])->value('name_course');
         if ($courseName === null || ! $db->table('bs_exam_session')->where('id', $data['bs_exam_session_id'])->exists()) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
+            throw ValidationException::withMessages([
                 'bs_course_id' => 'Select an existing exam package and session.',
             ]);
         }
-        $id = (string) \Illuminate\Support\Str::uuid();
+        $id = (string) Str::uuid();
         $loginId = (string) ($request->user()?->getAuthIdentifier() ?? '');
         $db->transaction(function () use ($db, $data, $id, $loginId): void {
             $pending = $db->table('bs_person_exam_ext')
@@ -290,7 +294,7 @@ class TheoreticalExternalAssessmentsController extends Controller
                     $query->whereNull('started')->orWhere('started', '');
                 })->exists();
             if ($pending) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
+                throw ValidationException::withMessages([
                     'email' => 'The examinee already has a pending exam on the selected date.',
                 ]);
             }
@@ -321,7 +325,7 @@ class TheoreticalExternalAssessmentsController extends Controller
                     : collect();
             }
             if ($topics->isEmpty()) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
+                throw ValidationException::withMessages([
                     'exam_type' => $data['exam_type'] === 'Resit'
                         ? 'No failed topics were found in the latest completed exam.'
                         : 'This exam package has no topics.',
@@ -349,7 +353,7 @@ class TheoreticalExternalAssessmentsController extends Controller
             ]);
             foreach ($topics as $topic) {
                 $db->table('bs_person_exam_topic_ext')->insert([
-                    'id' => (string) \Illuminate\Support\Str::uuid(),
+                    'id' => (string) Str::uuid(),
                     'bs_person_exam_id' => $id,
                     'bs_topic_id' => $topic['bs_topic_id'],
                     'quest_cnt' => $topic['quest_cnt'],
@@ -398,6 +402,7 @@ class TheoreticalExternalAssessmentsController extends Controller
             report($exception);
             $emailSent = false;
         }
+
         return response()->json([
             'message' => $emailSent ? 'The record has been saved.' : 'The record was saved, but its email could not be sent.',
             'id' => $id,
@@ -412,12 +417,17 @@ class TheoreticalExternalAssessmentsController extends Controller
     public function edit(Request $request, string $assessmentId): JsonResponse
     {
         $db = $this->resolveSchoolConnection($request);
-        if ($db instanceof JsonResponse) return $db;
+        if ($db instanceof JsonResponse) {
+            return $db;
+        }
         $assessment = $db->table('bs_person_exam_ext')->where('id', $assessmentId)
             ->first(['id', 'email', 'fname', 'mname', 'lname', 'bs_course_id',
                 'bs_exam_session_id', 'exam_type', 'duration', 'proctor_name',
                 'access_exp_date', 'access_exp_time', 'access_exp_date_to', 'access_exp_time_to']);
-        if (! $assessment) return response()->json(['message' => 'Assessment not found.'], 404);
+        if (! $assessment) {
+            return response()->json(['message' => 'Assessment not found.'], 404);
+        }
+
         return response()->json(['assessment' => $assessment]);
     }
 
@@ -449,18 +459,17 @@ class TheoreticalExternalAssessmentsController extends Controller
             'access_exp_time_to' => ['required', 'date_format:H:i'],
         ]);
         $data['email'] = strtolower(trim($data['email']));
-        $start = \Illuminate\Support\Carbon::createFromFormat(
+        $start = Carbon::createFromFormat(
             '!Y-m-d H:i',
             $data['access_exp_date'].' '.$data['access_exp_time'],
         );
-        $end = \Illuminate\Support\Carbon::createFromFormat(
+        $end = Carbon::createFromFormat(
             '!Y-m-d H:i',
             $data['access_exp_date_to'].' '.$data['access_exp_time_to'],
         );
         if ($end->lessThanOrEqualTo($start)) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'access_exp_date_to' =>
-                    'The access end must be after the access start.',
+            throw ValidationException::withMessages([
+                'access_exp_date_to' => 'The access end must be after the access start.',
             ]);
         }
         $courseExists = $db
@@ -472,9 +481,8 @@ class TheoreticalExternalAssessmentsController extends Controller
             ->where('id', $data['bs_exam_session_id'])
             ->exists();
         if (! $courseExists || ! $sessionExists) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'bs_course_id' =>
-                    'Select an existing exam package and session.',
+            throw ValidationException::withMessages([
+                'bs_course_id' => 'Select an existing exam package and session.',
             ]);
         }
         $db->transaction(function () use (
@@ -492,9 +500,8 @@ class TheoreticalExternalAssessmentsController extends Controller
                 abort(404, 'Assessment not found.');
             }
             if (trim((string) ($record->started ?? '')) !== '') {
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'assessment' =>
-                        'This assessment can no longer be edited because the examinee has already started it.',
+                throw ValidationException::withMessages([
+                    'assessment' => 'This assessment can no longer be edited because the examinee has already started it.',
                 ]);
             }
             $packageChanged =
@@ -546,7 +553,7 @@ class TheoreticalExternalAssessmentsController extends Controller
                         : collect();
                 }
                 if ($topics->isEmpty()) {
-                    throw \Illuminate\Validation\ValidationException::withMessages([
+                    throw ValidationException::withMessages([
                         'exam_type' => $data['exam_type'] === 'Resit'
                             ? 'No failed topics were found in the latest completed exam.'
                             : 'This exam package has no topics.',
@@ -568,7 +575,7 @@ class TheoreticalExternalAssessmentsController extends Controller
                     ->delete();
                 foreach ($topics as $topic) {
                     $db->table('bs_person_exam_topic_ext')->insert([
-                        'id' => (string) \Illuminate\Support\Str::uuid(),
+                        'id' => (string) Str::uuid(),
                         'bs_person_exam_id' => $assessmentId,
                         'bs_topic_id' => $topic['bs_topic_id'],
                         'quest_cnt' => $topic['quest_cnt'],
@@ -607,6 +614,7 @@ class TheoreticalExternalAssessmentsController extends Controller
                     'last_update' => now()->format('Y-m-d H:i:s'),
                 ]);
         });
+
         return response()->json([
             'id' => $assessmentId,
             'message' => 'The record has been saved.',
@@ -655,8 +663,7 @@ class TheoreticalExternalAssessmentsController extends Controller
             ->first();
         if (! $assessment) {
             return response()->json([
-                'message' =>
-                    'The External assessment could not be found.',
+                'message' => 'The External assessment could not be found.',
             ], Response::HTTP_NOT_FOUND);
         }
         $answers = $db
@@ -700,10 +707,8 @@ class TheoreticalExternalAssessmentsController extends Controller
                      * The legacy page had these two fields reversed.
                      */
                     'answer' => $answer->answer,
-                    'correct_answer' =>
-                        $answer->correct_ans,
-                    'is_correct' =>
-                        (string) $answer->answer ===
+                    'correct_answer' => $answer->correct_ans,
+                    'is_correct' => (string) $answer->answer ===
                         (string) $answer->correct_ans,
                 ];
             });
@@ -712,6 +717,7 @@ class TheoreticalExternalAssessmentsController extends Controller
             $this->formatExamineeName($assessment);
         $assessment['total_items'] =
             $answers->count();
+
         return response()->json([
             'assessment' => $assessment,
             'answers' => $answers,
@@ -755,14 +761,12 @@ class TheoreticalExternalAssessmentsController extends Controller
             ->first();
         if (! $assessment) {
             return response()->json([
-                'message' =>
-                    'The External assessment could not be found.',
+                'message' => 'The External assessment could not be found.',
             ], Response::HTTP_NOT_FOUND);
         }
         if ($assessment->done !== 'Y') {
             return response()->json([
-                'message' =>
-                    'A certificate is only available for a completed assessment.',
+                'message' => 'A certificate is only available for a completed assessment.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
         /*
@@ -903,13 +907,11 @@ class TheoreticalExternalAssessmentsController extends Controller
 
                 return [
 
-                    'description' =>
+                    'description' => $this->decodeText(
 
-                        $this->decodeText(
+                        $topic->desc_topic,
 
-                            $topic->desc_topic,
-
-                        ),
+                    ),
 
                     'rating' => $questionCount > 0
 
@@ -923,9 +925,7 @@ class TheoreticalExternalAssessmentsController extends Controller
 
                         : 0,
 
-                    'remarks' =>
-
-                        (float) $topic->score >=
+                    'remarks' => (float) $topic->score >=
 
                         (float) $topic->passing_mark
 
@@ -933,9 +933,7 @@ class TheoreticalExternalAssessmentsController extends Controller
 
                             : 'FAIL',
 
-                    'date_taken' =>
-
-                        $topic->started,
+                    'date_taken' => $topic->started,
 
                 ];
 
@@ -1061,14 +1059,13 @@ class TheoreticalExternalAssessmentsController extends Controller
 
             $lastName.', '.$firstName.' '.$middleName,
 
-            " ,",
+            ' ,',
 
         );
 
     }
 
     private function decodeText(mixed $value): string
-
     {
 
         return str_replace(
@@ -1121,9 +1118,7 @@ class TheoreticalExternalAssessmentsController extends Controller
 
             return response()->json([
 
-                'message' =>
-
-                    'No school database has been selected.',
+                'message' => 'No school database has been selected.',
 
             ], Response::HTTP_FORBIDDEN);
 
@@ -1139,9 +1134,7 @@ class TheoreticalExternalAssessmentsController extends Controller
 
             return response()->json([
 
-                'message' =>
-
-                    'The selected school is not configured.',
+                'message' => 'The selected school is not configured.',
 
             ], Response::HTTP_FORBIDDEN);
 
@@ -1173,9 +1166,7 @@ class TheoreticalExternalAssessmentsController extends Controller
 
             return response()->json([
 
-                'message' =>
-
-                    'The selected school code is invalid.',
+                'message' => 'The selected school code is invalid.',
 
             ], Response::HTTP_FORBIDDEN);
 
@@ -1203,9 +1194,7 @@ class TheoreticalExternalAssessmentsController extends Controller
 
             return response()->json([
 
-                'message' =>
-
-                    'The school database connection is not configured.',
+                'message' => 'The school database connection is not configured.',
 
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
 
@@ -1222,5 +1211,4 @@ class TheoreticalExternalAssessmentsController extends Controller
         return DB::connection($connection);
 
     }
-
 }

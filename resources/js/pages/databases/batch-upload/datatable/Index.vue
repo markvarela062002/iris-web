@@ -6,7 +6,6 @@ import Toast from 'primevue/toast';
 import { useToast } from 'primevue/usetoast';
 import { computed, onBeforeUnmount, ref } from 'vue';
 
-
 defineOptions({
     inheritAttrs: false,
 
@@ -53,8 +52,7 @@ type Result = {
     created_accounts: CreatedAccount[];
 };
 
-const API =
-    '/api/v1/databases/students/batch-upload';
+const API = '/api/v1/databases/students/batch-upload';
 
 const file = ref<File | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
@@ -68,9 +66,7 @@ const result = ref<Result | null>(null);
 
 let disposed = false;
 
-function showError(
-    detail: string,
-): void {
+function showError(detail: string): void {
     toast.add({
         severity: 'error',
         summary: 'Error',
@@ -79,10 +75,7 @@ function showError(
     });
 }
 
-function showSuccess(
-    summary: string,
-    detail: string,
-): void {
+function showSuccess(summary: string, detail: string): void {
     toast.add({
         severity: 'success',
         summary,
@@ -92,30 +85,22 @@ function showSuccess(
 }
 
 const canImport = computed(
-    () =>
-        file.value !== null &&
-        confirmed.value &&
-        !importing.value,
+    () => file.value !== null && confirmed.value && !importing.value,
 );
 
-const selectedFileSize = computed(
-    () => {
-        if (!file.value) {
-            return '';
-        }
+const selectedFileSize = computed(() => {
+    if (!file.value) {
+        return '';
+    }
 
-        const kilobytes =
-            file.value.size / 1024;
+    const kilobytes = file.value.size / 1024;
 
-        if (kilobytes < 1024) {
-            return `${kilobytes.toFixed(1)} KB`;
-        }
+    if (kilobytes < 1024) {
+        return `${kilobytes.toFixed(1)} KB`;
+    }
 
-        return `${(
-            kilobytes / 1024
-        ).toFixed(2)} MB`;
-    },
-);
+    return `${(kilobytes / 1024).toFixed(2)} MB`;
+});
 
 function openFilePicker(): void {
     if (importing.value) {
@@ -126,33 +111,22 @@ function openFilePicker(): void {
 }
 
 function downloadTemplate(): void {
-    if (
-        downloadingTemplate.value ||
-        importing.value
-    ) {
+    if (downloadingTemplate.value || importing.value) {
         return;
     }
 
     downloadingTemplate.value = true;
 
     try {
-        const link =
-            document.createElement(
-                'a',
-            );
+        const link = document.createElement('a');
 
-        link.href =
-            '/templates/student-template.xlsx';
+        link.href = '/templates/student-template.xlsx';
 
-        link.download =
-            'student-template.xlsx';
+        link.download = 'student-template.xlsx';
 
-        link.style.display =
-            'none';
+        link.style.display = 'none';
 
-        document.body.appendChild(
-            link,
-        );
+        document.body.appendChild(link);
 
         link.click();
         link.remove();
@@ -160,28 +134,19 @@ function downloadTemplate(): void {
         toast.add({
             severity: 'success',
             summary: 'Template Download Started',
-            detail:
-                'student-template.xlsx is being downloaded.',
+            detail: 'student-template.xlsx is being downloaded.',
             life: 3000,
         });
     } catch {
-        showError(
-            'Unable to start the Excel template download.',
-        );
+        showError('Unable to start the Excel template download.');
     } finally {
-        window.setTimeout(
-            () => {
-                downloadingTemplate.value =
-                    false;
-            },
-            500,
-        );
+        window.setTimeout(() => {
+            downloadingTemplate.value = false;
+        }, 500);
     }
 }
 
-function applySelectedFile(
-    selected: File | null,
-): void {
+function applySelectedFile(selected: File | null): void {
     resetFeedback();
 
     if (!selected) {
@@ -192,13 +157,8 @@ function applySelectedFile(
         return;
     }
 
-    if (
-        selected.size >
-        5 * 1024 * 1024
-    ) {
-        showError(
-            'The Excel file must not exceed 5 MB.',
-        );
+    if (selected.size > 5 * 1024 * 1024) {
+        showError('The Excel file must not exceed 5 MB.');
 
         return;
     }
@@ -214,30 +174,20 @@ function applySelectedFile(
     toast.add({
         severity: 'info',
         summary: 'Workbook Selected',
-        detail:
-            `${selected.name} is ready for validation.`,
+        detail: `${selected.name} is ready for validation.`,
         life: 3000,
     });
 }
 
-function selectFile(
-    event: Event,
-): void {
-    const input =
-        event.target as HTMLInputElement;
+function selectFile(event: Event): void {
+    const input = event.target as HTMLInputElement;
 
-    const selected =
-        input.files?.[0] ??
-        null;
+    const selected = input.files?.[0] ?? null;
 
-    applySelectedFile(
-        selected,
-    );
+    applySelectedFile(selected);
 }
 
-function handleFileDragOver(
-    event: DragEvent,
-): void {
+function handleFileDragOver(event: DragEvent): void {
     if (importing.value) {
         return;
     }
@@ -246,25 +196,20 @@ function handleFileDragOver(
     event.stopPropagation();
 
     if (event.dataTransfer) {
-        event.dataTransfer.dropEffect =
-            'copy';
+        event.dataTransfer.dropEffect = 'copy';
     }
 
     isDraggingFile.value = true;
 }
 
-function handleFileDragLeave(
-    event: DragEvent,
-): void {
+function handleFileDragLeave(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
 
     isDraggingFile.value = false;
 }
 
-function handleFileDrop(
-    event: DragEvent,
-): void {
+function handleFileDrop(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
 
@@ -274,34 +219,18 @@ function handleFileDrop(
         return;
     }
 
-    let selected: File | null =
-        event.dataTransfer
-            ?.files?.[0]
-        ??
-        null;
+    let selected: File | null = event.dataTransfer?.files?.[0] ?? null;
 
     /*
      * Some Chromium/Safari drag sources expose the dropped file
      * through DataTransferItem before files[0].
      */
-    if (
-        !selected &&
-        event.dataTransfer
-            ?.items?.length
-    ) {
-        const item =
-            Array.from(
-                event.dataTransfer.items,
-            ).find(
-                (entry) =>
-                    entry.kind ===
-                    'file',
-            );
+    if (!selected && event.dataTransfer?.items?.length) {
+        const item = Array.from(event.dataTransfer.items).find(
+            (entry) => entry.kind === 'file',
+        );
 
-        selected =
-            item?.getAsFile()
-            ??
-            null;
+        selected = item?.getAsFile() ?? null;
     }
 
     if (!selected) {
@@ -312,26 +241,20 @@ function handleFileDrop(
         return;
     }
 
-    applySelectedFile(
-        selected,
-    );
+    applySelectedFile(selected);
 }
 
 async function importStudents(): Promise<void> {
     resetFeedback();
 
     if (!file.value) {
-        showError(
-            'Select an Excel file before importing.',
-        );
+        showError('Select an Excel file before importing.');
 
         return;
     }
 
     if (!confirmed.value) {
-        showError(
-            'Confirm the update notice before importing.',
-        );
+        showError('Confirm the update notice before importing.');
 
         return;
     }
@@ -344,20 +267,14 @@ async function importStudents(): Promise<void> {
     body.append('confirm_update', '1');
 
     try {
-        const response = await axios.post<Result>(
-            `${API}/import`,
-            body,
-            {
-                headers: {
-                    Accept:
-                        'application/json',
-                    'X-Requested-With':
-                        'XMLHttpRequest',
-                },
-
-                withCredentials: true,
+        const response = await axios.post<Result>(`${API}/import`, body, {
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
             },
-        );
+
+            withCredentials: true,
+        });
 
         if (disposed) {
             return;
@@ -372,14 +289,11 @@ async function importStudents(): Promise<void> {
         }
 
         const emailSummary =
-            response.data.emails_sent > 0 ||
-            response.data.emails_failed > 0
+            response.data.emails_sent > 0 || response.data.emails_failed > 0
                 ? ` ${response.data.emails_sent} credential email(s) sent` +
-                  (
-                      response.data.emails_failed > 0
-                          ? `, ${response.data.emails_failed} failed.`
-                          : '.'
-                  )
+                  (response.data.emails_failed > 0
+                      ? `, ${response.data.emails_failed} failed.`
+                      : '.')
                 : '';
 
         showSuccess(
@@ -391,20 +305,13 @@ async function importStudents(): Promise<void> {
             return;
         }
 
-        showError(
-            errorMessage(
-                caught,
-                'Unable to import students.',
-            ),
-        );
+        showError(errorMessage(caught, 'Unable to import students.'));
 
         if (axios.isAxiosError(caught)) {
-            issues.value =
-                caught.response?.data?.issues ?? [];
+            issues.value = caught.response?.data?.issues ?? [];
 
             issueCount.value = Number(
-                caught.response?.data?.issue_count
-                ?? issues.value.length,
+                caught.response?.data?.issue_count ?? issues.value.length,
             );
         }
     } finally {
@@ -412,24 +319,17 @@ async function importStudents(): Promise<void> {
     }
 }
 
-function errorMessage(
-    caught: unknown,
-    fallback: string,
-): string {
+function errorMessage(caught: unknown, fallback: string): string {
     if (!axios.isAxiosError(caught)) {
         return fallback;
     }
 
     const body = caught.response?.data;
-    const first = Object.values(
-        body?.errors ?? {},
-    )[0];
+    const first = Object.values(body?.errors ?? {})[0];
 
     return Array.isArray(first)
         ? String(first[0])
-        : String(
-              body?.message ?? fallback,
-          );
+        : String(body?.message ?? fallback);
 }
 
 function resetFeedback(): void {
@@ -439,9 +339,7 @@ function resetFeedback(): void {
 }
 
 function clearForm(): void {
-    const hadSelection =
-        file.value !== null ||
-        confirmed.value;
+    const hadSelection = file.value !== null || confirmed.value;
 
     file.value = null;
     confirmed.value = false;
@@ -456,16 +354,13 @@ function clearForm(): void {
         toast.add({
             severity: 'info',
             summary: 'Selection Cleared',
-            detail:
-                'The selected workbook and confirmation were cleared.',
+            detail: 'The selected workbook and confirmation were cleared.',
             life: 2500,
         });
     }
 }
 
-function accountText(
-    account: CreatedAccount,
-): string {
+function accountText(account: CreatedAccount): string {
     return [
         `School ID: ${account.school_id_no}`,
         `Name: ${account.name}`,
@@ -474,13 +369,9 @@ function accountText(
     ].join('\n');
 }
 
-async function copyAccount(
-    account: CreatedAccount,
-): Promise<void> {
+async function copyAccount(account: CreatedAccount): Promise<void> {
     try {
-        await navigator.clipboard.writeText(
-            accountText(account),
-        );
+        await navigator.clipboard.writeText(accountText(account));
 
         showSuccess(
             'Credentials Copied',
@@ -494,16 +385,13 @@ async function copyAccount(
 }
 
 async function copyAllAccounts(): Promise<void> {
-    const accounts =
-        result.value?.created_accounts ?? [];
+    const accounts = result.value?.created_accounts ?? [];
 
     if (accounts.length === 0) {
         return;
     }
 
-    const text = accounts
-        .map((account) => accountText(account))
-        .join('\n\n');
+    const text = accounts.map((account) => accountText(account)).join('\n\n');
 
     try {
         await navigator.clipboard.writeText(text);
@@ -534,15 +422,11 @@ onBeforeUnmount(() => {
 
     <Toast position="top-right" />
 
-    <div
-        class="flex flex-1 flex-col gap-5 bg-[#F8FAFC] p-4 lg:p-6"
-    >
+    <div class="flex flex-1 flex-col gap-5 bg-[#F8FAFC] p-4 lg:p-6">
         <section
             class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:p-6"
         >
-            <div
-                class="mb-5 flex flex-wrap items-center justify-between gap-4"
-            >
+            <div class="mb-5 flex flex-wrap items-center justify-between gap-4">
                 <div class="flex items-center gap-3">
                     <div
                         class="relative flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-[#123A63] to-[#377EC0] text-white shadow-lg shadow-[#377EC0]/20"
@@ -557,25 +441,19 @@ onBeforeUnmount(() => {
                     </div>
 
                     <div>
-                        <h1
-                            class="text-xl font-bold text-slate-800"
-                        >
+                        <h1 class="text-xl font-bold text-slate-800">
                             Batch Upload Students
                         </h1>
 
-                        <p
-                            class="text-sm text-slate-500"
-                        >
-                            Add new students or update existing student records from an XLS or XLSX workbook.
+                        <p class="text-sm text-slate-500">
+                            Add new students or update existing student records
+                            from an XLS or XLSX workbook.
                         </p>
                     </div>
                 </div>
-
             </div>
 
-            <div
-                class="mb-5 grid gap-3 md:grid-cols-3"
-            >
+            <div class="mb-5 grid gap-3 md:grid-cols-3">
                 <div
                     class="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-3"
                 >
@@ -586,16 +464,13 @@ onBeforeUnmount(() => {
                     </div>
 
                     <div>
-                        <p
-                            class="text-sm font-semibold text-slate-800"
-                        >
+                        <p class="text-sm font-semibold text-slate-800">
                             Download the template
                         </p>
 
-                        <p
-                            class="mt-1 text-xs text-slate-600"
-                        >
-                            Download the Excel template, fill in the student rows, then upload it below.
+                        <p class="mt-1 text-xs text-slate-600">
+                            Download the Excel template, fill in the student
+                            rows, then upload it below.
                         </p>
                     </div>
                 </div>
@@ -610,16 +485,13 @@ onBeforeUnmount(() => {
                     </div>
 
                     <div>
-                        <p
-                            class="text-sm font-semibold text-slate-800"
-                        >
+                        <p class="text-sm font-semibold text-slate-800">
                             Complete the student rows
                         </p>
 
-                        <p
-                            class="mt-1 text-xs text-slate-600"
-                        >
-                            Keep the 9 columns in the same order. Gender and Email are required; Middle Name may be blank.
+                        <p class="mt-1 text-xs text-slate-600">
+                            Keep the 9 columns in the same order. Gender and
+                            Email are required; Middle Name may be blank.
                         </p>
                     </div>
                 </div>
@@ -634,16 +506,13 @@ onBeforeUnmount(() => {
                     </div>
 
                     <div>
-                        <p
-                            class="text-sm font-semibold text-slate-800"
-                        >
+                        <p class="text-sm font-semibold text-slate-800">
                             Upload and confirm
                         </p>
 
-                        <p
-                            class="mt-1 text-xs text-slate-600"
-                        >
-                            Drag or choose any XLS/XLSX workbook. The filename does not need to match the template.
+                        <p class="mt-1 text-xs text-slate-600">
+                            Drag or choose any XLS/XLSX workbook. The filename
+                            does not need to match the template.
                         </p>
                     </div>
                 </div>
@@ -682,7 +551,9 @@ onBeforeUnmount(() => {
 
                 <div class="w-full overflow-x-auto bg-[#F3F3F3]">
                     <div class="min-w-[1620px] p-4">
-                        <div class="overflow-hidden border border-slate-300 bg-white">
+                        <div
+                            class="overflow-hidden border border-slate-300 bg-white"
+                        >
                             <table
                                 class="w-full table-fixed border-collapse text-left text-sm"
                             >
@@ -699,253 +570,253 @@ onBeforeUnmount(() => {
                                     <col style="width: 260px" />
                                 </colgroup>
 
-                            <thead>
-                                <tr>
-                                    <th
-                                        class="h-8 border-r border-b border-slate-300 bg-[#E7E6E6]"
-                                    ></th>
+                                <thead>
+                                    <tr>
+                                        <th
+                                            class="h-8 border-r border-b border-slate-300 bg-[#E7E6E6]"
+                                        ></th>
 
-                                    <th
-                                        v-for="letter in [
-                                            'A',
-                                            'B',
-                                            'C',
-                                            'D',
-                                            'E',
-                                            'F',
-                                            'G',
-                                            'H',
-                                            'I',
-                                        ]"
-                                        :key="letter"
-                                        class="h-8 border-r border-b border-slate-300 bg-[#E7E6E6] px-3 text-center text-xs font-semibold text-slate-700 last:border-r-0"
-                                    >
-                                        {{ letter }}
-                                    </th>
-                                </tr>
-                            </thead>
+                                        <th
+                                            v-for="letter in [
+                                                'A',
+                                                'B',
+                                                'C',
+                                                'D',
+                                                'E',
+                                                'F',
+                                                'G',
+                                                'H',
+                                                'I',
+                                            ]"
+                                            :key="letter"
+                                            class="h-8 border-r border-b border-slate-300 bg-[#E7E6E6] px-3 text-center text-xs font-semibold text-slate-700 last:border-r-0"
+                                        >
+                                            {{ letter }}
+                                        </th>
+                                    </tr>
+                                </thead>
 
-                            <tbody>
-                                <tr>
-                                    <th
-                                        class="border-r border-b border-slate-300 bg-[#E7E6E6] text-center text-xs font-semibold text-slate-700"
-                                    >
-                                        1
-                                    </th>
+                                <tbody>
+                                    <tr>
+                                        <th
+                                            class="border-r border-b border-slate-300 bg-[#E7E6E6] text-center text-xs font-semibold text-slate-700"
+                                        >
+                                            1
+                                        </th>
 
-                                    <td
-                                        class="border-r border-b border-slate-300 bg-[#E2F0D9] px-3 py-2 font-semibold text-slate-800"
-                                    >
-                                        SCHOOL ID NO.
-                                    </td>
+                                        <td
+                                            class="border-r border-b border-slate-300 bg-[#E2F0D9] px-3 py-2 font-semibold text-slate-800"
+                                        >
+                                            SCHOOL ID NO.
+                                        </td>
 
-                                    <td
-                                        class="border-r border-b border-slate-300 bg-[#E2F0D9] px-3 py-2 font-semibold text-slate-800"
-                                    >
-                                        LAST NAME
-                                    </td>
+                                        <td
+                                            class="border-r border-b border-slate-300 bg-[#E2F0D9] px-3 py-2 font-semibold text-slate-800"
+                                        >
+                                            LAST NAME
+                                        </td>
 
-                                    <td
-                                        class="border-r border-b border-slate-300 bg-[#E2F0D9] px-3 py-2 font-semibold text-slate-800"
-                                    >
-                                        FIRST NAME
-                                    </td>
+                                        <td
+                                            class="border-r border-b border-slate-300 bg-[#E2F0D9] px-3 py-2 font-semibold text-slate-800"
+                                        >
+                                            FIRST NAME
+                                        </td>
 
-                                    <td
-                                        class="border-r border-b border-slate-300 bg-[#E2F0D9] px-3 py-2 font-semibold text-slate-800"
-                                    >
-                                        MIDDLE NAME
-                                    </td>
+                                        <td
+                                            class="border-r border-b border-slate-300 bg-[#E2F0D9] px-3 py-2 font-semibold text-slate-800"
+                                        >
+                                            MIDDLE NAME
+                                        </td>
 
-                                    <td
-                                        class="border-r border-b border-slate-300 bg-[#E2F0D9] px-3 py-2 font-semibold text-slate-800"
-                                    >
-                                        GENDER
-                                    </td>
+                                        <td
+                                            class="border-r border-b border-slate-300 bg-[#E2F0D9] px-3 py-2 font-semibold text-slate-800"
+                                        >
+                                            GENDER
+                                        </td>
 
-                                    <td
-                                        class="border-r border-b border-slate-300 bg-[#E2F0D9] px-3 py-2 font-semibold text-slate-800"
-                                    >
-                                        CCI YEAR
-                                    </td>
+                                        <td
+                                            class="border-r border-b border-slate-300 bg-[#E2F0D9] px-3 py-2 font-semibold text-slate-800"
+                                        >
+                                            CCI YEAR
+                                        </td>
 
-                                    <td
-                                        class="border-r border-b border-slate-300 bg-[#E2F0D9] px-3 py-2 font-semibold text-slate-800"
-                                    >
-                                        DEPARTMENT
-                                    </td>
+                                        <td
+                                            class="border-r border-b border-slate-300 bg-[#E2F0D9] px-3 py-2 font-semibold text-slate-800"
+                                        >
+                                            DEPARTMENT
+                                        </td>
 
-                                    <td
-                                        class="border-r border-b border-slate-300 bg-[#E2F0D9] px-3 py-2 font-semibold text-slate-800"
-                                    >
-                                        TRB TYPE
-                                    </td>
+                                        <td
+                                            class="border-r border-b border-slate-300 bg-[#E2F0D9] px-3 py-2 font-semibold text-slate-800"
+                                        >
+                                            TRB TYPE
+                                        </td>
 
-                                    <td
-                                        class="border-r-0 border-b border-slate-300 bg-[#E2F0D9] px-3 py-2 font-semibold text-slate-800"
-                                    >
-                                        EMAIL
-                                    </td>
-                                </tr>
+                                        <td
+                                            class="border-r-0 border-b border-slate-300 bg-[#E2F0D9] px-3 py-2 font-semibold text-slate-800"
+                                        >
+                                            EMAIL
+                                        </td>
+                                    </tr>
 
-                                <tr>
-                                    <th
-                                        class="border-r border-b border-slate-300 bg-[#E7E6E6] text-center text-xs font-semibold text-slate-700"
-                                    >
-                                        2
-                                    </th>
+                                    <tr>
+                                        <th
+                                            class="border-r border-b border-slate-300 bg-[#E7E6E6] text-center text-xs font-semibold text-slate-700"
+                                        >
+                                            2
+                                        </th>
 
-                                    <td
-                                        class="border-r border-b border-slate-300 px-3 py-2"
-                                    >
-                                        2026-001
-                                    </td>
+                                        <td
+                                            class="border-r border-b border-slate-300 px-3 py-2"
+                                        >
+                                            2026-001
+                                        </td>
 
-                                    <td
-                                        class="border-r border-b border-slate-300 px-3 py-2"
-                                    >
-                                        DELA CRUZ
-                                    </td>
+                                        <td
+                                            class="border-r border-b border-slate-300 px-3 py-2"
+                                        >
+                                            DELA CRUZ
+                                        </td>
 
-                                    <td
-                                        class="border-r border-b border-slate-300 px-3 py-2"
-                                    >
-                                        JUAN
-                                    </td>
+                                        <td
+                                            class="border-r border-b border-slate-300 px-3 py-2"
+                                        >
+                                            JUAN
+                                        </td>
 
-                                    <td
-                                        class="border-r border-b border-slate-300 bg-[#FAFAFA] px-3 py-2"
-                                        title="Middle Name may be left blank"
-                                    >
-                                        &nbsp;
-                                    </td>
+                                        <td
+                                            class="border-r border-b border-slate-300 bg-[#FAFAFA] px-3 py-2"
+                                            title="Middle Name may be left blank"
+                                        >
+                                            &nbsp;
+                                        </td>
 
-                                    <td
-                                        class="border-r border-b border-slate-300 px-3 py-2"
-                                    >
-                                        MALE
-                                    </td>
+                                        <td
+                                            class="border-r border-b border-slate-300 px-3 py-2"
+                                        >
+                                            MALE
+                                        </td>
 
-                                    <td
-                                        class="border-r border-b border-slate-300 px-3 py-2"
-                                    >
-                                        2026
-                                    </td>
+                                        <td
+                                            class="border-r border-b border-slate-300 px-3 py-2"
+                                        >
+                                            2026
+                                        </td>
 
-                                    <td
-                                        class="border-r border-b border-slate-300 px-3 py-2"
-                                    >
-                                        DECK
-                                    </td>
+                                        <td
+                                            class="border-r border-b border-slate-300 px-3 py-2"
+                                        >
+                                            DECK
+                                        </td>
 
-                                    <td
-                                        class="border-r border-b border-slate-300 px-3 py-2"
-                                    >
-                                        GMET
-                                    </td>
+                                        <td
+                                            class="border-r border-b border-slate-300 px-3 py-2"
+                                        >
+                                            GMET
+                                        </td>
 
-                                    <td
-                                        class="border-r-0 border-b border-slate-300 px-3 py-2"
-                                    >
-                                        juan.delacruz@example.com
-                                    </td>
-                                </tr>
+                                        <td
+                                            class="border-r-0 border-b border-slate-300 px-3 py-2"
+                                        >
+                                            juan.delacruz@example.com
+                                        </td>
+                                    </tr>
 
-                                <tr>
-                                    <th
-                                        class="border-r border-b border-slate-300 bg-[#E7E6E6] text-center text-xs font-semibold text-slate-700"
-                                    >
-                                        3
-                                    </th>
+                                    <tr>
+                                        <th
+                                            class="border-r border-b border-slate-300 bg-[#E7E6E6] text-center text-xs font-semibold text-slate-700"
+                                        >
+                                            3
+                                        </th>
 
-                                    <td
-                                        class="border-r border-b border-slate-300 px-3 py-2"
-                                    >
-                                        2026-002
-                                    </td>
+                                        <td
+                                            class="border-r border-b border-slate-300 px-3 py-2"
+                                        >
+                                            2026-002
+                                        </td>
 
-                                    <td
-                                        class="border-r border-b border-slate-300 px-3 py-2"
-                                    >
-                                        SANTOS
-                                    </td>
+                                        <td
+                                            class="border-r border-b border-slate-300 px-3 py-2"
+                                        >
+                                            SANTOS
+                                        </td>
 
-                                    <td
-                                        class="border-r border-b border-slate-300 px-3 py-2"
-                                    >
-                                        MARIA
-                                    </td>
+                                        <td
+                                            class="border-r border-b border-slate-300 px-3 py-2"
+                                        >
+                                            MARIA
+                                        </td>
 
-                                    <td
-                                        class="border-r border-b border-slate-300 px-3 py-2"
-                                    >
-                                        LUISA
-                                    </td>
+                                        <td
+                                            class="border-r border-b border-slate-300 px-3 py-2"
+                                        >
+                                            LUISA
+                                        </td>
 
-                                    <td
-                                        class="border-r border-b border-slate-300 px-3 py-2"
-                                    >
-                                        FEMALE
-                                    </td>
+                                        <td
+                                            class="border-r border-b border-slate-300 px-3 py-2"
+                                        >
+                                            FEMALE
+                                        </td>
 
-                                    <td
-                                        class="border-r border-b border-slate-300 px-3 py-2"
-                                    >
-                                        2026
-                                    </td>
+                                        <td
+                                            class="border-r border-b border-slate-300 px-3 py-2"
+                                        >
+                                            2026
+                                        </td>
 
-                                    <td
-                                        class="border-r border-b border-slate-300 px-3 py-2"
-                                    >
-                                        ENGINE
-                                    </td>
+                                        <td
+                                            class="border-r border-b border-slate-300 px-3 py-2"
+                                        >
+                                            ENGINE
+                                        </td>
 
-                                    <td
-                                        class="border-r border-b border-slate-300 px-3 py-2"
-                                    >
-                                        ISF
-                                    </td>
+                                        <td
+                                            class="border-r border-b border-slate-300 px-3 py-2"
+                                        >
+                                            ISF
+                                        </td>
 
-                                    <td
-                                        class="border-r-0 border-b border-slate-300 px-3 py-2"
-                                    >
-                                        maria.santos@example.com
-                                    </td>
-                                </tr>
+                                        <td
+                                            class="border-r-0 border-b border-slate-300 px-3 py-2"
+                                        >
+                                            maria.santos@example.com
+                                        </td>
+                                    </tr>
 
-                                <tr>
-                                    <th
-                                        class="border-r border-b border-slate-300 bg-[#E7E6E6] text-center text-xs font-semibold text-slate-700"
-                                    >
-                                        4
-                                    </th>
+                                    <tr>
+                                        <th
+                                            class="border-r border-b border-slate-300 bg-[#E7E6E6] text-center text-xs font-semibold text-slate-700"
+                                        >
+                                            4
+                                        </th>
 
-                                    <td
-                                        v-for="column in 9"
-                                        :key="column"
-                                        class="h-9 border-r border-b border-slate-300 bg-white last:border-r-0"
-                                    >
-                                        &nbsp;
-                                    </td>
-                                </tr>
+                                        <td
+                                            v-for="column in 9"
+                                            :key="column"
+                                            class="h-9 border-r border-b border-slate-300 bg-white last:border-r-0"
+                                        >
+                                            &nbsp;
+                                        </td>
+                                    </tr>
 
-                                <tr>
-                                    <th
-                                        class="border-r border-slate-300 bg-[#E7E6E6] text-center text-xs font-semibold text-slate-700"
-                                    >
-                                        5
-                                    </th>
+                                    <tr>
+                                        <th
+                                            class="border-r border-slate-300 bg-[#E7E6E6] text-center text-xs font-semibold text-slate-700"
+                                        >
+                                            5
+                                        </th>
 
-                                    <td
-                                        v-for="column in 9"
-                                        :key="column"
-                                        class="h-9 border-r border-slate-300 bg-white last:border-r-0"
-                                    >
-                                        &nbsp;
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                                        <td
+                                            v-for="column in 9"
+                                            :key="column"
+                                            class="h-9 border-r border-slate-300 bg-white last:border-r-0"
+                                        >
+                                            &nbsp;
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
 
                             <div
                                 class="flex h-9 items-end border-t border-slate-300 bg-[#F3F3F3] pl-14"
@@ -976,10 +847,7 @@ onBeforeUnmount(() => {
                 </div>
             </section>
 
-            <form
-                class="space-y-5"
-                @submit.prevent="importStudents"
-            >
+            <form class="space-y-5" @submit.prevent="importStudents">
                 <div
                     class="rounded-xl border-2 border-dashed p-5 transition"
                     :class="[
@@ -989,18 +857,10 @@ onBeforeUnmount(() => {
                               ? 'border-emerald-300 bg-emerald-50'
                               : 'border-slate-300 bg-slate-50',
                     ]"
-                    @dragover="
-                        handleFileDragOver
-                    "
-                    @dragenter="
-                        handleFileDragOver
-                    "
-                    @dragleave="
-                        handleFileDragLeave
-                    "
-                    @drop="
-                        handleFileDrop
-                    "
+                    @dragover="handleFileDragOver"
+                    @dragenter="handleFileDragOver"
+                    @dragleave="handleFileDragLeave"
+                    @drop="handleFileDrop"
                 >
                     <input
                         id="student-workbook"
@@ -1009,9 +869,7 @@ onBeforeUnmount(() => {
                         accept=".xls,.xlsx"
                         :disabled="importing"
                         class="hidden"
-                        @change="
-                            selectFile
-                        "
+                        @change="selectFile"
                     />
 
                     <div
@@ -1021,20 +879,14 @@ onBeforeUnmount(() => {
                         <div
                             class="mb-3 flex size-12 items-center justify-center rounded-xl bg-blue-100 text-blue-700"
                         >
-                            <i
-                                class="pi pi-cloud-upload text-xl"
-                            ></i>
+                            <i class="pi pi-cloud-upload text-xl"></i>
                         </div>
 
-                        <p
-                            class="font-semibold text-slate-800"
-                        >
+                        <p class="font-semibold text-slate-800">
                             Drag and drop your completed Excel file here
                         </p>
 
-                        <p
-                            class="mt-1 text-sm text-slate-500"
-                        >
+                        <p class="mt-1 text-sm text-slate-500">
                             or choose the file from your computer
                         </p>
 
@@ -1046,14 +898,10 @@ onBeforeUnmount(() => {
                             outlined
                             class="mt-4"
                             :disabled="importing"
-                            @click="
-                                openFilePicker
-                            "
+                            @click="openFilePicker"
                         />
 
-                        <p
-                            class="mt-3 text-xs text-slate-400"
-                        >
+                        <p class="mt-3 text-xs text-slate-400">
                             XLS or XLSX · Any filename · Maximum 5 MB
                         </p>
                     </div>
@@ -1062,15 +910,11 @@ onBeforeUnmount(() => {
                         v-else
                         class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
                     >
-                        <div
-                            class="flex min-w-0 items-center gap-3"
-                        >
+                        <div class="flex min-w-0 items-center gap-3">
                             <div
                                 class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700"
                             >
-                                <i
-                                    class="pi pi-file-excel text-lg"
-                                ></i>
+                                <i class="pi pi-file-excel text-lg"></i>
                             </div>
 
                             <div class="min-w-0">
@@ -1080,9 +924,7 @@ onBeforeUnmount(() => {
                                     {{ file.name }}
                                 </p>
 
-                                <p
-                                    class="mt-1 text-xs text-emerald-700"
-                                >
+                                <p class="mt-1 text-xs text-emerald-700">
                                     {{ selectedFileSize }}
                                     · Ready for confirmation
                                 </p>
@@ -1096,9 +938,7 @@ onBeforeUnmount(() => {
                             severity="secondary"
                             outlined
                             :disabled="importing"
-                            @click="
-                                openFilePicker
-                            "
+                            @click="openFilePicker"
                         />
                     </div>
                 </div>
@@ -1123,8 +963,8 @@ onBeforeUnmount(() => {
                         </span>
 
                         If a School ID No. already exists, the student's name,
-                        gender, email, department, CCI Year and TRB Type will be updated.
-                        Existing login credentials will not be changed.
+                        gender, email, department, CCI Year and TRB Type will be
+                        updated. Existing login credentials will not be changed.
                     </label>
                 </div>
 
@@ -1170,11 +1010,7 @@ onBeforeUnmount(() => {
                 <div
                     v-if="!importing"
                     class="flex items-center gap-2 text-xs"
-                    :class="
-                        canImport
-                            ? 'text-emerald-700'
-                            : 'text-slate-500'
-                    "
+                    :class="canImport ? 'text-emerald-700' : 'text-slate-500'"
                 >
                     <i
                         :class="
@@ -1237,17 +1073,16 @@ onBeforeUnmount(() => {
             v-if="result?.created_accounts?.length"
             class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:p-6"
         >
-            <div
-                class="mb-4 flex flex-wrap items-center justify-between gap-3"
-            >
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <h2 class="font-semibold text-slate-800">
                         Newly Created Student Accounts
                     </h2>
 
                     <p class="mt-1 text-sm text-slate-500">
-                        These generated passwords are shown from this import response.
-                        Copy them before leaving or refreshing the page.
+                        These generated passwords are shown from this import
+                        response. Copy them before leaving or refreshing the
+                        page.
                     </p>
                 </div>
 
@@ -1262,13 +1097,9 @@ onBeforeUnmount(() => {
             </div>
 
             <div class="overflow-x-auto">
-                <table
-                    class="w-full min-w-[900px] text-left text-sm"
-                >
+                <table class="w-full min-w-[900px] text-left text-sm">
                     <thead>
-                        <tr
-                            class="border-b border-slate-200 text-slate-600"
-                        >
+                        <tr class="border-b border-slate-200 text-slate-600">
                             <th class="p-3">Row</th>
                             <th class="p-3">School ID</th>
                             <th class="p-3">Student</th>
@@ -1318,17 +1149,16 @@ onBeforeUnmount(() => {
                                 </span>
 
                                 <span
-                                    v-else-if="account.email_status === 'failed'"
+                                    v-else-if="
+                                        account.email_status === 'failed'
+                                    "
                                     class="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700"
                                 >
                                     <i class="pi pi-exclamation-circle"></i>
                                     Failed
                                 </span>
 
-                                <span
-                                    v-else
-                                    class="text-xs text-slate-400"
-                                >
+                                <span v-else class="text-xs text-slate-400">
                                     —
                                 </span>
                             </td>

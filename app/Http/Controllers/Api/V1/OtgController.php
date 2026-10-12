@@ -20,8 +20,7 @@ class OtgController extends Controller
 {
     public function __construct(
         private readonly DatatableService $datatableService,
-    ) {
-    }
+    ) {}
 
     /**
      * Return OTG task records.
@@ -211,39 +210,28 @@ class OtgController extends Controller
                 ],
 
                 sortableColumns: [
-                    'completed' =>
-                        'person_task.completed',
+                    'completed' => 'person_task.completed',
 
-                    'code_person' =>
-                        'person.code_person',
+                    'code_person' => 'person.code_person',
 
-                    'school_id_no' =>
-                        'person.school_id_no',
+                    'school_id_no' => 'person.school_id_no',
 
-                    'fname' =>
-                        'person.fname',
+                    'fname' => 'person.fname',
 
-                    'lname' =>
-                        'person.lname',
+                    'lname' => 'person.lname',
 
-                    'dept' =>
-                        'person.dept',
+                    'dept' => 'person.dept',
 
-                    'ref_no' =>
-                        'task.ref_no',
+                    'ref_no' => 'task.ref_no',
 
-                    'desc_task' =>
-                        'task.desc_task',
+                    'desc_task' => 'task.desc_task',
 
-                    'month_no' =>
-                        'person_task.month_no',
+                    'month_no' => 'person_task.month_no',
                 ],
 
-                defaultSortColumn:
-                    'completed',
+                defaultSortColumn: 'completed',
 
-                defaultSortDirection:
-                    $isMonitoring
+                defaultSortDirection: $isMonitoring
                         ? 'desc'
                         : 'asc',
             );
@@ -258,14 +246,12 @@ class OtgController extends Controller
         $result['filters'] = [
             'month' => $month,
             'year' => $year,
-            'fromDate' =>
-                $fromDate->format(
-                    'Y-m-d',
-                ),
-            'toDate' =>
-                $toDate->format(
-                    'Y-m-d',
-                ),
+            'fromDate' => $fromDate->format(
+                'Y-m-d',
+            ),
+            'toDate' => $toDate->format(
+                'Y-m-d',
+            ),
         ];
 
         return response()->json(
@@ -333,13 +319,13 @@ class OtgController extends Controller
 
         $personIds = $records
             ->pluck('person_id')
-            ->filter(static fn (mixed $id): bool =>
-                is_string($id) && trim($id) !== ''
+            ->filter(static fn (mixed $id): bool => is_string($id) && trim($id) !== ''
             )
             ->values();
 
         if ($personIds->isEmpty()) {
             $result['data'] = [];
+
             return response()->json($result);
         }
 
@@ -439,222 +425,210 @@ class OtgController extends Controller
     }
 
     /**
- * Return the authenticated student's OTG summary.
- */
-public function studentDashboard(
-    Request $request,
-): JsonResponse {
-    $account = $request->user();
+     * Return the authenticated student's OTG summary.
+     */
+    public function studentDashboard(
+        Request $request,
+    ): JsonResponse {
+        $account = $request->user();
 
-    if (! $account instanceof Student) {
-        return response()->json(
-            [
-                'message' =>
-                    'Only student accounts may access this resource.',
-            ],
-            Response::HTTP_FORBIDDEN,
+        if (! $account instanceof Student) {
+            return response()->json(
+                [
+                    'message' => 'Only student accounts may access this resource.',
+                ],
+                Response::HTTP_FORBIDDEN,
+            );
+        }
+
+        $db = $this->resolveSchoolConnection(
+            $request,
         );
+
+        if ($db instanceof JsonResponse) {
+            return $db;
+        }
+
+        $studentId = (string) $account
+            ->getAuthIdentifier();
+
+        /*
+         * Count all applicable OTG tasks assigned to the
+         * authenticated student.
+         */
+        $totalTasks = $db
+            ->table('person_task')
+            ->where(
+                'person_id',
+                $studentId,
+            )
+            ->whereRaw(
+                "UPPER(TRIM(COALESCE(not_app, ''))) != 'Y'",
+            )
+            ->count();
+
+        /*
+         * Count completed OTG tasks.
+         *
+         * A completed OTG task must contain:
+         * - a completion date
+         * - a month onboard
+         * - objective evidence
+         * - proof of assessment
+         * - not be marked N/A
+         */
+        $completedTasks = $db
+            ->table('person_task')
+            ->where(
+                'person_id',
+                $studentId,
+            )
+            ->whereNotNull(
+                'completed',
+            )
+            ->whereRaw(
+                "TRIM(COALESCE(completed, '')) != ''",
+            )
+            ->whereRaw(
+                "TRIM(COALESCE(month_no, '')) != ''",
+            )
+            ->whereRaw(
+                "UPPER(TRIM(COALESCE(not_app, ''))) != 'Y'",
+            )
+            ->whereExists(
+                function ($query): void {
+                    $query
+                        ->selectRaw('1')
+                        ->from('person_task_file')
+                        ->whereColumn(
+                            'person_task_file.person_task_id',
+                            'person_task.id',
+                        );
+                },
+            )
+            ->whereExists(
+                function ($query): void {
+                    $query
+                        ->selectRaw('1')
+                        ->from('person_task_proof')
+                        ->whereColumn(
+                            'person_task_proof.person_task_id',
+                            'person_task.id',
+                        );
+                },
+            )
+            ->count();
+
+        /*
+         * Avoid division by zero when no OTG tasks have
+         * been assigned.
+         */
+        $completionPercentage = $totalTasks > 0
+            ? round(
+                ($completedTasks / $totalTasks) * 100,
+                1,
+            )
+            : 0.0;
+
+        /*
+         * Return the student's latest 10 completed OTG tasks.
+         */
+        $tasks = $db
+            ->table('person_task')
+            ->leftJoin(
+                'task',
+                'task.id',
+                '=',
+                'person_task.task_id',
+            )
+            ->where(
+                'person_task.person_id',
+                $studentId,
+            )
+            ->whereNotNull(
+                'person_task.completed',
+            )
+            ->whereRaw(
+                "TRIM(COALESCE(person_task.completed, '')) != ''",
+            )
+            ->whereRaw(
+                "TRIM(COALESCE(person_task.month_no, '')) != ''",
+            )
+            ->whereRaw(
+                "UPPER(TRIM(COALESCE(person_task.not_app, ''))) != 'Y'",
+            )
+            ->whereExists(
+                function ($query): void {
+                    $query
+                        ->selectRaw('1')
+                        ->from('person_task_file')
+                        ->whereColumn(
+                            'person_task_file.person_task_id',
+                            'person_task.id',
+                        );
+                },
+            )
+            ->whereExists(
+                function ($query): void {
+                    $query
+                        ->selectRaw('1')
+                        ->from('person_task_proof')
+                        ->whereColumn(
+                            'person_task_proof.person_task_id',
+                            'person_task.id',
+                        );
+                },
+            )
+            ->select([
+                'person_task.id',
+                'person_task.person_id',
+                'person_task.task_id',
+                'person_task.completed',
+                'person_task.month_no',
+                'person_task.not_app',
+
+                'task.ref_no',
+                'task.desc_task',
+            ])
+            ->orderByDesc(
+                'person_task.completed',
+            )
+            ->limit(10)
+            ->get()
+            ->map(
+                static function (
+                    object $task,
+                ): array {
+                    return [
+                        'id' => $task->id,
+
+                        'task_id' => $task->task_id,
+
+                        'reference_number' => $task->ref_no,
+
+                        'description' => $task->desc_task
+                            ?? 'OTG Task',
+
+                        'month_number' => $task->month_no,
+
+                        'completed_at' => $task->completed,
+
+                        'status' => 'Completed',
+                    ];
+                },
+            )
+            ->values();
+
+        return response()->json([
+            'percentage' => $completionPercentage,
+
+            'completed' => $completedTasks,
+
+            'total' => $totalTasks,
+
+            'data' => $tasks,
+        ]);
     }
-
-    $db = $this->resolveSchoolConnection(
-        $request,
-    );
-
-    if ($db instanceof JsonResponse) {
-        return $db;
-    }
-
-    $studentId = (string) $account
-        ->getAuthIdentifier();
-
-    /*
-     * Count all applicable OTG tasks assigned to the
-     * authenticated student.
-     */
-    $totalTasks = $db
-        ->table('person_task')
-        ->where(
-            'person_id',
-            $studentId,
-        )
-        ->whereRaw(
-            "UPPER(TRIM(COALESCE(not_app, ''))) != 'Y'",
-        )
-        ->count();
-
-    /*
-     * Count completed OTG tasks.
-     *
-     * A completed OTG task must contain:
-     * - a completion date
-     * - a month onboard
-     * - objective evidence
-     * - proof of assessment
-     * - not be marked N/A
-     */
-    $completedTasks = $db
-        ->table('person_task')
-        ->where(
-            'person_id',
-            $studentId,
-        )
-        ->whereNotNull(
-            'completed',
-        )
-        ->whereRaw(
-            "TRIM(COALESCE(completed, '')) != ''",
-        )
-        ->whereRaw(
-            "TRIM(COALESCE(month_no, '')) != ''",
-        )
-        ->whereRaw(
-            "UPPER(TRIM(COALESCE(not_app, ''))) != 'Y'",
-        )
-        ->whereExists(
-            function ($query): void {
-                $query
-                    ->selectRaw('1')
-                    ->from('person_task_file')
-                    ->whereColumn(
-                        'person_task_file.person_task_id',
-                        'person_task.id',
-                    );
-            },
-        )
-        ->whereExists(
-            function ($query): void {
-                $query
-                    ->selectRaw('1')
-                    ->from('person_task_proof')
-                    ->whereColumn(
-                        'person_task_proof.person_task_id',
-                        'person_task.id',
-                    );
-            },
-        )
-        ->count();
-
-    /*
-     * Avoid division by zero when no OTG tasks have
-     * been assigned.
-     */
-    $completionPercentage = $totalTasks > 0
-        ? round(
-            ($completedTasks / $totalTasks) * 100,
-            1,
-        )
-        : 0.0;
-
-    /*
-     * Return the student's latest 10 completed OTG tasks.
-     */
-    $tasks = $db
-        ->table('person_task')
-        ->leftJoin(
-            'task',
-            'task.id',
-            '=',
-            'person_task.task_id',
-        )
-        ->where(
-            'person_task.person_id',
-            $studentId,
-        )
-        ->whereNotNull(
-            'person_task.completed',
-        )
-        ->whereRaw(
-            "TRIM(COALESCE(person_task.completed, '')) != ''",
-        )
-        ->whereRaw(
-            "TRIM(COALESCE(person_task.month_no, '')) != ''",
-        )
-        ->whereRaw(
-            "UPPER(TRIM(COALESCE(person_task.not_app, ''))) != 'Y'",
-        )
-        ->whereExists(
-            function ($query): void {
-                $query
-                    ->selectRaw('1')
-                    ->from('person_task_file')
-                    ->whereColumn(
-                        'person_task_file.person_task_id',
-                        'person_task.id',
-                    );
-            },
-        )
-        ->whereExists(
-            function ($query): void {
-                $query
-                    ->selectRaw('1')
-                    ->from('person_task_proof')
-                    ->whereColumn(
-                        'person_task_proof.person_task_id',
-                        'person_task.id',
-                    );
-            },
-        )
-        ->select([
-            'person_task.id',
-            'person_task.person_id',
-            'person_task.task_id',
-            'person_task.completed',
-            'person_task.month_no',
-            'person_task.not_app',
-
-            'task.ref_no',
-            'task.desc_task',
-        ])
-        ->orderByDesc(
-            'person_task.completed',
-        )
-        ->limit(10)
-        ->get()
-        ->map(
-            static function (
-                object $task,
-            ): array {
-                return [
-                    'id' =>
-                        $task->id,
-
-                    'task_id' =>
-                        $task->task_id,
-
-                    'reference_number' =>
-                        $task->ref_no,
-
-                    'description' =>
-                        $task->desc_task
-                        ?? 'OTG Task',
-
-                    'month_number' =>
-                        $task->month_no,
-
-                    'completed_at' =>
-                        $task->completed,
-
-                    'status' =>
-                        'Completed',
-                ];
-            },
-        )
-        ->values();
-
-    return response()->json([
-        'percentage' =>
-            $completionPercentage,
-
-        'completed' =>
-            $completedTasks,
-
-        'total' =>
-            $totalTasks,
-
-        'data' =>
-            $tasks,
-    ]);
-}
 
     /**
      * Return the authenticated student's complete OTG overview.
@@ -670,8 +644,7 @@ public function studentDashboard(
         if (! $account instanceof Student) {
             return response()->json(
                 [
-                    'message' =>
-                        'Only student accounts may access this resource.',
+                    'message' => 'Only student accounts may access this resource.',
                 ],
                 Response::HTTP_FORBIDDEN,
             );
@@ -696,8 +669,7 @@ public function studentDashboard(
         if (! $studentExists) {
             return response()->json(
                 [
-                    'message' =>
-                        'The student record was not found.',
+                    'message' => 'The student record was not found.',
                 ],
                 Response::HTTP_NOT_FOUND,
             );
@@ -734,38 +706,30 @@ public function studentDashboard(
                     object $vessel,
                 ): array {
                     return [
-                        'id' =>
-                            (string) $vessel->id,
+                        'id' => (string) $vessel->id,
 
-                        'vessel_type_id' =>
-                            $vessel->vessel_type_id,
+                        'vessel_type_id' => $vessel->vessel_type_id,
 
-                        'vessel_name' =>
-                            $this->decodeStudentTrainingText(
-                                $vessel->vessel_name,
-                            ),
+                        'vessel_name' => $this->decodeStudentTrainingText(
+                            $vessel->vessel_name,
+                        ),
 
-                        'vessel_type' =>
-                            $this->decodeStudentTrainingText(
-                                $vessel
-                                    ->desc_vessel_type,
-                            ),
+                        'vessel_type' => $this->decodeStudentTrainingText(
+                            $vessel
+                                ->desc_vessel_type,
+                        ),
 
-                        'ship_company' =>
-                            $this->decodeStudentTrainingText(
-                                $vessel->ship_company,
-                            ),
+                        'ship_company' => $this->decodeStudentTrainingText(
+                            $vessel->ship_company,
+                        ),
 
-                        'flag' =>
-                            $this->decodeStudentTrainingText(
-                                $vessel->flag,
-                            ),
+                        'flag' => $this->decodeStudentTrainingText(
+                            $vessel->flag,
+                        ),
 
-                        'sign_on_date' =>
-                            $vessel->from_date,
+                        'sign_on_date' => $vessel->from_date,
 
-                        'sign_off_date' =>
-                            $vessel->to_date,
+                        'sign_off_date' => $vessel->to_date,
                     ];
                 },
             )
@@ -923,55 +887,46 @@ public function studentDashboard(
                                 object $task,
                             ): array {
                                 return [
-                                    'person_task_id' =>
-                                        $task
-                                            ->person_task_id
+                                    'person_task_id' => $task
+                                        ->person_task_id
                                             ? (string) $task
                                                 ->person_task_id
                                             : null,
 
-                                    'task_id' =>
-                                        (string) $task
-                                            ->task_id,
+                                    'task_id' => (string) $task
+                                        ->task_id,
 
-                                    'ref_no' =>
-                                        $this->decodeStudentTrainingText(
-                                            $task->ref_no,
-                                        ),
+                                    'ref_no' => $this->decodeStudentTrainingText(
+                                        $task->ref_no,
+                                    ),
 
-                                    'description' =>
-                                        $this->decodeStudentTrainingText(
-                                            $task->desc_task,
-                                        ),
+                                    'description' => $this->decodeStudentTrainingText(
+                                        $task->desc_task,
+                                    ),
 
-                                    'competence' =>
-                                        $this->decodeStudentTrainingText(
-                                            $task
-                                                ->desc_competence,
-                                        ),
+                                    'competence' => $this->decodeStudentTrainingText(
+                                        $task
+                                            ->desc_competence,
+                                    ),
 
-                                    'topic' =>
-                                        $this->decodeStudentTrainingText(
-                                            $task
-                                                ->desc_sub_competence,
-                                        ),
+                                    'topic' => $this->decodeStudentTrainingText(
+                                        $task
+                                            ->desc_sub_competence,
+                                    ),
 
-                                    'completion_date' =>
-                                        $task->completed,
+                                    'completion_date' => $task->completed,
 
-                                    'not_applicable' =>
-                                        strtoupper(
-                                            trim(
-                                                (string) (
-                                                    $task
-                                                        ->not_app ??
-                                                    ''
-                                                ),
+                                    'not_applicable' => strtoupper(
+                                        trim(
+                                            (string) (
+                                                $task
+                                                    ->not_app ??
+                                                ''
                                             ),
-                                        ) === 'Y',
+                                        ),
+                                    ) === 'Y',
 
-                                    'month_no' =>
-                                        $task->month_no,
+                                    'month_no' => $task->month_no,
                                 ];
                             },
                         )
@@ -1016,38 +971,29 @@ public function studentDashboard(
                             : 0;
 
                     return [
-                        'workbook_assignment_id' =>
-                            (string) $workbook->id,
+                        'workbook_assignment_id' => (string) $workbook->id,
 
-                        'trb_type_id' =>
-                            $trbTypeId,
+                        'trb_type_id' => $trbTypeId,
 
-                        'workbook' =>
-                            $this->decodeStudentTrainingText(
-                                $workbook
-                                    ->desc_trb_type,
-                            ),
+                        'workbook' => $this->decodeStudentTrainingText(
+                            $workbook
+                                ->desc_trb_type,
+                        ),
 
-                        'reference_count' =>
-                            $referenceCount,
+                        'reference_count' => $referenceCount,
 
-                        'effective_task_count' =>
-                            $effectiveTaskCount,
+                        'effective_task_count' => $effectiveTaskCount,
 
-                        'completed_task_count' =>
-                            $completedTaskCount,
+                        'completed_task_count' => $completedTaskCount,
 
-                        'completed_na_task_count' =>
-                            $completedNaTaskCount,
+                        'completed_na_task_count' => $completedNaTaskCount,
 
-                        'completion_percentage' =>
-                            round(
-                                $completionPercentage,
-                                2,
-                            ),
+                        'completion_percentage' => round(
+                            $completionPercentage,
+                            2,
+                        ),
 
-                        'task_references' =>
-                            $tasks,
+                        'task_references' => $tasks,
                     ];
                 },
             )
@@ -1082,34 +1028,27 @@ public function studentDashboard(
         return response()->json([
             'success' => true,
 
-            'message' =>
-                $vessels->isEmpty() &&
+            'message' => $vessels->isEmpty() &&
                 $workbooks->isEmpty() &&
                 $overallTaskCount === 0
                     ? 'No training records found.'
                     : 'Training records fetched successfully.',
 
             'data' => [
-                'training_vessels' =>
-                    $vessels,
+                'training_vessels' => $vessels,
 
-                'training_workbooks' =>
-                    $workbooks,
+                'training_workbooks' => $workbooks,
 
-                'overall_task_count' =>
-                    $overallTaskCount,
+                'overall_task_count' => $overallTaskCount,
 
-                'overall_completed_task_count' =>
-                    $overallCompletedTaskCount,
+                'overall_completed_task_count' => $overallCompletedTaskCount,
 
-                'overall_completed_na_task_count' =>
-                    $overallCompletedNaTaskCount,
+                'overall_completed_na_task_count' => $overallCompletedNaTaskCount,
 
-                'overall_completion_percentage' =>
-                    round(
-                        $overallCompletionPercentage,
-                        2,
-                    ),
+                'overall_completion_percentage' => round(
+                    $overallCompletionPercentage,
+                    2,
+                ),
             ],
         ]);
     }
@@ -1351,8 +1290,7 @@ public function studentDashboard(
             $trbTypeIds,
         )
             ->filter(
-                static fn ($value): bool =>
-                    filled($value),
+                static fn ($value): bool => filled($value),
             )
             ->unique()
             ->values();
@@ -1424,17 +1362,13 @@ public function studentDashboard(
                     $lastUpdate,
                 ): array {
                     return [
-                        'id' =>
-                            (string) Str::uuid(),
+                        'id' => (string) Str::uuid(),
 
-                        'person_id' =>
-                            $studentId,
+                        'person_id' => $studentId,
 
-                        'task_id' =>
-                            (string) $taskId,
+                        'task_id' => (string) $taskId,
 
-                        'last_update' =>
-                            $lastUpdate,
+                        'last_update' => $lastUpdate,
                     ];
                 },
             )
@@ -1492,14 +1426,12 @@ public function studentDashboard(
                     object $vesselType,
                 ): array {
                     return [
-                        'id' =>
-                            (string) $vesselType->id,
+                        'id' => (string) $vesselType->id,
 
-                        'description' =>
-                            $this->decodeStudentTrainingText(
-                                $vesselType
-                                    ->desc_vessel_type,
-                            ),
+                        'description' => $this->decodeStudentTrainingText(
+                            $vesselType
+                                ->desc_vessel_type,
+                        ),
                     ];
                 },
             )
@@ -1508,8 +1440,7 @@ public function studentDashboard(
         return response()->json([
             'success' => true,
             'data' => [
-                'vessel_types' =>
-                    $vesselTypes,
+                'vessel_types' => $vesselTypes,
             ],
         ]);
     }
@@ -1588,8 +1519,7 @@ public function studentDashboard(
         if (! $vesselType) {
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'The selected vessel type is invalid.',
+                'message' => 'The selected vessel type is invalid.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
@@ -1604,99 +1534,80 @@ public function studentDashboard(
         $db
             ->table('person_trb_setup')
             ->insert([
-                'id' =>
-                    $vesselId,
+                'id' => $vesselId,
 
-                'person_id' =>
-                    $studentId,
+                'person_id' => $studentId,
 
-                'vessel_name' =>
-                    trim(
+                'vessel_name' => trim(
+                    $validated[
+                        'vessel_name'
+                    ],
+                ),
+
+                'vessel_type_id' => $validated[
+                        'vessel_type_id'
+                    ],
+
+                'ship_company' => trim(
+                    $validated[
+                        'ship_company'
+                    ],
+                ),
+
+                'flag' => trim(
+                    $validated['flag'],
+                ),
+
+                'from_date' => $validated[
+                        'sign_on_date'
+                    ],
+
+                'to_date' => $validated[
+                        'sign_off_date'
+                    ],
+
+                'login_id' => $studentId,
+
+                'last_update' => $lastUpdate,
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Vessel added successfully.',
+            'data' => [
+                'vessel' => [
+                    'id' => $vesselId,
+
+                    'vessel_type_id' => (string) $vesselType->id,
+
+                    'vessel_name' => trim(
                         $validated[
                             'vessel_name'
                         ],
                     ),
 
-                'vessel_type_id' =>
-                    $validated[
-                        'vessel_type_id'
-                    ],
+                    'vessel_type' => $this->decodeStudentTrainingText(
+                        $vesselType
+                            ->desc_vessel_type,
+                    ),
 
-                'ship_company' =>
-                    trim(
+                    'ship_company' => trim(
                         $validated[
                             'ship_company'
                         ],
                     ),
 
-                'flag' =>
-                    trim(
-                        $validated['flag'],
+                    'flag' => trim(
+                        $validated[
+                            'flag'
+                        ],
                     ),
 
-                'from_date' =>
-                    $validated[
-                        'sign_on_date'
-                    ],
-
-                'to_date' =>
-                    $validated[
-                        'sign_off_date'
-                    ],
-
-                'login_id' =>
-                    $studentId,
-
-                'last_update' =>
-                    $lastUpdate,
-            ]);
-
-        return response()->json([
-            'success' => true,
-            'message' =>
-                'Vessel added successfully.',
-            'data' => [
-                'vessel' => [
-                    'id' =>
-                        $vesselId,
-
-                    'vessel_type_id' =>
-                        (string) $vesselType->id,
-
-                    'vessel_name' =>
-                        trim(
-                            $validated[
-                                'vessel_name'
-                            ],
-                        ),
-
-                    'vessel_type' =>
-                        $this->decodeStudentTrainingText(
-                            $vesselType
-                                ->desc_vessel_type,
-                        ),
-
-                    'ship_company' =>
-                        trim(
-                            $validated[
-                                'ship_company'
-                            ],
-                        ),
-
-                    'flag' =>
-                        trim(
-                            $validated[
-                                'flag'
-                            ],
-                        ),
-
-                    'sign_on_date' =>
-                        $validated[
+                    'sign_on_date' => $validated[
                             'sign_on_date'
                         ],
 
-                    'sign_off_date' =>
-                        $validated[
+                    'sign_off_date' => $validated[
                             'sign_off_date'
                         ],
                 ],
@@ -1772,8 +1683,7 @@ public function studentDashboard(
         if (! $vessel) {
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'Vessel record not found.',
+                'message' => 'Vessel record not found.',
             ], Response::HTTP_NOT_FOUND);
         }
 
@@ -1794,8 +1704,7 @@ public function studentDashboard(
         if (! $vesselType) {
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'The selected vessel type is invalid.',
+                'message' => 'The selected vessel type is invalid.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
@@ -1810,53 +1719,44 @@ public function studentDashboard(
                 $studentId,
             )
             ->update([
-                'vessel_name' =>
-                    trim(
-                        $validated[
-                            'vessel_name'
-                        ],
-                    ),
-
-                'vessel_type_id' =>
+                'vessel_name' => trim(
                     $validated[
+                        'vessel_name'
+                    ],
+                ),
+
+                'vessel_type_id' => $validated[
                         'vessel_type_id'
                     ],
 
-                'ship_company' =>
-                    trim(
-                        $validated[
-                            'ship_company'
-                        ],
-                    ),
-
-                'flag' =>
-                    trim(
-                        $validated['flag'],
-                    ),
-
-                'from_date' =>
+                'ship_company' => trim(
                     $validated[
+                        'ship_company'
+                    ],
+                ),
+
+                'flag' => trim(
+                    $validated['flag'],
+                ),
+
+                'from_date' => $validated[
                         'sign_on_date'
                     ],
 
-                'to_date' =>
-                    $validated[
+                'to_date' => $validated[
                         'sign_off_date'
                     ],
 
-                'login_id' =>
-                    $studentId,
+                'login_id' => $studentId,
 
-                'last_update' =>
-                    now()->format(
-                        'Y-m-d H:i:s',
-                    ),
+                'last_update' => now()->format(
+                    'Y-m-d H:i:s',
+                ),
             ]);
 
         return response()->json([
             'success' => true,
-            'message' =>
-                'Vessel updated successfully.',
+            'message' => 'Vessel updated successfully.',
         ]);
     }
 
@@ -1899,15 +1799,13 @@ public function studentDashboard(
         if ($deleted === 0) {
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'Vessel record not found.',
+                'message' => 'Vessel record not found.',
             ], Response::HTTP_NOT_FOUND);
         }
 
         return response()->json([
             'success' => true,
-            'message' =>
-                'Vessel removed successfully.',
+            'message' => 'Vessel removed successfully.',
         ]);
     }
 
@@ -1933,10 +1831,8 @@ public function studentDashboard(
 
         if (! $person) {
             return [
-                'families' =>
-                    collect(),
-                'departments' =>
-                    collect(),
+                'families' => collect(),
+                'departments' => collect(),
             ];
         }
 
@@ -2003,11 +1899,9 @@ public function studentDashboard(
             ->values();
 
         return [
-            'families' =>
-                $families,
+            'families' => $families,
 
-            'departments' =>
-                $departments,
+            'departments' => $departments,
         ];
     }
 
@@ -2054,11 +1948,9 @@ public function studentDashboard(
         ) {
             return response()->json([
                 'success' => true,
-                'message' =>
-                    'The student eTRB type or department is not configured as ISF/GMET and Deck/Engine.',
+                'message' => 'The student eTRB type or department is not configured as ISF/GMET and Deck/Engine.',
                 'data' => [
-                    'workbook_types' =>
-                        [],
+                    'workbook_types' => [],
                 ],
             ]);
         }
@@ -2122,34 +2014,30 @@ public function studentDashboard(
                     object $type,
                 ): array {
                     return [
-                        'id' =>
-                            (string) $type->id,
+                        'id' => (string) $type->id,
 
-                        'description' =>
-                            $this->decodeStudentTrainingText(
-                                $type
-                                    ->desc_trb_type,
-                            ),
+                        'description' => $this->decodeStudentTrainingText(
+                            $type
+                                ->desc_trb_type,
+                        ),
 
-                        'trb' =>
-                            strtoupper(
-                                trim(
-                                    (string) (
-                                        $type->trb ??
-                                        ''
-                                    ),
+                        'trb' => strtoupper(
+                            trim(
+                                (string) (
+                                    $type->trb ??
+                                    ''
                                 ),
                             ),
+                        ),
 
-                        'department' =>
-                            strtoupper(
-                                trim(
-                                    (string) (
-                                        $type->dept ??
-                                        ''
-                                    ),
+                        'department' => strtoupper(
+                            trim(
+                                (string) (
+                                    $type->dept ??
+                                    ''
                                 ),
                             ),
+                        ),
                     ];
                 },
             )
@@ -2158,8 +2046,7 @@ public function studentDashboard(
         return response()->json([
             'success' => true,
             'data' => [
-                'workbook_types' =>
-                    $workbookTypes,
+                'workbook_types' => $workbookTypes,
             ],
         ]);
     }
@@ -2215,8 +2102,7 @@ public function studentDashboard(
         ) {
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'The student eTRB type or department is not configured for this workbook.',
+                'message' => 'The student eTRB type or department is not configured for this workbook.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
@@ -2239,8 +2125,7 @@ public function studentDashboard(
         if (! $type) {
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'The selected workbook type is invalid.',
+                'message' => 'The selected workbook type is invalid.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
@@ -2272,8 +2157,7 @@ public function studentDashboard(
         ) {
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'The selected workbook does not match the student eTRB type or department.',
+                'message' => 'The selected workbook does not match the student eTRB type or department.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
@@ -2294,8 +2178,7 @@ public function studentDashboard(
         if ($exists) {
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'This workbook is already assigned to the student.',
+                'message' => 'This workbook is already assigned to the student.',
             ], Response::HTTP_CONFLICT);
         }
 
@@ -2305,21 +2188,17 @@ public function studentDashboard(
         $db
             ->table('person_trb_book')
             ->insert([
-                'id' =>
-                    $assignmentId,
+                'id' => $assignmentId,
 
-                'person_id' =>
-                    $studentId,
+                'person_id' => $studentId,
 
-                'trb_type_id' =>
-                    $validated[
+                'trb_type_id' => $validated[
                         'trb_type_id'
                     ],
 
-                'last_update' =>
-                    now()->format(
-                        'Y-m-d H:i:s',
-                    ),
+                'last_update' => now()->format(
+                    'Y-m-d H:i:s',
+                ),
             ]);
 
         $this->ensureStudentWorkbookPersonTasks(
@@ -2334,11 +2213,9 @@ public function studentDashboard(
 
         return response()->json([
             'success' => true,
-            'message' =>
-                'Workbook added successfully.',
+            'message' => 'Workbook added successfully.',
             'data' => [
-                'workbook_assignment_id' =>
-                    $assignmentId,
+                'workbook_assignment_id' => $assignmentId,
             ],
         ], Response::HTTP_CREATED);
     }
@@ -2386,8 +2263,7 @@ public function studentDashboard(
         if (! $assignment) {
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'Workbook assignment not found.',
+                'message' => 'Workbook assignment not found.',
             ], Response::HTTP_NOT_FOUND);
         }
 
@@ -2405,8 +2281,7 @@ public function studentDashboard(
 
         return response()->json([
             'success' => true,
-            'message' =>
-                'Workbook removed. Existing task records and uploaded files were preserved.',
+            'message' => 'Workbook removed. Existing task records and uploaded files were preserved.',
         ]);
     }
 
@@ -2476,7 +2351,7 @@ public function studentDashboard(
             ! str_starts_with($configured, 'https://')
         ) {
             $configured =
-                'https://' .
+                'https://'.
                 ltrim(
                     $configured,
                     '/',
@@ -2486,8 +2361,8 @@ public function studentDashboard(
         return rtrim(
             $configured,
             '/',
-        ) .
-            '/' .
+        ).
+            '/'.
             rawurlencode(
                 basename(
                     (string) $filename,
@@ -2514,14 +2389,14 @@ public function studentDashboard(
         $filename =
             now()->format(
                 'Ymd_His',
-            ) .
-            '_' .
+            ).
+            '_'.
             Str::lower(
                 Str::random(8),
-            ) .
+            ).
             (
                 $extension !== ''
-                    ? '.' . $extension
+                    ? '.'.$extension
                     : ''
             );
 
@@ -2534,29 +2409,22 @@ public function studentDashboard(
         );
 
         $record = [
-            'id' =>
-                (string) Str::uuid(),
+            'id' => (string) Str::uuid(),
 
-            'filename' =>
-                $filename,
+            'filename' => $filename,
 
-            'file_desc' =>
-                $file
-                    ->getClientOriginalName(),
+            'file_desc' => $file
+                ->getClientOriginalName(),
 
-            'uploaded' =>
-                now()->format(
-                    'Y-m-d',
-                ),
+            'uploaded' => now()->format(
+                'Y-m-d',
+            ),
 
-            'person_id' =>
-                $studentId,
+            'person_id' => $studentId,
 
-            'task_id' =>
-                $taskId,
+            'task_id' => $taskId,
 
-            'person_task_id' =>
-                $personTaskId,
+            'person_task_id' => $personTaskId,
         ];
 
         $table =
@@ -2566,23 +2434,17 @@ public function studentDashboard(
 
         if ($type === 'objective') {
             $record += [
-                'checked_by_id' =>
-                    null,
+                'checked_by_id' => null,
 
-                'app_by_id' =>
-                    null,
+                'app_by_id' => null,
 
-                'date_checked' =>
-                    null,
+                'date_checked' => null,
 
-                'date_app' =>
-                    null,
+                'date_app' => null,
 
-                'checked_remarks' =>
-                    null,
+                'checked_remarks' => null,
 
-                'app_remarks' =>
-                    null,
+                'app_remarks' => null,
             ];
         }
 
@@ -2591,11 +2453,9 @@ public function studentDashboard(
             ->insert($record);
 
         return [
-            'type' =>
-                $type,
+            'type' => $type,
 
-            'filename' =>
-                $filename,
+            'filename' => $filename,
         ];
     }
 
@@ -2697,8 +2557,7 @@ public function studentDashboard(
         if (! $task) {
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'Training task not found.',
+                'message' => 'Training task not found.',
             ], Response::HTTP_NOT_FOUND);
         }
 
@@ -2725,25 +2584,20 @@ public function studentDashboard(
                     $request,
                 ): array {
                     return [
-                        'id' =>
-                            (string) $file->id,
+                        'id' => (string) $file->id,
 
-                        'filename' =>
+                        'filename' => $file->filename,
+
+                        'file_description' => $this->decodeStudentTrainingText(
+                            $file->file_desc,
+                        ),
+
+                        'uploaded_date' => $file->uploaded,
+
+                        'file_url' => $this->studentTaskFileUrl(
+                            $request,
                             $file->filename,
-
-                        'file_description' =>
-                            $this->decodeStudentTrainingText(
-                                $file->file_desc,
-                            ),
-
-                        'uploaded_date' =>
-                            $file->uploaded,
-
-                        'file_url' =>
-                            $this->studentTaskFileUrl(
-                                $request,
-                                $file->filename,
-                            ),
+                        ),
                     ];
                 },
             )
@@ -2772,25 +2626,20 @@ public function studentDashboard(
                     $request,
                 ): array {
                     return [
-                        'id' =>
-                            (string) $file->id,
+                        'id' => (string) $file->id,
 
-                        'filename' =>
+                        'filename' => $file->filename,
+
+                        'file_description' => $this->decodeStudentTrainingText(
+                            $file->file_desc,
+                        ),
+
+                        'uploaded_date' => $file->uploaded,
+
+                        'file_url' => $this->studentTaskFileUrl(
+                            $request,
                             $file->filename,
-
-                        'file_description' =>
-                            $this->decodeStudentTrainingText(
-                                $file->file_desc,
-                            ),
-
-                        'uploaded_date' =>
-                            $file->uploaded,
-
-                        'file_url' =>
-                            $this->studentTaskFileUrl(
-                                $request,
-                                $file->filename,
-                            ),
+                        ),
                     ];
                 },
             )
@@ -2800,70 +2649,57 @@ public function studentDashboard(
             'success' => true,
             'data' => [
                 'task' => [
-                    'person_task_id' =>
-                        (string) $task
-                            ->person_task_id,
+                    'person_task_id' => (string) $task
+                        ->person_task_id,
 
-                    'task_id' =>
-                        (string) $task
-                            ->task_id,
+                    'task_id' => (string) $task
+                        ->task_id,
 
-                    'ref_no' =>
-                        $this->decodeStudentTrainingText(
-                            $task->ref_no,
-                        ),
+                    'ref_no' => $this->decodeStudentTrainingText(
+                        $task->ref_no,
+                    ),
 
-                    'description' =>
-                        $this->decodeStudentTrainingText(
-                            $task->desc_task,
-                        ),
+                    'description' => $this->decodeStudentTrainingText(
+                        $task->desc_task,
+                    ),
 
-                    'completion_date' =>
-                        $task->completed,
+                    'completion_date' => $task->completed,
 
-                    'month_no' =>
-                        $task->month_no,
+                    'month_no' => $task->month_no,
 
-                    'not_applicable' =>
-                        strtoupper(
-                            trim(
-                                (string) (
-                                    $task->not_app ??
-                                    ''
-                                ),
+                    'not_applicable' => strtoupper(
+                        trim(
+                            (string) (
+                                $task->not_app ??
+                                ''
                             ),
-                        ) === 'Y',
+                        ),
+                    ) === 'Y',
                 ],
 
                 'competence' => [
-                    'ref_no' =>
-                        $task
-                            ->competence_ref_no,
+                    'ref_no' => $task
+                    ->competence_ref_no,
 
-                    'description' =>
-                        $this->decodeStudentTrainingText(
-                            $task
-                                ->desc_competence,
-                        ),
+                    'description' => $this->decodeStudentTrainingText(
+                        $task
+                            ->desc_competence,
+                    ),
                 ],
 
                 'sub_competence' => [
-                    'ref_no' =>
-                        $task
-                            ->topic_ref_no,
+                    'ref_no' => $task
+                    ->topic_ref_no,
 
-                    'description' =>
-                        $this->decodeStudentTrainingText(
-                            $task
-                                ->desc_sub_competence,
-                        ),
+                    'description' => $this->decodeStudentTrainingText(
+                        $task
+                            ->desc_sub_competence,
+                    ),
                 ],
 
-                'objective_evidence' =>
-                    $objectiveEvidence,
+                'objective_evidence' => $objectiveEvidence,
 
-                'proof_of_assessment' =>
-                    $proofOfAssessment,
+                'proof_of_assessment' => $proofOfAssessment,
             ],
         ]);
     }
@@ -2944,8 +2780,7 @@ public function studentDashboard(
         if (! $personTask) {
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'Training task not found.',
+                'message' => 'Training task not found.',
             ], Response::HTTP_NOT_FOUND);
         }
 
@@ -2975,25 +2810,21 @@ public function studentDashboard(
                     $studentId,
                 )
                 ->update([
-                    'completed' =>
-                        $validated[
+                    'completed' => $validated[
                             'completion_date'
                         ],
 
-                    'month_no' =>
-                        $validated[
+                    'month_no' => $validated[
                             'month_no'
                         ],
 
-                    'not_app' =>
-                        $validated[
+                    'not_app' => $validated[
                             'not_app'
                         ],
 
-                    'last_update' =>
-                        now()->format(
-                            'Y-m-d H:i:s',
-                        ),
+                    'last_update' => now()->format(
+                        'Y-m-d H:i:s',
+                    ),
                 ]);
 
             foreach (
@@ -3046,8 +2877,7 @@ public function studentDashboard(
 
         return response()->json([
             'success' => true,
-            'message' =>
-                'Training task updated successfully.',
+            'message' => 'Training task updated successfully.',
         ]);
     }
 
@@ -3109,15 +2939,15 @@ public function studentDashboard(
                 'person_task',
                 'person_task.id',
                 '=',
-                $table .
+                $table.
                     '.person_task_id',
             )
             ->select([
-                $table . '.id',
-                $table . '.filename',
+                $table.'.id',
+                $table.'.filename',
             ])
             ->where(
-                $table . '.id',
+                $table.'.id',
                 $fileId,
             )
             ->where(
@@ -3129,8 +2959,7 @@ public function studentDashboard(
         if (! $file) {
             return response()->json([
                 'success' => false,
-                'message' =>
-                    $type === 'objective'
+                'message' => $type === 'objective'
                         ? 'Objective evidence not found.'
                         : 'Proof of assessment not found.',
             ], Response::HTTP_NOT_FOUND);
@@ -3151,8 +2980,7 @@ public function studentDashboard(
 
         return response()->json([
             'success' => true,
-            'message' =>
-                $type === 'objective'
+            'message' => $type === 'objective'
                     ? 'Objective evidence removed successfully.'
                     : 'Proof of assessment removed successfully.',
         ]);
@@ -3161,7 +2989,6 @@ public function studentDashboard(
     /**
      * Resolve the school database selected during login.
      */
-
     public function adminStudentIndex(
         Request $request,
         string $studentId,
@@ -3226,38 +3053,30 @@ public function studentDashboard(
                     object $vessel,
                 ): array {
                     return [
-                        'id' =>
-                            (string) $vessel->id,
+                        'id' => (string) $vessel->id,
 
-                        'vessel_type_id' =>
-                            $vessel->vessel_type_id,
+                        'vessel_type_id' => $vessel->vessel_type_id,
 
-                        'vessel_name' =>
-                            $this->decodeStudentTrainingText(
-                                $vessel->vessel_name,
-                            ),
+                        'vessel_name' => $this->decodeStudentTrainingText(
+                            $vessel->vessel_name,
+                        ),
 
-                        'vessel_type' =>
-                            $this->decodeStudentTrainingText(
-                                $vessel
-                                    ->desc_vessel_type,
-                            ),
+                        'vessel_type' => $this->decodeStudentTrainingText(
+                            $vessel
+                                ->desc_vessel_type,
+                        ),
 
-                        'ship_company' =>
-                            $this->decodeStudentTrainingText(
-                                $vessel->ship_company,
-                            ),
+                        'ship_company' => $this->decodeStudentTrainingText(
+                            $vessel->ship_company,
+                        ),
 
-                        'flag' =>
-                            $this->decodeStudentTrainingText(
-                                $vessel->flag,
-                            ),
+                        'flag' => $this->decodeStudentTrainingText(
+                            $vessel->flag,
+                        ),
 
-                        'sign_on_date' =>
-                            $vessel->from_date,
+                        'sign_on_date' => $vessel->from_date,
 
-                        'sign_off_date' =>
-                            $vessel->to_date,
+                        'sign_off_date' => $vessel->to_date,
                     ];
                 },
             )
@@ -3415,55 +3234,46 @@ public function studentDashboard(
                                 object $task,
                             ): array {
                                 return [
-                                    'person_task_id' =>
-                                        $task
-                                            ->person_task_id
+                                    'person_task_id' => $task
+                                        ->person_task_id
                                             ? (string) $task
                                                 ->person_task_id
                                             : null,
 
-                                    'task_id' =>
-                                        (string) $task
-                                            ->task_id,
+                                    'task_id' => (string) $task
+                                        ->task_id,
 
-                                    'ref_no' =>
-                                        $this->decodeStudentTrainingText(
-                                            $task->ref_no,
-                                        ),
+                                    'ref_no' => $this->decodeStudentTrainingText(
+                                        $task->ref_no,
+                                    ),
 
-                                    'description' =>
-                                        $this->decodeStudentTrainingText(
-                                            $task->desc_task,
-                                        ),
+                                    'description' => $this->decodeStudentTrainingText(
+                                        $task->desc_task,
+                                    ),
 
-                                    'competence' =>
-                                        $this->decodeStudentTrainingText(
-                                            $task
-                                                ->desc_competence,
-                                        ),
+                                    'competence' => $this->decodeStudentTrainingText(
+                                        $task
+                                            ->desc_competence,
+                                    ),
 
-                                    'topic' =>
-                                        $this->decodeStudentTrainingText(
-                                            $task
-                                                ->desc_sub_competence,
-                                        ),
+                                    'topic' => $this->decodeStudentTrainingText(
+                                        $task
+                                            ->desc_sub_competence,
+                                    ),
 
-                                    'completion_date' =>
-                                        $task->completed,
+                                    'completion_date' => $task->completed,
 
-                                    'not_applicable' =>
-                                        strtoupper(
-                                            trim(
-                                                (string) (
-                                                    $task
-                                                        ->not_app ??
-                                                    ''
-                                                ),
+                                    'not_applicable' => strtoupper(
+                                        trim(
+                                            (string) (
+                                                $task
+                                                    ->not_app ??
+                                                ''
                                             ),
-                                        ) === 'Y',
+                                        ),
+                                    ) === 'Y',
 
-                                    'month_no' =>
-                                        $task->month_no,
+                                    'month_no' => $task->month_no,
                                 ];
                             },
                         )
@@ -3508,38 +3318,29 @@ public function studentDashboard(
                             : 0;
 
                     return [
-                        'workbook_assignment_id' =>
-                            (string) $workbook->id,
+                        'workbook_assignment_id' => (string) $workbook->id,
 
-                        'trb_type_id' =>
-                            $trbTypeId,
+                        'trb_type_id' => $trbTypeId,
 
-                        'workbook' =>
-                            $this->decodeStudentTrainingText(
-                                $workbook
-                                    ->desc_trb_type,
-                            ),
+                        'workbook' => $this->decodeStudentTrainingText(
+                            $workbook
+                                ->desc_trb_type,
+                        ),
 
-                        'reference_count' =>
-                            $referenceCount,
+                        'reference_count' => $referenceCount,
 
-                        'effective_task_count' =>
-                            $effectiveTaskCount,
+                        'effective_task_count' => $effectiveTaskCount,
 
-                        'completed_task_count' =>
-                            $completedTaskCount,
+                        'completed_task_count' => $completedTaskCount,
 
-                        'completed_na_task_count' =>
-                            $completedNaTaskCount,
+                        'completed_na_task_count' => $completedNaTaskCount,
 
-                        'completion_percentage' =>
-                            round(
-                                $completionPercentage,
-                                2,
-                            ),
+                        'completion_percentage' => round(
+                            $completionPercentage,
+                            2,
+                        ),
 
-                        'task_references' =>
-                            $tasks,
+                        'task_references' => $tasks,
                     ];
                 },
             )
@@ -3574,8 +3375,7 @@ public function studentDashboard(
         return response()->json([
             'success' => true,
 
-            'message' =>
-                $vessels->isEmpty() &&
+            'message' => $vessels->isEmpty() &&
                 $workbooks->isEmpty() &&
                 $overallTaskCount === 0
                     ? 'No training records found.'
@@ -3594,26 +3394,20 @@ public function studentDashboard(
                     'etrb_type' => $student->etrb_type,
                 ],
 
-                'training_vessels' =>
-                    $vessels,
+                'training_vessels' => $vessels,
 
-                'training_workbooks' =>
-                    $workbooks,
+                'training_workbooks' => $workbooks,
 
-                'overall_task_count' =>
-                    $overallTaskCount,
+                'overall_task_count' => $overallTaskCount,
 
-                'overall_completed_task_count' =>
-                    $overallCompletedTaskCount,
+                'overall_completed_task_count' => $overallCompletedTaskCount,
 
-                'overall_completed_na_task_count' =>
-                    $overallCompletedNaTaskCount,
+                'overall_completed_na_task_count' => $overallCompletedNaTaskCount,
 
-                'overall_completion_percentage' =>
-                    round(
-                        $overallCompletionPercentage,
-                        2,
-                    ),
+                'overall_completion_percentage' => round(
+                    $overallCompletionPercentage,
+                    2,
+                ),
             ],
         ]);
     }
@@ -3622,7 +3416,6 @@ public function studentDashboard(
      * Count fully completed non-N/A tasks using the same OTG completion rules
      * already used by the mobile Training module.
      */
-
     public function adminTaskDetails(
         Request $request,
         string $studentId,
@@ -3694,8 +3487,7 @@ public function studentDashboard(
         if (! $task) {
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'Training task not found.',
+                'message' => 'Training task not found.',
             ], Response::HTTP_NOT_FOUND);
         }
 
@@ -3722,25 +3514,20 @@ public function studentDashboard(
                     $request,
                 ): array {
                     return [
-                        'id' =>
-                            (string) $file->id,
+                        'id' => (string) $file->id,
 
-                        'filename' =>
+                        'filename' => $file->filename,
+
+                        'file_description' => $this->decodeStudentTrainingText(
+                            $file->file_desc,
+                        ),
+
+                        'uploaded_date' => $file->uploaded,
+
+                        'file_url' => $this->studentTaskFileUrl(
+                            $request,
                             $file->filename,
-
-                        'file_description' =>
-                            $this->decodeStudentTrainingText(
-                                $file->file_desc,
-                            ),
-
-                        'uploaded_date' =>
-                            $file->uploaded,
-
-                        'file_url' =>
-                            $this->studentTaskFileUrl(
-                                $request,
-                                $file->filename,
-                            ),
+                        ),
                     ];
                 },
             )
@@ -3769,25 +3556,20 @@ public function studentDashboard(
                     $request,
                 ): array {
                     return [
-                        'id' =>
-                            (string) $file->id,
+                        'id' => (string) $file->id,
 
-                        'filename' =>
+                        'filename' => $file->filename,
+
+                        'file_description' => $this->decodeStudentTrainingText(
+                            $file->file_desc,
+                        ),
+
+                        'uploaded_date' => $file->uploaded,
+
+                        'file_url' => $this->studentTaskFileUrl(
+                            $request,
                             $file->filename,
-
-                        'file_description' =>
-                            $this->decodeStudentTrainingText(
-                                $file->file_desc,
-                            ),
-
-                        'uploaded_date' =>
-                            $file->uploaded,
-
-                        'file_url' =>
-                            $this->studentTaskFileUrl(
-                                $request,
-                                $file->filename,
-                            ),
+                        ),
                     ];
                 },
             )
@@ -3797,70 +3579,57 @@ public function studentDashboard(
             'success' => true,
             'data' => [
                 'task' => [
-                    'person_task_id' =>
-                        (string) $task
-                            ->person_task_id,
+                    'person_task_id' => (string) $task
+                        ->person_task_id,
 
-                    'task_id' =>
-                        (string) $task
-                            ->task_id,
+                    'task_id' => (string) $task
+                        ->task_id,
 
-                    'ref_no' =>
-                        $this->decodeStudentTrainingText(
-                            $task->ref_no,
-                        ),
+                    'ref_no' => $this->decodeStudentTrainingText(
+                        $task->ref_no,
+                    ),
 
-                    'description' =>
-                        $this->decodeStudentTrainingText(
-                            $task->desc_task,
-                        ),
+                    'description' => $this->decodeStudentTrainingText(
+                        $task->desc_task,
+                    ),
 
-                    'completion_date' =>
-                        $task->completed,
+                    'completion_date' => $task->completed,
 
-                    'month_no' =>
-                        $task->month_no,
+                    'month_no' => $task->month_no,
 
-                    'not_applicable' =>
-                        strtoupper(
-                            trim(
-                                (string) (
-                                    $task->not_app ??
-                                    ''
-                                ),
+                    'not_applicable' => strtoupper(
+                        trim(
+                            (string) (
+                                $task->not_app ??
+                                ''
                             ),
-                        ) === 'Y',
+                        ),
+                    ) === 'Y',
                 ],
 
                 'competence' => [
-                    'ref_no' =>
-                        $task
-                            ->competence_ref_no,
+                    'ref_no' => $task
+                    ->competence_ref_no,
 
-                    'description' =>
-                        $this->decodeStudentTrainingText(
-                            $task
-                                ->desc_competence,
-                        ),
+                    'description' => $this->decodeStudentTrainingText(
+                        $task
+                            ->desc_competence,
+                    ),
                 ],
 
                 'sub_competence' => [
-                    'ref_no' =>
-                        $task
-                            ->topic_ref_no,
+                    'ref_no' => $task
+                    ->topic_ref_no,
 
-                    'description' =>
-                        $this->decodeStudentTrainingText(
-                            $task
-                                ->desc_sub_competence,
-                        ),
+                    'description' => $this->decodeStudentTrainingText(
+                        $task
+                            ->desc_sub_competence,
+                    ),
                 ],
 
-                'objective_evidence' =>
-                    $objectiveEvidence,
+                'objective_evidence' => $objectiveEvidence,
 
-                'proof_of_assessment' =>
-                    $proofOfAssessment,
+                'proof_of_assessment' => $proofOfAssessment,
             ],
         ]);
     }
@@ -3869,7 +3638,6 @@ public function studentDashboard(
      * Revise a task exactly through the fields the mobile task editor owns:
      * completion date, month onboard, N/A status, Objective Evidence and Proof.
      */
-
     public function adminUpdateTask(
         Request $request,
         string $studentId,
@@ -3938,8 +3706,7 @@ public function studentDashboard(
         if (! $personTask) {
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'Training task not found.',
+                'message' => 'Training task not found.',
             ], Response::HTTP_NOT_FOUND);
         }
 
@@ -3969,25 +3736,21 @@ public function studentDashboard(
                     $studentId,
                 )
                 ->update([
-                    'completed' =>
-                        $validated[
+                    'completed' => $validated[
                             'completion_date'
                         ],
 
-                    'month_no' =>
-                        $validated[
+                    'month_no' => $validated[
                             'month_no'
                         ],
 
-                    'not_app' =>
-                        $validated[
+                    'not_app' => $validated[
                             'not_app'
                         ],
 
-                    'last_update' =>
-                        now()->format(
-                            'Y-m-d H:i:s',
-                        ),
+                    'last_update' => now()->format(
+                        'Y-m-d H:i:s',
+                    ),
                 ]);
 
             foreach (
@@ -4040,8 +3803,7 @@ public function studentDashboard(
 
         return response()->json([
             'success' => true,
-            'message' =>
-                'Training task updated successfully.',
+            'message' => 'Training task updated successfully.',
         ]);
     }
 

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-
 import { Head } from '@inertiajs/vue3';
 
 import axios from 'axios';
@@ -16,9 +15,14 @@ import Select from 'primevue/select';
 
 import PrimeTag from 'primevue/tag';
 
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
-
-
+import {
+    computed,
+    onBeforeUnmount,
+    onMounted,
+    reactive,
+    ref,
+    watch,
+} from 'vue';
 
 import Datatable from '@/components/Datatable.vue';
 
@@ -26,38 +30,38 @@ import { dashboard } from '@/routes';
 
 import type { DataTableAction, DataTableColumn, DataTableRow } from '@/types';
 
-
-
 defineOptions({
-
     inheritAttrs: false,
 
     layout: {
-
         breadcrumbs: [
-
             { title: 'Dashboard', href: dashboard() },
 
-            { title: 'Practical Assessments - Internal', href: '/dashboard/practical-internal' },
+            {
+                title: 'Practical Assessments - Internal',
+                href: '/dashboard/practical-internal',
+            },
 
-            { title: 'Batch Creation', href: '/dashboard/practical-internal/batch' },
-
+            {
+                title: 'Batch Creation',
+                href: '/dashboard/practical-internal/batch',
+            },
         ],
-
     },
-
 });
-
-
 
 type PageEvent = { page: number; rows: number; first: number };
 
 type SortEvent = { sortField: string; sortOrder: number };
 
-type AssessmentOption = { id: string; label: string; grade_system?: string; passing_mark?: number };
+type AssessmentOption = {
+    id: string;
+    label: string;
+    grade_system?: string;
+    passing_mark?: number;
+};
 
 type Student = {
-
     id: string;
 
     school_id_no: string;
@@ -73,11 +77,9 @@ type Student = {
     gender?: unknown;
 
     email_sent?: boolean;
-
 };
 
 type BatchDetails = {
-
     id: string;
 
     p_assess_h_id: string;
@@ -91,10 +93,7 @@ type BatchDetails = {
     assessor: string;
 
     students: Student[];
-
 };
-
-
 
 const API = '/api/v1/dashboard/practical-internal/batches';
 
@@ -144,10 +143,7 @@ let studentController: AbortController | null = null;
 
 let studentTimer: ReturnType<typeof setTimeout> | null = null;
 
-
-
 const form = reactive({
-
     p_assess_h_id: '',
 
     from_date: '',
@@ -155,41 +151,61 @@ const form = reactive({
     due_date: '',
 
     assessor: '',
-
 });
 
-
-
 const columns: DataTableColumn[] = [
+    {
+        field: 'last_update',
+        header: 'Date Created',
+        sortable: true,
+        searchable: false,
+        class: 'w-[190px] min-w-[190px]',
+    },
 
-    { field: 'last_update', header: 'Date Created', sortable: true, searchable: false, class: 'w-[190px] min-w-[190px]' },
+    {
+        field: 'title_assess',
+        header: 'Practical Assessment',
+        sortable: true,
+        searchable: true,
+        class: 'min-w-[320px]',
+    },
 
-    { field: 'title_assess', header: 'Practical Assessment', sortable: true, searchable: true, class: 'min-w-[320px]' },
+    {
+        field: 'assessor',
+        header: 'Assessor',
+        sortable: true,
+        searchable: true,
+        class: 'w-[240px] min-w-[240px]',
+    },
 
-    { field: 'assessor', header: 'Assessor', sortable: true, searchable: true, class: 'w-[240px] min-w-[240px]' },
+    {
+        field: 'assessment_period',
+        header: 'Assessment Period',
+        sortable: false,
+        searchable: false,
+        class: 'w-[260px] min-w-[260px]',
+    },
 
-    { field: 'assessment_period', header: 'Assessment Period', sortable: false, searchable: false, class: 'w-[260px] min-w-[260px]' },
-
-    { field: 'examinee_count', header: 'Examinees', sortable: true, searchable: false, class: 'w-[130px] min-w-[130px] text-center', headerClass: '!text-center', bodyClass: '!text-center' },
-
+    {
+        field: 'examinee_count',
+        header: 'Examinees',
+        sortable: true,
+        searchable: false,
+        class: 'w-[130px] min-w-[130px] text-center',
+        headerClass: '!text-center',
+        bodyClass: '!text-center',
+    },
 ];
-
-
 
 const actions: DataTableAction[] = [
-
     { key: 'view', label: 'View batch', icon: 'pi pi-eye', severity: 'info' },
-
 ];
 
-
-
-const selectedIds = computed(() => new Set(selectedStudents.value.map((student) => student.id)));
-
-
+const selectedIds = computed(
+    () => new Set(selectedStudents.value.map((student) => student.id)),
+);
 
 async function loadBatches(page = 1): Promise<void> {
-
     listController?.abort();
 
     const controller = new AbortController();
@@ -200,16 +216,11 @@ async function loadBatches(page = 1): Promise<void> {
 
     errorMessage.value = '';
 
-
-
     try {
-
         const response = await axios.get(API, {
-
             signal: controller.signal,
 
             params: {
-
                 page,
 
                 per_page: rows.value,
@@ -219,16 +230,15 @@ async function loadBatches(page = 1): Promise<void> {
                 sort_field: sortField.value,
 
                 sort_direction: sortDirection.value,
-
             },
 
-            headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
 
             withCredentials: true,
-
         });
-
-
 
         batches.value = response.data.data;
 
@@ -236,75 +246,62 @@ async function loadBatches(page = 1): Promise<void> {
 
         rows.value = response.data.meta.perPage;
 
-        first.value = (response.data.meta.currentPage - 1) * response.data.meta.perPage;
-
+        first.value =
+            (response.data.meta.currentPage - 1) * response.data.meta.perPage;
     } catch (error: unknown) {
-
-        if (axios.isCancel(error) || (axios.isAxiosError(error) && error.code === 'ERR_CANCELED')) {
-return;
-}
+        if (
+            axios.isCancel(error) ||
+            (axios.isAxiosError(error) && error.code === 'ERR_CANCELED')
+        ) {
+            return;
+        }
 
         batches.value = [];
 
         totalRecords.value = 0;
 
-        errorMessage.value = getError(error, 'Unable to load Practical Internal batches.');
-
+        errorMessage.value = getError(
+            error,
+            'Unable to load Practical Internal batches.',
+        );
     } finally {
-
         if (listController === controller) {
-loading.value = false;
-}
-
+            loading.value = false;
+        }
     }
-
 }
-
-
 
 async function loadOptions(): Promise<void> {
-
     if (assessments.value.length > 0) {
-return;
-}
+        return;
+    }
 
     optionsLoading.value = true;
 
-
-
     try {
-
-        const response = await axios.get(`${API}/options`, { withCredentials: true });
+        const response = await axios.get(`${API}/options`, {
+            withCredentials: true,
+        });
 
         assessments.value = response.data.data.assessments;
-
     } catch (error: unknown) {
-
-        errorMessage.value = getError(error, 'Unable to load Practical Assessment options.');
-
+        errorMessage.value = getError(
+            error,
+            'Unable to load Practical Assessment options.',
+        );
     } finally {
-
         optionsLoading.value = false;
-
     }
-
 }
 
-
-
 async function searchStudents(): Promise<void> {
-
     const term = studentSearch.value.trim();
 
     if (term.length < 2 || viewMode.value) {
-
         studentResults.value = [];
 
         return;
-
     }
-
-
 
     studentController?.abort();
 
@@ -314,56 +311,41 @@ async function searchStudents(): Promise<void> {
 
     studentLoading.value = true;
 
-
-
     try {
-
         const response = await axios.get(`${API}/students`, {
-
             signal: controller.signal,
 
             params: { search: term },
 
             withCredentials: true,
-
         });
 
         studentResults.value = response.data.data;
-
     } catch (error: unknown) {
-
-        if (axios.isCancel(error) || (axios.isAxiosError(error) && error.code === 'ERR_CANCELED')) {
-return;
-}
+        if (
+            axios.isCancel(error) ||
+            (axios.isAxiosError(error) && error.code === 'ERR_CANCELED')
+        ) {
+            return;
+        }
 
         errorMessage.value = getError(error, 'Unable to search students.');
-
     } finally {
-
         if (studentController === controller) {
-studentLoading.value = false;
-}
-
+            studentLoading.value = false;
+        }
     }
-
 }
-
-
 
 watch(studentSearch, () => {
-
     if (studentTimer) {
-clearTimeout(studentTimer);
-}
+        clearTimeout(studentTimer);
+    }
 
     studentTimer = setTimeout(() => void searchStudents(), 350);
-
 });
 
-
-
 function openCreate(): void {
-
     resetForm();
 
     viewMode.value = false;
@@ -371,24 +353,20 @@ function openCreate(): void {
     dialogVisible.value = true;
 
     void loadOptions();
-
 }
 
-
-
 async function openView(row: DataTableRow): Promise<void> {
-
     resetForm();
 
     viewMode.value = true;
 
     dialogVisible.value = true;
 
-
-
     try {
-
-        const response = await axios.get(`${API}/${encodeURIComponent(String(row.id))}`, { withCredentials: true });
+        const response = await axios.get(
+            `${API}/${encodeURIComponent(String(row.id))}`,
+            { withCredentials: true },
+        );
 
         const batch = response.data.data as BatchDetails;
 
@@ -401,31 +379,25 @@ async function openView(row: DataTableRow): Promise<void> {
         form.assessor = batch.assessor;
 
         selectedStudents.value = batch.students;
-
     } catch (error: unknown) {
-
         dialogVisible.value = false;
 
-        errorMessage.value = getError(error, 'Unable to load the selected batch.');
-
+        errorMessage.value = getError(
+            error,
+            'Unable to load the selected batch.',
+        );
     }
-
 }
-
-
 
 function addStudent(student: Student): void {
-
     if (selectedIds.value.has(student.id)) {
-return;
-}
+        return;
+    }
 
     if (selectedStudents.value.length >= 40) {
-
         errorMessage.value = 'Only 40 students may be added to one batch.';
 
         return;
-
     }
 
     selectedStudents.value.push(student);
@@ -433,64 +405,57 @@ return;
     studentSearch.value = '';
 
     studentResults.value = [];
-
 }
-
-
 
 function removeStudent(id: string): void {
-
     if (viewMode.value) {
-return;
+        return;
+    }
+
+    selectedStudents.value = selectedStudents.value.filter(
+        (student) => student.id !== id,
+    );
 }
-
-    selectedStudents.value = selectedStudents.value.filter((student) => student.id !== id);
-
-}
-
-
 
 async function saveBatch(): Promise<void> {
-
     validationErrors.value = {};
 
     errorMessage.value = '';
 
-
-
     if (selectedStudents.value.length === 0) {
-
-        errorMessage.value = 'Add at least one student before saving the batch.';
+        errorMessage.value =
+            'Add at least one student before saving the batch.';
 
         return;
-
     }
-
-
 
     saving.value = true;
 
     try {
+        const response = await axios.post(
+            API,
+            {
+                ...form,
 
-        const response = await axios.post(API, {
+                assessor: form.assessor.trim().toUpperCase(),
 
-            ...form,
+                students: selectedStudents.value.map((student) => ({
+                    id: student.id,
+                })),
+            },
+            {
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
 
-            assessor: form.assessor.trim().toUpperCase(),
+                withCredentials: true,
+            },
+        );
 
-            students: selectedStudents.value.map((student) => ({ id: student.id })),
-
-        }, {
-
-            headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-
-            withCredentials: true,
-
-        });
-
-
-
-        successMessage.value = response.data.message || 'Practical Internal batch created successfully.';
+        successMessage.value =
+            response.data.message ||
+            'Practical Internal batch created successfully.';
 
         dialogVisible.value = false;
 
@@ -499,29 +464,21 @@ async function saveBatch(): Promise<void> {
         first.value = 0;
 
         await loadBatches(1);
-
     } catch (error: unknown) {
-
         if (axios.isAxiosError(error) && error.response?.status === 422) {
-
             validationErrors.value = error.response.data.errors ?? {};
-
         }
 
-        errorMessage.value = getError(error, 'Unable to create the Practical Internal batch.');
-
+        errorMessage.value = getError(
+            error,
+            'Unable to create the Practical Internal batch.',
+        );
     } finally {
-
         saving.value = false;
-
     }
-
 }
 
-
-
 function resetForm(): void {
-
     form.p_assess_h_id = '';
 
     form.from_date = '';
@@ -537,25 +494,17 @@ function resetForm(): void {
     studentSearch.value = '';
 
     validationErrors.value = {};
-
 }
 
-
-
 function handlePage(event: PageEvent): void {
-
     rows.value = event.rows;
 
     first.value = event.first;
 
     void loadBatches(event.page + 1);
-
 }
 
-
-
 function handleSort(event: SortEvent): void {
-
     sortField.value = event.sortField || 'due_date';
 
     sortDirection.value = event.sortOrder === -1 ? 'desc' : 'asc';
@@ -563,115 +512,92 @@ function handleSort(event: SortEvent): void {
     first.value = 0;
 
     void loadBatches(1);
-
 }
 
-
-
 function handleSearch(value: string): void {
-
     search.value = value;
 
     first.value = 0;
 
     void loadBatches(1);
-
 }
-
-
 
 function handleAction(action: string, row: DataTableRow): void {
-
     if (action === 'view') {
-void openView(row);
+        void openView(row);
+    }
 }
-
-}
-
-
 
 function formatDate(value: unknown): string {
-
     const text = String(value ?? '').trim();
 
     if (!text) {
-return '—';
-}
+        return '—';
+    }
 
     const date = new Date(`${text.slice(0, 10)}T00:00:00`);
 
     if (Number.isNaN(date.getTime())) {
-return text;
+        return text;
+    }
+
+    return new Intl.DateTimeFormat('en-PH', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+    }).format(date);
 }
-
-    return new Intl.DateTimeFormat('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }).format(date);
-
-}
-
-
 
 function formatDateTime(value: unknown): string {
-
     const text = String(value ?? '').trim();
 
     if (!text) {
-return '—';
-}
+        return '—';
+    }
 
     const date = new Date(text.replace(' ', 'T'));
 
     if (Number.isNaN(date.getTime())) {
-return text;
+        return text;
+    }
+
+    return new Intl.DateTimeFormat('en-PH', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    }).format(date);
 }
-
-    return new Intl.DateTimeFormat('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
-
-}
-
-
 
 function initials(student: Student): string {
-
     const parts = student.name.replace(',', '').split(/\s+/).filter(Boolean);
 
     return `${parts[0]?.[0] ?? ''}${parts[1]?.[0] ?? ''}`.toUpperCase() || 'ST';
-
 }
-
-
 
 function firstError(field: string): string {
-
     return validationErrors.value[field]?.[0] ?? '';
-
 }
-
-
 
 function getError(error: unknown, fallback: string): string {
-
     if (!axios.isAxiosError(error)) {
-return fallback;
-}
+        return fallback;
+    }
 
     return error.response?.data?.message || fallback;
-
 }
-
-
 
 onMounted(() => void loadBatches(1));
 
 onBeforeUnmount(() => {
-
     listController?.abort();
 
     studentController?.abort();
 
     if (studentTimer) {
-clearTimeout(studentTimer);
-}
-
+        clearTimeout(studentTimer);
+    }
 });
 </script>
 

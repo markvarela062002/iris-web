@@ -12,11 +12,7 @@ import Select from 'primevue/select';
 import PrimeTag from 'primevue/tag';
 import { onMounted, ref } from 'vue';
 import Datatable from '@/components/Datatable.vue';
-import type {
-    DataTableAction,
-    DataTableColumn,
-    DataTableRow,
-} from '@/types';
+import type { DataTableAction, DataTableColumn, DataTableRow } from '@/types';
 defineOptions({
     inheritAttrs: false,
     layout: {
@@ -64,12 +60,7 @@ type SortEvent = {
     sortOrder?: number;
 };
 type TagSeverity =
-    | 'success'
-    | 'info'
-    | 'warn'
-    | 'danger'
-    | 'secondary'
-    | 'contrast';
+    'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast';
 /*
 |--------------------------------------------------------------------------
 | DataTable configuration
@@ -126,8 +117,7 @@ const actions: DataTableAction[] = [
         label: 'Download Certificate',
         icon: 'pi pi-download',
         severity: 'info',
-        visible: (row) =>
-            row.is_completed === true,
+        visible: (row) => row.is_completed === true,
     },
     /*
      * Certificate unavailable fallback.
@@ -138,8 +128,7 @@ const actions: DataTableAction[] = [
         key: 'certificate-unavailable',
         label: 'No Certificate Available',
         icon: 'pi pi-download',
-        visible: (row) =>
-            row.is_completed !== true,
+        visible: (row) => row.is_completed !== true,
         disabled: () => true,
     },
     /*
@@ -150,8 +139,7 @@ const actions: DataTableAction[] = [
         label: 'View Answers',
         icon: 'pi pi-eye',
         severity: 'danger',
-        visible: (row) =>
-            row.is_completed === true,
+        visible: (row) => row.is_completed === true,
     },
     /*
      * Answers unavailable fallback.
@@ -162,8 +150,7 @@ const actions: DataTableAction[] = [
         key: 'answers-unavailable',
         label: 'No Answers Available',
         icon: 'pi pi-eye',
-        visible: (row) =>
-            row.is_completed !== true,
+        visible: (row) => row.is_completed !== true,
         disabled: () => true,
     },
     /*
@@ -188,8 +175,7 @@ const first = ref(0);
 const rows = ref(10);
 const search = ref('');
 const sortField = ref('started');
-const sortDirection =
-    ref<'asc' | 'desc'>('desc');
+const sortDirection = ref<'asc' | 'desc'>('desc');
 /*
 |--------------------------------------------------------------------------
 | Filter state
@@ -204,10 +190,7 @@ const sessions = ref<Option[]>([]);
 */
 const detailsVisible = ref(false);
 const loadingDetails = ref(false);
-const selectedAssessment =
-    ref<Record<string, unknown> | null>(
-        null,
-    );
+const selectedAssessment = ref<Record<string, unknown> | null>(null);
 const answers = ref<AnswerRow[]>([]);
 const pageError = ref('');
 /*
@@ -215,72 +198,45 @@ const pageError = ref('');
 | Formatting helpers
 |--------------------------------------------------------------------------
 */
-function formatDateTime(
-    value: unknown,
-): string {
-    const raw = String(
-        value ?? '',
-    ).trim();
+function formatDateTime(value: unknown): string {
+    const raw = String(value ?? '').trim();
 
-    if (
-        !raw ||
-        raw.startsWith('1970-01-01') ||
-        raw.startsWith('0000-00-00')
-    ) {
+    if (!raw || raw.startsWith('1970-01-01') || raw.startsWith('0000-00-00')) {
         return 'Not taken';
     }
 
-    const date = new Date(
-        raw.replace(' ', 'T'),
-    );
+    const date = new Date(raw.replace(' ', 'T'));
 
     if (Number.isNaN(date.getTime())) {
         return raw;
     }
 
-    return new Intl.DateTimeFormat(
-        'en-US',
-        {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true,
-        },
-    ).format(date);
+    return new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+    }).format(date);
 }
-function uppercaseValue(
-    value: unknown,
-    fallback = 'N/A',
-): string {
-    const normalized = String(
-        value ?? '',
-    ).trim();
+function uppercaseValue(value: unknown, fallback = 'N/A'): string {
+    const normalized = String(value ?? '').trim();
 
-    return normalized
-        ? normalized.toUpperCase()
-        : fallback;
+    return normalized ? normalized.toUpperCase() : fallback;
 }
-function getInitials(
-    row: DataTableRow | StudentOption,
-): string {
-    const firstName = String(
-        row.fname ?? '',
-    ).trim();
-    const lastName = String(
-        row.lname ?? '',
-    ).trim();
+function getInitials(row: DataTableRow | StudentOption): string {
+    const firstName = String(row.fname ?? '').trim();
+    const lastName = String(row.lname ?? '').trim();
     const initials =
-        `${firstName.charAt(0)}${lastName.charAt(0)}`
-            .toUpperCase();
+        `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
 
     return initials || 'NA';
 }
-function getAvatarImage(
-    row: DataTableRow | StudentOption,
-): string {
-    const gender = String(row.gender ?? '').trim().toUpperCase();
+function getAvatarImage(row: DataTableRow | StudentOption): string {
+    const gender = String(row.gender ?? '')
+        .trim()
+        .toUpperCase();
 
     if (gender === 'M' || gender === 'MALE') {
         return '/images/male-cadet.png';
@@ -297,21 +253,13 @@ function getAvatarImage(
 | Department helpers
 |--------------------------------------------------------------------------
 */
-function normalizeDepartment(
-    department: unknown,
-): string {
-    return String(
-        department ?? '',
-    )
+function normalizeDepartment(department: unknown): string {
+    return String(department ?? '')
         .trim()
         .toUpperCase();
 }
-function getDepartmentSeverity(
-    department: unknown,
-): TagSeverity {
-    const value = normalizeDepartment(
-        department,
-    );
+function getDepartmentSeverity(department: unknown): TagSeverity {
+    const value = normalizeDepartment(department);
 
     if (value === 'DECK') {
         return 'success';
@@ -323,12 +271,8 @@ function getDepartmentSeverity(
 
     return 'secondary';
 }
-function getDepartmentIcon(
-    department: unknown,
-): string {
-    const value = normalizeDepartment(
-        department,
-    );
+function getDepartmentIcon(department: unknown): string {
+    const value = normalizeDepartment(department);
 
     if (value === 'DECK') {
         return 'pi pi-compass';
@@ -345,21 +289,13 @@ function getDepartmentIcon(
 | Exam type helpers
 |--------------------------------------------------------------------------
 */
-function normalizeExamType(
-    examType: unknown,
-): string {
-    return String(
-        examType ?? '',
-    )
+function normalizeExamType(examType: unknown): string {
+    return String(examType ?? '')
         .trim()
         .toUpperCase();
 }
-function getExamTypeSeverity(
-    examType: unknown,
-): TagSeverity {
-    const value = normalizeExamType(
-        examType,
-    );
+function getExamTypeSeverity(examType: unknown): TagSeverity {
+    const value = normalizeExamType(examType);
 
     if (value === 'NEW') {
         return 'success';
@@ -371,12 +307,8 @@ function getExamTypeSeverity(
 
     return 'secondary';
 }
-function getExamTypeIcon(
-    examType: unknown,
-): string {
-    const value = normalizeExamType(
-        examType,
-    );
+function getExamTypeIcon(examType: unknown): string {
+    const value = normalizeExamType(examType);
 
     if (value === 'NEW') {
         return 'pi pi-check-circle';
@@ -407,9 +339,7 @@ function buildParameters(page: number): Record<string, unknown> {
 | API requests
 |--------------------------------------------------------------------------
 */
-async function loadAssessments(
-    page = 1,
-): Promise<void> {
+async function loadAssessments(page = 1): Promise<void> {
     loading.value = true;
     pageError.value = '';
 
@@ -417,38 +347,26 @@ async function loadAssessments(
         const response = await axios.get(
             '/api/v1/dashboard/datatable/theoretical-assessments',
             {
-                params: buildParameters(
-                    page,
-                ),
+                params: buildParameters(page),
                 withCredentials: true,
             },
         );
-        assessments.value =
-            response.data.data ?? [];
-        totalRecords.value =
-            response.data.meta?.total ?? 0;
-        const currentPage =
-            response.data.meta?.currentPage ??
-            page;
-        const currentPerPage =
-            response.data.meta?.perPage ??
-            rows.value;
+        assessments.value = response.data.data ?? [];
+        totalRecords.value = response.data.meta?.total ?? 0;
+        const currentPage = response.data.meta?.currentPage ?? page;
+        const currentPerPage = response.data.meta?.perPage ?? rows.value;
         rows.value = currentPerPage;
-        first.value =
-            (currentPage - 1) *
-            currentPerPage;
+        first.value = (currentPage - 1) * currentPerPage;
     } catch (error: unknown) {
         assessments.value = [];
         totalRecords.value = 0;
 
         if (axios.isAxiosError(error)) {
             pageError.value =
-                error.response?.data
-                    ?.message ??
+                error.response?.data?.message ??
                 'Unable to load theoretical assessments.';
         } else {
-            pageError.value =
-                'Unable to load theoretical assessments.';
+            pageError.value = 'Unable to load theoretical assessments.';
         }
     } finally {
         loading.value = false;
@@ -462,25 +380,19 @@ async function loadOptions(): Promise<void> {
                 withCredentials: true,
             },
         );
-        courses.value =
-            response.data.courses ?? [];
-        sessions.value =
-            response.data.sessions ?? [];
+        courses.value = response.data.courses ?? [];
+        sessions.value = response.data.sessions ?? [];
     } catch (error: unknown) {
         if (axios.isAxiosError(error)) {
             pageError.value =
-                error.response?.data
-                    ?.message ??
+                error.response?.data?.message ??
                 'Unable to load assessment filters.';
         } else {
-            pageError.value =
-                'Unable to load assessment filters.';
+            pageError.value = 'Unable to load assessment filters.';
         }
     }
 }
-async function viewAnswers(
-    assessment: DataTableRow,
-): Promise<void> {
+async function viewAnswers(assessment: DataTableRow): Promise<void> {
     detailsVisible.value = true;
     loadingDetails.value = true;
     selectedAssessment.value = null;
@@ -494,21 +406,17 @@ async function viewAnswers(
                 withCredentials: true,
             },
         );
-        selectedAssessment.value =
-            response.data.assessment;
-        answers.value =
-            response.data.answers ?? [];
+        selectedAssessment.value = response.data.assessment;
+        answers.value = response.data.answers ?? [];
     } catch (error: unknown) {
         detailsVisible.value = false;
 
         if (axios.isAxiosError(error)) {
             pageError.value =
-                error.response?.data
-                    ?.message ??
+                error.response?.data?.message ??
                 'Unable to load assessment answers.';
         } else {
-            pageError.value =
-                'Unable to load assessment answers.';
+            pageError.value = 'Unable to load assessment answers.';
         }
     } finally {
         loadingDetails.value = false;
@@ -519,65 +427,40 @@ async function viewAnswers(
 | DataTable events
 |--------------------------------------------------------------------------
 */
-function handlePage(
-    event: PageEvent,
-): void {
+function handlePage(event: PageEvent): void {
     rows.value = event.rows;
     first.value = event.first;
-    const page =
-        Math.floor(
-            event.first /
-                event.rows,
-        ) + 1;
+    const page = Math.floor(event.first / event.rows) + 1;
     void loadAssessments(page);
 }
-function handleSort(
-    event: SortEvent,
-): void {
-    if (
-        typeof event.sortField ===
-        'string'
-    ) {
-        sortField.value =
-            event.sortField;
+function handleSort(event: SortEvent): void {
+    if (typeof event.sortField === 'string') {
+        sortField.value = event.sortField;
     }
 
-    sortDirection.value =
-        event.sortOrder === -1
-            ? 'desc'
-            : 'asc';
+    sortDirection.value = event.sortOrder === -1 ? 'desc' : 'asc';
     first.value = 0;
     void loadAssessments(1);
 }
-function handleSearch(
-    value: string,
-): void {
+function handleSearch(value: string): void {
     search.value = value;
     first.value = 0;
     void loadAssessments(1);
 }
-function handleAction(
-    action: string,
-    assessment: DataTableRow,
-): void {
+function handleAction(action: string, assessment: DataTableRow): void {
     /*
      * Ignore fallback actions even if an event
      * is triggered programmatically.
      */
     if (
-        action ===
-            'certificate-unavailable' ||
-        action ===
-            'answers-unavailable'
+        action === 'certificate-unavailable' ||
+        action === 'answers-unavailable'
     ) {
         return;
     }
 
     if (action === 'certificate') {
-        if (
-            assessment.is_completed !==
-            true
-        ) {
+        if (assessment.is_completed !== true) {
             return;
         }
 
@@ -591,10 +474,7 @@ function handleAction(
     }
 
     if (action === 'answers') {
-        if (
-            assessment.is_completed !==
-            true
-        ) {
+        if (assessment.is_completed !== true) {
             return;
         }
 
@@ -694,8 +574,8 @@ function openCreate(): void {
 }
 async function openEdit(assessment: DataTableRow): Promise<void> {
     if (createSaving.value) {
-return;
-}
+        return;
+    }
 
     openCreate();
     const id = String(assessment.id);
@@ -713,8 +593,8 @@ return;
         );
 
         if (!createVisible.value || editingId.value !== id) {
-return;
-}
+            return;
+        }
 
         const record = response.data.assessment;
 
@@ -724,9 +604,13 @@ return;
                 student_name: record.student_name,
                 school_id_no: record.school_id_no,
             },
-            course: courses.value.find((option) => option.id === record.bs_course_id)
-                ?? { id: record.bs_course_id, label: record.name_course },
-            session: sessions.value.find((option) => option.id === record.bs_exam_session_id) ?? null,
+            course: courses.value.find(
+                (option) => option.id === record.bs_course_id,
+            ) ?? { id: record.bs_course_id, label: record.name_course },
+            session:
+                sessions.value.find(
+                    (option) => option.id === record.bs_exam_session_id,
+                ) ?? null,
             examType: record.exam_type,
             duration: Number(record.duration ?? 0),
             proctorName: record.proctor_name ?? '',
@@ -737,17 +621,20 @@ return;
         };
     } catch (error: unknown) {
         if (!createVisible.value || editingId.value !== id) {
-return;
-}
+            return;
+        }
 
         editLoadFailed.value = true;
         createError.value = axios.isAxiosError(error)
-            ? error.response?.data?.message ?? 'The assessment could not be loaded.'
-            : error instanceof Error ? error.message : 'The assessment could not be loaded.';
+            ? (error.response?.data?.message ??
+              'The assessment could not be loaded.')
+            : error instanceof Error
+              ? error.message
+              : 'The assessment could not be loaded.';
     } finally {
         if (editingId.value === id) {
-editLoading.value = false;
-}
+            editLoading.value = false;
+        }
     }
 }
 
@@ -775,8 +662,8 @@ async function searchCreateStudents(event: { query: string }): Promise<void> {
 }
 async function saveAssessment(): Promise<void> {
     if (createSaving.value || editLoading.value || editLoadFailed.value) {
-return;
-}
+        return;
+    }
 
     createError.value = '';
     createErrors.value = {};
@@ -807,7 +694,8 @@ return;
     }
 
     if (!form.accessDateTo) {
-        createErrors.value.access_exp_date_to = 'Access Until Date is required.';
+        createErrors.value.access_exp_date_to =
+            'Access Until Date is required.';
     }
 
     if (!form.accessTimeTo) {
@@ -871,19 +759,12 @@ return;
     }
 }
 onMounted(() => {
-    void Promise.all([
-        loadOptions(),
-        loadAssessments(),
-    ]);
+    void Promise.all([loadOptions(), loadAssessments()]);
 });
 </script>
 <template>
-    <Head
-        title="Theoretical Assessments - Internal (Enrolled)"
-    />
-    <div
-        class="flex min-h-0 flex-1 flex-col gap-4 p-4"
-    >
+    <Head title="Theoretical Assessments - Internal (Enrolled)" />
+    <div class="flex min-h-0 flex-1 flex-col gap-4 p-4">
         <Message
             v-if="createSuccess"
             severity="success"
@@ -915,17 +796,10 @@ onMounted(() => {
             :data="assessments"
             :columns="columns"
             :actions="actions"
-            :total-records="
-                totalRecords
-            "
+            :total-records="totalRecords"
             :first="first"
             :rows="rows"
-            :rows-per-page-options="[
-                10,
-                20,
-                50,
-                100,
-            ]"
+            :rows-per-page-options="[10, 20, 50, 100]"
             actions-header="Actions"
             actions-width="170px"
             @page="handlePage"
@@ -942,30 +816,13 @@ onMounted(() => {
                 />
             </template>
             <!-- STUDENT INFORMATION -->
-            <template
-                #cell-student_name="{
-                    data,
-                }"
-            >
-                <div
-                    class="flex items-center gap-3"
-                >
+            <template #cell-student_name="{ data }">
+                <div class="flex items-center gap-3">
                     <Avatar
-                        v-if="
-                            getAvatarImage(
-                                data,
-                            )
-                        "
-                        :image="
-                            getAvatarImage(
-                                data,
-                            )
-                        "
+                        v-if="getAvatarImage(data)"
+                        :image="getAvatarImage(data)"
                         :aria-label="
-                            uppercaseValue(
-                                data.student_name,
-                                'Student',
-                            )
+                            uppercaseValue(data.student_name, 'Student')
                         "
                         shape="circle"
                         size="large"
@@ -973,16 +830,9 @@ onMounted(() => {
                     />
                     <Avatar
                         v-else
-                        :label="
-                            getInitials(
-                                data,
-                            )
-                        "
+                        :label="getInitials(data)"
                         :aria-label="
-                            uppercaseValue(
-                                data.student_name,
-                                'Student',
-                            )
+                            uppercaseValue(data.student_name, 'Student')
                         "
                         shape="circle"
                         size="large"
@@ -990,7 +840,7 @@ onMounted(() => {
                     />
                     <div class="min-w-0">
                         <p
-                            class="truncate font-semibold uppercase text-slate-700"
+                            class="truncate font-semibold text-slate-700 uppercase"
                         >
                             {{
                                 uppercaseValue(
@@ -999,167 +849,85 @@ onMounted(() => {
                                 )
                             }}
                         </p>
-                        <div
-                            class="mt-1 flex flex-nowrap items-center gap-1.5"
-                        >
+                        <div class="mt-1 flex flex-nowrap items-center gap-1.5">
                             <PrimeTag
-                                :value="
-                                    data.school_id_no ||
-                                    'No School ID'
-                                "
+                                :value="data.school_id_no || 'No School ID'"
                                 icon="pi pi-id-card"
                                 severity="info"
                                 rounded
-                                class="shrink-0 !whitespace-nowrap !px-2 !py-0.5 !text-xs !font-semibold"
+                                class="shrink-0 !px-2 !py-0.5 !text-xs !font-semibold !whitespace-nowrap"
                             />
                             <PrimeTag
-                                v-if="
-                                    data.dept
-                                "
-                                :value="
-                                    normalizeDepartment(
-                                        data.dept,
-                                    )
-                                "
-                                :icon="
-                                    getDepartmentIcon(
-                                        data.dept,
-                                    )
-                                "
-                                :severity="
-                                    getDepartmentSeverity(
-                                        data.dept,
-                                    )
-                                "
+                                v-if="data.dept"
+                                :value="normalizeDepartment(data.dept)"
+                                :icon="getDepartmentIcon(data.dept)"
+                                :severity="getDepartmentSeverity(data.dept)"
                                 rounded
-                                class="shrink-0 !whitespace-nowrap !px-2 !py-0.5 !text-xs !font-semibold"
+                                class="shrink-0 !px-2 !py-0.5 !text-xs !font-semibold !whitespace-nowrap"
                             />
                         </div>
                     </div>
                 </div>
             </template>
             <!-- MERGED EXAM DETAILS -->
-            <template
-                #cell-exam_details="{
-                    data,
-                }"
-            >
-                <div
-                    class="min-w-0 space-y-2"
-                >
+            <template #cell-exam_details="{ data }">
+                <div class="min-w-0 space-y-2">
                     <!-- PACKAGE -->
-                    <div
-                        class="flex items-start gap-2"
-                    >
+                    <div class="flex items-start gap-2">
                         <i
                             class="pi pi-graduation-cap mt-0.5 shrink-0 text-blue-500"
                         ></i>
-                        <p
-                            class="line-clamp-2 font-semibold text-slate-700"
-                        >
-                            {{
-                                data.name_course ||
-                                'No exam package'
-                            }}
+                        <p class="line-clamp-2 font-semibold text-slate-700">
+                            {{ data.name_course || 'No exam package' }}
                         </p>
                     </div>
                     <!-- SESSION AND TYPE -->
-                    <div
-                        class="flex flex-wrap items-center gap-1.5"
-                    >
+                    <div class="flex flex-wrap items-center gap-1.5">
                         <PrimeTag
-                            :value="
-                                data.session_code ||
-                                'No Session'
-                            "
+                            :value="data.session_code || 'No Session'"
                             icon="pi pi-calendar"
                             severity="secondary"
                             rounded
-                            class="!whitespace-nowrap !px-2 !py-0.5 !text-xs !font-semibold"
+                            class="!px-2 !py-0.5 !text-xs !font-semibold !whitespace-nowrap"
                         />
                         <PrimeTag
                             :value="
-                                normalizeExamType(
-                                    data.exam_type,
-                                ) ||
-                                'NO TYPE'
+                                normalizeExamType(data.exam_type) || 'NO TYPE'
                             "
-                            :icon="
-                                getExamTypeIcon(
-                                    data.exam_type,
-                                )
-                            "
-                            :severity="
-                                getExamTypeSeverity(
-                                    data.exam_type,
-                                )
-                            "
+                            :icon="getExamTypeIcon(data.exam_type)"
+                            :severity="getExamTypeSeverity(data.exam_type)"
                             rounded
-                            class="!whitespace-nowrap !px-2 !py-0.5 !text-xs !font-semibold"
+                            class="!px-2 !py-0.5 !text-xs !font-semibold !whitespace-nowrap"
                         />
                     </div>
                     <!-- DATE TAKEN -->
-                    <p
-                        class="flex items-center gap-1.5 text-sm text-slate-500"
-                    >
-                        <i
-                            class="pi pi-clock shrink-0 text-amber-500"
-                        ></i>
+                    <p class="flex items-center gap-1.5 text-sm text-slate-500">
+                        <i class="pi pi-clock shrink-0 text-amber-500"></i>
                         <span>
-                            {{
-                                formatDateTime(
-                                    data.started,
-                                )
-                            }}
+                            {{ formatDateTime(data.started) }}
                         </span>
                     </p>
                 </div>
             </template>
             <!-- PROCTOR -->
-            <template
-                #cell-proctor_name="{
-                    data,
-                }"
-            >
-                <div
-                    class="flex items-center gap-2"
-                >
-                    <i
-                        class="pi pi-user shrink-0 text-violet-500"
-                    ></i>
-                    <span
-                        class="font-semibold uppercase text-slate-700"
-                    >
-                        {{
-                            uppercaseValue(
-                                data.proctor_name,
-                                'NO PROCTOR',
-                            )
-                        }}
+            <template #cell-proctor_name="{ data }">
+                <div class="flex items-center gap-2">
+                    <i class="pi pi-user shrink-0 text-violet-500"></i>
+                    <span class="font-semibold text-slate-700 uppercase">
+                        {{ uppercaseValue(data.proctor_name, 'NO PROCTOR') }}
                     </span>
                 </div>
             </template>
             <!-- SCORE -->
-            <template
-                #cell-score="{ data }"
-            >
+            <template #cell-score="{ data }">
                 <div class="text-center">
-                    <p
-                        class="font-semibold text-slate-700"
-                    >
-                        {{
-                            data.score || 0
-                        }}/{{
-                            data.total_items ||
-                            0
-                        }}
+                    <p class="font-semibold text-slate-700">
+                        {{ data.score || 0 }}/{{ data.total_items || 0 }}
                     </p>
                     <PrimeTag
                         :value="`${data.score_percentage || 0}%`"
                         :severity="
-                            Number(
-                                data.score_percentage,
-                            ) >= 70
+                            Number(data.score_percentage) >= 70
                                 ? 'success'
                                 : 'danger'
                         "
@@ -1169,40 +937,32 @@ onMounted(() => {
                 </div>
             </template>
             <!-- STATUS -->
-            <template
-                #cell-done="{ data }"
-            >
+            <template #cell-done="{ data }">
                 <PrimeTag
-                    :value="
-                        data.is_completed
-                            ? 'Done'
-                            : 'Pending'
-                    "
+                    :value="data.is_completed ? 'Done' : 'Pending'"
                     :icon="
-                        data.is_completed
-                            ? 'pi pi-check-circle'
-                            : 'pi pi-clock'
+                        data.is_completed ? 'pi pi-check-circle' : 'pi pi-clock'
                     "
-                    :severity="
-                        data.is_completed
-                            ? 'success'
-                            : 'warn'
-                    "
+                    :severity="data.is_completed ? 'success' : 'warn'"
                     rounded
                     class="!px-2 !py-0.5 !text-xs !font-semibold"
                 />
             </template>
         </Datatable>
-<!-- ADD / EDIT ASSESSMENT DIALOG -->
-<Dialog
-    v-model:visible="createVisible"
-    modal
-    :draggable="false"
-    :header="editingId ? 'Edit Theoretical Assessment' : 'Add Theoretical Assessment'"
-    :closable="!createSaving"
-    :close-on-escape="!createSaving"
-    class="w-[95vw] max-w-3xl"
->
+        <!-- ADD / EDIT ASSESSMENT DIALOG -->
+        <Dialog
+            v-model:visible="createVisible"
+            modal
+            :draggable="false"
+            :header="
+                editingId
+                    ? 'Edit Theoretical Assessment'
+                    : 'Add Theoretical Assessment'
+            "
+            :closable="!createSaving"
+            :close-on-escape="!createSaving"
+            class="w-[95vw] max-w-3xl"
+        >
             <div
                 class="mb-4 flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900"
                 role="note"
@@ -1214,190 +974,239 @@ onMounted(() => {
                     required fields.</span
                 >
             </div>
-    <div v-if="editLoading" class="flex items-center justify-center gap-2 py-8" role="status">
-        <i class="pi pi-spinner pi-spin" aria-hidden="true"></i>
-        <span>Loading assessment...</span>
-    </div>
-    <div v-else-if="!editLoadFailed" class="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div class="md:col-span-2">
-            <label class="mb-2 block text-sm font-semibold text-slate-700">
-                Student Name <span class="text-red-500">*</span>
-            </label>
-            <AutoComplete
-                v-model="createForm.student"
-                :disabled="editingId !== null"
-                :suggestions="createStudentSuggestions"
-                option-label="student_name"
-                placeholder="Search student..."
-                force-selection
-                dropdown
-                class="w-full"
-                input-class="w-full"
-                @complete="searchCreateStudents"
-            />
-            <small v-if="createErrors.person_id" class="text-red-500">
-                {{ createErrors.person_id }}
-            </small>
-        </div>
-        <div>
-            <label class="mb-2 block text-sm font-semibold text-slate-700">
-                Exam Package <span class="text-red-500">*</span>
-            </label>
-            <Select
-                v-model="createForm.course"
-                :options="courses"
-                option-label="label"
-                placeholder="Select exam package"
-                class="w-full"
-            />
-            <small v-if="createErrors.bs_course_id" class="text-red-500">
-                {{ createErrors.bs_course_id }}
-            </small>
-        </div>
-        <div>
-            <label class="mb-2 block text-sm font-semibold text-slate-700">
-                Session <span class="text-red-500">*</span>
-            </label>
-            <Select
-                v-model="createForm.session"
-                :options="sessions"
-                option-label="label"
-                placeholder="Select session"
-                class="w-full"
-            />
-            <small v-if="createErrors.bs_exam_session_id" class="text-red-500">
-                {{ createErrors.bs_exam_session_id }}
-            </small>
-        </div>
-        <div>
-            <label class="mb-2 block text-sm font-semibold text-slate-700">
-                Exam Type <span class="text-red-500">*</span>
-            </label>
-            <Select
-                v-model="createForm.examType"
-                :options="examTypeOptions"
-                option-label="label"
-                option-value="value"
-                placeholder="Select exam type"
-                class="w-full"
-            />
-            <small v-if="createErrors.exam_type" class="text-red-500">
-                {{ createErrors.exam_type }}
-            </small>
-        </div>
-        <div>
-            <label class="mb-2 block text-sm font-semibold text-slate-700">
-                Duration (minutes)
-            </label>
-            <InputNumber
-                v-model="createForm.duration"
-                :min="0"
-                :max="1440"
-                :use-grouping="false"
-                fluid
-            />
-            <small class="text-slate-500">
-                Enter 0 to calculate from the exam topics.
-            </small>
-            <small v-if="createErrors.duration" class="block text-red-500">
-                {{ createErrors.duration }}
-            </small>
-        </div>
-        <div class="md:col-span-2">
-            <label class="mb-2 block text-sm font-semibold text-slate-700">
-                Proctor Name
-            </label>
-            <InputText
-                v-model="createForm.proctorName"
-                class="w-full"
-                placeholder="Enter proctor name"
-            />
-            <small v-if="createErrors.proctor_name" class="text-red-500">
-                {{ createErrors.proctor_name }}
-            </small>
-        </div>
-        <div>
-            <label class="mb-2 block text-sm font-semibold text-slate-700">
-                Access Date From <span class="text-red-500">*</span>
-            </label>
-            <InputText
-                v-model="createForm.accessDate"
-                type="date"
-                class="w-full"
-            />
-            <small v-if="createErrors.access_exp_date" class="text-red-500">
-                {{ createErrors.access_exp_date }}
-            </small>
-        </div>
-        <div>
-            <label class="mb-2 block text-sm font-semibold text-slate-700">
-                Access Start Time <span class="text-red-500">*</span>
-            </label>
-            <InputText
-                v-model="createForm.accessTime"
-                type="time"
-                step="1800"
-                class="w-full"
-            />
-            <small v-if="createErrors.access_exp_time" class="text-red-500">
-                {{ createErrors.access_exp_time }}
-            </small>
-        </div>
-        <div>
-            <label class="mb-2 block text-sm font-semibold text-slate-700">
-                Access Until Date <span class="text-red-500">*</span>
-            </label>
-            <InputText
-                v-model="createForm.accessDateTo"
-                type="date"
-                class="w-full"
-            />
-            <small v-if="createErrors.access_exp_date_to" class="text-red-500">
-                {{ createErrors.access_exp_date_to }}
-            </small>
-        </div>
-        <div>
-            <label class="mb-2 block text-sm font-semibold text-slate-700">
-                Access End Time <span class="text-red-500">*</span>
-            </label>
-            <InputText
-                v-model="createForm.accessTimeTo"
-                type="time"
-                step="1800"
-                class="w-full"
-            />
-            <small v-if="createErrors.access_exp_time_to" class="text-red-500">
-                {{ createErrors.access_exp_time_to }}
-            </small>
-        </div>
-    </div>
-    <Message v-if="createError" severity="error" class="mt-4">
-        {{ createError }}
-    </Message>
-    <template #footer>
-        <Button
-            type="button"
-            label="Cancel"
-            severity="secondary"
-            variant="outlined"
-            :disabled="createSaving"
-            @click="createVisible = false"
-        />
-        <Button
-            type="button"
-            :label="editingId ? 'Save Changes' : 'Save Assessment'"
-            :disabled="editLoading || editLoadFailed"
-            icon="pi pi-save"
-            :loading="createSaving"
-            @click="saveAssessment"
-        />
-    </template>
-</Dialog>
+            <div
+                v-if="editLoading"
+                class="flex items-center justify-center gap-2 py-8"
+                role="status"
+            >
+                <i class="pi pi-spinner pi-spin" aria-hidden="true"></i>
+                <span>Loading assessment...</span>
+            </div>
+            <div
+                v-else-if="!editLoadFailed"
+                class="grid grid-cols-1 gap-4 md:grid-cols-2"
+            >
+                <div class="md:col-span-2">
+                    <label
+                        class="mb-2 block text-sm font-semibold text-slate-700"
+                    >
+                        Student Name <span class="text-red-500">*</span>
+                    </label>
+                    <AutoComplete
+                        v-model="createForm.student"
+                        :disabled="editingId !== null"
+                        :suggestions="createStudentSuggestions"
+                        option-label="student_name"
+                        placeholder="Search student..."
+                        force-selection
+                        dropdown
+                        class="w-full"
+                        input-class="w-full"
+                        @complete="searchCreateStudents"
+                    />
+                    <small v-if="createErrors.person_id" class="text-red-500">
+                        {{ createErrors.person_id }}
+                    </small>
+                </div>
+                <div>
+                    <label
+                        class="mb-2 block text-sm font-semibold text-slate-700"
+                    >
+                        Exam Package <span class="text-red-500">*</span>
+                    </label>
+                    <Select
+                        v-model="createForm.course"
+                        :options="courses"
+                        option-label="label"
+                        placeholder="Select exam package"
+                        class="w-full"
+                    />
+                    <small
+                        v-if="createErrors.bs_course_id"
+                        class="text-red-500"
+                    >
+                        {{ createErrors.bs_course_id }}
+                    </small>
+                </div>
+                <div>
+                    <label
+                        class="mb-2 block text-sm font-semibold text-slate-700"
+                    >
+                        Session <span class="text-red-500">*</span>
+                    </label>
+                    <Select
+                        v-model="createForm.session"
+                        :options="sessions"
+                        option-label="label"
+                        placeholder="Select session"
+                        class="w-full"
+                    />
+                    <small
+                        v-if="createErrors.bs_exam_session_id"
+                        class="text-red-500"
+                    >
+                        {{ createErrors.bs_exam_session_id }}
+                    </small>
+                </div>
+                <div>
+                    <label
+                        class="mb-2 block text-sm font-semibold text-slate-700"
+                    >
+                        Exam Type <span class="text-red-500">*</span>
+                    </label>
+                    <Select
+                        v-model="createForm.examType"
+                        :options="examTypeOptions"
+                        option-label="label"
+                        option-value="value"
+                        placeholder="Select exam type"
+                        class="w-full"
+                    />
+                    <small v-if="createErrors.exam_type" class="text-red-500">
+                        {{ createErrors.exam_type }}
+                    </small>
+                </div>
+                <div>
+                    <label
+                        class="mb-2 block text-sm font-semibold text-slate-700"
+                    >
+                        Duration (minutes)
+                    </label>
+                    <InputNumber
+                        v-model="createForm.duration"
+                        :min="0"
+                        :max="1440"
+                        :use-grouping="false"
+                        fluid
+                    />
+                    <small class="text-slate-500">
+                        Enter 0 to calculate from the exam topics.
+                    </small>
+                    <small
+                        v-if="createErrors.duration"
+                        class="block text-red-500"
+                    >
+                        {{ createErrors.duration }}
+                    </small>
+                </div>
+                <div class="md:col-span-2">
+                    <label
+                        class="mb-2 block text-sm font-semibold text-slate-700"
+                    >
+                        Proctor Name
+                    </label>
+                    <InputText
+                        v-model="createForm.proctorName"
+                        class="w-full"
+                        placeholder="Enter proctor name"
+                    />
+                    <small
+                        v-if="createErrors.proctor_name"
+                        class="text-red-500"
+                    >
+                        {{ createErrors.proctor_name }}
+                    </small>
+                </div>
+                <div>
+                    <label
+                        class="mb-2 block text-sm font-semibold text-slate-700"
+                    >
+                        Access Date From <span class="text-red-500">*</span>
+                    </label>
+                    <InputText
+                        v-model="createForm.accessDate"
+                        type="date"
+                        class="w-full"
+                    />
+                    <small
+                        v-if="createErrors.access_exp_date"
+                        class="text-red-500"
+                    >
+                        {{ createErrors.access_exp_date }}
+                    </small>
+                </div>
+                <div>
+                    <label
+                        class="mb-2 block text-sm font-semibold text-slate-700"
+                    >
+                        Access Start Time <span class="text-red-500">*</span>
+                    </label>
+                    <InputText
+                        v-model="createForm.accessTime"
+                        type="time"
+                        step="1800"
+                        class="w-full"
+                    />
+                    <small
+                        v-if="createErrors.access_exp_time"
+                        class="text-red-500"
+                    >
+                        {{ createErrors.access_exp_time }}
+                    </small>
+                </div>
+                <div>
+                    <label
+                        class="mb-2 block text-sm font-semibold text-slate-700"
+                    >
+                        Access Until Date <span class="text-red-500">*</span>
+                    </label>
+                    <InputText
+                        v-model="createForm.accessDateTo"
+                        type="date"
+                        class="w-full"
+                    />
+                    <small
+                        v-if="createErrors.access_exp_date_to"
+                        class="text-red-500"
+                    >
+                        {{ createErrors.access_exp_date_to }}
+                    </small>
+                </div>
+                <div>
+                    <label
+                        class="mb-2 block text-sm font-semibold text-slate-700"
+                    >
+                        Access End Time <span class="text-red-500">*</span>
+                    </label>
+                    <InputText
+                        v-model="createForm.accessTimeTo"
+                        type="time"
+                        step="1800"
+                        class="w-full"
+                    />
+                    <small
+                        v-if="createErrors.access_exp_time_to"
+                        class="text-red-500"
+                    >
+                        {{ createErrors.access_exp_time_to }}
+                    </small>
+                </div>
+            </div>
+            <Message v-if="createError" severity="error" class="mt-4">
+                {{ createError }}
+            </Message>
+            <template #footer>
+                <Button
+                    type="button"
+                    label="Cancel"
+                    severity="secondary"
+                    variant="outlined"
+                    :disabled="createSaving"
+                    @click="createVisible = false"
+                />
+                <Button
+                    type="button"
+                    :label="editingId ? 'Save Changes' : 'Save Assessment'"
+                    :disabled="editLoading || editLoadFailed"
+                    icon="pi pi-save"
+                    :loading="createSaving"
+                    @click="saveAssessment"
+                />
+            </template>
+        </Dialog>
         <!-- ANSWERS DIALOG -->
         <Dialog
-            v-model:visible="
-                detailsVisible
-            "
+            v-model:visible="detailsVisible"
             modal
             maximizable
             header="Assessment Answers"
@@ -1408,133 +1217,72 @@ onMounted(() => {
                 v-if="loadingDetails"
                 class="flex min-h-48 items-center justify-center"
             >
-                <i
-                    class="pi pi-spin pi-spinner text-3xl text-blue-500"
-                ></i>
+                <i class="pi pi-spin pi-spinner text-3xl text-blue-500"></i>
             </div>
             <template v-else>
                 <div
-                    v-if="
-                        selectedAssessment
-                    "
+                    v-if="selectedAssessment"
                     class="mb-4 grid gap-3 rounded-xl bg-slate-50 p-4 md:grid-cols-2"
                 >
                     <p>
-                        <strong>
-                            Student:
-                        </strong>
-                        {{
-                            uppercaseValue(
-                                selectedAssessment.student_name,
-                            )
-                        }}
+                        <strong> Student: </strong>
+                        {{ uppercaseValue(selectedAssessment.student_name) }}
                     </p>
                     <p>
-                        <strong>
-                            School ID:
-                        </strong>
+                        <strong> School ID: </strong>
+                        {{ selectedAssessment.school_id_no || 'N/A' }}
+                    </p>
+                    <p>
+                        <strong> Exam: </strong>
+                        {{ selectedAssessment.name_course || 'N/A' }}
+                    </p>
+                    <p>
+                        <strong> Exam Type: </strong>
                         {{
-                            selectedAssessment.school_id_no ||
+                            normalizeExamType(selectedAssessment.exam_type) ||
                             'N/A'
                         }}
                     </p>
                     <p>
-                        <strong>
-                            Exam:
-                        </strong>
-                        {{
-                            selectedAssessment.name_course ||
-                            'N/A'
-                        }}
+                        <strong> Date Taken: </strong>
+                        {{ formatDateTime(selectedAssessment.started) }}
                     </p>
                     <p>
-                        <strong>
-                            Exam Type:
-                        </strong>
-                        {{
-                            normalizeExamType(
-                                selectedAssessment.exam_type,
-                            ) ||
-                            'N/A'
-                        }}
-                    </p>
-                    <p>
-                        <strong>
-                            Date Taken:
-                        </strong>
-                        {{
-                            formatDateTime(
-                                selectedAssessment.started,
-                            )
-                        }}
-                    </p>
-                    <p>
-                        <strong>
-                            Score:
-                        </strong>
-                        {{
-                            selectedAssessment.score ||
-                            0
-                        }}/{{
-                            selectedAssessment.total_items ||
-                            0
+                        <strong> Score: </strong>
+                        {{ selectedAssessment.score || 0 }}/{{
+                            selectedAssessment.total_items || 0
                         }}
                     </p>
                 </div>
-                <div
-                    class="overflow-x-auto"
-                >
-                    <table
-                        class="w-full border-collapse text-sm"
-                    >
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse text-sm">
                         <thead>
-                            <tr
-                                class="bg-slate-100 text-left text-slate-700"
-                            >
+                            <tr class="bg-slate-100 text-left text-slate-700">
                                 <th
                                     class="w-14 border border-slate-200 p-3 text-center"
                                 >
                                     #
                                 </th>
-                                <th
-                                    class="border border-slate-200 p-3"
-                                >
+                                <th class="border border-slate-200 p-3">
                                     Question
                                 </th>
-                                <th
-                                    class="w-52 border border-slate-200 p-3"
-                                >
+                                <th class="w-52 border border-slate-200 p-3">
                                     Answer
                                 </th>
-                                <th
-                                    class="w-52 border border-slate-200 p-3"
-                                >
+                                <th class="w-52 border border-slate-200 p-3">
                                     Correct Answer
                                 </th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr
-                                v-for="
-                                    answer in answers
-                                "
-                                :key="
-                                    answer.index
-                                "
-                            >
+                            <tr v-for="answer in answers" :key="answer.index">
                                 <td
                                     class="border border-slate-200 p-3 text-center"
                                 >
-                                    {{
-                                        answer.index
-                                    }}
+                                    {{ answer.index }}
                                 </td>
-                                <td
-                                    class="border border-slate-200 p-3"
-                                >
-                                    {{
-                                        answer.question
-                                    }}
+                                <td class="border border-slate-200 p-3">
+                                    {{ answer.question }}
                                 </td>
                                 <td
                                     class="border border-slate-200 p-3 font-semibold"
@@ -1544,32 +1292,20 @@ onMounted(() => {
                                             : 'text-red-600'
                                     "
                                 >
-                                    {{
-                                        answer.answer ||
-                                        'No answer'
-                                    }}
+                                    {{ answer.answer || 'No answer' }}
                                 </td>
                                 <td
                                     class="border border-slate-200 p-3 font-semibold text-green-600"
                                 >
-                                    {{
-                                        answer.correct_answer ||
-                                        'N/A'
-                                    }}
+                                    {{ answer.correct_answer || 'N/A' }}
                                 </td>
                             </tr>
-                            <tr
-                                v-if="
-                                    answers.length ===
-                                    0
-                                "
-                            >
+                            <tr v-if="answers.length === 0">
                                 <td
                                     colspan="4"
                                     class="border border-slate-200 p-8 text-center text-slate-500"
                                 >
-                                    No answers are
-                                    available.
+                                    No answers are available.
                                 </td>
                             </tr>
                         </tbody>

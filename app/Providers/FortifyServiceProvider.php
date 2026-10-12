@@ -179,7 +179,7 @@ class FortifyServiceProvider extends ServiceProvider
                  * First, attempt authentication against
                  * the administrator-side login table.
                  */
-                $user = (new User())
+                $user = (new User)
                     ->setConnection($connection)
                     ->newQuery()
                     ->with('loginType')
@@ -215,7 +215,7 @@ class FortifyServiceProvider extends ServiceProvider
                  * If no valid login-table account matched,
                  * attempt authentication against person.
                  */
-                $student = (new Student())
+                $student = (new Student)
                     ->setConnection($connection)
                     ->newQuery()
                     ->with('loginType')
@@ -306,13 +306,11 @@ class FortifyServiceProvider extends ServiceProvider
         $request->session()->put([
             'school_code' => $schoolCode,
 
-            'database_connection' =>
-                $connection,
+            'database_connection' => $connection,
 
             'account_type' => $accountType,
 
-            'login_type_id' =>
-                is_string($roleId)
+            'login_type_id' => is_string($roleId)
                     ? $roleId
                     : null,
         ]);

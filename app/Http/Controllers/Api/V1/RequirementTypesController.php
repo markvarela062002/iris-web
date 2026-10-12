@@ -22,8 +22,7 @@ class RequirementTypesController extends Controller
 {
     public function __construct(
         private readonly DatatableService $datatableService,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -77,27 +76,17 @@ class RequirementTypesController extends Controller
                 'vessel_type.desc_vessel_type',
             ],
             sortableColumns: [
-                'code_requirement' =>
-                    'requirement.code_requirement',
-                'desc_requirement' =>
-                    'requirement.desc_requirement',
-                'cci_reqd' =>
-                    'requirement.cci_reqd',
-                'rank_name' =>
-                    'rank.desc_rank',
-                'vessel_type_name' =>
-                    'vessel_type.desc_vessel_type',
-                'cat_requirement' =>
-                    'requirement.cat_requirement',
-                'prio' =>
-                    'requirement.prio',
-                'template' =>
-                    'requirement.template',
+                'code_requirement' => 'requirement.code_requirement',
+                'desc_requirement' => 'requirement.desc_requirement',
+                'cci_reqd' => 'requirement.cci_reqd',
+                'rank_name' => 'rank.desc_rank',
+                'vessel_type_name' => 'vessel_type.desc_vessel_type',
+                'cat_requirement' => 'requirement.cat_requirement',
+                'prio' => 'requirement.prio',
+                'template' => 'requirement.template',
             ],
-            defaultSortColumn:
-                'desc_requirement',
-            defaultSortDirection:
-                'asc',
+            defaultSortColumn: 'desc_requirement',
+            defaultSortDirection: 'asc',
         );
 
         $result =
@@ -129,7 +118,7 @@ class RequirementTypesController extends Controller
                         ] =
                             $template !== ''
                                 ? $documentsBaseUrl
-                                    . rawurlencode(
+                                    .rawurlencode(
                                         basename(
                                             $template,
                                         ),
@@ -174,8 +163,7 @@ class RequirementTypesController extends Controller
                             (string)
                                 $row->desc_rank,
                         ),
-                        'value' =>
-                            (string) $row->id,
+                        'value' => (string) $row->id,
                     ];
                 },
             )
@@ -202,8 +190,7 @@ class RequirementTypesController extends Controller
                                 $row
                                     ->desc_vessel_type,
                         ),
-                        'value' =>
-                            (string) $row->id,
+                        'value' => (string) $row->id,
                     ];
                 },
             )
@@ -213,8 +200,7 @@ class RequirementTypesController extends Controller
         return response()->json([
             'data' => [
                 'ranks' => $ranks,
-                'vesselTypes' =>
-                    $vesselTypes,
+                'vesselTypes' => $vesselTypes,
             ],
         ]);
     }
@@ -237,12 +223,10 @@ class RequirementTypesController extends Controller
 
         $this->ensureUniqueRequirement(
             db: $db,
-            code:
-                $input[
+            code: $input[
                     'code_requirement'
                 ],
-            description:
-                $input[
+            description: $input[
                     'desc_requirement'
                 ],
         );
@@ -260,12 +244,10 @@ class RequirementTypesController extends Controller
                 $templateName =
                     $this->storeTemplate(
                         request: $request,
-                        file:
-                            $request->file(
-                                'template_file',
-                            ),
-                        code:
-                            $input[
+                        file: $request->file(
+                            'template_file',
+                        ),
+                        code: $input[
                                 'code_requirement'
                             ],
                     );
@@ -285,33 +267,27 @@ class RequirementTypesController extends Controller
                         ->insert([
                             'id' => $id,
 
-                            'code_requirement' =>
-                                $input[
+                            'code_requirement' => $input[
                                     'code_requirement'
                                 ],
 
-                            'desc_requirement' =>
-                                $input[
+                            'desc_requirement' => $input[
                                     'desc_requirement'
                                 ],
 
-                            'cci_reqd' =>
-                                $input[
+                            'cci_reqd' => $input[
                                     'cci_reqd'
                                 ],
 
-                            'rank_id' =>
-                                $input[
+                            'rank_id' => $input[
                                     'rank_id'
                                 ],
 
-                            'vessel_type' =>
-                                $input[
+                            'vessel_type' => $input[
                                     'vessel_type'
                                 ],
 
-                            'cat_requirement' =>
-                                $input[
+                            'cat_requirement' => $input[
                                     'cat_requirement'
                                 ],
 
@@ -319,22 +295,19 @@ class RequirementTypesController extends Controller
                              * The legacy form does
                              * not expose school_id.
                              */
-                            'school_id' =>
-                                null,
+                            'school_id' => null,
 
                             /*
                              * Preserve the legacy
                              * create behavior:
                              * blank priority = 1.
                              */
-                            'prio' =>
-                                $input[
+                            'prio' => $input[
                                     'prio'
                                 ]
                                 ?? 1,
 
-                            'template' =>
-                                $templateName,
+                            'template' => $templateName,
                         ]);
                 },
             );
@@ -344,25 +317,21 @@ class RequirementTypesController extends Controller
             ) {
                 $this
                     ->deleteTemplateQuietly(
-                        request:
-                            $request,
-                        filename:
-                            $templateName,
+                        request: $request,
+                        filename: $templateName,
                     );
             }
 
             if (
                 $exception
-                    instanceof
-                    QueryException
+                    instanceof QueryException
                 &&
                 (string)
                     $exception
                         ->getCode()
                     === '23000'
             ) {
-                throw ValidationException
-                    ::withMessages([
+                throw ValidationException::withMessages([
                         'code_requirement' => [
                             'The requirement code or description already exists.',
                         ],
@@ -373,17 +342,13 @@ class RequirementTypesController extends Controller
         }
 
         return response()->json([
-            'message' =>
-                'Requirement type created successfully.',
+            'message' => 'Requirement type created successfully.',
 
-            'data' =>
-                $this->findRequirement(
-                    request:
-                        $request,
-                    db: $db,
-                    requirementId:
-                        $id,
-                ),
+            'data' => $this->findRequirement(
+                request: $request,
+                db: $db,
+                requirementId: $id,
+            ),
         ], Response::HTTP_CREATED);
     }
 
@@ -409,8 +374,7 @@ class RequirementTypesController extends Controller
 
         if (! $existing) {
             return response()->json([
-                'message' =>
-                    'Requirement type not found.',
+                'message' => 'Requirement type not found.',
             ], Response::HTTP_NOT_FOUND);
         }
 
@@ -421,16 +385,13 @@ class RequirementTypesController extends Controller
 
         $this->ensureUniqueRequirement(
             db: $db,
-            code:
-                $input[
+            code: $input[
                     'code_requirement'
                 ],
-            description:
-                $input[
+            description: $input[
                     'desc_requirement'
                 ],
-            exceptId:
-                $requirementId,
+            exceptId: $requirementId,
         );
 
         $oldTemplate = trim(
@@ -451,50 +412,41 @@ class RequirementTypesController extends Controller
                 $newTemplate =
                     $this->storeTemplate(
                         request: $request,
-                        file:
-                            $request->file(
-                                'template_file',
-                            ),
-                        code:
-                            $input[
+                        file: $request->file(
+                            'template_file',
+                        ),
+                        code: $input[
                                 'code_requirement'
                             ],
                     );
             }
 
             $update = [
-                'code_requirement' =>
-                    $input[
+                'code_requirement' => $input[
                         'code_requirement'
                     ],
 
-                'desc_requirement' =>
-                    $input[
+                'desc_requirement' => $input[
                         'desc_requirement'
                     ],
 
-                'cci_reqd' =>
-                    $input[
+                'cci_reqd' => $input[
                         'cci_reqd'
                     ],
 
-                'rank_id' =>
-                    $input[
+                'rank_id' => $input[
                         'rank_id'
                     ],
 
-                'vessel_type' =>
-                    $input[
+                'vessel_type' => $input[
                         'vessel_type'
                     ],
 
-                'cat_requirement' =>
-                    $input[
+                'cat_requirement' => $input[
                         'cat_requirement'
                     ],
 
-                'prio' =>
-                    $input['prio']
+                'prio' => $input['prio']
                     ?? 1,
             ];
 
@@ -518,25 +470,21 @@ class RequirementTypesController extends Controller
             ) {
                 $this
                     ->deleteTemplateQuietly(
-                        request:
-                            $request,
-                        filename:
-                            $newTemplate,
+                        request: $request,
+                        filename: $newTemplate,
                     );
             }
 
             if (
                 $exception
-                    instanceof
-                    QueryException
+                    instanceof QueryException
                 &&
                 (string)
                     $exception
                         ->getCode()
                     === '23000'
             ) {
-                throw ValidationException
-                    ::withMessages([
+                throw ValidationException::withMessages([
                         'code_requirement' => [
                             'The requirement code or description already exists.',
                         ],
@@ -565,26 +513,20 @@ class RequirementTypesController extends Controller
             if (! $stillReferenced) {
                 $this
                     ->deleteTemplateQuietly(
-                        request:
-                            $request,
-                        filename:
-                            $oldTemplate,
+                        request: $request,
+                        filename: $oldTemplate,
                     );
             }
         }
 
         return response()->json([
-            'message' =>
-                'Requirement type updated successfully.',
+            'message' => 'Requirement type updated successfully.',
 
-            'data' =>
-                $this->findRequirement(
-                    request:
-                        $request,
-                    db: $db,
-                    requirementId:
-                        $requirementId,
-                ),
+            'data' => $this->findRequirement(
+                request: $request,
+                db: $db,
+                requirementId: $requirementId,
+            ),
         ]);
     }
 
@@ -614,8 +556,7 @@ class RequirementTypesController extends Controller
 
         if (! $requirement) {
             return response()->json([
-                'message' =>
-                    'Requirement type not found.',
+                'message' => 'Requirement type not found.',
             ], Response::HTTP_NOT_FOUND);
         }
 
@@ -634,8 +575,7 @@ class RequirementTypesController extends Controller
                 === '23000'
             ) {
                 return response()->json([
-                    'message' =>
-                        'This requirement type is already being used and cannot be deleted.',
+                    'message' => 'This requirement type is already being used and cannot be deleted.',
                 ], Response::HTTP_CONFLICT);
             }
 
@@ -644,8 +584,7 @@ class RequirementTypesController extends Controller
 
         if ($deleted < 1) {
             return response()->json([
-                'message' =>
-                    'Requirement type was not deleted.',
+                'message' => 'Requirement type was not deleted.',
             ], Response::HTTP_CONFLICT);
         }
 
@@ -658,8 +597,7 @@ class RequirementTypesController extends Controller
          */
 
         return response()->json([
-            'message' =>
-                'Requirement type deleted successfully.',
+            'message' => 'Requirement type deleted successfully.',
         ]);
     }
 
@@ -754,8 +692,7 @@ class RequirementTypesController extends Controller
                 )
                 ->exists()
         ) {
-            throw ValidationException
-                ::withMessages([
+            throw ValidationException::withMessages([
                     'rank_id' => [
                         'The selected rank is invalid.',
                     ],
@@ -775,8 +712,7 @@ class RequirementTypesController extends Controller
                 )
                 ->exists()
         ) {
-            throw ValidationException
-                ::withMessages([
+            throw ValidationException::withMessages([
                     'vessel_type' => [
                         'The selected vessel type is invalid.',
                     ],
@@ -798,28 +734,23 @@ class RequirementTypesController extends Controller
                     ],
             ),
 
-            'cci_reqd' =>
-                (string)
+            'cci_reqd' => (string)
                     $input['cci_reqd'],
 
-            'rank_id' =>
-                $rankId,
+            'rank_id' => $rankId,
 
-            'vessel_type' =>
-                $vesselType,
+            'vessel_type' => $vesselType,
 
-            'cat_requirement' =>
-                $this->nullableTrim(
-                    $input[
-                        'cat_requirement'
-                    ]
-                    ?? null,
-                ),
+            'cat_requirement' => $this->nullableTrim(
+                $input[
+                    'cat_requirement'
+                ]
+                ?? null,
+            ),
 
-            'prio' =>
-                isset(
-                    $input['prio'],
-                )
+            'prio' => isset(
+                $input['prio'],
+            )
                     ? (int)
                         $input['prio']
                     : null,
@@ -848,8 +779,7 @@ class RequirementTypesController extends Controller
         }
 
         if ($codeQuery->exists()) {
-            throw ValidationException
-                ::withMessages([
+            throw ValidationException::withMessages([
                     'code_requirement' => [
                         'The requirement code already exists.',
                     ],
@@ -874,8 +804,7 @@ class RequirementTypesController extends Controller
         if (
             $descriptionQuery->exists()
         ) {
-            throw ValidationException
-                ::withMessages([
+            throw ValidationException::withMessages([
                     'desc_requirement' => [
                         'The requirement description already exists.',
                     ],
@@ -893,8 +822,7 @@ class RequirementTypesController extends Controller
             ||
             ! $file->isValid()
         ) {
-            throw ValidationException
-                ::withMessages([
+            throw ValidationException::withMessages([
                     'template_file' => [
                         'The selected template file is invalid.',
                     ],
@@ -949,8 +877,7 @@ class RequirementTypesController extends Controller
         }
 
         try {
-            $stored = Storage
-                ::disk($diskName)
+            $stored = Storage::disk($diskName)
                 ->put(
                     $filename,
                     $stream,
@@ -1071,7 +998,7 @@ class RequirementTypesController extends Controller
                     ->documentsBaseUrl(
                         $request,
                     )
-                    . rawurlencode(
+                    .rawurlencode(
                         basename(
                             $template,
                         ),
@@ -1112,7 +1039,7 @@ class RequirementTypesController extends Controller
             );
         }
 
-        return $url . '/';
+        return $url.'/';
     }
 
     private function schoolDocumentDiskName(
@@ -1200,8 +1127,7 @@ class RequirementTypesController extends Controller
 
         if ($schoolCode === '') {
             return response()->json([
-                'message' =>
-                    'No school database has been selected.',
+                'message' => 'No school database has been selected.',
             ], Response::HTTP_FORBIDDEN);
         }
 
@@ -1212,8 +1138,7 @@ class RequirementTypesController extends Controller
 
         if (! is_array($schools)) {
             return response()->json([
-                'message' =>
-                    'School configuration is unavailable.',
+                'message' => 'School configuration is unavailable.',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
@@ -1223,10 +1148,8 @@ class RequirementTypesController extends Controller
 
         if (! is_array($school)) {
             return response()->json([
-                'message' =>
-                    'The selected school is not configured.',
-                'schoolCode' =>
-                    $schoolCode,
+                'message' => 'The selected school is not configured.',
+                'schoolCode' => $schoolCode,
             ], Response::HTTP_FORBIDDEN);
         }
 
@@ -1248,8 +1171,7 @@ class RequirementTypesController extends Controller
             )
         ) {
             return response()->json([
-                'message' =>
-                    'The selected school code is invalid.',
+                'message' => 'The selected school code is invalid.',
             ], Response::HTTP_FORBIDDEN);
         }
 
@@ -1263,10 +1185,8 @@ class RequirementTypesController extends Controller
             $connection === ''
         ) {
             return response()->json([
-                'message' =>
-                    'The school database connection is missing.',
-                'schoolCode' =>
-                    $schoolCode,
+                'message' => 'The school database connection is missing.',
+                'schoolCode' => $schoolCode,
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
@@ -1281,18 +1201,14 @@ class RequirementTypesController extends Controller
             )
         ) {
             return response()->json([
-                'message' =>
-                    'The school database connection is not configured.',
-                'schoolCode' =>
-                    $schoolCode,
-                'connection' =>
-                    $connection,
+                'message' => 'The school database connection is not configured.',
+                'schoolCode' => $schoolCode,
+                'connection' => $connection,
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
         config([
-            'database.default' =>
-                $connection,
+            'database.default' => $connection,
         ]);
 
         DB::setDefaultConnection(

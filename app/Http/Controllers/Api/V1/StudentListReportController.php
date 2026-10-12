@@ -73,8 +73,7 @@ class StudentListReportController extends Controller
 
     public function __construct(
         private readonly DatatableService $datatableService,
-    ) {
-    }
+    ) {}
 
     public function options(Request $request): JsonResponse
     {
@@ -191,11 +190,11 @@ class StudentListReportController extends Controller
         );
 
         $schoolCode = $this->selectedSchoolCode($request);
-        $filename = 'student-list-report-' . now('Asia/Manila')->format('Ymd-His') . '.xlsx';
+        $filename = 'student-list-report-'.now('Asia/Manila')->format('Ymd-His').'.xlsx';
 
         return response()->streamDownload(
             function () use ($query, $input, $selectedOptionalColumns, $schoolCode): void {
-                $spreadsheet = new Spreadsheet();
+                $spreadsheet = new Spreadsheet;
                 $sheet = $spreadsheet->getActiveSheet();
                 $sheet->setTitle('Student List Report');
 
@@ -215,15 +214,15 @@ class StudentListReportController extends Controller
 
                 $sheet->mergeCells("A2:{$lastColumn}2");
 
-                $filterDescription = 'School: ' . ($schoolCode !== '' ? $schoolCode : '—')
-                    . ' | Registration Date: ' . $input['from_date'] . ' to ' . $input['to_date'];
+                $filterDescription = 'School: '.($schoolCode !== '' ? $schoolCode : '—')
+                    .' | Registration Date: '.$input['from_date'].' to '.$input['to_date'];
 
                 if (! empty($input['batch_no'])) {
-                    $filterDescription .= ' | CCI Year: ' . $input['batch_no'];
+                    $filterDescription .= ' | CCI Year: '.$input['batch_no'];
                 }
 
                 if (! empty($input['dept'])) {
-                    $filterDescription .= ' | Department: ' . $input['dept'];
+                    $filterDescription .= ' | Department: '.$input['dept'];
                 }
 
                 $sheet->setCellValue('A2', $filterDescription);
@@ -231,7 +230,7 @@ class StudentListReportController extends Controller
                 $sheet->mergeCells("A3:{$lastColumn}3");
                 $sheet->setCellValue(
                     'A3',
-                    'Generated: ' . now('Asia/Manila')->format('M d, Y h:i A'),
+                    'Generated: '.now('Asia/Manila')->format('M d, Y h:i A'),
                 );
 
                 $headerRow = 5;
@@ -354,7 +353,7 @@ class StudentListReportController extends Controller
             'to_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:from_date'],
             'batch_no' => ['nullable', 'string', 'max:20'],
             'dept' => ['nullable', Rule::in(['DECK', 'ENGINE', 'NON-MARITIME'])],
-            'columns' => ['nullable', 'array', 'max:' . count(self::OPTIONAL_COLUMNS)],
+            'columns' => ['nullable', 'array', 'max:'.count(self::OPTIONAL_COLUMNS)],
             'columns.*' => [
                 'string',
                 'distinct',
@@ -407,11 +406,11 @@ class StudentListReportController extends Controller
         ];
 
         foreach (self::BASE_COLUMNS as $field => $definition) {
-            $select[] = $definition['database'] . ' as ' . $field;
+            $select[] = $definition['database'].' as '.$field;
         }
 
         foreach ($selectedOptionalColumns as $field) {
-            $select[] = self::OPTIONAL_COLUMNS[$field]['database'] . ' as ' . $field;
+            $select[] = self::OPTIONAL_COLUMNS[$field]['database'].' as '.$field;
         }
 
         $toExclusive = CarbonImmutable::createFromFormat(
@@ -481,6 +480,7 @@ class StudentListReportController extends Controller
             foreach ($searchableColumns as $index => $column) {
                 if ($index === 0) {
                     $searchQuery->where($column, 'like', "%{$search}%");
+
                     continue;
                 }
 
@@ -526,7 +526,7 @@ class StudentListReportController extends Controller
 
         while ($number > 0) {
             $number--;
-            $name = chr(65 + ($number % 26)) . $name;
+            $name = chr(65 + ($number % 26)).$name;
             $number = intdiv($number, 26);
         }
 

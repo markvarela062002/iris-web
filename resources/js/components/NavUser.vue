@@ -3,7 +3,6 @@ import { usePage } from '@inertiajs/vue3';
 import { ChevronsUpDown } from '@lucide/vue';
 import { computed } from 'vue';
 
-
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -44,24 +43,15 @@ const user = computed(() => {
 });
 
 const displayName = computed(() => {
-    const fullName = [
-        user.value.fname,
-        user.value.mname,
-        user.value.lname,
-    ]
+    const fullName = [user.value.fname, user.value.mname, user.value.lname]
         .filter(
             (name): name is string =>
-                typeof name === 'string' &&
-                name.trim() !== '',
+                typeof name === 'string' && name.trim() !== '',
         )
         .map((name) => name.trim())
         .join(' ');
 
-    return (
-        fullName ||
-        user.value.login_name ||
-        'User'
-    );
+    return fullName || user.value.login_name || 'User';
 });
 
 const roleName = computed(() => {
@@ -73,11 +63,7 @@ const profileImage = computed(() => {
         return user.value.avatar;
     }
 
-    const gender = String(
-        user.value.sex ??
-            user.value.gender ??
-            '',
-    )
+    const gender = String(user.value.sex ?? user.value.gender ?? '')
         .trim()
         .toUpperCase();
 
@@ -133,7 +119,7 @@ const { isMobile, state } = useSidebar();
 
                             <!-- Complete User Name -->
                             <div
-                                class="break-words whitespace-normal text-sm leading-5 font-semibold !text-white"
+                                class="text-sm leading-5 font-semibold break-words whitespace-normal !text-white"
                             >
                                 {{ displayName }}
                             </div>
@@ -161,16 +147,12 @@ const { isMobile, state } = useSidebar();
                 >
                     <!-- Account Information -->
                     <div class="border-b px-3 py-3">
-
-
                         <p class="mt-1 text-sm font-semibold">
                             {{ roleName }}
                         </p>
                     </div>
 
-                    <UserMenuContent
-                        :user="displayUser"
-                    />
+                    <UserMenuContent :user="displayUser" />
                 </DropdownMenuContent>
             </DropdownMenu>
         </SidebarMenuItem>

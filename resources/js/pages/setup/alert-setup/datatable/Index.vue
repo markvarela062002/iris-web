@@ -8,22 +8,12 @@ import Message from 'primevue/message';
 import PrimeTag from 'primevue/tag';
 import Toast from 'primevue/toast';
 import { useToast } from 'primevue/usetoast';
-import {
-    computed,
-    onBeforeUnmount,
-    onMounted,
-    reactive,
-    ref,
-} from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 
 import Datatable from '@/components/Datatable.vue';
 import { dashboard } from '@/routes';
 
-import type {
-    DataTableAction,
-    DataTableColumn,
-    DataTableRow,
-} from '@/types';
+import type { DataTableAction, DataTableColumn, DataTableRow } from '@/types';
 
 defineOptions({
     inheritAttrs: false,
@@ -65,16 +55,13 @@ type SortEvent = {
 
 type Errors = Record<string, string>;
 
-const DATATABLE_URL =
-    '/api/v1/setup/alert-setup/datatable';
+const DATATABLE_URL = '/api/v1/setup/alert-setup/datatable';
 
-const API_BASE =
-    '/api/v1/setup/alert-setup';
+const API_BASE = '/api/v1/setup/alert-setup';
 
 const toast = useToast();
 
-const alerts =
-    ref<DataTableRow[]>([]);
+const alerts = ref<DataTableRow[]>([]);
 
 const loading = ref(false);
 const saving = ref(false);
@@ -84,32 +71,23 @@ const totalRecords = ref(0);
 const first = ref(0);
 const perPage = ref(10);
 
-const sortField =
-    ref('as_of');
+const sortField = ref('as_of');
 
-const sortDirection =
-    ref<'asc' | 'desc'>(
-        'desc',
-    );
+const sortDirection = ref<'asc' | 'desc'>('desc');
 
-const dialogVisible =
-    ref(false);
+const dialogVisible = ref(false);
 
-const formErrors =
-    ref<Errors>({});
+const formErrors = ref<Errors>({});
 
 const form = reactive({
     id: '',
     as_of: '',
     alert_type: '',
     alert_type_label: '',
-    inactive_days:
-        null as number | null,
+    inactive_days: null as number | null,
 });
 
-let requestController:
-    | AbortController
-    | null = null;
+let requestController: AbortController | null = null;
 
 const columns: DataTableColumn[] = [
     {
@@ -131,87 +109,55 @@ const columns: DataTableColumn[] = [
         header: 'Inactivity Days',
         sortable: false,
         searchable: false,
-        class:
-            'min-w-[180px] text-center',
-        headerClass:
-            'text-center',
-        bodyClass:
-            'text-center',
+        class: 'min-w-[180px] text-center',
+        headerClass: 'text-center',
+        bodyClass: 'text-center',
     },
 ];
 
 const actions: DataTableAction[] = [
     {
         key: 'edit',
-        label:
-            'Edit inactivity days',
+        label: 'Edit inactivity days',
         icon: 'pi pi-pencil',
         severity: 'warn',
     },
 ];
 
-const currentPage = computed(
-    () =>
-        Math.floor(
-            first.value /
-                perPage.value,
-        ) + 1,
-);
+const currentPage = computed(() => Math.floor(first.value / perPage.value) + 1);
 
-async function loadAlerts(
-    page = 1,
-): Promise<void> {
+async function loadAlerts(page = 1): Promise<void> {
     requestController?.abort();
 
-    const controller =
-        new AbortController();
+    const controller = new AbortController();
 
-    requestController =
-        controller;
+    requestController = controller;
 
     loading.value = true;
     errorMessage.value = '';
 
     try {
-        const response =
-            await axios.get<ApiListResponse>(
-                DATATABLE_URL,
-                {
-                    signal:
-                        controller.signal,
+        const response = await axios.get<ApiListResponse>(DATATABLE_URL, {
+            signal: controller.signal,
 
-                    params: {
-                        page,
-                        per_page:
-                            perPage.value,
-                        sort_field:
-                            sortField.value,
-                        sort_direction:
-                            sortDirection.value,
-                    },
+            params: {
+                page,
+                per_page: perPage.value,
+                sort_field: sortField.value,
+                sort_direction: sortDirection.value,
+            },
 
-                    ...requestConfig(),
-                },
-            );
+            ...requestConfig(),
+        });
 
-        alerts.value =
-            response.data.data;
+        alerts.value = response.data.data;
 
-        totalRecords.value =
-            response.data.meta.total;
+        totalRecords.value = response.data.meta.total;
 
-        perPage.value =
-            response.data.meta
-                .perPage;
+        perPage.value = response.data.meta.perPage;
 
         first.value =
-            (
-                response.data.meta
-                    .currentPage -
-                1
-            ) *
-            response.data.meta
-                .perPage;
+            (response.data.meta.currentPage - 1) * response.data.meta.perPage;
     } catch (error: unknown) {
         if (isCanceled(error)) {
             return;
@@ -220,56 +166,36 @@ async function loadAlerts(
         alerts.value = [];
         totalRecords.value = 0;
 
-        errorMessage.value =
-            getErrorMessage(
-                error,
-                'Unable to load alert setup.',
-            );
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to load alert setup.',
+        );
     } finally {
-        if (
-            requestController ===
-            controller
-        ) {
+        if (requestController === controller) {
             loading.value = false;
         }
     }
 }
 
-function handlePage(
-    event: PageEvent,
-): void {
-    perPage.value =
-        event.rows;
+function handlePage(event: PageEvent): void {
+    perPage.value = event.rows;
 
-    first.value =
-        event.first;
+    first.value = event.first;
 
-    void loadAlerts(
-        event.page + 1,
-    );
+    void loadAlerts(event.page + 1);
 }
 
-function handleSort(
-    event: SortEvent,
-): void {
-    sortField.value =
-        event.sortField
-        || 'as_of';
+function handleSort(event: SortEvent): void {
+    sortField.value = event.sortField || 'as_of';
 
-    sortDirection.value =
-        event.sortOrder === -1
-            ? 'desc'
-            : 'asc';
+    sortDirection.value = event.sortOrder === -1 ? 'desc' : 'asc';
 
     first.value = 0;
 
     void loadAlerts(1);
 }
 
-function handleAction(
-    action: string,
-    row: DataTableRow,
-): void {
+function handleAction(action: string, row: DataTableRow): void {
     if (action !== 'edit') {
         return;
     }
@@ -277,54 +203,30 @@ function handleAction(
     openEdit(row);
 }
 
-function openEdit(
-    row: DataTableRow,
-): void {
+function openEdit(row: DataTableRow): void {
     formErrors.value = {};
 
-    form.id =
-        String(row.id ?? '');
+    form.id = String(row.id ?? '');
 
-    form.as_of =
-        String(row.as_of ?? '');
+    form.as_of = String(row.as_of ?? '');
 
-    form.alert_type =
-        String(
-            row.alert_type ?? '',
-        );
+    form.alert_type = String(row.alert_type ?? '');
 
-    form.alert_type_label =
-        String(
-            row.alert_type_label
-            ?? '',
-        );
+    form.alert_type_label = String(row.alert_type_label ?? '');
 
-    const days = Number(
-        row.inactive_days
-        ?? 0,
-    );
+    const days = Number(row.inactive_days ?? 0);
 
-    form.inactive_days =
-        Number.isFinite(days)
-            ? days
-            : null;
+    form.inactive_days = Number.isFinite(days) ? days : null;
 
-    dialogVisible.value =
-        true;
+    dialogVisible.value = true;
 }
 
 async function saveAlert(): Promise<void> {
     formErrors.value = {};
     errorMessage.value = '';
 
-    if (
-        form.inactive_days === null
-        ||
-        form.inactive_days < 1
-    ) {
-        formErrors.value
-            .inactive_days =
-            'Inactivity Days must be at least 1.';
+    if (form.inactive_days === null || form.inactive_days < 1) {
+        formErrors.value.inactive_days = 'Inactivity Days must be at least 1.';
 
         return;
     }
@@ -336,110 +238,70 @@ async function saveAlert(): Promise<void> {
     saving.value = true;
 
     try {
-        const response =
-            await axios.put<{
-                message: string;
-            }>(
-                `${API_BASE}/${encodeURIComponent(
-                    form.id,
-                )}`,
-                {
-                    inactive_days:
-                        form.inactive_days,
-                },
-                requestConfig(),
-            );
+        const response = await axios.put<{
+            message: string;
+        }>(
+            `${API_BASE}/${encodeURIComponent(form.id)}`,
+            {
+                inactive_days: form.inactive_days,
+            },
+            requestConfig(),
+        );
 
         toast.add({
             severity: 'success',
-            summary:
-                'Alert Setup Updated',
-            detail:
-                response.data.message,
+            summary: 'Alert Setup Updated',
+            detail: response.data.message,
             life: 4000,
         });
 
-        dialogVisible.value =
-            false;
+        dialogVisible.value = false;
 
-        await loadAlerts(
-            currentPage.value,
-        );
+        await loadAlerts(currentPage.value);
     } catch (error: unknown) {
-        formErrors.value =
-            getValidationErrors(
-                error,
-            );
+        formErrors.value = getValidationErrors(error);
 
-        errorMessage.value =
-            getErrorMessage(
-                error,
-                'Unable to update alert setup.',
-            );
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to update alert setup.',
+        );
     } finally {
         saving.value = false;
     }
 }
 
-function formatDate(
-    value: unknown,
-): string {
-    const raw = String(
-        value ?? '',
-    ).trim();
+function formatDate(value: unknown): string {
+    const raw = String(value ?? '').trim();
 
     if (!raw) {
         return '—';
     }
 
-    const parts =
-        raw.split('-');
+    const parts = raw.split('-');
 
     if (parts.length !== 3) {
         return raw;
     }
 
-    const year =
-        Number(parts[0]);
+    const year = Number(parts[0]);
 
-    const month =
-        Number(parts[1]);
+    const month = Number(parts[1]);
 
-    const day =
-        Number(parts[2]);
+    const day = Number(parts[2]);
 
-    if (
-        !year
-        || !month
-        || !day
-    ) {
+    if (!year || !month || !day) {
         return raw;
     }
 
-    return new Intl.DateTimeFormat(
-        'en-US',
-        {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-        },
-    ).format(
-        new Date(
-            year,
-            month - 1,
-            day,
-        ),
-    );
+    return new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+    }).format(new Date(year, month - 1, day));
 }
 
-function alertIcon(
-    alertType: unknown,
-): string {
-    switch (
-        String(
-            alertType ?? '',
-        )
-    ) {
+function alertIcon(alertType: unknown): string {
+    switch (String(alertType ?? '')) {
         case 'person_activity':
             return 'pi pi-bolt';
 
@@ -460,109 +322,62 @@ function alertIcon(
 function requestConfig() {
     return {
         headers: {
-            Accept:
-                'application/json',
-            'X-Requested-With':
-                'XMLHttpRequest',
+            Accept: 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
         },
 
         withCredentials: true,
     };
 }
 
-function isCanceled(
-    error: unknown,
-): boolean {
+function isCanceled(error: unknown): boolean {
     return (
-        axios.isCancel(error)
-        ||
-        (
-            axios.isAxiosError(
-                error,
-            )
-            &&
-            error.code ===
-                'ERR_CANCELED'
-        )
+        axios.isCancel(error) ||
+        (axios.isAxiosError(error) && error.code === 'ERR_CANCELED')
     );
 }
 
-function getErrorMessage(
-    error: unknown,
-    fallback: string,
-): string {
-    if (
-        !axios.isAxiosError(
-            error,
-        )
-    ) {
+function getErrorMessage(error: unknown, fallback: string): string {
+    if (!axios.isAxiosError(error)) {
         return fallback;
     }
 
     return (
         (
-            error.response
-                ?.data as
+            error.response?.data as
                 | {
                       message?: string;
                   }
                 | undefined
-        )?.message
-        ||
-        fallback
+        )?.message || fallback
     );
 }
 
-function getValidationErrors(
-    error: unknown,
-): Errors {
-    if (
-        !axios.isAxiosError(
-            error,
-        )
-    ) {
+function getValidationErrors(error: unknown): Errors {
+    if (!axios.isAxiosError(error)) {
         return {};
     }
 
     const source =
         (
-            error.response
-                ?.data as
+            error.response?.data as
                 | {
-                      errors?: Record<
-                          string,
-                          string[]
-                      >;
+                      errors?: Record<string, string[]>;
                   }
                 | undefined
-        )?.errors
-        ?? {};
+        )?.errors ?? {};
 
     return Object.fromEntries(
-        Object.entries(
-            source,
-        ).map(
-            ([
-                key,
-                messages,
-            ]) => [
-                key,
-                messages[0]
-                ?? 'Invalid value.',
-            ],
-        ),
+        Object.entries(source).map(([key, messages]) => [
+            key,
+            messages[0] ?? 'Invalid value.',
+        ]),
     );
 }
 
-onMounted(
-    () =>
-        void loadAlerts(1),
-);
+onMounted(() => void loadAlerts(1));
 
-onBeforeUnmount(
-    () =>
-        requestController?.abort(),
-);
+onBeforeUnmount(() => requestController?.abort());
 </script>
 
 <template>
@@ -607,50 +422,31 @@ onBeforeUnmount(
             @action="handleAction"
         >
             <template #cell-as_of="{ value }">
-                <div
-                    class="flex items-center gap-2"
-                >
-                    <i
-                        class="pi pi-calendar shrink-0 text-blue-500"
-                    ></i>
+                <div class="flex items-center gap-2">
+                    <i class="pi pi-calendar shrink-0 text-blue-500"></i>
 
-                    <span
-                        class="font-medium text-slate-700"
-                    >
+                    <span class="font-medium text-slate-700">
                         {{ formatDate(value) }}
                     </span>
                 </div>
             </template>
 
-            <template
-                #cell-alert_type_label="{ data }"
-            >
-                <div
-                    class="flex items-center gap-2"
-                >
+            <template #cell-alert_type_label="{ data }">
+                <div class="flex items-center gap-2">
                     <i
                         :class="[
-                            alertIcon(
-                                data.alert_type,
-                            ),
+                            alertIcon(data.alert_type),
                             'shrink-0 text-green-500',
                         ]"
                     ></i>
 
-                    <span
-                        class="font-semibold text-slate-700"
-                    >
-                        {{
-                            data.alert_type_label
-                            || '—'
-                        }}
+                    <span class="font-semibold text-slate-700">
+                        {{ data.alert_type_label || '—' }}
                     </span>
                 </div>
             </template>
 
-            <template
-                #cell-inactive_days="{ value }"
-            >
+            <template #cell-inactive_days="{ value }">
                 <PrimeTag
                     :value="`${value ?? 0} days`"
                     :severity="
@@ -674,9 +470,7 @@ onBeforeUnmount(
             :draggable="false"
             class="w-[min(94vw,620px)]"
         >
-            <div
-                class="grid gap-4"
-            >
+            <div class="grid gap-4">
                 <div>
                     <label
                         class="mb-2 block text-sm font-semibold text-slate-700"
@@ -689,20 +483,13 @@ onBeforeUnmount(
                     >
                         <i
                             :class="[
-                                alertIcon(
-                                    form.alert_type,
-                                ),
+                                alertIcon(form.alert_type),
                                 'shrink-0 text-green-500',
                             ]"
                         ></i>
 
-                        <span
-                            class="font-semibold text-slate-700"
-                        >
-                            {{
-                                form.alert_type_label
-                                || '—'
-                            }}
+                        <span class="font-semibold text-slate-700">
+                            {{ form.alert_type_label || '—' }}
                         </span>
                     </div>
                 </div>
@@ -717,18 +504,10 @@ onBeforeUnmount(
                     <div
                         class="flex min-h-[42px] items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2"
                     >
-                        <i
-                            class="pi pi-calendar shrink-0 text-blue-500"
-                        ></i>
+                        <i class="pi pi-calendar shrink-0 text-blue-500"></i>
 
-                        <span
-                            class="font-medium text-slate-700"
-                        >
-                            {{
-                                formatDate(
-                                    form.as_of,
-                                )
-                            }}
+                        <span class="font-medium text-slate-700">
+                            {{ formatDate(form.as_of) }}
                         </span>
                     </div>
                 </div>
@@ -738,11 +517,7 @@ onBeforeUnmount(
                         class="mb-2 block text-sm font-semibold text-slate-700"
                     >
                         Inactivity Days
-                        <span
-                            class="text-red-500"
-                        >
-                            *
-                        </span>
+                        <span class="text-red-500"> * </span>
                     </label>
 
                     <InputNumber
@@ -750,31 +525,23 @@ onBeforeUnmount(
                         class="w-full"
                         :min="1"
                         :use-grouping="false"
-                        :invalid="
-                            Boolean(
-                                formErrors.inactive_days,
-                            )
-                        "
+                        :invalid="Boolean(formErrors.inactive_days)"
                         :disabled="saving"
                     />
 
                     <small
-                        v-if="
-                            formErrors.inactive_days
-                        "
+                        v-if="formErrors.inactive_days"
                         class="mt-1 block text-red-500"
                     >
-                        {{
-                            formErrors.inactive_days
-                        }}
+                        {{ formErrors.inactive_days }}
                     </small>
                 </div>
 
                 <div
                     class="rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700"
                 >
-                    Only the inactivity threshold can be changed.
-                    Alert Type and Date Updated are fixed system values.
+                    Only the inactivity threshold can be changed. Alert Type and
+                    Date Updated are fixed system values.
                 </div>
             </div>
 
@@ -785,10 +552,7 @@ onBeforeUnmount(
                     severity="secondary"
                     outlined
                     :disabled="saving"
-                    @click="
-                        dialogVisible =
-                            false
-                    "
+                    @click="dialogVisible = false"
                 />
 
                 <Button

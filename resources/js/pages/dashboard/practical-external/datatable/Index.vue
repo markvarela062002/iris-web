@@ -18,7 +18,6 @@ import Message from 'primevue/message';
 import Select from 'primevue/select';
 import PrimeTag from 'primevue/tag';
 
-
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 
 import Datatable from '@/components/Datatable.vue';
@@ -212,16 +211,16 @@ const addForm = ref({
     assessor: '',
 });
 function resetAddForm(): void {
-addForm.value = {
-            email: '',
-            fname: '',
-            mname: '',
-            lname: '',
-            p_assess_h_id: '',
-            from_date: '',
-            due_date: '',
-            assessor: '',
-        };
+    addForm.value = {
+        email: '',
+        fname: '',
+        mname: '',
+        lname: '',
+        p_assess_h_id: '',
+        from_date: '',
+        due_date: '',
+        assessor: '',
+    };
 }
 
 function editableDate(value: unknown): string {
@@ -232,8 +231,8 @@ function editableDate(value: unknown): string {
 
 async function openEdit(assessmentId: string): Promise<void> {
     if (addSaving.value) {
-return;
-}
+        return;
+    }
 
     const requestId = ++formRequestId;
     editingId.value = assessmentId;
@@ -245,12 +244,14 @@ return;
     try {
         const [options, response] = await Promise.all([
             axios.get('/api/v1/dashboard/practical-external/options'),
-            axios.get(`/api/v1/dashboard/practical-external/${encodeURIComponent(assessmentId)}/edit`),
+            axios.get(
+                `/api/v1/dashboard/practical-external/${encodeURIComponent(assessmentId)}/edit`,
+            ),
         ]);
 
         if (requestId !== formRequestId || !addVisible.value) {
-return;
-}
+            return;
+        }
 
         const record = response.data.assessment;
         assessmentChoices.value = options.data.assessments ?? [];
@@ -266,22 +267,25 @@ return;
         };
     } catch (error: unknown) {
         if (requestId !== formRequestId) {
-return;
-}
+            return;
+        }
 
-        errorMessage.value = getErrorMessage(error, 'Unable to load the assessment for editing.');
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to load the assessment for editing.',
+        );
         addVisible.value = false;
     } finally {
         if (requestId === formRequestId) {
-editLoading.value = false;
-}
+            editLoading.value = false;
+        }
     }
 }
 
 async function openAdd(): Promise<void> {
     if (addSaving.value) {
-return;
-}
+        return;
+    }
 
     const requestId = ++formRequestId;
     editingId.value = null;
@@ -296,8 +300,8 @@ return;
         );
 
         if (requestId !== formRequestId) {
-return;
-}
+            return;
+        }
 
         assessmentChoices.value = response.data.assessments ?? [];
     } catch (error: unknown) {
@@ -309,8 +313,8 @@ return;
 }
 async function saveAdd(): Promise<void> {
     if (editLoading.value || addSaving.value) {
-return;
-}
+        return;
+    }
 
     addError.value = '';
     addSaving.value = true;
@@ -321,8 +325,7 @@ return;
             url: editingId.value
                 ? `/api/v1/dashboard/practical-external/${encodeURIComponent(editingId.value)}`
                 : '/api/v1/dashboard/practical-external',
-            data:
-            {
+            data: {
                 ...addForm.value,
                 from_date: addForm.value.from_date || null,
                 due_date: addForm.value.due_date || null,
@@ -436,21 +439,21 @@ const columns: DataTableColumn[] = [
 ];
 
 const actions: DataTableAction[] = [
-{
-    key: 'edit',
-    label: 'Edit Assessment',
-    icon: 'pi pi-pencil',
-    severity: 'warn',
-    visible: (row) => row.can_edit === true,
-},
-{
-    key: 'edit-unavailable',
-    label: 'Edit Unavailable',
-    icon: 'pi pi-pencil',
-    severity: 'secondary',
-    visible: (row) => row.can_edit !== true,
-    disabled: () => true,
-},
+    {
+        key: 'edit',
+        label: 'Edit Assessment',
+        icon: 'pi pi-pencil',
+        severity: 'warn',
+        visible: (row) => row.can_edit === true,
+    },
+    {
+        key: 'edit-unavailable',
+        label: 'Edit Unavailable',
+        icon: 'pi pi-pencil',
+        severity: 'secondary',
+        visible: (row) => row.can_edit !== true,
+        disabled: () => true,
+    },
     {
         key: 'grade',
 
@@ -724,8 +727,8 @@ function handleAction(
         const assessmentId = String(assessment.id ?? '').trim();
 
         if (assessmentId) {
-void openEdit(assessmentId);
-}
+            void openEdit(assessmentId);
+        }
 
         return;
     }
@@ -967,7 +970,6 @@ async function reloadCurrentPage(): Promise<void> {
         await loadAssessments(currentPage.value - 1);
     }
 }
-
 
 function getGradeSystemSeverity(value: unknown): 'info' | 'success' | 'warn' {
     const gradeSystem = String(value ?? '').toLowerCase();
@@ -1247,13 +1249,16 @@ onBeforeUnmount(() => {
             v-model:visible="addVisible"
             modal
             :draggable="false"
-            :header="editingId ? 'Edit External Practical Assessment' : 'Add External Practical Assessment'"
+            :header="
+                editingId
+                    ? 'Edit External Practical Assessment'
+                    : 'Add External Practical Assessment'
+            "
             :closable="!addSaving"
             :close-on-escape="!addSaving"
             class="w-[95vw] max-w-2xl"
         >
-
-                            <div
+            <div
                 class="mb-4 flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900"
                 role="note"
             >
@@ -1263,11 +1268,15 @@ onBeforeUnmount(() => {
                     <span class="font-semibold text-red-500">*</span> are
                     required fields.</span
                 >
-            </div>  
+            </div>
             <Message severity="warn" class="mb-4">
-                Leaving From Date and Due Date blank keeps the assessment open for submissions anytime.
+                Leaving From Date and Due Date blank keeps the assessment open
+                for submissions anytime.
             </Message>
-            <div v-if="editLoading" class="flex items-center justify-center gap-2 py-8">
+            <div
+                v-if="editLoading"
+                class="flex items-center justify-center gap-2 py-8"
+            >
                 <i class="pi pi-spin pi-spinner"></i> Loading assessment…
             </div>
             <form

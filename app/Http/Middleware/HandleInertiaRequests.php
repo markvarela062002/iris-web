@@ -2,6 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\LoginType;
+use App\Models\Student;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -47,8 +50,7 @@ class HandleInertiaRequests extends Middleware
             $schoolCode !== '' &&
             is_array($schools)
         ) {
-            $configuredSchool =
-                $schools[$schoolCode] ?? null;
+            $configuredSchool = $schools[$schoolCode] ?? null;
 
             if (is_array($configuredSchool)) {
                 $school = $configuredSchool;
@@ -94,55 +96,56 @@ class HandleInertiaRequests extends Middleware
         /*
          * Retrieve the authenticated administrator or student.
          */
-        $account = $request->user();
+        $authenticatedAccount = $request->user();
+
+        $account = (
+            $authenticatedAccount instanceof User ||
+            $authenticatedAccount instanceof Student
+        ) ? $authenticatedAccount : null;
 
         /*
          * Load the role assigned through login_type.
          */
-        if (
-            $account &&
-            method_exists($account, 'loginType')
-        ) {
-            $account->loadMissing('loginType');
-        }
+        $role = null;
 
-        $role = $account?->getRelationValue(
-            'loginType',
-        );
+        if ($account !== null) {
+            $account->loadMissing('loginType');
+
+            $assignedRole = $account->getRelationValue('loginType');
+
+            if ($assignedRole instanceof LoginType) {
+                $role = $assignedRole;
+            }
+        }
 
         /*
          * Normalize both User and Student models into the
          * same structure for the Vue application.
          */
-        $authenticatedUser = $account
+        $authenticatedUser = $account !== null
             ? [
                 ...$account->toArray(),
 
                 'account_type' => (string) (
-                    $account->getAttribute(
-                        'account_type',
-                    ) ?? 'unknown'
+                    $account->getAttribute('account_type') ?? 'unknown'
                 ),
 
-                'role' => $role
-                    ? (string) $role->code_type
+                'role' => $role !== null
+                    ? (string) $role->getAttribute('code_type')
                     : 'CADET',
 
-                'role_id' => $account->getAttribute(
-                    'login_type_id',
-                ) ?? $account->getAttribute(
-                    'login_id',
-                ),
+                'role_id' => $account->getAttribute('login_type_id')
+                    ?? $account->getAttribute('login_id'),
 
-                'is_admin' => $role
+                'is_admin' => $role !== null
                     ? $role->isAdministrator()
                     : false,
 
-                'can_delete' => $role
+                'can_delete' => $role !== null
                     ? $role->canDelete()
                     : false,
 
-                'is_internal' => $role
+                'is_internal' => $role !== null
                     ? $role->isInternal()
                     : false,
             ]
@@ -159,13 +162,8 @@ class HandleInertiaRequests extends Middleware
 
             'school' => $schoolIdentity,
 
-            'sidebarOpen' =>
-                ! $request->hasCookie(
-                    'sidebar_state',
-                ) ||
-                $request->cookie(
-                    'sidebar_state',
-                ) === 'true',
+            'sidebarOpen' => ! $request->hasCookie('sidebar_state')
+                || $request->cookie('sidebar_state') === 'true',
         ];
     }
 }

@@ -18,19 +18,19 @@ defineProps<{
 
             <!-- Decorative Background -->
             <div
-                class="absolute -left-28 -top-28 h-[330px] w-[330px] rounded-full bg-[#387FC0]/[0.05]"
+                class="absolute -top-28 -left-28 h-[330px] w-[330px] rounded-full bg-[#387FC0]/[0.05]"
             ></div>
 
             <div
-                class="absolute -bottom-40 -right-32 h-[390px] w-[390px] rounded-full bg-[#387FC0]/[0.06]"
+                class="absolute -right-32 -bottom-40 h-[390px] w-[390px] rounded-full bg-[#387FC0]/[0.06]"
             ></div>
 
             <div
-                class="absolute left-[10%] top-[45%] h-20 w-20 rounded-full border border-[#387FC0]/10"
+                class="absolute top-[45%] left-[10%] h-20 w-20 rounded-full border border-[#387FC0]/10"
             ></div>
 
             <div
-                class="absolute bottom-[12%] right-[12%] h-24 w-24 rounded-full border border-[#387FC0]/10"
+                class="absolute right-[12%] bottom-[12%] h-24 w-24 rounded-full border border-[#387FC0]/10"
             ></div>
 
             <!-- TOP LOGOS -->
@@ -61,7 +61,7 @@ defineProps<{
 
             <!-- CENTERED VIDEO -->
             <div
-                class="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center px-10 pb-20 pt-6 text-center xl:px-14 xl:pb-24 2xl:px-16"
+                class="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center px-10 pt-6 pb-20 text-center xl:px-14 xl:pb-24 2xl:px-16"
             >
                 <video
                     autoplay
@@ -71,28 +71,22 @@ defineProps<{
                     preload="auto"
                     class="max-h-[50vh] w-full max-w-[760px] object-contain object-center"
                 >
-                    <source
-                        src="/videos/introduction.mp4"
-                        type="video/mp4"
-                    />
+                    <source src="/videos/introduction.mp4" type="video/mp4" />
 
                     Your browser does not support the video tag.
                 </video>
             </div>
 
             <!-- FOOTER -->
-<div
-    class="absolute bottom-6 left-8 z-20 text-xs text-[#64748B] xl:left-12 xl:text-sm"
->
-    © {{ new Date().getFullYear() }} Powered by
-    <span class="font-bold text-[#B82C32]">E</span><span
-        class="font-bold text-[#21365A]"
-    >LO</span><span
-        class="font-bold text-[#38A0DE]"
-    >SOFT</span>.
-    All rights reserved.
-</div>
-
+            <div
+                class="absolute bottom-6 left-8 z-20 text-xs text-[#64748B] xl:left-12 xl:text-sm"
+            >
+                © {{ new Date().getFullYear() }} Powered by
+                <span class="font-bold text-[#B82C32]">E</span
+                ><span class="font-bold text-[#21365A]">LO</span
+                ><span class="font-bold text-[#38A0DE]">SOFT</span>. All rights
+                reserved.
+            </div>
         </div>
 
         <!-- RIGHT SIDE -->
@@ -104,15 +98,15 @@ defineProps<{
 
             <!-- Decorative Circles -->
             <div
-                class="absolute -right-32 -top-32 h-[400px] w-[400px] rounded-full bg-white/[0.05]"
+                class="absolute -top-32 -right-32 h-[400px] w-[400px] rounded-full bg-white/[0.05]"
             ></div>
 
             <div
-                class="absolute right-[14%] top-[38%] h-20 w-20 rounded-full border border-white/[0.08]"
+                class="absolute top-[38%] right-[14%] h-20 w-20 rounded-full border border-white/[0.08]"
             ></div>
 
             <div
-                class="absolute left-[8%] top-[13%] h-14 w-14 rounded-full bg-white/[0.04]"
+                class="absolute top-[13%] left-[8%] h-14 w-14 rounded-full bg-white/[0.04]"
             ></div>
 
             <div
@@ -120,12 +114,12 @@ defineProps<{
             ></div>
 
             <div
-                class="absolute bottom-[12%] right-[18%] h-28 w-28 rounded-full border border-white/[0.06]"
+                class="absolute right-[18%] bottom-[12%] h-28 w-28 rounded-full border border-white/[0.06]"
             ></div>
 
             <!-- Decorative Glows -->
             <div
-                class="absolute -right-32 -top-32 h-[440px] w-[440px] rounded-full bg-white/[0.06] blur-3xl"
+                class="absolute -top-32 -right-32 h-[440px] w-[440px] rounded-full bg-white/[0.06] blur-3xl"
             ></div>
 
             <div
@@ -133,15 +127,11 @@ defineProps<{
             ></div>
 
             <!-- LOGIN CONTENT -->
-            <div
-                class="relative z-10 w-full max-w-[520px] xl:max-w-[560px]"
-            >
+            <div class="relative z-10 w-full max-w-[520px] xl:max-w-[560px]">
                 <!-- LOGIN HEADER -->
                 <div class="mb-10">
                     <!-- IRIS LOGO -->
-                    <div
-                        class="mb-6 flex w-full items-center justify-center"
-                    >
+                    <div class="mb-6 flex w-full items-center justify-center">
                         <img
                             src="/images/iris.png"
                             alt="IRIS Student Activity Monitoring System"

@@ -12,7 +12,6 @@ class MessageContentFilter
      * checks profanity, sexual content, threats, harassment, self-harm abuse,
      * and discriminatory/hateful terms.
      *
-     * @param  string|null  ...$values
      * @return array{allowed: bool, category: string|null}
      */
     public function inspect(
@@ -24,12 +23,10 @@ class MessageContentFilter
                     ' ',
                     array_filter(
                         array_map(
-                            static fn ($value) =>
-                                trim((string) $value),
+                            static fn ($value) => trim((string) $value),
                             $values,
                         ),
-                        static fn ($value) =>
-                            $value !== '',
+                        static fn ($value) => $value !== '',
                     ),
                 ),
             );
@@ -47,8 +44,7 @@ class MessageContentFilter
             );
 
         foreach (
-            $this->patterns() as
-            $category => $patterns
+            $this->patterns() as $category => $patterns
         ) {
             foreach ($patterns as $pattern) {
                 if (
@@ -202,114 +198,110 @@ class MessageContentFilter
     private function patterns(): array
     {
         return [
-            'profanity' =>
-                array_merge(
-                    $this->termPatterns([
-                        'fuck',
-                        'fucks',
-                        'fucked',
-                        'fucker',
-                        'fuckers',
-                        'fucking',
-                        'motherfucker',
-                        'motherfuckers',
-                        'motherfucking',
-                        'shit',
-                        'shits',
-                        'shitty',
-                        'bullshit',
-                        'bitch',
-                        'bitches',
-                        'bitching',
-                        'asshole',
-                        'assholes',
-                        'dumbass',
-                        'jackass',
-                        'cunt',
-                        'cunts',
-                        'bastard',
-                        'bastards',
-                        'putangina',
-                        'tangina',
-                        'puta',
-                        'gago',
-                        'gaga',
-                        'ulol',
-                    ]),
-                    [
-                        '/\bputang\s+ina\b/ui',
-                        '/\bpunyeta\b/ui',
-                    ],
-                ),
+            'profanity' => array_merge(
+                $this->termPatterns([
+                    'fuck',
+                    'fucks',
+                    'fucked',
+                    'fucker',
+                    'fuckers',
+                    'fucking',
+                    'motherfucker',
+                    'motherfuckers',
+                    'motherfucking',
+                    'shit',
+                    'shits',
+                    'shitty',
+                    'bullshit',
+                    'bitch',
+                    'bitches',
+                    'bitching',
+                    'asshole',
+                    'assholes',
+                    'dumbass',
+                    'jackass',
+                    'cunt',
+                    'cunts',
+                    'bastard',
+                    'bastards',
+                    'putangina',
+                    'tangina',
+                    'puta',
+                    'gago',
+                    'gaga',
+                    'ulol',
+                ]),
+                [
+                    '/\bputang\s+ina\b/ui',
+                    '/\bpunyeta\b/ui',
+                ],
+            ),
 
-            'sexual_content' =>
-                array_merge(
-                    $this->termPatterns([
-                        'porn',
-                        'porno',
-                        'pornography',
-                        'blowjob',
-                        'handjob',
-                        'nudes',
-                        'sext',
-                        'sexting',
-                        'masturbate',
-                        'masturbation',
-                    ]),
-                    [
-                        '/\bsend\s+(?:me\s+)?nudes?\b/ui',
-                        '/\bshow\s+(?:me\s+)?(?:your\s+)?(?:boobs?|breasts?|genitals?)\b/ui',
-                        '/\b(?:nude|naked)\s+(?:photo|picture|video|pic)\b/ui',
-                        '/\b(?:sex|sexual)\s+(?:video|photo|picture|content|chat)\b/ui',
-                        '/\b(?:want|wanna|want\s+to)\s+(?:have\s+)?sex\b/ui',
-                    ],
-                ),
+            'sexual_content' => array_merge(
+                $this->termPatterns([
+                    'porn',
+                    'porno',
+                    'pornography',
+                    'blowjob',
+                    'handjob',
+                    'nudes',
+                    'sext',
+                    'sexting',
+                    'masturbate',
+                    'masturbation',
+                ]),
+                [
+                    '/\bsend\s+(?:me\s+)?nudes?\b/ui',
+                    '/\bshow\s+(?:me\s+)?(?:your\s+)?(?:boobs?|breasts?|genitals?)\b/ui',
+                    '/\b(?:nude|naked)\s+(?:photo|picture|video|pic)\b/ui',
+                    '/\b(?:sex|sexual)\s+(?:video|photo|picture|content|chat)\b/ui',
+                    '/\b(?:want|wanna|want\s+to)\s+(?:have\s+)?sex\b/ui',
+                ],
+            ),
 
             'threats_or_violence' => [
-                /* First-person threats: target may contain a typo, e.g. "I will kill gyou". */
-                '/\b(?:i|we)\s+(?:will|am\s+going\s+to|are\s+going\s+to|gonna|plan\s+to|want\s+to)\s+(?:kill|murder|shoot|stab|hurt|beat|attack|strangle)\b/ui',
-                '/\bi(?:ll)?\s+(?:kill|murder|shoot|stab|hurt|beat|attack|strangle)\b/ui',
+            /* First-person threats: target may contain a typo, e.g. "I will kill gyou". */
+            '/\b(?:i|we)\s+(?:will|am\s+going\s+to|are\s+going\s+to|gonna|plan\s+to|want\s+to)\s+(?:kill|murder|shoot|stab|hurt|beat|attack|strangle)\b/ui',
+            '/\bi(?:ll)?\s+(?:kill|murder|shoot|stab|hurt|beat|attack|strangle)\b/ui',
 
-                /* Direct threats. */
-                '/\b(?:kill|murder|shoot|stab|strangle)\s+(?:you|u|him|her|them)\b/ui',
-                '/\bbeat\s+(?:you|u|him|her|them)\s+up\b/ui',
-                '/\byou\s+(?:will|are\s+going\s+to|gonna)\s+die\b/ui',
-                '/\byou\s+are\s+dead\b/ui',
-                '/\bwatch\s+your\s+back\b/ui',
-                '/\byou\s+better\s+watch\s+your\s+back\b/ui',
-                '/\bi\s+know\s+where\s+you\s+live\b/ui',
-                '/\bi\s+will\s+find\s+you\b/ui',
+            /* Direct threats. */
+            '/\b(?:kill|murder|shoot|stab|strangle)\s+(?:you|u|him|her|them)\b/ui',
+            '/\bbeat\s+(?:you|u|him|her|them)\s+up\b/ui',
+            '/\byou\s+(?:will|are\s+going\s+to|gonna)\s+die\b/ui',
+            '/\byou\s+are\s+dead\b/ui',
+            '/\bwatch\s+your\s+back\b/ui',
+            '/\byou\s+better\s+watch\s+your\s+back\b/ui',
+            '/\bi\s+know\s+where\s+you\s+live\b/ui',
+            '/\bi\s+will\s+find\s+you\b/ui',
             ],
 
-            'harassment_or_abuse' =>
-                array_merge(
-                    $this->termPatterns([
-                        'retard',
-                        'retarded',
-                        'tanga',
-                        'bobo',
-                    ]),
-                    [
-                        '/\b(?:you\s+are|youre|ur)\s+(?:an?\s+)?(?:stupid|idiot|moron|worthless|useless|disgusting|pathetic|ugly|loser)\b/ui',
-                        '/\b(?:stupid|idiot|moron|worthless|useless|pathetic|loser)\s+(?:you|boy|girl|student)\b/ui',
-                        '/\bhayop\s+ka\b/ui',
-                        '/\bwalan(?:g)?\s+hiya\b/ui',
-                        '/\b(?:go\s+die|kill\s+yourself|go\s+kill\s+yourself|kys)\b/ui',
-                    ],
-                ),
+            'harassment_or_abuse' => array_merge(
+                $this->termPatterns([
+                    'retard',
+                    'retarded',
+                    'tanga',
+                    'bobo',
+                ]),
+                [
+                    '/\b(?:you\s+are|youre|ur)\s+(?:an?\s+)?(?:stupid|idiot|moron|worthless|useless|disgusting|pathetic|ugly|loser)\b/ui',
+                    '/\b(?:stupid|idiot|moron|worthless|useless|pathetic|loser)\s+(?:you|boy|girl|student)\b/ui',
+                    '/\bhayop\s+ka\b/ui',
+                    '/\bwalan(?:g)?\s+hiya\b/ui',
+                    '/\b(?:go\s+die|kill\s+yourself|go\s+kill\s+yourself|kys)\b/ui',
+                ],
+            ),
 
-            'hate_or_discriminatory_content' =>
-                array_merge(
-                    $this->termPatterns([
-                        'nigger',
-                        'nigga',
-                        'faggot',
-                        'tranny',
-                    ]),
-                    [
-                        '/\bching\s+chong\b/ui',
-                    ],
-                ),
+            'hate_or_discriminatory_content' => array_merge(
+                $this->termPatterns([
+                    'nigger',
+                    'nigga',
+                    'faggot',
+                    'tranny',
+                ]),
+                [
+                    '/\bching\s+chong\b/ui',
+                ],
+            ),
         ];
     }
 
@@ -352,6 +344,7 @@ class MessageContentFilter
                             $runs[$lastIndex]['character'] === $character
                         ) {
                             $runs[$lastIndex]['count']++;
+
                             continue;
                         }
 
@@ -378,23 +371,23 @@ class MessageContentFilter
 
                                 return
                                     '(?:'
-                                    . $escaped
-                                    . '){'
-                                    . $minimum
-                                    . ','
-                                    . $maximum
-                                    . '}';
+                                    .$escaped
+                                    .'){'
+                                    .$minimum
+                                    .','
+                                    .$maximum
+                                    .'}';
                             },
                             $runs,
                         );
 
                     return
                         '/(?<![\p{L}\p{N}])'
-                        . implode(
+                        .implode(
                             '[\s._*~\-]*',
                             $runPatterns,
                         )
-                        . '(?![\p{L}\p{N}])/ui';
+                        .'(?![\p{L}\p{N}])/ui';
                 },
                 $terms,
             );

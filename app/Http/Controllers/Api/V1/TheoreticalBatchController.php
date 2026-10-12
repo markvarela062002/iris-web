@@ -4,34 +4,23 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Services\IrisEmailService;
-
 use Illuminate\Database\ConnectionInterface;
-
 use Illuminate\Database\Query\Builder;
-
 use Illuminate\Http\JsonResponse;
-
 use Illuminate\Http\Request;
-
 use Illuminate\Support\Facades\DB;
-
 use Illuminate\Support\Str;
-
 use Illuminate\Validation\ValidationException;
-
 use Symfony\Component\HttpFoundation\Response;
-
 use Throwable;
 
 class TheoreticalBatchController extends Controller
 {
     public function __construct(
         private readonly IrisEmailService $irisEmailService,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
-
     {
 
         $database = $this->database($request);
@@ -264,17 +253,11 @@ class TheoreticalBatchController extends Controller
 
                 'bs_course_id' => (string) $row->bs_course_id,
 
-                'bs_exam_session_id' =>
+                'bs_exam_session_id' => (string) $row->bs_exam_session_id,
 
-                    (string) $row->bs_exam_session_id,
+                'name_course' => $row->name_course ?: 'No Exam Package',
 
-                'name_course' =>
-
-                    $row->name_course ?: 'No Exam Package',
-
-                'session_code' =>
-
-                    $row->session_code ?: 'No Exam Session',
+                'session_code' => $row->session_code ?: 'No Exam Session',
 
                 'exam_type' => $row->exam_type ?: 'New',
 
@@ -296,21 +279,13 @@ class TheoreticalBatchController extends Controller
 
                 ),
 
-                'access_exp_date_from' =>
+                'access_exp_date_from' => $row->access_exp_date_from,
 
-                    $row->access_exp_date_from,
+                'access_exp_time_from' => $row->access_exp_time_from,
 
-                'access_exp_time_from' =>
+                'access_exp_date_to' => $row->access_exp_date_to,
 
-                    $row->access_exp_time_from,
-
-                'access_exp_date_to' =>
-
-                    $row->access_exp_date_to,
-
-                'access_exp_time_to' =>
-
-                    $row->access_exp_time_to,
+                'access_exp_time_to' => $row->access_exp_time_to,
 
                 'last_update' => $row->last_update,
 
@@ -361,7 +336,6 @@ class TheoreticalBatchController extends Controller
     }
 
     public function options(Request $request): JsonResponse
-
     {
 
         $database = $this->database($request);
@@ -451,7 +425,6 @@ class TheoreticalBatchController extends Controller
     }
 
     public function students(Request $request): JsonResponse
-
     {
 
         $database = $this->database($request);
@@ -588,9 +561,7 @@ class TheoreticalBatchController extends Controller
 
                     'name' => $this->studentName($student),
 
-                    'school_id_no' =>
-
-                        $student->school_id_no
+                    'school_id_no' => $student->school_id_no
 
                         ?: $student->code_person,
 
@@ -710,9 +681,7 @@ class TheoreticalBatchController extends Controller
 
                 'name' => $this->studentName($student),
 
-                'school_id_no' =>
-
-                    $student->school_id_no
+                'school_id_no' => $student->school_id_no
 
                     ?: $student->code_person,
 
@@ -738,49 +707,37 @@ class TheoreticalBatchController extends Controller
 
                 'bs_course_id' => (string) $batch->bs_course_id,
 
-                'bs_exam_session_id' =>
-
-                    (string) $batch->bs_exam_session_id,
+                'bs_exam_session_id' => (string) $batch->bs_exam_session_id,
 
                 'duration' => (int) ($batch->duration ?? 0),
 
                 'exam_type' => $batch->exam_type ?: 'New',
 
-                'proctor_name' =>
+                'proctor_name' => $batch->proctor_name ?? '',
 
-                    $batch->proctor_name ?? '',
+                'access_exp_date_from' => $batch->access_exp_date_from,
 
-                'access_exp_date_from' =>
+                'access_exp_time_from' => substr(
 
-                    $batch->access_exp_date_from,
+                    (string) $batch->access_exp_time_from,
 
-                'access_exp_time_from' =>
+                    0,
 
-                    substr(
+                    5,
 
-                        (string) $batch->access_exp_time_from,
+                ),
 
-                        0,
+                'access_exp_date_to' => $batch->access_exp_date_to,
 
-                        5,
+                'access_exp_time_to' => substr(
 
-                    ),
+                    (string) $batch->access_exp_time_to,
 
-                'access_exp_date_to' =>
+                    0,
 
-                    $batch->access_exp_date_to,
+                    5,
 
-                'access_exp_time_to' =>
-
-                    substr(
-
-                        (string) $batch->access_exp_time_to,
-
-                        0,
-
-                        5,
-
-                    ),
+                ),
 
                 'students' => $students,
 
@@ -801,7 +758,6 @@ class TheoreticalBatchController extends Controller
     }
 
     public function store(Request $request): JsonResponse
-
     {
 
         $database = $this->database($request);
@@ -821,7 +777,6 @@ class TheoreticalBatchController extends Controller
         if ($studentIds->isEmpty()) {
 
             throw ValidationException::withMessages([
-
                 'student_ids' => [
 
                     'Add at least one examinee before saving the batch.',
@@ -835,7 +790,6 @@ class TheoreticalBatchController extends Controller
         if ($studentIds->count() > 40) {
 
             throw ValidationException::withMessages([
-
                 'student_ids' => [
 
                     'The number of examinees is limited to 40 per batch.',
@@ -912,9 +866,7 @@ class TheoreticalBatchController extends Controller
 
                     $automaticDuration = (int) $topics->sum(
 
-                        fn (object $topic): int =>
-
-                            (int) ($topic->no_quest ?? 0),
+                        fn (object $topic): int => (int) ($topic->no_quest ?? 0),
 
                     );
 
@@ -934,37 +886,23 @@ class TheoreticalBatchController extends Controller
 
                             'id' => $batchId,
 
-                            'bs_course_id' =>
+                            'bs_course_id' => $validated['bs_course_id'],
 
-                                $validated['bs_course_id'],
-
-                            'bs_exam_session_id' =>
-
-                                $validated['bs_exam_session_id'],
+                            'bs_exam_session_id' => $validated['bs_exam_session_id'],
 
                             'exam_type' => 'New',
 
                             'duration' => $duration,
 
-                            'proctor_name' =>
+                            'proctor_name' => $validated['proctor_name'],
 
-                                $validated['proctor_name'],
+                            'access_exp_date_from' => $validated['access_exp_date_from'],
 
-                            'access_exp_date_from' =>
+                            'access_exp_time_from' => $validated['access_exp_time_from'],
 
-                                $validated['access_exp_date_from'],
+                            'access_exp_date_to' => $validated['access_exp_date_to'],
 
-                            'access_exp_time_from' =>
-
-                                $validated['access_exp_time_from'],
-
-                            'access_exp_date_to' =>
-
-                                $validated['access_exp_date_to'],
-
-                            'access_exp_time_to' =>
-
-                                $validated['access_exp_time_to'],
+                            'access_exp_time_to' => $validated['access_exp_time_to'],
 
                             'login_id' => $loginId,
 
@@ -1008,9 +946,7 @@ class TheoreticalBatchController extends Controller
 
                         ->keyBy(
 
-                            fn (object $student): string =>
-
-                                (string) $student->id,
+                            fn (object $student): string => (string) $student->id,
 
                         );
 
@@ -1030,9 +966,7 @@ class TheoreticalBatchController extends Controller
 
                                 'person_id' => $studentId,
 
-                                'bs_person_exam_batch_id' =>
-
-                                    $batchId,
+                                'bs_person_exam_batch_id' => $batchId,
 
                                 'bs_person_exam_id' => $examId,
 
@@ -1046,9 +980,7 @@ class TheoreticalBatchController extends Controller
 
                                 'id' => $examId,
 
-                                'bs_course_id' =>
-
-                                    $validated['bs_course_id'],
+                                'bs_course_id' => $validated['bs_course_id'],
 
                                 'person_id' => $studentId,
 
@@ -1060,21 +992,13 @@ class TheoreticalBatchController extends Controller
 
                                 'passed' => '',
 
-                                'access_exp_date' =>
+                                'access_exp_date' => $validated['access_exp_date_from'],
 
-                                    $validated['access_exp_date_from'],
+                                'access_exp_time' => $validated['access_exp_time_from'],
 
-                                'access_exp_time' =>
+                                'access_exp_date_to' => $validated['access_exp_date_to'],
 
-                                    $validated['access_exp_time_from'],
-
-                                'access_exp_date_to' =>
-
-                                    $validated['access_exp_date_to'],
-
-                                'access_exp_time_to' =>
-
-                                    $validated['access_exp_time_to'],
+                                'access_exp_time_to' => $validated['access_exp_time_to'],
 
                                 'or_no' => '',
 
@@ -1082,9 +1006,7 @@ class TheoreticalBatchController extends Controller
 
                                 'payment_date' => '1970-01-01',
 
-                                'proctor_name' =>
-
-                                    $validated['proctor_name'],
+                                'proctor_name' => $validated['proctor_name'],
 
                                 'login_id' => $loginId,
 
@@ -1100,9 +1022,7 @@ class TheoreticalBatchController extends Controller
 
                                 'issued_by' => '',
 
-                                'bs_exam_session_id' =>
-
-                                    $validated['bs_exam_session_id'],
+                                'bs_exam_session_id' => $validated['bs_exam_session_id'],
 
                             ]);
 
@@ -1116,9 +1036,7 @@ class TheoreticalBatchController extends Controller
 
                                     'id' => (string) Str::uuid(),
 
-                                    'bs_person_exam_id' =>
-
-                                        $examId,
+                                    'bs_person_exam_id' => $examId,
 
                                     'bs_topic_id' => $topic->id,
 
@@ -1142,13 +1060,9 @@ class TheoreticalBatchController extends Controller
 
                             ->update([
 
-                                'exam_id' =>
+                                'exam_id' => $validated['bs_course_id'],
 
-                                    $validated['bs_course_id'],
-
-                                'access_exp' =>
-
-                                    $validated['access_exp_date_to'].
+                                'access_exp' => $validated['access_exp_date_to'].
 
                                     ' '.
 
@@ -1184,9 +1098,7 @@ class TheoreticalBatchController extends Controller
 
                                     'id' => (string) Str::uuid(),
 
-                                    'subj_inbox' =>
-
-                                        'Scheduled Theoretical Assessment on IRIS-SAM',
+                                    'subj_inbox' => 'Scheduled Theoretical Assessment on IRIS-SAM',
 
                                     'date_inbox' => $now,
 
@@ -1255,16 +1167,13 @@ class TheoreticalBatchController extends Controller
         } catch (ValidationException $exception) {
 
             throw $exception;
-
         } catch (Throwable $exception) {
 
             report($exception);
 
             return response()->json([
 
-                'message' =>
-
-                    'The theoretical assessment batch could not be created.',
+                'message' => 'The theoretical assessment batch could not be created.',
 
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
 
@@ -1274,9 +1183,7 @@ class TheoreticalBatchController extends Controller
 
         return response()->json([
 
-            'message' =>
-
-                "Batch created successfully. {$emailsSent} email(s) sent.",
+            'message' => "Batch created successfully. {$emailsSent} email(s) sent.",
 
             'data' => [
 
@@ -1392,21 +1299,13 @@ class TheoreticalBatchController extends Controller
 
                 'proctor_name' => $validated['proctor_name'] ?? '',
 
-                'access_exp_date_from' =>
+                'access_exp_date_from' => $validated['access_exp_date_from'],
 
-                    $validated['access_exp_date_from'],
+                'access_exp_time_from' => $validated['access_exp_time_from'],
 
-                'access_exp_time_from' =>
+                'access_exp_date_to' => $validated['access_exp_date_to'],
 
-                    $validated['access_exp_time_from'],
-
-                'access_exp_date_to' =>
-
-                    $validated['access_exp_date_to'],
-
-                'access_exp_time_to' =>
-
-                    $validated['access_exp_time_to'],
+                'access_exp_time_to' => $validated['access_exp_time_to'],
 
                 'last_update' => now(),
 
@@ -1421,7 +1320,6 @@ class TheoreticalBatchController extends Controller
     }
 
     private function validateBatch(Request $request): array
-
     {
 
         $validated = $request->validate([
@@ -1531,7 +1429,6 @@ class TheoreticalBatchController extends Controller
     }
 
     private function validateDateRange(array $validated): void
-
     {
 
         $from = strtotime(
@@ -1557,7 +1454,6 @@ class TheoreticalBatchController extends Controller
         if ($from === false || $to === false || $from > $to) {
 
             throw ValidationException::withMessages([
-
                 'access_exp_date_to' => [
 
                     'The ending date and time must be after the starting date and time.',
@@ -1591,7 +1487,6 @@ class TheoreticalBatchController extends Controller
         if (! $courseExists) {
 
             throw ValidationException::withMessages([
-
                 'bs_course_id' => [
 
                     'The selected exam package is invalid.',
@@ -1619,7 +1514,6 @@ class TheoreticalBatchController extends Controller
         if (! $sessionExists) {
 
             throw ValidationException::withMessages([
-
                 'bs_exam_session_id' => [
 
                     'The selected exam session is invalid.',
@@ -1641,7 +1535,6 @@ class TheoreticalBatchController extends Controller
         if ($studentCount !== count($studentIds)) {
 
             throw ValidationException::withMessages([
-
                 'student_ids' => [
 
                     'One or more selected students are invalid.',
@@ -1693,7 +1586,6 @@ class TheoreticalBatchController extends Controller
         if ($pendingStudent) {
 
             throw ValidationException::withMessages([
-
                 'student_ids' => [
 
                     'A selected student already has a pending exam with the same package and session.',
@@ -1771,7 +1663,6 @@ class TheoreticalBatchController extends Controller
     }
 
     private function studentName(object $student): string
-
     {
 
         $lastName = trim(
@@ -1790,9 +1681,7 @@ class TheoreticalBatchController extends Controller
 
             ->map(
 
-                fn ($name): string =>
-
-                    trim((string) $name),
+                fn ($name): string => trim((string) $name),
 
             )
 
@@ -1869,7 +1758,6 @@ class TheoreticalBatchController extends Controller
     }
 
     private function sendEmails(array $recipients): int
-
     {
 
         $sent = 0;
@@ -1909,7 +1797,6 @@ class TheoreticalBatchController extends Controller
     }
 
     private function timeOptions(): array
-
     {
 
         $times = [];
@@ -1935,5 +1822,4 @@ class TheoreticalBatchController extends Controller
         return $times;
 
     }
-
 }

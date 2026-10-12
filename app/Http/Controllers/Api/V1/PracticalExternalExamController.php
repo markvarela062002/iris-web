@@ -18,8 +18,7 @@ class PracticalExternalExamController extends Controller
 {
     public function __construct(
         private readonly ExternalAssessmentAccessService $externalAssessmentAccessService,
-    ) {
-    }
+    ) {}
 
     public function page(string $accessToken): InertiaResponse
     {
@@ -110,8 +109,7 @@ class PracticalExternalExamController extends Controller
 
         $maximumPoints = $done
             ? (float) $items->sum(
-                fn (array $item): float =>
-                    (float) ($item['maximum_points'] ?? 0),
+                fn (array $item): float => (float) ($item['maximum_points'] ?? 0),
             )
             : 0.0;
 

@@ -8,22 +8,12 @@ import Message from 'primevue/message';
 import PrimeTag from 'primevue/tag';
 import Toast from 'primevue/toast';
 import { useToast } from 'primevue/usetoast';
-import {
-    computed,
-    onBeforeUnmount,
-    onMounted,
-    reactive,
-    ref,
-} from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 
 import Datatable from '@/components/Datatable.vue';
 import { dashboard } from '@/routes';
 
-import type {
-    DataTableAction,
-    DataTableColumn,
-    DataTableRow,
-} from '@/types';
+import type { DataTableAction, DataTableColumn, DataTableRow } from '@/types';
 
 defineOptions({
     inheritAttrs: false,
@@ -74,8 +64,7 @@ type ExamSessionForm = {
 type FormErrors = Partial<Record<keyof ExamSessionForm, string>>;
 
 const API_BASE = '/api/v1/assessment-setup/exam-sessions';
-const DATATABLE_URL =
-    '/api/v1/assessment-setup/datatable/exam-sessions';
+const DATATABLE_URL = '/api/v1/assessment-setup/datatable/exam-sessions';
 
 const toast = useToast();
 const examSessions = ref<DataTableRow[]>([]);
@@ -104,7 +93,6 @@ const form = reactive<ExamSessionForm>({
 let requestController: AbortController | null = null;
 
 const columns: DataTableColumn[] = [
-
     {
         field: 'session_code',
         header: 'Session Code',
@@ -144,9 +132,7 @@ const actions: DataTableAction[] = [
 ];
 
 const dialogTitle = computed(() => {
-    return form.id
-        ? 'Edit Exam Session'
-        : 'Create Exam Session';
+    return form.id ? 'Edit Exam Session' : 'Create Exam Session';
 });
 
 const currentPage = computed(() => {
@@ -185,8 +171,7 @@ async function loadExamSessions(pageNumber = 1): Promise<void> {
         totalRecords.value = response.data.meta.total;
         perPage.value = response.data.meta.perPage;
         first.value =
-            (response.data.meta.currentPage - 1) *
-            response.data.meta.perPage;
+            (response.data.meta.currentPage - 1) * response.data.meta.perPage;
     } catch (error: unknown) {
         if (
             axios.isCancel(error) ||
@@ -283,8 +268,7 @@ function validateForm(): boolean {
     if (!form.date_to) {
         errors.date_to = 'Date to is required.';
     } else if (form.date_from && form.date_to < form.date_from) {
-        errors.date_to =
-            'Date to must be the same as or later than date from.';
+        errors.date_to = 'Date to must be the same as or later than date from.';
     }
 
     formErrors.value = errors;
@@ -457,8 +441,7 @@ function getValidationErrors(error: unknown): FormErrors {
     }
 
     const data = error.response?.data as
-        | { errors?: Record<string, string[]> }
-        | undefined;
+        { errors?: Record<string, string[]> } | undefined;
 
     const errors: FormErrors = {};
 
@@ -554,7 +537,7 @@ onBeforeUnmount(() => {
                         />
 
                         <span
-                            class="whitespace-nowrap text-sm font-medium text-slate-600"
+                            class="text-sm font-medium whitespace-nowrap text-slate-600"
                         >
                             {{ formatDate(data.date_from) }}
                         </span>
@@ -568,7 +551,7 @@ onBeforeUnmount(() => {
                         />
 
                         <span
-                            class="whitespace-nowrap text-sm font-medium text-slate-600"
+                            class="text-sm font-medium whitespace-nowrap text-slate-600"
                         >
                             {{ formatDate(data.date_to) }}
                         </span>
@@ -697,8 +680,10 @@ onBeforeUnmount(() => {
         >
             <Message severity="warn" :closable="false">
                 Are you sure you want to delete
-                <strong>{{ selectedSession?.session_code || 'this exam session' }}</strong>?
-                This action cannot be undone.
+                <strong>{{
+                    selectedSession?.session_code || 'this exam session'
+                }}</strong
+                >? This action cannot be undone.
             </Message>
 
             <template #footer>

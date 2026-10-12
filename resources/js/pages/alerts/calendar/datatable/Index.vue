@@ -11,10 +11,7 @@ import Calendar from '@/components/Calendar.vue';
 import Datatable from '@/components/Datatable.vue';
 import { dashboard } from '@/routes';
 
-import type {
-    DataTableColumn,
-    DataTableRow,
-} from '@/types';
+import type { DataTableColumn, DataTableRow } from '@/types';
 import type { CalendarEvent } from '@/types/calendar';
 
 defineOptions({
@@ -72,8 +69,7 @@ const detailColumns = computed<DataTableColumn[]>(() => {
             {
                 field: 'desc_activity',
                 header: 'Activity',
-                class:
-                    'w-[300px] min-w-[300px] whitespace-normal',
+                class: 'w-[300px] min-w-[300px] whitespace-normal',
             },
             {
                 field: 'start_date',
@@ -103,8 +99,7 @@ const detailColumns = computed<DataTableColumn[]>(() => {
             {
                 field: 'desc_requirement',
                 header: 'Requirement Type',
-                class:
-                    'w-[320px] min-w-[320px] whitespace-normal',
+                class: 'w-[320px] min-w-[320px] whitespace-normal',
             },
             {
                 field: 'date_uploaded',
@@ -158,8 +153,7 @@ const detailColumns = computed<DataTableColumn[]>(() => {
         {
             field: 'ref_no',
             header: 'Task',
-            class:
-                'w-[420px] min-w-[420px] whitespace-normal',
+            class: 'w-[420px] min-w-[420px] whitespace-normal',
         },
         {
             field: 'month_no',
@@ -208,15 +202,12 @@ async function loadEvents(): Promise<void> {
     errorMessage.value = '';
 
     try {
-        const response = await axios.get<EventsResponse>(
-            `${API_BASE}/events`,
-            {
-                params: {
-                    month: month.value,
-                },
-                ...requestConfig(),
+        const response = await axios.get<EventsResponse>(`${API_BASE}/events`, {
+            params: {
+                month: month.value,
             },
-        );
+            ...requestConfig(),
+        });
 
         events.value = response.data.data;
     } catch (error: unknown) {
@@ -237,9 +228,7 @@ async function changeMonth(value: string): Promise<void> {
     await loadEvents();
 }
 
-async function openEvent(
-    event: CalendarEvent,
-): Promise<void> {
+async function openEvent(event: CalendarEvent): Promise<void> {
     selectedEvent.value = event;
 
     details.value = [];
@@ -288,22 +277,12 @@ function currentMonth(): string {
     ].join('-');
 }
 
-function getStudentFullName(
-    row: DataTableRow,
-): string {
-    const lastName = String(
-        row.lname ?? '',
-    ).trim();
+function getStudentFullName(row: DataTableRow): string {
+    const lastName = String(row.lname ?? '').trim();
 
-    const otherNames = [
-        row.fname,
-        row.mname,
-    ]
+    const otherNames = [row.fname, row.mname]
         .filter((name) => {
-            return (
-                typeof name === 'string'
-                && name.trim() !== ''
-            );
+            return typeof name === 'string' && name.trim() !== '';
         })
         .map((name) => {
             return String(name).trim();
@@ -314,213 +293,132 @@ function getStudentFullName(
         return `${lastName}, ${otherNames}`.toUpperCase();
     }
 
-    return (
-        lastName
-        || otherNames
-        || String(row.student ?? '')
-    ).toUpperCase();
+    return (lastName || otherNames || String(row.student ?? '')).toUpperCase();
 }
 
-function getStudentInitials(
-    row: DataTableRow,
-): string {
-    const firstName = String(
-        row.fname ?? '',
-    ).trim();
+function getStudentInitials(row: DataTableRow): string {
+    const firstName = String(row.fname ?? '').trim();
 
-    const lastName = String(
-        row.lname ?? '',
-    ).trim();
+    const lastName = String(row.lname ?? '').trim();
 
-    const initials =
-        `${firstName.charAt(0)}${lastName.charAt(0)}`;
+    const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`;
 
     return initials.toUpperCase() || 'ST';
 }
 
-function getStudentAvatar(
-    gender: unknown,
-): string | undefined {
+function getStudentAvatar(gender: unknown): string | undefined {
     const value = String(gender ?? '')
         .trim()
         .toUpperCase();
 
-    if (
-        value === 'M'
-        || value === 'MALE'
-    ) {
+    if (value === 'M' || value === 'MALE') {
         return '/images/male-cadet.png';
     }
 
-    if (
-        value === 'F'
-        || value === 'FEMALE'
-    ) {
+    if (value === 'F' || value === 'FEMALE') {
         return '/images/female-cadet.png';
     }
 
     return undefined;
 }
 
-function getSchoolIdLabel(
-    value: unknown,
-): string {
-    return (
-        String(value ?? '').trim()
-        || 'No School ID'
-    );
+function getSchoolIdLabel(value: unknown): string {
+    return String(value ?? '').trim() || 'No School ID';
 }
 
-function isVerified(
-    row: DataTableRow,
-): boolean {
+function isVerified(row: DataTableRow): boolean {
     return (
-        String(
-            row.sto_validated ?? '',
-        )
+        String(row.sto_validated ?? '')
             .trim()
             .toUpperCase() === 'Y'
     );
 }
 
-function hasRevisionRemarks(
-    row: DataTableRow,
-): boolean {
-    const remarks = String(
-        row.revise_remarks ?? '',
-    ).trim();
+function hasRevisionRemarks(row: DataTableRow): boolean {
+    const remarks = String(row.revise_remarks ?? '').trim();
 
-    return (
-        remarks !== ''
-        && remarks !== '-'
-    );
+    return remarks !== '' && remarks !== '-';
 }
 
-function formatDate(
-    value: unknown,
-): string {
-    if (
-        !value
-        || value === '1970-01-01'
-        || value === '1970-01-01 00:00:00'
-    ) {
+function formatDate(value: unknown): string {
+    if (!value || value === '1970-01-01' || value === '1970-01-01 00:00:00') {
         return '—';
     }
 
     const raw = String(value);
     const dateOnly = raw.substring(0, 10);
 
-    const date = new Date(
-        `${dateOnly}T00:00:00`,
-    );
+    const date = new Date(`${dateOnly}T00:00:00`);
 
     if (Number.isNaN(date.getTime())) {
         return raw;
     }
 
-    return new Intl.DateTimeFormat(
-        'en-PH',
-        {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-        },
-    ).format(date);
+    return new Intl.DateTimeFormat('en-PH', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+    }).format(date);
 }
 
-function formatTime(
-    value: unknown,
-): string {
-    const raw = String(
-        value ?? '',
-    ).trim();
+function formatTime(value: unknown): string {
+    const raw = String(value ?? '').trim();
 
     if (!raw) {
         return '—';
     }
 
-    const [hourValue, minuteValue] =
-        raw.split(':');
+    const [hourValue, minuteValue] = raw.split(':');
 
     const hour = Number(hourValue);
     const minute = Number(minuteValue);
 
-    if (
-        !Number.isFinite(hour)
-        || !Number.isFinite(minute)
-    ) {
+    if (!Number.isFinite(hour) || !Number.isFinite(minute)) {
         return raw;
     }
 
     const date = new Date();
 
-    date.setHours(
-        hour,
-        minute,
-        0,
-        0,
-    );
+    date.setHours(hour, minute, 0, 0);
 
-    return new Intl.DateTimeFormat(
-        'en-PH',
-        {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true,
-        },
-    ).format(date);
+    return new Intl.DateTimeFormat('en-PH', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+    }).format(date);
 }
 
-function getTaskDescription(
-    value: unknown,
-): string {
-    const description = String(
-        value ?? '',
-    );
+function getTaskDescription(value: unknown): string {
+    const description = String(value ?? '');
 
     if (!description) {
         return '—';
     }
 
     try {
-        return decodeURIComponent(
-            description.replace(
-                /\+/g,
-                ' ',
-            ),
-        );
+        return decodeURIComponent(description.replace(/\+/g, ' '));
     } catch {
         return description;
     }
 }
 
-function getMonthLabel(
-    value: unknown,
-): string {
-    const raw = String(
-        value ?? '',
-    ).trim();
+function getMonthLabel(value: unknown): string {
+    const raw = String(value ?? '').trim();
 
     if (!raw) {
         return '—';
     }
 
-    const monthNumber =
-        Number.parseInt(raw, 10);
+    const monthNumber = Number.parseInt(raw, 10);
 
-    if (
-        Number.isNaN(monthNumber)
-    ) {
+    if (Number.isNaN(monthNumber)) {
         return raw;
     }
 
     return `Month ${monthNumber}`;
 }
 
-function getErrorMessage(
-    error: unknown,
-    fallback: string,
-): string {
+function getErrorMessage(error: unknown, fallback: string): string {
     if (!axios.isAxiosError(error)) {
         return fallback;
     }
@@ -532,8 +430,7 @@ function getErrorMessage(
                       message?: string;
                   }
                 | undefined
-        )?.message
-        || fallback
+        )?.message || fallback
     );
 }
 
@@ -602,25 +499,11 @@ onMounted(() => {
                 empty-icon="pi pi-calendar-times"
             >
                 <template #cell-fname="{ data }">
-                    <div
-                        class="flex items-center gap-3"
-                    >
+                    <div class="flex items-center gap-3">
                         <Avatar
-                            v-if="
-                                getStudentAvatar(
-                                    data.gender,
-                                )
-                            "
-                            :image="
-                                getStudentAvatar(
-                                    data.gender,
-                                )
-                            "
-                            :aria-label="
-                                getStudentFullName(
-                                    data,
-                                )
-                            "
+                            v-if="getStudentAvatar(data.gender)"
+                            :image="getStudentAvatar(data.gender)"
+                            :aria-label="getStudentFullName(data)"
                             shape="circle"
                             size="large"
                             class="shrink-0"
@@ -628,36 +511,22 @@ onMounted(() => {
 
                         <Avatar
                             v-else
-                            :label="
-                                getStudentInitials(
-                                    data,
-                                )
-                            "
+                            :label="getStudentInitials(data)"
                             shape="circle"
                             size="large"
                             class="shrink-0 !bg-[#377EC0]/10 !text-xs !font-bold !text-[#377EC0]"
                         />
 
                         <div class="min-w-0">
-                            <p
-                                class="truncate font-semibold text-slate-700"
-                            >
-                                {{
-                                    getStudentFullName(
-                                        data,
-                                    ) || '—'
-                                }}
+                            <p class="truncate font-semibold text-slate-700">
+                                {{ getStudentFullName(data) || '—' }}
                             </p>
 
                             <div
                                 class="mt-1 flex flex-wrap items-center gap-1.5"
                             >
                                 <PrimeTag
-                                    :value="
-                                        getSchoolIdLabel(
-                                            data.school_id_no,
-                                        )
-                                    "
+                                    :value="getSchoolIdLabel(data.school_id_no)"
                                     icon="pi pi-id-card"
                                     severity="info"
                                     class="!px-2 !py-0.5 !text-xs !font-semibold"
@@ -667,9 +536,7 @@ onMounted(() => {
                     </div>
                 </template>
 
-                <template
-                    #cell-desc_activity="{ value }"
-                >
+                <template #cell-desc_activity="{ value }">
                     <div
                         class="flex min-w-0 items-start gap-2 whitespace-normal"
                     >
@@ -685,13 +552,9 @@ onMounted(() => {
                     </div>
                 </template>
 
-                <template
-                    #cell-start_date="{ data }"
-                >
+                <template #cell-start_date="{ data }">
                     <div class="space-y-2">
-                        <div
-                            class="flex items-center gap-2"
-                        >
+                        <div class="flex items-center gap-2">
                             <PrimeTag
                                 value="Started"
                                 severity="success"
@@ -699,19 +562,13 @@ onMounted(() => {
                             />
 
                             <span
-                                class="whitespace-nowrap text-sm font-medium text-slate-600"
+                                class="text-sm font-medium whitespace-nowrap text-slate-600"
                             >
-                                {{
-                                    formatDate(
-                                        data.start_date,
-                                    )
-                                }}
+                                {{ formatDate(data.start_date) }}
                             </span>
                         </div>
 
-                        <div
-                            class="flex items-center gap-2"
-                        >
+                        <div class="flex items-center gap-2">
                             <PrimeTag
                                 value="Ended"
                                 severity="danger"
@@ -719,21 +576,15 @@ onMounted(() => {
                             />
 
                             <span
-                                class="whitespace-nowrap text-sm font-medium text-slate-600"
+                                class="text-sm font-medium whitespace-nowrap text-slate-600"
                             >
-                                {{
-                                    formatDate(
-                                        data.end_date,
-                                    )
-                                }}
+                                {{ formatDate(data.end_date) }}
                             </span>
                         </div>
                     </div>
                 </template>
 
-                <template
-                    #cell-desc_requirement="{ value }"
-                >
+                <template #cell-desc_requirement="{ value }">
                     <div
                         class="flex min-w-0 items-start gap-2 whitespace-normal"
                     >
@@ -749,44 +600,24 @@ onMounted(() => {
                     </div>
                 </template>
 
-                <template
-                    #cell-date_uploaded="{ data }"
-                >
-                    <div
-                        class="flex items-center gap-2"
-                    >
-                        <i
-                            class="pi pi-clock text-lg text-yellow-500"
-                        ></i>
+                <template #cell-date_uploaded="{ data }">
+                    <div class="flex items-center gap-2">
+                        <i class="pi pi-clock text-lg text-yellow-500"></i>
 
                         <span
                             class="text-sm font-medium whitespace-nowrap text-slate-600"
                         >
-                            {{
-                                formatDate(
-                                    data.date_uploaded,
-                                )
-                            }}
+                            {{ formatDate(data.date_uploaded) }}
 
-                            <template
-                                v-if="
-                                    data.time_uploaded
-                                "
-                            >
+                            <template v-if="data.time_uploaded">
                                 ·
-                                {{
-                                    formatTime(
-                                        data.time_uploaded,
-                                    )
-                                }}
+                                {{ formatTime(data.time_uploaded) }}
                             </template>
                         </span>
                     </div>
                 </template>
 
-                <template
-                    #cell-sto_validated="{ data }"
-                >
+                <template #cell-sto_validated="{ data }">
                     <PrimeTag
                         v-if="isVerified(data)"
                         value="Verified"
@@ -795,9 +626,7 @@ onMounted(() => {
                     />
 
                     <PrimeTag
-                        v-else-if="
-                            hasRevisionRemarks(data)
-                        "
+                        v-else-if="hasRevisionRemarks(data)"
                         value="Revise"
                         severity="danger"
                         icon="pi pi-undo"
@@ -811,174 +640,103 @@ onMounted(() => {
                     />
                 </template>
 
-                <template
-                    #cell-revise_remarks="{ value }"
-                >
+                <template #cell-revise_remarks="{ value }">
                     <span
-                        v-if="
-                            value
-                            && String(
-                                value,
-                            ).trim() !== '-'
-                        "
+                        v-if="value && String(value).trim() !== '-'"
                         class="text-sm font-medium text-slate-700"
                     >
                         {{ value }}
                     </span>
 
-                    <span
-                        v-else
-                        class="text-slate-400"
-                    >
-                        —
-                    </span>
+                    <span v-else class="text-slate-400"> — </span>
                 </template>
 
-                <template
-                    #cell-ref_no="{ data }"
-                >
-                    <div
-                        class="flex min-w-0 items-start gap-3"
-                    >
+                <template #cell-ref_no="{ data }">
+                    <div class="flex min-w-0 items-start gap-3">
                         <div
                             class="flex size-9 shrink-0 items-center justify-center text-green-500"
                         >
-                            <i
-                                class="pi pi-list-check"
-                            ></i>
+                            <i class="pi pi-list-check"></i>
                         </div>
 
                         <div class="min-w-0">
-                            <p
-                                class="text-sm font-bold text-[#377EC0]"
-                            >
-                                {{
-                                    data.ref_no
-                                    || 'No reference'
-                                }}
+                            <p class="text-sm font-bold text-[#377EC0]">
+                                {{ data.ref_no || 'No reference' }}
                             </p>
 
                             <p
                                 class="mt-1 leading-5 break-words whitespace-normal text-slate-700"
                             >
-                                {{
-                                    getTaskDescription(
-                                        data.desc_task,
-                                    )
-                                }}
+                                {{ getTaskDescription(data.desc_task) }}
                             </p>
                         </div>
                     </div>
                 </template>
 
-                <template
-                    #cell-month_no="{ value }"
-                >
+                <template #cell-month_no="{ value }">
                     <PrimeTag
-                        :value="
-                            getMonthLabel(value)
-                        "
+                        :value="getMonthLabel(value)"
                         severity="info"
                         icon="pi pi-calendar"
                     />
                 </template>
 
-                <template
-                    #cell-completed="{ value }"
-                >
-                    <div
-                        class="flex items-center gap-2"
-                    >
+                <template #cell-completed="{ value }">
+                    <div class="flex items-center gap-2">
                         <i
                             class="pi pi-clock text-lg font-bold text-yellow-500"
                         ></i>
 
                         <span
-                            class="whitespace-nowrap text-sm font-semibold text-slate-600"
+                            class="text-sm font-semibold whitespace-nowrap text-slate-600"
                         >
-                            {{
-                                formatDate(
-                                    value,
-                                )
-                            }}
+                            {{ formatDate(value) }}
                         </span>
                     </div>
                 </template>
 
-                <template
-                    #cell-date_journal="{ data }"
-                >
+                <template #cell-date_journal="{ data }">
                     <div class="space-y-2">
-                        <div
-                            class="flex items-center gap-2"
-                        >
+                        <div class="flex items-center gap-2">
                             <i
                                 class="pi pi-calendar text-sm font-bold text-blue-500"
                             ></i>
 
-                            <span
-                                class="font-semibold text-slate-700"
-                            >
-                                {{
-                                    formatDate(
-                                        data.date_journal,
-                                    )
-                                }}
+                            <span class="font-semibold text-slate-700">
+                                {{ formatDate(data.date_journal) }}
                             </span>
                         </div>
 
-                        <div
-                            class="flex items-center gap-2"
-                        >
+                        <div class="flex items-center gap-2">
                             <i
                                 class="pi pi-clock text-sm font-bold text-yellow-500"
                             ></i>
 
-                            <span
-                                class="text-sm text-slate-500"
-                            >
-                                {{
-                                    formatTime(
-                                        data.journal_time,
-                                    )
-                                }}
+                            <span class="text-sm text-slate-500">
+                                {{ formatTime(data.journal_time) }}
                                 –
-                                {{
-                                    formatTime(
-                                        data.journal_time_to,
-                                    )
-                                }}
+                                {{ formatTime(data.journal_time_to) }}
                             </span>
                         </div>
 
                         <div
-                            v-if="
-                                data.vessel_name
-                            "
+                            v-if="data.vessel_name"
                             class="flex items-center gap-2"
                         >
                             <i
                                 class="pi pi-compass text-sm font-bold text-cyan-500"
                             ></i>
 
-                            <span
-                                class="text-sm text-slate-500"
-                            >
-                                {{
-                                    data.vessel_name
-                                }}
+                            <span class="text-sm text-slate-500">
+                                {{ data.vessel_name }}
                             </span>
                         </div>
                     </div>
                 </template>
 
-                <template
-                    #cell-port_depart="{ data }"
-                >
+                <template #cell-port_depart="{ data }">
                     <div class="space-y-2">
-                        <div
-                            class="flex items-start gap-2"
-                        >
+                        <div class="flex items-start gap-2">
                             <PrimeTag
                                 value="From"
                                 severity="success"
@@ -988,16 +746,11 @@ onMounted(() => {
                             <span
                                 class="pt-0.5 text-sm font-medium text-slate-700"
                             >
-                                {{
-                                    data.port_depart
-                                    || '—'
-                                }}
+                                {{ data.port_depart || '—' }}
                             </span>
                         </div>
 
-                        <div
-                            class="flex items-start gap-2"
-                        >
+                        <div class="flex items-start gap-2">
                             <PrimeTag
                                 value="To"
                                 severity="info"
@@ -1007,34 +760,20 @@ onMounted(() => {
                             <span
                                 class="pt-0.5 text-sm font-medium text-slate-700"
                             >
-                                {{
-                                    data.port_dest
-                                    || '—'
-                                }}
+                                {{ data.port_dest || '—' }}
                             </span>
                         </div>
                     </div>
                 </template>
 
-                <template
-                    #cell-status="{ data }"
-                >
+                <template #cell-status="{ data }">
                     <PrimeTag
-                        :value="
-                            String(
-                                data.status
-                                || 'Pending',
-                            )
-                        "
+                        :value="String(data.status || 'Pending')"
                         :severity="
-                            data.status ===
-                            'Signed'
-                                ? 'success'
-                                : 'warn'
+                            data.status === 'Signed' ? 'success' : 'warn'
                         "
                         :icon="
-                            data.status ===
-                            'Signed'
+                            data.status === 'Signed'
                                 ? 'pi pi-check-circle'
                                 : 'pi pi-clock'
                         "

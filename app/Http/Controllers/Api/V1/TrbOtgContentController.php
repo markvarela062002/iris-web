@@ -67,7 +67,7 @@ class TrbOtgContentController extends Controller
         }
 
         return response()->streamDownload(function (): void {
-            $book = new Spreadsheet();
+            $book = new Spreadsheet;
 
             try {
                 $sheet = $book->getActiveSheet();
@@ -736,6 +736,7 @@ class TrbOtgContentController extends Controller
 
                 if (implode('', $values) === '') {
                     $skipped++;
+
                     continue;
                 }
 
@@ -833,7 +834,7 @@ class TrbOtgContentController extends Controller
 
     private function validateXlsxArchive(string $path): void
     {
-        $archive = new ZipArchive();
+        $archive = new ZipArchive;
 
         if ($archive->open($path) !== true) {
             throw new \RuntimeException('Invalid XLSX archive.');

@@ -21,8 +21,7 @@ class AlertSetupController extends Controller
 
     public function __construct(
         private readonly DatatableService $datatableService,
-    ) {
-    }
+    ) {}
 
     public function index(
         Request $request,
@@ -61,17 +60,12 @@ class AlertSetupController extends Controller
                     'alert_setup.alert_type',
                 ],
                 sortableColumns: [
-                    'as_of' =>
-                        'alert_setup.as_of',
-                    'alert_type' =>
-                        'alert_setup.alert_type',
-                    'inactive_days' =>
-                        'alert_setup.inactive_days',
+                    'as_of' => 'alert_setup.as_of',
+                    'alert_type' => 'alert_setup.alert_type',
+                    'inactive_days' => 'alert_setup.inactive_days',
                 ],
-                defaultSortColumn:
-                    'as_of',
-                defaultSortDirection:
-                    'desc',
+                defaultSortColumn: 'as_of',
+                defaultSortDirection: 'desc',
             );
 
         $result = $this
@@ -137,8 +131,7 @@ class AlertSetupController extends Controller
 
         if (! $record) {
             return response()->json([
-                'message' =>
-                    'Alert setup record was not found.',
+                'message' => 'Alert setup record was not found.',
             ], Response::HTTP_NOT_FOUND);
         }
 
@@ -156,8 +149,7 @@ class AlertSetupController extends Controller
             )
         ) {
             return response()->json([
-                'message' =>
-                    'This alert type is not supported.',
+                'message' => 'This alert type is not supported.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
@@ -188,30 +180,24 @@ class AlertSetupController extends Controller
                 $alertSetupId,
             )
             ->update([
-                'inactive_days' =>
-                    (int) $input[
+                'inactive_days' => (int) $input[
                         'inactive_days'
                     ],
-                'login_id' =>
-                    $loginId !== ''
+                'login_id' => $loginId !== ''
                         ? $loginId
                         : null,
-                'last_update' =>
-                    now(
-                        'Asia/Manila',
-                    )->format(
-                        'Y-m-d H:i:s',
-                    ),
+                'last_update' => now(
+                    'Asia/Manila',
+                )->format(
+                    'Y-m-d H:i:s',
+                ),
             ]);
 
         return response()->json([
-            'message' =>
-                'Alert inactivity days updated successfully.',
+            'message' => 'Alert inactivity days updated successfully.',
             'data' => [
-                'id' =>
-                    $alertSetupId,
-                'inactive_days' =>
-                    (int) $input[
+                'id' => $alertSetupId,
+                'inactive_days' => (int) $input[
                         'inactive_days'
                     ],
             ],
@@ -234,8 +220,7 @@ class AlertSetupController extends Controller
 
         if ($schoolCode === '') {
             return response()->json([
-                'message' =>
-                    'No school database has been selected.',
+                'message' => 'No school database has been selected.',
             ], Response::HTTP_FORBIDDEN);
         }
 
@@ -246,8 +231,7 @@ class AlertSetupController extends Controller
 
         if (! is_array($schools)) {
             return response()->json([
-                'message' =>
-                    'School configuration is unavailable.',
+                'message' => 'School configuration is unavailable.',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
@@ -257,10 +241,8 @@ class AlertSetupController extends Controller
 
         if (! is_array($school)) {
             return response()->json([
-                'message' =>
-                    'The selected school is not configured.',
-                'schoolCode' =>
-                    $schoolCode,
+                'message' => 'The selected school is not configured.',
+                'schoolCode' => $schoolCode,
             ], Response::HTTP_FORBIDDEN);
         }
 
@@ -282,8 +264,7 @@ class AlertSetupController extends Controller
             )
         ) {
             return response()->json([
-                'message' =>
-                    'The selected school code is invalid.',
+                'message' => 'The selected school code is invalid.',
             ], Response::HTTP_FORBIDDEN);
         }
 
@@ -299,10 +280,8 @@ class AlertSetupController extends Controller
             $connection === ''
         ) {
             return response()->json([
-                'message' =>
-                    'The school database connection is missing.',
-                'schoolCode' =>
-                    $schoolCode,
+                'message' => 'The school database connection is missing.',
+                'schoolCode' => $schoolCode,
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
@@ -312,18 +291,14 @@ class AlertSetupController extends Controller
 
         if (! is_array($connectionConfig)) {
             return response()->json([
-                'message' =>
-                    'The school database connection is not configured.',
-                'schoolCode' =>
-                    $schoolCode,
-                'connection' =>
-                    $connection,
+                'message' => 'The school database connection is not configured.',
+                'schoolCode' => $schoolCode,
+                'connection' => $connection,
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
         config([
-            'database.default' =>
-                $connection,
+            'database.default' => $connection,
         ]);
 
         DB::setDefaultConnection(

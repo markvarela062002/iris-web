@@ -6,26 +6,31 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
+use stdClass;
 
+/**
+ * @phpstan-type TableResponse array{
+ *     data: array<array-key, object|array<string, mixed>>,
+ *     meta: array{
+ *         currentPage: int,
+ *         perPage: int,
+ *         lastPage?: int,
+ *         total?: int,
+ *         from?: int|null,
+ *         to?: int|null
+ *     },
+ *     links: array<string, string|null>
+ * }
+ */
 class DatatableService
 {
     /**
      * Apply searching, sorting, and pagination to a query.
      *
-     * @param  array<string>  $searchableColumns
+     * @param  array<int, string>  $searchableColumns
      * @param  array<string, string>  $sortableColumns
-     * @param  array<string>  $selectColumns  Explicit columns to select.
-     *         Leave empty to select all columns (previous default behavior).
-     * @param  bool  $simplePaginate  When true, skips the COUNT(*) query
-     *         (no total/lastPage in the response). Use for tables where the
-     *         UI only needs prev/next, not a page count — this is usually
-     *         the single biggest speed win on large tables.
-     * @param  string  $searchMode  'contains' (default, original behavior,
-     *         "%term%") or 'starts_with' ("term%"), which can use a normal
-     *         B-tree index and is much faster on large tables when the UX
-     *         allows prefix search instead of substring search.
-     * @return array<string, mixed>
+     * @param  array<int, string>  $selectColumns
+     * @return TableResponse
      */
     public function paginate(
         Builder $query,
@@ -55,16 +60,22 @@ class DatatableService
             $defaultSortColumn,
         );
 
-        $sortDirection = strtolower(
+        $requestedSortDirection = strtolower(
             (string) $request->input(
                 'sort_direction',
                 $defaultSortDirection,
             ),
         );
 
-        if (! in_array($sortDirection, ['asc', 'desc'], true)) {
-            $sortDirection = $defaultSortDirection;
-        }
+        $fallbackSortDirection = strtolower($defaultSortDirection) === 'desc'
+            ? 'desc'
+            : 'asc';
+
+        $sortDirection = match ($requestedSortDirection) {
+            'asc' => 'asc',
+            'desc' => 'desc',
+            default => $fallbackSortDirection,
+        };
 
         $sortColumn = $sortableColumns[$requestedSortColumn]
             ?? $sortableColumns[$defaultSortColumn]
@@ -83,7 +94,9 @@ class DatatableService
         return $this->formatResponse($paginator);
     }
 
-    /** @param array<string> $searchableColumns */
+    /**
+     * @param  array<int, string>  $searchableColumns
+     */
     private function applySearch(
         Builder $query,
         string $search,
@@ -105,6 +118,7 @@ class DatatableService
             foreach ($searchableColumns as $index => $column) {
                 if ($index === 0) {
                     $searchQuery->where($column, 'like', $pattern);
+
                     continue;
                 }
 
@@ -113,7 +127,10 @@ class DatatableService
         });
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * @param  LengthAwarePaginator<int, stdClass>|Paginator<int, stdClass>  $paginator
+     * @return TableResponse
+     */
     private function formatResponse(
         LengthAwarePaginator|Paginator $paginator,
     ): array {
@@ -127,10 +144,6 @@ class DatatableService
             'next' => $paginator->nextPageUrl(),
         ];
 
-        // Only LengthAwarePaginator (paginate()) knows the total row count
-        // and last page — simplePaginate() intentionally skips the COUNT(*)
-        // query needed to compute these, which is where the speed gain
-        // comes from.
         if ($paginator instanceof LengthAwarePaginator) {
             $meta['lastPage'] = $paginator->lastPage();
             $meta['total'] = $paginator->total();
@@ -148,29 +161,35 @@ class DatatableService
         ];
     }
 
-    /** Add a continuous row number to the current page. */
+    /**
+     * Add a continuous row number to the current page.
+     *
+     * @param  TableResponse  $response
+     * @return TableResponse
+     */
     public function addRowNumbers(
         array $response,
         string $key = 'index',
     ): array {
-        $currentPage = (int) $response['meta']['currentPage'];
-        $perPage = (int) $response['meta']['perPage'];
+        $currentPage = $response['meta']['currentPage'];
+        $perPage = $response['meta']['perPage'];
         $startingIndex = (($currentPage - 1) * $perPage) + 1;
 
-        $response['data'] = Collection::make($response['data'])
-            ->values()
-            ->map(function (
-                object|array $row,
-                int $position,
-            ) use ($key, $startingIndex): array {
-                $rowData = is_object($row) ? (array) $row : $row;
+        $numberedRows = [];
+        $position = 0;
 
-                return [
-                    $key => $startingIndex + $position,
-                    ...$rowData,
-                ];
-            })
-            ->all();
+        foreach ($response['data'] as $row) {
+            $rowData = is_object($row) ? (array) $row : $row;
+
+            $numberedRows[] = [
+                $key => $startingIndex + $position,
+                ...$rowData,
+            ];
+
+            $position++;
+        }
+
+        $response['data'] = $numberedRows;
 
         return $response;
     }

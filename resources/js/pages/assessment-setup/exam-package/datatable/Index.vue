@@ -14,11 +14,7 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 
 import Datatable from '@/components/Datatable.vue';
 import { dashboard } from '@/routes';
-import type {
-    DataTableAction,
-    DataTableColumn,
-    DataTableRow,
-} from '@/types';
+import type { DataTableAction, DataTableColumn, DataTableRow } from '@/types';
 
 defineOptions({
     inheritAttrs: false,
@@ -55,8 +51,7 @@ type PageEvent = { page: number; rows: number; first: number };
 type SortEvent = { sortField: string; sortOrder: number };
 type Errors = Record<string, string>;
 
-const DATATABLE_URL =
-    '/api/v1/assessment-setup/datatable/exam-packages';
+const DATATABLE_URL = '/api/v1/assessment-setup/datatable/exam-packages';
 const API_BASE = '/api/v1/assessment-setup/exam-packages';
 
 const toast = useToast();
@@ -100,7 +95,6 @@ const subjectForm = reactive({
 let requestController: AbortController | null = null;
 
 const columns: DataTableColumn[] = [
-
     {
         field: 'code_course',
         header: 'Code',
@@ -146,9 +140,7 @@ const actions: DataTableAction[] = [
     },
 ];
 
-const currentPage = computed(() =>
-    Math.floor(first.value / perPage.value) + 1,
-);
+const currentPage = computed(() => Math.floor(first.value / perPage.value) + 1);
 
 const packageDialogTitle = computed(() =>
     packageForm.id ? 'Edit Exam Package' : 'Create Exam Package',
@@ -182,12 +174,11 @@ async function loadPackages(page = 1): Promise<void> {
         totalRecords.value = response.data.meta.total;
         perPage.value = response.data.meta.perPage;
         first.value =
-            (response.data.meta.currentPage - 1) *
-            response.data.meta.perPage;
+            (response.data.meta.currentPage - 1) * response.data.meta.perPage;
     } catch (error: unknown) {
         if (isCanceled(error)) {
-return;
-}
+            return;
+        }
 
         packages.value = [];
         totalRecords.value = 0;
@@ -197,8 +188,8 @@ return;
         );
     } finally {
         if (requestController === controller) {
-loading.value = false;
-}
+            loading.value = false;
+        }
     }
 }
 
@@ -258,8 +249,8 @@ async function savePackage(): Promise<void> {
     }
 
     if (Object.keys(packageErrors.value).length) {
-return;
-}
+        return;
+    }
 
     saving.value = true;
     const wasNew = !packageForm.id;
@@ -293,7 +284,10 @@ return;
         await loadSubjects();
     } catch (error: unknown) {
         packageErrors.value = getValidationErrors(error);
-        errorMessage.value = getErrorMessage(error, 'Unable to save the exam package.');
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to save the exam package.',
+        );
     } finally {
         saving.value = false;
     }
@@ -303,8 +297,8 @@ async function deletePackage(): Promise<void> {
     const id = String(selectedPackage.value?.id ?? '');
 
     if (!id) {
-return;
-}
+        return;
+    }
 
     deleting.value = true;
 
@@ -323,7 +317,10 @@ return;
         });
         await reloadCurrentPage();
     } catch (error: unknown) {
-        errorMessage.value = getErrorMessage(error, 'Unable to delete the exam package.');
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to delete the exam package.',
+        );
     } finally {
         deleting.value = false;
     }
@@ -368,30 +365,30 @@ function openEditSubject(subject: Subject): void {
 
 async function saveSubject(): Promise<void> {
     if (!packageForm.id) {
-return;
-}
+        return;
+    }
 
     subjectErrors.value = {};
 
     if (!subjectForm.desc_topic.trim()) {
-subjectErrors.value.desc_topic = 'Description is required.';
-}
+        subjectErrors.value.desc_topic = 'Description is required.';
+    }
 
     if (subjectForm.no_quest === null) {
-subjectErrors.value.no_quest = 'Number of items is required.';
-}
+        subjectErrors.value.no_quest = 'Number of items is required.';
+    }
 
     if (subjectForm.passing_mark === null) {
-subjectErrors.value.passing_mark = 'Passing mark is required.';
-}
+        subjectErrors.value.passing_mark = 'Passing mark is required.';
+    }
 
     if (subjectForm.order_no === null) {
-subjectErrors.value.order_no = 'Order number is required.';
-}
+        subjectErrors.value.order_no = 'Order number is required.';
+    }
 
     if (Object.keys(subjectErrors.value).length) {
-return;
-}
+        return;
+    }
 
     subjectLoading.value = true;
 
@@ -409,7 +406,11 @@ return;
                   payload,
                   requestConfig(),
               )
-            : await axios.post<{ message: string }>(base, payload, requestConfig());
+            : await axios.post<{ message: string }>(
+                  base,
+                  payload,
+                  requestConfig(),
+              );
 
         toast.add({
             severity: 'success',
@@ -423,7 +424,10 @@ return;
         await loadPackages(currentPage.value);
     } catch (error: unknown) {
         subjectErrors.value = getValidationErrors(error);
-        errorMessage.value = getErrorMessage(error, 'Unable to save the subject.');
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to save the subject.',
+        );
     } finally {
         subjectLoading.value = false;
     }
@@ -431,8 +435,8 @@ return;
 
 async function deleteSubject(): Promise<void> {
     if (!packageForm.id || !selectedSubject.value?.id) {
-return;
-}
+        return;
+    }
 
     subjectLoading.value = true;
 
@@ -452,7 +456,10 @@ return;
         await loadSubjects();
         await loadPackages(currentPage.value);
     } catch (error: unknown) {
-        errorMessage.value = getErrorMessage(error, 'Unable to delete the subject.');
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to delete the subject.',
+        );
     } finally {
         subjectLoading.value = false;
     }
@@ -498,27 +505,39 @@ function requestConfig() {
 }
 
 function isCanceled(error: unknown): boolean {
-    return axios.isCancel(error) ||
-        (axios.isAxiosError(error) && error.code === 'ERR_CANCELED');
+    return (
+        axios.isCancel(error) ||
+        (axios.isAxiosError(error) && error.code === 'ERR_CANCELED')
+    );
 }
 
 function getErrorMessage(error: unknown, fallback: string): string {
     if (!axios.isAxiosError(error)) {
-return fallback;
-}
+        return fallback;
+    }
 
-    return (error.response?.data as { message?: string } | undefined)?.message || fallback;
+    return (
+        (error.response?.data as { message?: string } | undefined)?.message ||
+        fallback
+    );
 }
 
 function getValidationErrors(error: unknown): Errors {
     if (!axios.isAxiosError(error)) {
-return {};
-}
+        return {};
+    }
 
-    const source = (error.response?.data as { errors?: Record<string, string[]> } | undefined)?.errors ?? {};
+    const source =
+        (
+            error.response?.data as
+                { errors?: Record<string, string[]> } | undefined
+        )?.errors ?? {};
 
     return Object.fromEntries(
-        Object.entries(source).map(([key, messages]) => [key, messages[0] ?? 'Invalid value.']),
+        Object.entries(source).map(([key, messages]) => [
+            key,
+            messages[0] ?? 'Invalid value.',
+        ]),
     );
 }
 
@@ -530,8 +549,15 @@ onBeforeUnmount(() => requestController?.abort());
     <Head title="Exam Packages" />
     <Toast position="top-right" />
 
-    <div class="flex h-full min-h-0 flex-1 flex-col gap-4 overflow-y-auto bg-[#F8FAFC] p-4 lg:p-5">
-        <Message v-if="errorMessage" severity="error" closable @close="errorMessage = ''">
+    <div
+        class="flex h-full min-h-0 flex-1 flex-col gap-4 overflow-y-auto bg-[#F8FAFC] p-4 lg:p-5"
+    >
+        <Message
+            v-if="errorMessage"
+            severity="error"
+            closable
+            @close="errorMessage = ''"
+        >
             {{ errorMessage }}
         </Message>
 
@@ -562,37 +588,88 @@ onBeforeUnmount(() => requestController?.abort());
             @action="handleAction"
         >
             <template #header-actions>
-                <Button label="Create Exam Package" icon="pi pi-plus" severity="success" size="small" @click="openCreatePackage" />
+                <Button
+                    label="Create Exam Package"
+                    icon="pi pi-plus"
+                    severity="success"
+                    size="small"
+                    @click="openCreatePackage"
+                />
             </template>
 
             <template #cell-code_course="{ value }">
-                <span class="font-semibold text-slate-700">{{ value || '—' }}</span>
+                <span class="font-semibold text-slate-700">{{
+                    value || '—'
+                }}</span>
             </template>
 
             <template #cell-randomize="{ value }">
-                <PrimeTag :value="value === 'Y' ? 'Yes' : 'No'" :severity="value === 'Y' ? 'success' : 'secondary'" rounded />
+                <PrimeTag
+                    :value="value === 'Y' ? 'Yes' : 'No'"
+                    :severity="value === 'Y' ? 'success' : 'secondary'"
+                    rounded
+                />
             </template>
 
             <template #cell-total_subjects="{ value }">
-                <PrimeTag :value="String(value ?? 0)" severity="info" icon="pi pi-book" rounded />
+                <PrimeTag
+                    :value="String(value ?? 0)"
+                    severity="info"
+                    icon="pi pi-book"
+                    rounded
+                />
             </template>
         </Datatable>
 
-        <Dialog v-model:visible="packageDialogVisible" modal :header="packageDialogTitle" :draggable="false" :closable="!saving" class="w-[min(96vw,920px)]">
+        <Dialog
+            v-model:visible="packageDialogVisible"
+            modal
+            :header="packageDialogTitle"
+            :draggable="false"
+            :closable="!saving"
+            class="w-[min(96vw,920px)]"
+        >
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
-                    <label class="mb-2 block text-sm font-semibold text-slate-700">Code</label>
-                    <InputText v-model="packageForm.code_course" class="w-full" :invalid="Boolean(packageErrors.code_course)" />
-                    <small v-if="packageErrors.code_course" class="text-red-500">{{ packageErrors.code_course }}</small>
+                    <label
+                        class="mb-2 block text-sm font-semibold text-slate-700"
+                        >Code</label
+                    >
+                    <InputText
+                        v-model="packageForm.code_course"
+                        class="w-full"
+                        :invalid="Boolean(packageErrors.code_course)"
+                    />
+                    <small
+                        v-if="packageErrors.code_course"
+                        class="text-red-500"
+                        >{{ packageErrors.code_course }}</small
+                    >
                 </div>
                 <div>
-                    <label class="mb-2 block text-sm font-semibold text-slate-700">Exam Name</label>
-                    <InputText v-model="packageForm.name_course" class="w-full" :invalid="Boolean(packageErrors.name_course)" />
-                    <small v-if="packageErrors.name_course" class="text-red-500">{{ packageErrors.name_course }}</small>
+                    <label
+                        class="mb-2 block text-sm font-semibold text-slate-700"
+                        >Exam Name</label
+                    >
+                    <InputText
+                        v-model="packageForm.name_course"
+                        class="w-full"
+                        :invalid="Boolean(packageErrors.name_course)"
+                    />
+                    <small
+                        v-if="packageErrors.name_course"
+                        class="text-red-500"
+                        >{{ packageErrors.name_course }}</small
+                    >
                 </div>
                 <div class="flex items-center gap-3 sm:col-span-2">
-                    <ToggleSwitch v-model="packageForm.randomize" input-id="randomize" />
-                    <label for="randomize" class="font-semibold text-slate-700">Randomize questions</label>
+                    <ToggleSwitch
+                        v-model="packageForm.randomize"
+                        input-id="randomize"
+                    />
+                    <label for="randomize" class="font-semibold text-slate-700"
+                        >Randomize questions</label
+                    >
                 </div>
             </div>
 
@@ -600,36 +677,99 @@ onBeforeUnmount(() => requestController?.abort());
                 <div class="mb-3 flex items-center justify-between gap-3">
                     <div>
                         <h3 class="font-bold text-slate-800">Subjects</h3>
-                        <p class="text-sm text-slate-500">Subjects are ordered using their order number.</p>
+                        <p class="text-sm text-slate-500">
+                            Subjects are ordered using their order number.
+                        </p>
                     </div>
-                    <Button label="Add Subject" icon="pi pi-plus" size="small" :disabled="!packageForm.id" @click="openNewSubject" />
+                    <Button
+                        label="Add Subject"
+                        icon="pi pi-plus"
+                        size="small"
+                        :disabled="!packageForm.id"
+                        @click="openNewSubject"
+                    />
                 </div>
 
-                <Message v-if="!packageForm.id" severity="info" :closable="false">Save the exam package before adding subjects.</Message>
+                <Message
+                    v-if="!packageForm.id"
+                    severity="info"
+                    :closable="false"
+                    >Save the exam package before adding subjects.</Message
+                >
 
-                <div v-else class="overflow-x-auto rounded-xl border border-slate-200">
+                <div
+                    v-else
+                    class="overflow-x-auto rounded-xl border border-slate-200"
+                >
                     <table class="w-full min-w-[720px] text-left text-sm">
                         <thead class="bg-slate-50 text-slate-600">
                             <tr>
                                 <th class="px-4 py-3">Description</th>
                                 <th class="px-4 py-3 text-center">Items</th>
-                                <th class="px-4 py-3 text-center">Passing Mark</th>
+                                <th class="px-4 py-3 text-center">
+                                    Passing Mark
+                                </th>
                                 <th class="px-4 py-3 text-center">Order</th>
                                 <th class="px-4 py-3 text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-if="subjectLoading"><td colspan="5" class="px-4 py-6 text-center text-slate-500">Loading subjects...</td></tr>
-                            <tr v-else-if="!subjects.length"><td colspan="5" class="px-4 py-6 text-center text-slate-500">No subjects added.</td></tr>
-                            <tr v-for="subject in subjects" :key="subject.id" class="border-t border-slate-200">
-                                <td class="px-4 py-3 font-medium text-slate-700">{{ subject.desc_topic }}</td>
-                                <td class="px-4 py-3 text-center">{{ subject.no_quest }}</td>
-                                <td class="px-4 py-3 text-center">{{ subject.passing_mark }}</td>
-                                <td class="px-4 py-3 text-center">{{ subject.order_no }}</td>
+                            <tr v-if="subjectLoading">
+                                <td
+                                    colspan="5"
+                                    class="px-4 py-6 text-center text-slate-500"
+                                >
+                                    Loading subjects...
+                                </td>
+                            </tr>
+                            <tr v-else-if="!subjects.length">
+                                <td
+                                    colspan="5"
+                                    class="px-4 py-6 text-center text-slate-500"
+                                >
+                                    No subjects added.
+                                </td>
+                            </tr>
+                            <tr
+                                v-for="subject in subjects"
+                                :key="subject.id"
+                                class="border-t border-slate-200"
+                            >
+                                <td
+                                    class="px-4 py-3 font-medium text-slate-700"
+                                >
+                                    {{ subject.desc_topic }}
+                                </td>
+                                <td class="px-4 py-3 text-center">
+                                    {{ subject.no_quest }}
+                                </td>
+                                <td class="px-4 py-3 text-center">
+                                    {{ subject.passing_mark }}
+                                </td>
+                                <td class="px-4 py-3 text-center">
+                                    {{ subject.order_no }}
+                                </td>
                                 <td class="px-4 py-3">
                                     <div class="flex justify-center gap-2">
-                                        <Button icon="pi pi-pencil" severity="warn" rounded size="small" aria-label="Edit subject" @click="openEditSubject(subject)" />
-                                        <Button icon="pi pi-trash" severity="danger" rounded size="small" aria-label="Delete subject" @click="selectedSubject = subject; subjectDeleteVisible = true" />
+                                        <Button
+                                            icon="pi pi-pencil"
+                                            severity="warn"
+                                            rounded
+                                            size="small"
+                                            aria-label="Edit subject"
+                                            @click="openEditSubject(subject)"
+                                        />
+                                        <Button
+                                            icon="pi pi-trash"
+                                            severity="danger"
+                                            rounded
+                                            size="small"
+                                            aria-label="Delete subject"
+                                            @click="
+                                                selectedSubject = subject;
+                                                subjectDeleteVisible = true;
+                                            "
+                                        />
                                     </div>
                                 </td>
                             </tr>
@@ -639,53 +779,167 @@ onBeforeUnmount(() => requestController?.abort());
             </div>
 
             <template #footer>
-                <Button label="Close" icon="pi pi-times" severity="secondary" outlined :disabled="saving" @click="packageDialogVisible = false" />
-                <Button label="Save" icon="pi pi-save" severity="success" :loading="saving" @click="savePackage" />
+                <Button
+                    label="Close"
+                    icon="pi pi-times"
+                    severity="secondary"
+                    outlined
+                    :disabled="saving"
+                    @click="packageDialogVisible = false"
+                />
+                <Button
+                    label="Save"
+                    icon="pi pi-save"
+                    severity="success"
+                    :loading="saving"
+                    @click="savePackage"
+                />
             </template>
         </Dialog>
 
-        <Dialog v-model:visible="subjectDialogVisible" modal :header="subjectDialogTitle" :draggable="false" class="w-[min(92vw,620px)]">
+        <Dialog
+            v-model:visible="subjectDialogVisible"
+            modal
+            :header="subjectDialogTitle"
+            :draggable="false"
+            class="w-[min(92vw,620px)]"
+        >
             <div class="grid gap-4 sm:grid-cols-2">
                 <div class="sm:col-span-2">
-                    <label class="mb-2 block text-sm font-semibold">Description</label>
-                    <InputText v-model="subjectForm.desc_topic" class="w-full" :invalid="Boolean(subjectErrors.desc_topic)" />
-                    <small v-if="subjectErrors.desc_topic" class="text-red-500">{{ subjectErrors.desc_topic }}</small>
+                    <label class="mb-2 block text-sm font-semibold"
+                        >Description</label
+                    >
+                    <InputText
+                        v-model="subjectForm.desc_topic"
+                        class="w-full"
+                        :invalid="Boolean(subjectErrors.desc_topic)"
+                    />
+                    <small
+                        v-if="subjectErrors.desc_topic"
+                        class="text-red-500"
+                        >{{ subjectErrors.desc_topic }}</small
+                    >
                 </div>
                 <div>
-                    <label class="mb-2 block text-sm font-semibold">No. of Items</label>
-                    <InputNumber v-model="subjectForm.no_quest" class="w-full" :min="1" :use-grouping="false" />
-                    <small v-if="subjectErrors.no_quest" class="text-red-500">{{ subjectErrors.no_quest }}</small>
+                    <label class="mb-2 block text-sm font-semibold"
+                        >No. of Items</label
+                    >
+                    <InputNumber
+                        v-model="subjectForm.no_quest"
+                        class="w-full"
+                        :min="1"
+                        :use-grouping="false"
+                    />
+                    <small v-if="subjectErrors.no_quest" class="text-red-500">{{
+                        subjectErrors.no_quest
+                    }}</small>
                 </div>
                 <div>
-                    <label class="mb-2 block text-sm font-semibold">Passing Mark</label>
-                    <InputNumber v-model="subjectForm.passing_mark" class="w-full" :min="0" :use-grouping="false" />
-                    <small v-if="subjectErrors.passing_mark" class="text-red-500">{{ subjectErrors.passing_mark }}</small>
+                    <label class="mb-2 block text-sm font-semibold"
+                        >Passing Mark</label
+                    >
+                    <InputNumber
+                        v-model="subjectForm.passing_mark"
+                        class="w-full"
+                        :min="0"
+                        :use-grouping="false"
+                    />
+                    <small
+                        v-if="subjectErrors.passing_mark"
+                        class="text-red-500"
+                        >{{ subjectErrors.passing_mark }}</small
+                    >
                 </div>
                 <div>
-                    <label class="mb-2 block text-sm font-semibold">Order No.</label>
-                    <InputNumber v-model="subjectForm.order_no" class="w-full" :min="1" :use-grouping="false" />
-                    <small v-if="subjectErrors.order_no" class="text-red-500">{{ subjectErrors.order_no }}</small>
+                    <label class="mb-2 block text-sm font-semibold"
+                        >Order No.</label
+                    >
+                    <InputNumber
+                        v-model="subjectForm.order_no"
+                        class="w-full"
+                        :min="1"
+                        :use-grouping="false"
+                    />
+                    <small v-if="subjectErrors.order_no" class="text-red-500">{{
+                        subjectErrors.order_no
+                    }}</small>
                 </div>
             </div>
             <template #footer>
-                <Button label="Cancel" severity="secondary" outlined @click="subjectDialogVisible = false" />
-                <Button label="Save" icon="pi pi-save" severity="success" :loading="subjectLoading" @click="saveSubject" />
+                <Button
+                    label="Cancel"
+                    severity="secondary"
+                    outlined
+                    @click="subjectDialogVisible = false"
+                />
+                <Button
+                    label="Save"
+                    icon="pi pi-save"
+                    severity="success"
+                    :loading="subjectLoading"
+                    @click="saveSubject"
+                />
             </template>
         </Dialog>
 
-        <Dialog v-model:visible="packageDeleteVisible" modal header="Delete Exam Package" :draggable="false" class="w-[min(92vw,520px)]">
-            <Message severity="warn" :closable="false">Delete <strong>{{ selectedPackage?.name_course || 'this exam package' }}</strong>? All subjects must be removed first.</Message>
+        <Dialog
+            v-model:visible="packageDeleteVisible"
+            modal
+            header="Delete Exam Package"
+            :draggable="false"
+            class="w-[min(92vw,520px)]"
+        >
+            <Message severity="warn" :closable="false"
+                >Delete
+                <strong>{{
+                    selectedPackage?.name_course || 'this exam package'
+                }}</strong
+                >? All subjects must be removed first.</Message
+            >
             <template #footer>
-                <Button label="Cancel" severity="secondary" outlined @click="packageDeleteVisible = false" />
-                <Button label="Delete" icon="pi pi-trash" severity="danger" :loading="deleting" @click="deletePackage" />
+                <Button
+                    label="Cancel"
+                    severity="secondary"
+                    outlined
+                    @click="packageDeleteVisible = false"
+                />
+                <Button
+                    label="Delete"
+                    icon="pi pi-trash"
+                    severity="danger"
+                    :loading="deleting"
+                    @click="deletePackage"
+                />
             </template>
         </Dialog>
 
-        <Dialog v-model:visible="subjectDeleteVisible" modal header="Delete Subject" class="w-[min(92vw,520px)]">
-            <Message severity="warn" :closable="false">Delete <strong>{{ selectedSubject?.desc_topic || 'this subject' }}</strong>?</Message>
+        <Dialog
+            v-model:visible="subjectDeleteVisible"
+            modal
+            header="Delete Subject"
+            class="w-[min(92vw,520px)]"
+        >
+            <Message severity="warn" :closable="false"
+                >Delete
+                <strong>{{
+                    selectedSubject?.desc_topic || 'this subject'
+                }}</strong
+                >?</Message
+            >
             <template #footer>
-                <Button label="Cancel" severity="secondary" outlined @click="subjectDeleteVisible = false" />
-                <Button label="Delete" icon="pi pi-trash" severity="danger" :loading="subjectLoading" @click="deleteSubject" />
+                <Button
+                    label="Cancel"
+                    severity="secondary"
+                    outlined
+                    @click="subjectDeleteVisible = false"
+                />
+                <Button
+                    label="Delete"
+                    icon="pi pi-trash"
+                    severity="danger"
+                    :loading="subjectLoading"
+                    @click="deleteSubject"
+                />
             </template>
         </Dialog>
     </div>

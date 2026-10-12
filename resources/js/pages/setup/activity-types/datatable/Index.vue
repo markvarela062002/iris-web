@@ -10,22 +10,12 @@ import Textarea from 'primevue/textarea';
 import Toast from 'primevue/toast';
 import ToggleSwitch from 'primevue/toggleswitch';
 import { useToast } from 'primevue/usetoast';
-import {
-    computed,
-    onBeforeUnmount,
-    onMounted,
-    reactive,
-    ref,
-} from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 
 import Datatable from '@/components/Datatable.vue';
 import { dashboard } from '@/routes';
 
-import type {
-    DataTableAction,
-    DataTableColumn,
-    DataTableRow,
-} from '@/types';
+import type { DataTableAction, DataTableColumn, DataTableRow } from '@/types';
 
 defineOptions({
     inheritAttrs: false,
@@ -65,19 +55,15 @@ type SortEvent = {
     sortOrder: number;
 };
 
-type Errors =
-    Record<string, string>;
+type Errors = Record<string, string>;
 
-const DATATABLE_URL =
-    '/api/v1/setup/activity-types/datatable';
+const DATATABLE_URL = '/api/v1/setup/activity-types/datatable';
 
-const API_BASE =
-    '/api/v1/setup/activity-types';
+const API_BASE = '/api/v1/setup/activity-types';
 
 const toast = useToast();
 
-const activityTypes =
-    ref<DataTableRow[]>([]);
+const activityTypes = ref<DataTableRow[]>([]);
 
 const loading = ref(false);
 const saving = ref(false);
@@ -90,24 +76,16 @@ const first = ref(0);
 const perPage = ref(10);
 const search = ref('');
 
-const sortField =
-    ref('code_activity');
+const sortField = ref('code_activity');
 
-const sortDirection =
-    ref<'asc' | 'desc'>(
-        'asc',
-    );
+const sortDirection = ref<'asc' | 'desc'>('asc');
 
 const dialogVisible = ref(false);
 const deleteVisible = ref(false);
 
-const selectedActivityType =
-    ref<DataTableRow | null>(
-        null,
-    );
+const selectedActivityType = ref<DataTableRow | null>(null);
 
-const formErrors =
-    ref<Errors>({});
+const formErrors = ref<Errors>({});
 
 const form = reactive({
     id: '',
@@ -117,9 +95,7 @@ const form = reactive({
     for_admin: true,
 });
 
-let requestController:
-    | AbortController
-    | null = null;
+let requestController: AbortController | null = null;
 
 const columns: DataTableColumn[] = [
     {
@@ -141,8 +117,7 @@ const columns: DataTableColumn[] = [
         header: 'Remarks',
         sortable: false,
         searchable: false,
-        class:
-            'min-w-[320px] whitespace-normal',
+        class: 'min-w-[320px] whitespace-normal',
     },
     {
         field: 'for_admin',
@@ -168,148 +143,90 @@ const actions: DataTableAction[] = [
     },
 ];
 
-const currentPage = computed(
-    () =>
-        Math.floor(
-            first.value /
-                perPage.value,
-        ) + 1,
+const currentPage = computed(() => Math.floor(first.value / perPage.value) + 1);
+
+const dialogTitle = computed(() =>
+    form.id ? 'Edit Activity Type' : 'Create Activity Type',
 );
 
-const dialogTitle = computed(
-    () =>
-        form.id
-            ? 'Edit Activity Type'
-            : 'Create Activity Type',
-);
-
-async function loadActivityTypes(
-    page = 1,
-): Promise<void> {
+async function loadActivityTypes(page = 1): Promise<void> {
     requestController?.abort();
 
-    const controller =
-        new AbortController();
+    const controller = new AbortController();
 
-    requestController =
-        controller;
+    requestController = controller;
 
     loading.value = true;
     errorMessage.value = '';
 
     try {
-        const response =
-            await axios.get<ApiListResponse>(
-                DATATABLE_URL,
-                {
-                    signal:
-                        controller.signal,
+        const response = await axios.get<ApiListResponse>(DATATABLE_URL, {
+            signal: controller.signal,
 
-                    params: {
-                        page,
-                        per_page:
-                            perPage.value,
-                        search:
-                            search.value,
-                        sort_field:
-                            sortField.value,
-                        sort_direction:
-                            sortDirection.value,
-                    },
+            params: {
+                page,
+                per_page: perPage.value,
+                search: search.value,
+                sort_field: sortField.value,
+                sort_direction: sortDirection.value,
+            },
 
-                    ...requestConfig(),
-                },
-            );
+            ...requestConfig(),
+        });
 
-        activityTypes.value =
-            response.data.data;
+        activityTypes.value = response.data.data;
 
-        totalRecords.value =
-            response.data.meta.total;
+        totalRecords.value = response.data.meta.total;
 
-        perPage.value =
-            response.data.meta
-                .perPage;
+        perPage.value = response.data.meta.perPage;
 
         first.value =
-            (
-                response.data.meta
-                    .currentPage -
-                1
-            ) *
-            response.data.meta
-                .perPage;
+            (response.data.meta.currentPage - 1) * response.data.meta.perPage;
     } catch (error: unknown) {
-        if (
-            isCanceled(
-                error,
-            )
-        ) {
+        if (isCanceled(error)) {
             return;
         }
 
         activityTypes.value = [];
         totalRecords.value = 0;
 
-        errorMessage.value =
-            getErrorMessage(
-                error,
-                'Unable to load activity types.',
-            );
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to load activity types.',
+        );
     } finally {
-        if (
-            requestController ===
-            controller
-        ) {
+        if (requestController === controller) {
             loading.value = false;
         }
     }
 }
 
-function handlePage(
-    event: PageEvent,
-): void {
-    perPage.value =
-        event.rows;
+function handlePage(event: PageEvent): void {
+    perPage.value = event.rows;
 
-    first.value =
-        event.first;
+    first.value = event.first;
 
-    void loadActivityTypes(
-        event.page + 1,
-    );
+    void loadActivityTypes(event.page + 1);
 }
 
-function handleSort(
-    event: SortEvent,
-): void {
-    sortField.value =
-        event.sortField ||
-        'code_activity';
+function handleSort(event: SortEvent): void {
+    sortField.value = event.sortField || 'code_activity';
 
-    sortDirection.value =
-        event.sortOrder === -1
-            ? 'desc'
-            : 'asc';
+    sortDirection.value = event.sortOrder === -1 ? 'desc' : 'asc';
 
     first.value = 0;
 
     void loadActivityTypes(1);
 }
 
-function handleSearch(
-    value: string,
-): void {
+function handleSearch(value: string): void {
     search.value = value;
     first.value = 0;
 
     void loadActivityTypes(1);
 }
 
-function handleAction(
-    action: string,
-    row: DataTableRow,
-): void {
+function handleAction(action: string, row: DataTableRow): void {
     if (action === 'edit') {
         openEdit(row);
 
@@ -317,159 +234,100 @@ function handleAction(
     }
 
     if (action === 'delete') {
-        selectedActivityType.value =
-            row;
+        selectedActivityType.value = row;
 
-        deleteVisible.value =
-            true;
+        deleteVisible.value = true;
     }
 }
 
 function openCreate(): void {
     resetForm();
 
-    dialogVisible.value =
-        true;
+    dialogVisible.value = true;
 }
 
-function openEdit(
-    row: DataTableRow,
-): void {
+function openEdit(row: DataTableRow): void {
     formErrors.value = {};
 
-    form.id =
-        String(row.id ?? '');
+    form.id = String(row.id ?? '');
 
-    form.code_activity =
-        String(
-            row.code_activity ?? '',
-        );
+    form.code_activity = String(row.code_activity ?? '');
 
-    form.desc_activity =
-        String(
-            row.desc_activity ?? '',
-        );
+    form.desc_activity = String(row.desc_activity ?? '');
 
-    form.activity_remarks =
-        String(
-            row.activity_remarks ?? '',
-        );
+    form.activity_remarks = String(row.activity_remarks ?? '');
 
-    form.for_admin =
-        String(
-            row.for_admin ?? 'N',
-        ) === 'Y';
+    form.for_admin = String(row.for_admin ?? 'N') === 'Y';
 
-    dialogVisible.value =
-        true;
+    dialogVisible.value = true;
 }
 
 async function saveActivityType(): Promise<void> {
     formErrors.value = {};
     errorMessage.value = '';
 
-    if (
-        !form.code_activity.trim()
-    ) {
-        formErrors.value.code_activity =
-            'Code is required.';
+    if (!form.code_activity.trim()) {
+        formErrors.value.code_activity = 'Code is required.';
     }
 
-    if (
-        !form.desc_activity.trim()
-    ) {
-        formErrors.value.desc_activity =
-            'Description is required.';
+    if (!form.desc_activity.trim()) {
+        formErrors.value.desc_activity = 'Description is required.';
     }
 
-    if (
-        Object.keys(
-            formErrors.value,
-        ).length
-    ) {
+    if (Object.keys(formErrors.value).length) {
         return;
     }
 
     saving.value = true;
 
-    const wasNew =
-        !form.id;
+    const wasNew = !form.id;
 
     try {
         const payload = {
-            code_activity:
-                form.code_activity.trim(),
-            desc_activity:
-                form.desc_activity.trim(),
-            activity_remarks:
-                form.activity_remarks.trim()
-                || null,
-            for_admin:
-                form.for_admin
-                    ? 'Y'
-                    : 'N',
+            code_activity: form.code_activity.trim(),
+            desc_activity: form.desc_activity.trim(),
+            activity_remarks: form.activity_remarks.trim() || null,
+            for_admin: form.for_admin ? 'Y' : 'N',
         };
 
-        const response =
-            wasNew
-                ? await axios.post<{
-                      id: string;
-                      message: string;
-                  }>(
-                      API_BASE,
-                      payload,
-                      requestConfig(),
-                  )
-                : await axios.put<{
-                      id: string;
-                      message: string;
-                  }>(
-                      `${API_BASE}/${encodeURIComponent(
-                          form.id,
-                      )}`,
-                      payload,
-                      requestConfig(),
-                  );
+        const response = wasNew
+            ? await axios.post<{
+                  id: string;
+                  message: string;
+              }>(API_BASE, payload, requestConfig())
+            : await axios.put<{
+                  id: string;
+                  message: string;
+              }>(
+                  `${API_BASE}/${encodeURIComponent(form.id)}`,
+                  payload,
+                  requestConfig(),
+              );
 
-        form.id =
-            response.data.id;
+        form.id = response.data.id;
 
         toast.add({
             severity: 'success',
-            summary: wasNew
-                ? 'Activity Type Created'
-                : 'Activity Type Updated',
-            detail:
-                response.data.message,
+            summary: wasNew ? 'Activity Type Created' : 'Activity Type Updated',
+            detail: response.data.message,
             life: 4000,
         });
 
-        await loadActivityTypes(
-            wasNew
-                ? 1
-                : currentPage.value,
-        );
+        await loadActivityTypes(wasNew ? 1 : currentPage.value);
     } catch (error: unknown) {
-        formErrors.value =
-            getValidationErrors(
-                error,
-            );
+        formErrors.value = getValidationErrors(error);
 
-        errorMessage.value =
-            getErrorMessage(
-                error,
-                'Unable to save the activity type.',
-            );
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to save the activity type.',
+        );
     } finally {
         saving.value = false;
     }
 }
 
 async function deleteActivityType(): Promise<void> {
-    const id = String(
-        selectedActivityType.value
-            ?.id ?? '',
-    );
+    const id = String(selectedActivityType.value?.id ?? '');
 
     if (!id) {
         return;
@@ -479,182 +337,111 @@ async function deleteActivityType(): Promise<void> {
     errorMessage.value = '';
 
     try {
-        const response =
-            await axios.delete<{
-                message: string;
-            }>(
-                `${API_BASE}/${encodeURIComponent(
-                    id,
-                )}`,
-                requestConfig(),
-            );
+        const response = await axios.delete<{
+            message: string;
+        }>(`${API_BASE}/${encodeURIComponent(id)}`, requestConfig());
 
-        deleteVisible.value =
-            false;
+        deleteVisible.value = false;
 
-        selectedActivityType.value =
-            null;
+        selectedActivityType.value = null;
 
         toast.add({
             severity: 'success',
-            summary:
-                'Activity Type Deleted',
-            detail:
-                response.data.message,
+            summary: 'Activity Type Deleted',
+            detail: response.data.message,
             life: 4000,
         });
 
         await reloadCurrentPage();
     } catch (error: unknown) {
-        errorMessage.value =
-            getErrorMessage(
-                error,
-                'Unable to delete the activity type.',
-            );
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to delete the activity type.',
+        );
     } finally {
         deleting.value = false;
     }
 }
 
 function resetForm(): void {
-    Object.assign(
-        form,
-        {
-            id: '',
-            code_activity: '',
-            desc_activity: '',
-            activity_remarks: '',
-            for_admin: true,
-        },
-    );
+    Object.assign(form, {
+        id: '',
+        code_activity: '',
+        desc_activity: '',
+        activity_remarks: '',
+        for_admin: true,
+    });
 
     formErrors.value = {};
 }
 
 async function reloadCurrentPage(): Promise<void> {
-    await loadActivityTypes(
-        currentPage.value,
-    );
+    await loadActivityTypes(currentPage.value);
 
-    if (
-        !activityTypes.value.length
-        &&
-        currentPage.value > 1
-    ) {
-        await loadActivityTypes(
-            currentPage.value - 1,
-        );
+    if (!activityTypes.value.length && currentPage.value > 1) {
+        await loadActivityTypes(currentPage.value - 1);
     }
 }
 
 function requestConfig() {
     return {
         headers: {
-            Accept:
-                'application/json',
-            'X-Requested-With':
-                'XMLHttpRequest',
+            Accept: 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
         },
 
         withCredentials: true,
     };
 }
 
-function isCanceled(
-    error: unknown,
-): boolean {
+function isCanceled(error: unknown): boolean {
     return (
-        axios.isCancel(error)
-        ||
-        (
-            axios.isAxiosError(
-                error,
-            )
-            &&
-            error.code ===
-                'ERR_CANCELED'
-        )
+        axios.isCancel(error) ||
+        (axios.isAxiosError(error) && error.code === 'ERR_CANCELED')
     );
 }
 
-function getErrorMessage(
-    error: unknown,
-    fallback: string,
-): string {
-    if (
-        !axios.isAxiosError(
-            error,
-        )
-    ) {
+function getErrorMessage(error: unknown, fallback: string): string {
+    if (!axios.isAxiosError(error)) {
         return fallback;
     }
 
     return (
         (
-            error.response
-                ?.data as
+            error.response?.data as
                 | {
                       message?: string;
                   }
                 | undefined
-        )?.message
-        ||
-        fallback
+        )?.message || fallback
     );
 }
 
-function getValidationErrors(
-    error: unknown,
-): Errors {
-    if (
-        !axios.isAxiosError(
-            error,
-        )
-    ) {
+function getValidationErrors(error: unknown): Errors {
+    if (!axios.isAxiosError(error)) {
         return {};
     }
 
     const source =
         (
-            error.response
-                ?.data as
+            error.response?.data as
                 | {
-                      errors?: Record<
-                          string,
-                          string[]
-                      >;
+                      errors?: Record<string, string[]>;
                   }
                 | undefined
-        )?.errors
-        ?? {};
+        )?.errors ?? {};
 
     return Object.fromEntries(
-        Object.entries(
-            source,
-        ).map(
-            ([
-                key,
-                messages,
-            ]) => [
-                key,
-                messages[0]
-                ?? 'Invalid value.',
-            ],
-        ),
+        Object.entries(source).map(([key, messages]) => [
+            key,
+            messages[0] ?? 'Invalid value.',
+        ]),
     );
 }
 
-onMounted(
-    () =>
-        void loadActivityTypes(
-            1,
-        ),
-);
+onMounted(() => void loadActivityTypes(1));
 
-onBeforeUnmount(
-    () =>
-        requestController?.abort(),
-);
+onBeforeUnmount(() => requestController?.abort());
 </script>
 
 <template>
@@ -711,10 +498,7 @@ onBeforeUnmount(
             </template>
 
             <template #cell-code_activity="{ value }">
-                
-                <span
-                    class="font-semibold text-slate-700"
-                >
+                <span class="font-semibold text-slate-700">
                     {{ value || '—' }}
                 </span>
             </template>
@@ -725,40 +509,23 @@ onBeforeUnmount(
                         class="pi pi-list-check mt-0.5 shrink-0 text-green-500"
                     ></i>
 
-                    <span
-                        class="font-medium text-slate-700"
-                    >
+                    <span class="font-medium text-slate-700">
                         {{ value || '—' }}
                     </span>
                 </div>
             </template>
 
             <template #cell-activity_remarks="{ value }">
-                <span
-                    class="whitespace-normal text-sm text-slate-600"
-                >
-                
+                <span class="text-sm whitespace-normal text-slate-600">
                     {{ value || '—' }}
                 </span>
             </template>
 
             <template #cell-for_admin="{ value }">
                 <PrimeTag
-                    :value="
-                        value === 'Y'
-                            ? 'Yes'
-                            : 'No'
-                    "
-                    :severity="
-                        value === 'Y'
-                            ? 'warn'
-                            : 'secondary'
-                    "
-                    :icon="
-                        value === 'Y'
-                            ? 'pi pi-lock'
-                            : 'pi pi-users'
-                    "
+                    :value="value === 'Y' ? 'Yes' : 'No'"
+                    :severity="value === 'Y' ? 'warn' : 'secondary'"
+                    :icon="value === 'Y' ? 'pi pi-lock' : 'pi pi-users'"
                     rounded
                 />
             </template>
@@ -772,42 +539,25 @@ onBeforeUnmount(
             :draggable="false"
             class="w-[min(96vw,820px)]"
         >
-            <div
-                class="grid gap-4 sm:grid-cols-2"
-            >
+            <div class="grid gap-4 sm:grid-cols-2">
                 <div>
                     <label
                         class="mb-2 block text-sm font-semibold text-slate-700"
                     >
                         Code
-                        <span
-                            class="text-red-500"
-                        >
-                            *
-                        </span>
+                        <span class="text-red-500"> * </span>
                     </label>
 
                     <InputText
                         v-model="form.code_activity"
                         class="w-full"
                         maxlength="10"
-                        :invalid="
-                            Boolean(
-                                formErrors.code_activity,
-                            )
-                        "
+                        :invalid="Boolean(formErrors.code_activity)"
                         :disabled="saving"
                     />
 
-                    <small
-                        v-if="
-                            formErrors.code_activity
-                        "
-                        class="text-red-500"
-                    >
-                        {{
-                            formErrors.code_activity
-                        }}
+                    <small v-if="formErrors.code_activity" class="text-red-500">
+                        {{ formErrors.code_activity }}
                     </small>
                 </div>
 
@@ -816,40 +566,23 @@ onBeforeUnmount(
                         class="mb-2 block text-sm font-semibold text-slate-700"
                     >
                         Activity Name
-                        <span
-                            class="text-red-500"
-                        >
-                            *
-                        </span>
+                        <span class="text-red-500"> * </span>
                     </label>
 
                     <InputText
                         v-model="form.desc_activity"
                         class="w-full"
                         maxlength="100"
-                        :invalid="
-                            Boolean(
-                                formErrors.desc_activity,
-                            )
-                        "
+                        :invalid="Boolean(formErrors.desc_activity)"
                         :disabled="saving"
                     />
 
-                    <small
-                        v-if="
-                            formErrors.desc_activity
-                        "
-                        class="text-red-500"
-                    >
-                        {{
-                            formErrors.desc_activity
-                        }}
+                    <small v-if="formErrors.desc_activity" class="text-red-500">
+                        {{ formErrors.desc_activity }}
                     </small>
                 </div>
 
-                <div
-                    class="sm:col-span-2"
-                >
+                <div class="sm:col-span-2">
                     <label
                         class="mb-2 block text-sm font-semibold text-slate-700"
                     >
@@ -861,23 +594,15 @@ onBeforeUnmount(
                         rows="4"
                         auto-resize
                         class="w-full"
-                        :invalid="
-                            Boolean(
-                                formErrors.activity_remarks,
-                            )
-                        "
+                        :invalid="Boolean(formErrors.activity_remarks)"
                         :disabled="saving"
                     />
 
                     <small
-                        v-if="
-                            formErrors.activity_remarks
-                        "
+                        v-if="formErrors.activity_remarks"
                         class="text-red-500"
                     >
-                        {{
-                            formErrors.activity_remarks
-                        }}
+                        {{ formErrors.activity_remarks }}
                     </small>
                 </div>
 
@@ -898,10 +623,9 @@ onBeforeUnmount(
                             For Admin Only
                         </label>
 
-                        <p
-                            class="mt-0.5 text-xs text-slate-500"
-                        >
-                            When enabled, this activity type is restricted to administrator use.
+                        <p class="mt-0.5 text-xs text-slate-500">
+                            When enabled, this activity type is restricted to
+                            administrator use.
                         </p>
                     </div>
                 </div>
@@ -914,10 +638,7 @@ onBeforeUnmount(
                     severity="secondary"
                     outlined
                     :disabled="saving"
-                    @click="
-                        dialogVisible =
-                            false
-                    "
+                    @click="dialogVisible = false"
                 />
 
                 <Button
@@ -937,16 +658,14 @@ onBeforeUnmount(
             :draggable="false"
             class="w-[min(92vw,520px)]"
         >
-                <div
-                    class="w-full rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-700"
-                >
+            <div
+                class="w-full rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-700"
+            >
                 Are you sure you want to delete
                 <strong>
                     {{
-                        selectedActivityType?.desc_activity
-                        ||
-                        selectedActivityType?.code_activity
-                        ||
+                        selectedActivityType?.desc_activity ||
+                        selectedActivityType?.code_activity ||
                         'this activity type'
                     }}
                 </strong>
@@ -959,10 +678,7 @@ onBeforeUnmount(
                     severity="secondary"
                     outlined
                     :disabled="deleting"
-                    @click="
-                        deleteVisible =
-                            false
-                    "
+                    @click="deleteVisible = false"
                 />
 
                 <Button

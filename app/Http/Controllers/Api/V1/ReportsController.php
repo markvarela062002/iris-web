@@ -39,32 +39,28 @@ class ReportsController extends Controller
             2020,
             2032,
         );
+
         return response()->json([
             'reports' => [
                 [
                     'value' => 1,
-                    'label' =>
-                        'Percent Deployment',
+                    'label' => 'Percent Deployment',
                 ],
                 [
                     'value' => 2,
-                    'label' =>
-                        'Percent Deployment within 18 Months',
+                    'label' => 'Percent Deployment within 18 Months',
                 ],
                 [
                     'value' => 3,
-                    'label' =>
-                        'Activities Summary',
+                    'label' => 'Activities Summary',
                 ],
                 [
                     'value' => 4,
-                    'label' =>
-                        'Wastage Distribution Summary',
+                    'label' => 'Wastage Distribution Summary',
                 ],
                 [
                     'value' => 5,
-                    'label' =>
-                        'Wastages and CCI',
+                    'label' => 'Wastages and CCI',
                 ],
             ],
 
@@ -176,10 +172,9 @@ class ReportsController extends Controller
                 $db,
             ),
 
-            4 =>
-                $this->wastageDistribution(
-                    $db,
-                ),
+            4 => $this->wastageDistribution(
+                $db,
+            ),
 
             5 => $this->wastageAndCci(
                 $db,
@@ -348,67 +343,52 @@ class ReportsController extends Controller
 
         return response()->json([
             'report' => [
-                'type' =>
-                    $within18Months
+                'type' => $within18Months
                         ? 2
                         : 1,
 
-                'title' =>
-                    $within18Months
+                'title' => $within18Months
                         ? 'Percent Deployment within 18 Months'
                         : 'Percent Deployment',
             ],
 
             'columns' => [
                 [
-                    'field' =>
-                        'registered',
-                    'header' =>
-                        'Total Registered for CCI Year',
+                    'field' => 'registered',
+                    'header' => 'Total Registered for CCI Year',
                 ],
                 [
                     'field' => 'cci',
-                    'header' =>
-                        'Completed Classroom Instruction',
+                    'header' => 'Completed Classroom Instruction',
                 ],
                 [
-                    'field' =>
-                        'wastage',
-                    'header' =>
-                        'Wastage (Deceased/Disabled/Sick/Land Based)',
+                    'field' => 'wastage',
+                    'header' => 'Wastage (Deceased/Disabled/Sick/Land Based)',
                 ],
                 [
-                    'field' =>
-                        'deployed',
-                    'header' =>
-                        'Deployed',
+                    'field' => 'deployed',
+                    'header' => 'Deployed',
                 ],
                 [
-                    'field' =>
-                        'percentage',
-                    'header' =>
-                        'Percent Deployment',
+                    'field' => 'percentage',
+                    'header' => 'Percent Deployment',
                 ],
             ],
 
             'data' => [
                 [
-                    'registered' =>
-                        $registered,
+                    'registered' => $registered,
 
                     'cci' => $cci,
 
-                    'wastage' =>
-                        $wastage,
+                    'wastage' => $wastage,
 
-                    'deployed' =>
-                        $deployed,
+                    'deployed' => $deployed,
 
-                    'percentage' =>
-                        number_format(
-                            $percentage,
-                            2,
-                        ).'%',
+                    'percentage' => number_format(
+                        $percentage,
+                        2,
+                    ).'%',
                 ],
             ],
         ]);
@@ -432,17 +412,15 @@ class ReportsController extends Controller
         $row = [];
 
         foreach (
-            $activities as $index =>
-                $activity
+            $activities as $index => $activity
         ) {
             $field =
                 'activity_'.$index;
 
             $columns[] = [
                 'field' => $field,
-                'header' =>
-                    $activity
-                        ->desc_activity,
+                'header' => $activity
+                    ->desc_activity,
             ];
 
             $row[$field] = $db
@@ -460,8 +438,7 @@ class ReportsController extends Controller
         return response()->json([
             'report' => [
                 'type' => 3,
-                'title' =>
-                    'Activities Summary',
+                'title' => 'Activities Summary',
             ],
 
             'columns' => $columns,
@@ -495,17 +472,15 @@ class ReportsController extends Controller
         $row = [];
 
         foreach (
-            $activities as $index =>
-                $activity
+            $activities as $index => $activity
         ) {
             $field =
                 'wastage_'.$index;
 
             $columns[] = [
                 'field' => $field,
-                'header' =>
-                    $activity
-                        ->desc_activity,
+                'header' => $activity
+                    ->desc_activity,
             ];
 
             $row[$field] = $db
@@ -523,8 +498,7 @@ class ReportsController extends Controller
         return response()->json([
             'report' => [
                 'type' => 4,
-                'title' =>
-                    'Wastage Distribution Summary',
+                'title' => 'Wastage Distribution Summary',
             ],
 
             'columns' => $columns,
@@ -656,32 +630,25 @@ class ReportsController extends Controller
         return response()->json([
             'report' => [
                 'type' => 5,
-                'title' =>
-                    'Wastages and CCI',
+                'title' => 'Wastages and CCI',
             ],
 
             'columns' => [
                 [
-                    'field' =>
-                        'before_cci',
-                    'header' =>
-                        'Wastage Before CCI',
+                    'field' => 'before_cci',
+                    'header' => 'Wastage Before CCI',
                 ],
                 [
-                    'field' =>
-                        'after_cci',
-                    'header' =>
-                        'Wastage After CCI',
+                    'field' => 'after_cci',
+                    'header' => 'Wastage After CCI',
                 ],
             ],
 
             'data' => [
                 [
-                    'before_cci' =>
-                        $beforeCci,
+                    'before_cci' => $beforeCci,
 
-                    'after_cci' =>
-                        $afterCci,
+                    'after_cci' => $afterCci,
                 ],
             ],
         ]);
@@ -740,8 +707,7 @@ class ReportsController extends Controller
 
         if ($schoolCode === '') {
             return response()->json([
-                'message' =>
-                    'No school database has been selected.',
+                'message' => 'No school database has been selected.',
             ], Response::HTTP_FORBIDDEN);
         }
 
@@ -752,8 +718,7 @@ class ReportsController extends Controller
 
         if (! is_array($schools)) {
             return response()->json([
-                'message' =>
-                    'School configuration is unavailable.',
+                'message' => 'School configuration is unavailable.',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
@@ -763,10 +728,8 @@ class ReportsController extends Controller
 
         if (! is_array($school)) {
             return response()->json([
-                'message' =>
-                    'The selected school is not configured.',
-                'schoolCode' =>
-                    $schoolCode,
+                'message' => 'The selected school is not configured.',
+                'schoolCode' => $schoolCode,
             ], Response::HTTP_FORBIDDEN);
         }
 
@@ -779,14 +742,12 @@ class ReportsController extends Controller
             $connection === ''
         ) {
             return response()->json([
-                'message' =>
-                    'The school database connection is missing.',
+                'message' => 'The school database connection is missing.',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
         config([
-            'database.default' =>
-                $connection,
+            'database.default' => $connection,
         ]);
 
         DB::setDefaultConnection(

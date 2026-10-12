@@ -6,20 +6,10 @@ import Dialog from 'primevue/dialog';
 import Message from 'primevue/message';
 import Tag from 'primevue/tag';
 import Textarea from 'primevue/textarea';
-import {
-    computed,
-    onBeforeUnmount,
-    onMounted,
-    reactive,
-    ref,
-} from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 
 import Datatable from '@/components/Datatable.vue';
-import type {
-    DataTableAction,
-    DataTableColumn,
-    DataTableRow,
-} from '@/types';
+import type { DataTableAction, DataTableColumn, DataTableRow } from '@/types';
 
 type PracticalRow = DataTableRow & {
     id: string;
@@ -104,14 +94,11 @@ const sortOrder = ref(-1);
 const remarks = reactive<Record<string, string>>({});
 const pendingFiles = reactive<Record<string, File | null>>({});
 
-const evidenceInputs =
-    reactive<Record<string, HTMLInputElement | null>>({});
+const evidenceInputs = reactive<Record<string, HTMLInputElement | null>>({});
 
-const evidencePreviewUrls =
-    reactive<Record<string, string>>({});
+const evidencePreviewUrls = reactive<Record<string, string>>({});
 
-const draggingEvidence =
-    reactive<Record<string, boolean>>({});
+const draggingEvidence = reactive<Record<string, boolean>>({});
 
 const evidenceAccept =
     '.jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv';
@@ -173,9 +160,7 @@ const actions: DataTableAction[] = [
     },
 ];
 
-const currentPage = computed(
-    () => Math.floor(first.value / rows.value) + 1,
-);
+const currentPage = computed(() => Math.floor(first.value / rows.value) + 1);
 
 function statusSeverity(status: string) {
     if (status === 'Completed') {
@@ -220,10 +205,7 @@ function formatDate(value: string | null) {
     }).format(date);
 }
 
-function extractError(
-    error: unknown,
-    fallback: string,
-) {
+function extractError(error: unknown, fallback: string) {
     if (axios.isAxiosError(error)) {
         const data = error.response?.data as
             | {
@@ -247,27 +229,19 @@ async function loadAssessments() {
     errorMessage.value = '';
 
     try {
-        const response = await axios.get(
-            '/api/v1/student/practical-internal',
-            {
-                params: {
-                    page: currentPage.value,
-                    per_page: rows.value,
-                    search: search.value,
-                    sort_field: sortField.value,
-                    sort_direction:
-                        sortOrder.value === 1
-                            ? 'asc'
-                            : 'desc',
-                },
+        const response = await axios.get('/api/v1/student/practical-internal', {
+            params: {
+                page: currentPage.value,
+                per_page: rows.value,
+                search: search.value,
+                sort_field: sortField.value,
+                sort_direction: sortOrder.value === 1 ? 'asc' : 'desc',
             },
-        );
+        });
 
-        assessments.value =
-            response.data.data ?? [];
+        assessments.value = response.data.data ?? [];
 
-        totalRecords.value =
-            response.data.meta?.total ?? 0;
+        totalRecords.value = response.data.meta?.total ?? 0;
     } catch (error) {
         errorMessage.value = extractError(
             error,
@@ -278,9 +252,7 @@ async function loadAssessments() {
     }
 }
 
-async function openAssessment(
-    row: PracticalRow,
-) {
+async function openAssessment(row: PracticalRow) {
     detailVisible.value = true;
     detailLoading.value = true;
     selectedAssessment.value = null;
@@ -291,15 +263,10 @@ async function openAssessment(
             `/api/v1/student/practical-internal/${row.id}`,
         );
 
-        selectedAssessment.value =
-            response.data.data;
+        selectedAssessment.value = response.data.data;
 
-        for (
-            const item of
-            selectedAssessment.value?.items ?? []
-        ) {
-            remarks[item.id] =
-                item.remarks ?? '';
+        for (const item of selectedAssessment.value?.items ?? []) {
+            remarks[item.id] = item.remarks ?? '';
 
             clearPendingEvidence(item.id);
         }
@@ -315,38 +282,25 @@ async function openAssessment(
     }
 }
 
-function handleAction(
-    action: string,
-    row: DataTableRow,
-): void {
+function handleAction(action: string, row: DataTableRow): void {
     if (action !== 'view') {
         return;
     }
 
-    void openAssessment(
-        row as PracticalRow,
-    );
+    void openAssessment(row as PracticalRow);
 }
 
-function handlePage(event: {
-    first: number;
-    rows: number;
-}) {
+function handlePage(event: { first: number; rows: number }) {
     first.value = event.first;
     rows.value = event.rows;
 
     void loadAssessments();
 }
 
-function handleSort(event: {
-    sortField?: string;
-    sortOrder?: number;
-}) {
-    sortField.value =
-        event.sortField || 'due_date';
+function handleSort(event: { sortField?: string; sortOrder?: number }) {
+    sortField.value = event.sortField || 'due_date';
 
-    sortOrder.value =
-        event.sortOrder || -1;
+    sortOrder.value = event.sortOrder || -1;
 
     first.value = 0;
 
@@ -360,33 +314,21 @@ function handleSearch(value: string) {
     void loadAssessments();
 }
 
-function setEvidenceInput(
-    itemId: string,
-    element: unknown,
-) {
+function setEvidenceInput(itemId: string, element: unknown) {
     evidenceInputs[itemId] =
-        element instanceof HTMLInputElement
-            ? element
-            : null;
+        element instanceof HTMLInputElement ? element : null;
 }
 
-function openEvidencePicker(
-    itemId: string,
-) {
-    if (
-        savingItemId.value === itemId
-    ) {
+function openEvidencePicker(itemId: string) {
+    if (savingItemId.value === itemId) {
         return;
     }
 
     evidenceInputs[itemId]?.click();
 }
 
-function clearEvidencePreview(
-    itemId: string,
-) {
-    const url =
-        evidencePreviewUrls[itemId];
+function clearEvidencePreview(itemId: string) {
+    const url = evidencePreviewUrls[itemId];
 
     if (!url) {
         return;
@@ -394,55 +336,32 @@ function clearEvidencePreview(
 
     URL.revokeObjectURL(url);
 
-    delete evidencePreviewUrls[
-        itemId
-    ];
+    delete evidencePreviewUrls[itemId];
 }
 
-function getFileExtension(
-    file: File,
-) {
-    return (
-        file.name
-            .split('.')
-            .pop()
-            ?.toLowerCase() ?? ''
-    );
+function getFileExtension(file: File) {
+    return file.name.split('.').pop()?.toLowerCase() ?? '';
 }
 
-function isImageFile(
-    file: File | null | undefined,
-) {
+function isImageFile(file: File | null | undefined) {
     if (!file) {
         return false;
     }
 
-    const extension =
-        getFileExtension(file);
+    const extension = getFileExtension(file);
 
     return (
-        file.type.startsWith(
-            'image/',
-        ) ||
-        [
-            'jpg',
-            'jpeg',
-            'png',
-            'gif',
-            'webp',
-        ].includes(extension)
+        file.type.startsWith('image/') ||
+        ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)
     );
 }
 
-function selectedEvidenceKind(
-    file: File | null | undefined,
-) {
+function selectedEvidenceKind(file: File | null | undefined) {
     if (!file) {
         return 'File';
     }
 
-    const extension =
-        getFileExtension(file);
+    const extension = getFileExtension(file);
 
     if (isImageFile(file)) {
         return 'Image';
@@ -452,19 +371,11 @@ function selectedEvidenceKind(
         return 'PDF';
     }
 
-    if (
-        ['doc', 'docx'].includes(
-            extension,
-        )
-    ) {
+    if (['doc', 'docx'].includes(extension)) {
         return 'Document';
     }
 
-    if (
-        ['xls', 'xlsx'].includes(
-            extension,
-        )
-    ) {
+    if (['xls', 'xlsx'].includes(extension)) {
         return 'Spreadsheet';
     }
 
@@ -479,15 +390,12 @@ function selectedEvidenceKind(
     return 'File';
 }
 
-function selectedEvidenceIcon(
-    file: File | null | undefined,
-) {
+function selectedEvidenceIcon(file: File | null | undefined) {
     if (!file) {
         return 'pi pi-file';
     }
 
-    const extension =
-        getFileExtension(file);
+    const extension = getFileExtension(file);
 
     if (isImageFile(file)) {
         return 'pi pi-image';
@@ -497,28 +405,18 @@ function selectedEvidenceIcon(
         return 'pi pi-file-pdf';
     }
 
-    if (
-        ['xls', 'xlsx', 'csv'].includes(
-            extension,
-        )
-    ) {
+    if (['xls', 'xlsx', 'csv'].includes(extension)) {
         return 'pi pi-file-excel';
     }
 
-    if (
-        ['doc', 'docx', 'txt'].includes(
-            extension,
-        )
-    ) {
+    if (['doc', 'docx', 'txt'].includes(extension)) {
         return 'pi pi-file';
     }
 
     return 'pi pi-paperclip';
 }
 
-function selectedEvidenceSize(
-    file: File | null | undefined,
-) {
+function selectedEvidenceSize(file: File | null | undefined) {
     if (!file) {
         return '';
     }
@@ -529,39 +427,24 @@ function selectedEvidenceSize(
         return `${kb.toFixed(1)} KB`;
     }
 
-    return `${(
-        kb / 1024
-    ).toFixed(2)} MB`;
+    return `${(kb / 1024).toFixed(2)} MB`;
 }
 
-function applyEvidenceFile(
-    itemId: string,
-    file: File | null,
-) {
+function applyEvidenceFile(itemId: string, file: File | null) {
     if (!file) {
         return;
     }
 
-    const extension =
-        getFileExtension(file);
+    const extension = getFileExtension(file);
 
-    if (
-        !allowedEvidenceExtensions.has(
-            extension,
-        )
-    ) {
-        errorMessage.value =
-            'Unsupported evidence file type.';
+    if (!allowedEvidenceExtensions.has(extension)) {
+        errorMessage.value = 'Unsupported evidence file type.';
 
         return;
     }
 
-    if (
-        file.size >
-        evidenceMaxSize
-    ) {
-        errorMessage.value =
-            'Evidence files must not exceed 20 MB.';
+    if (file.size > evidenceMaxSize) {
+        errorMessage.value = 'Evidence files must not exceed 20 MB.';
 
         return;
     }
@@ -570,136 +453,85 @@ function applyEvidenceFile(
 
     clearEvidencePreview(itemId);
 
-    pendingFiles[itemId] =
-        file;
+    pendingFiles[itemId] = file;
 
     if (isImageFile(file)) {
-        evidencePreviewUrls[itemId] =
-            URL.createObjectURL(file);
+        evidencePreviewUrls[itemId] = URL.createObjectURL(file);
     }
 }
 
-function handleEvidenceInput(
-    itemId: string,
-    event: Event,
-) {
-    const input =
-        event.target as HTMLInputElement;
+function handleEvidenceInput(itemId: string, event: Event) {
+    const input = event.target as HTMLInputElement;
 
-    applyEvidenceFile(
-        itemId,
-        input.files?.[0] ?? null,
-    );
+    applyEvidenceFile(itemId, input.files?.[0] ?? null);
 }
 
-function handleEvidenceDragOver(
-    itemId: string,
-    event: DragEvent,
-) {
-    if (
-        savingItemId.value === itemId
-    ) {
+function handleEvidenceDragOver(itemId: string, event: DragEvent) {
+    if (savingItemId.value === itemId) {
         return;
     }
 
     event.preventDefault();
     event.stopPropagation();
 
-    draggingEvidence[itemId] =
-        true;
+    draggingEvidence[itemId] = true;
 
     if (event.dataTransfer) {
-        event.dataTransfer.dropEffect =
-            'copy';
+        event.dataTransfer.dropEffect = 'copy';
     }
 }
 
-function handleEvidenceDragLeave(
-    itemId: string,
-    event: DragEvent,
-) {
+function handleEvidenceDragLeave(itemId: string, event: DragEvent) {
     event.preventDefault();
     event.stopPropagation();
 
-    draggingEvidence[itemId] =
-        false;
+    draggingEvidence[itemId] = false;
 }
 
-function handleEvidenceDrop(
-    itemId: string,
-    event: DragEvent,
-) {
+function handleEvidenceDrop(itemId: string, event: DragEvent) {
     event.preventDefault();
     event.stopPropagation();
 
-    draggingEvidence[itemId] =
-        false;
+    draggingEvidence[itemId] = false;
 
-    if (
-        savingItemId.value === itemId
-    ) {
+    if (savingItemId.value === itemId) {
         return;
     }
 
-    applyEvidenceFile(
-        itemId,
-        event.dataTransfer
-            ?.files?.[0] ?? null,
-    );
+    applyEvidenceFile(itemId, event.dataTransfer?.files?.[0] ?? null);
 }
 
-function clearPendingEvidence(
-    itemId: string,
-) {
+function clearPendingEvidence(itemId: string) {
     clearEvidencePreview(itemId);
 
     pendingFiles[itemId] = null;
 
-    const input =
-        evidenceInputs[itemId];
+    const input = evidenceInputs[itemId];
 
     if (input) {
         input.value = '';
     }
 
-    draggingEvidence[itemId] =
-        false;
+    draggingEvidence[itemId] = false;
 }
 
-async function saveItem(
-    item: PracticalItem,
-) {
-    if (
-        !selectedAssessment.value
-            ?.is_editable
-    ) {
+async function saveItem(item: PracticalItem) {
+    if (!selectedAssessment.value?.is_editable) {
         return;
     }
 
-    savingItemId.value =
-        item.id;
+    savingItemId.value = item.id;
 
     errorMessage.value = '';
     successMessage.value = '';
 
     try {
-        const form =
-            new FormData();
+        const form = new FormData();
 
-        form.append(
-            'remarks',
-            remarks[item.id] ?? '',
-        );
+        form.append('remarks', remarks[item.id] ?? '');
 
-        if (
-            pendingFiles[item.id]
-        ) {
-            form.append(
-                'evidence',
-                pendingFiles[
-                    item.id
-                ] as File,
-            );
+        if (pendingFiles[item.id]) {
+            form.append('evidence', pendingFiles[item.id] as File);
         }
 
         await axios.post(
@@ -707,35 +539,22 @@ async function saveItem(
             form,
         );
 
-        successMessage.value =
-            'Item saved.';
+        successMessage.value = 'Item saved.';
 
-        clearPendingEvidence(
-            item.id,
-        );
+        clearPendingEvidence(item.id);
 
         await openAssessment({
-            id:
-                selectedAssessment
-                    .value.id,
+            id: selectedAssessment.value.id,
         } as PracticalRow);
     } catch (error) {
-        errorMessage.value =
-            extractError(
-                error,
-                'Unable to save this item.',
-            );
+        errorMessage.value = extractError(error, 'Unable to save this item.');
     } finally {
-        savingItemId.value =
-            null;
+        savingItemId.value = null;
     }
 }
 
 async function submitAssessment() {
-    if (
-        !selectedAssessment.value
-            ?.is_editable
-    ) {
+    if (!selectedAssessment.value?.is_editable) {
         return;
     }
 
@@ -748,25 +567,20 @@ async function submitAssessment() {
             `/api/v1/student/practical-internal/${selectedAssessment.value.id}/submit`,
         );
 
-        submitVisible.value =
-            false;
+        submitVisible.value = false;
 
-        detailVisible.value =
-            false;
+        detailVisible.value = false;
 
-        successMessage.value =
-            'Practical assessment submitted for grading.';
+        successMessage.value = 'Practical assessment submitted for grading.';
 
         await loadAssessments();
     } catch (error) {
-        errorMessage.value =
-            extractError(
-                error,
-                'Unable to submit this practical assessment.',
-            );
+        errorMessage.value = extractError(
+            error,
+            'Unable to submit this practical assessment.',
+        );
     } finally {
-        submitting.value =
-            false;
+        submitting.value = false;
     }
 }
 
@@ -775,23 +589,14 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-    for (
-        const itemId of
-        Object.keys(
-            evidencePreviewUrls,
-        )
-    ) {
-        clearEvidencePreview(
-            itemId,
-        );
+    for (const itemId of Object.keys(evidencePreviewUrls)) {
+        clearEvidencePreview(itemId);
     }
 });
 </script>
 
 <template>
-    <Head
-        title="Practical Assessments"
-    />
+    <Head title="Practical Assessments" />
 
     <div
         class="flex h-full min-h-0 flex-1 flex-col gap-4 overflow-y-auto bg-[#F8FAFC] p-4 lg:p-5"
@@ -800,9 +605,7 @@ onBeforeUnmount(() => {
             v-if="successMessage"
             severity="success"
             closable
-            @close="
-                successMessage = ''
-            "
+            @close="successMessage = ''"
         >
             {{ successMessage }}
         </Message>
@@ -811,9 +614,7 @@ onBeforeUnmount(() => {
             v-if="errorMessage"
             severity="error"
             closable
-            @close="
-                errorMessage = ''
-            "
+            @close="errorMessage = ''"
         >
             {{ errorMessage }}
         </Message>
@@ -835,33 +636,18 @@ onBeforeUnmount(() => {
             :data="assessments"
             :columns="columns"
             :actions="actions"
-            :total-records="
-                totalRecords
-            "
+            :total-records="totalRecords"
             :first="first"
             :rows="rows"
-            :rows-per-page-options="[
-                10,
-                20,
-                50,
-                100,
-            ]"
+            :rows-per-page-options="[10, 20, 50, 100]"
             @page="handlePage"
             @sort="handleSort"
             @search="handleSearch"
             @action="handleAction"
         >
-            <template
-                #cell-title_assess="{
-                    data,
-                }"
-            >
-                <div
-                    class="min-w-0 space-y-2"
-                >
-                    <div
-                        class="flex items-start gap-2"
-                    >
+            <template #cell-title_assess="{ data }">
+                <div class="min-w-0 space-y-2">
+                    <div class="flex items-start gap-2">
                         <i
                             class="pi pi-clipboard mt-0.5 shrink-0 text-blue-500"
                         ></i>
@@ -869,26 +655,15 @@ onBeforeUnmount(() => {
                         <p
                             class="font-semibold break-words whitespace-normal text-slate-700"
                         >
-                            {{
-                                data.title_assess ||
-                                'No assessment title'
-                            }}
+                            {{ data.title_assess || 'No assessment title' }}
                         </p>
                     </div>
                 </div>
             </template>
 
-            <template
-                #cell-due_date="{
-                    data,
-                }"
-            >
-                <div
-                    class="space-y-2"
-                >
-                    <div
-                        class="flex items-center gap-2"
-                    >
+            <template #cell-due_date="{ data }">
+                <div class="space-y-2">
+                    <div class="flex items-center gap-2">
                         <Tag
                             value="Started"
                             severity="success"
@@ -896,19 +671,13 @@ onBeforeUnmount(() => {
                         />
 
                         <span
-                            class="whitespace-nowrap text-sm font-medium text-slate-600"
+                            class="text-sm font-medium whitespace-nowrap text-slate-600"
                         >
-                            {{
-                                formatDate(
-                                    data.from_date,
-                                )
-                            }}
+                            {{ formatDate(data.from_date) }}
                         </span>
                     </div>
 
-                    <div
-                        class="flex items-center gap-2"
-                    >
+                    <div class="flex items-center gap-2">
                         <Tag
                             value="Ended"
                             severity="danger"
@@ -916,55 +685,28 @@ onBeforeUnmount(() => {
                         />
 
                         <span
-                            class="whitespace-nowrap text-sm font-medium text-slate-600"
+                            class="text-sm font-medium whitespace-nowrap text-slate-600"
                         >
-                            {{
-                                formatDate(
-                                    data.due_date,
-                                )
-                            }}
+                            {{ formatDate(data.due_date) }}
                         </span>
                     </div>
                 </div>
             </template>
 
-            <template
-                #cell-assessor="{
-                    data,
-                }"
-            >
-                <div
-                    class="flex items-center gap-2"
-                >
-                    <i
-                        class="pi pi-user shrink-0 text-blue-500"
-                    ></i>
+            <template #cell-assessor="{ data }">
+                <div class="flex items-center gap-2">
+                    <i class="pi pi-user shrink-0 text-blue-500"></i>
 
-                    <span
-                        class="font-semibold text-slate-700"
-                    >
-                        {{
-                            data.assessor ||
-                            'Not assigned'
-                        }}
+                    <span class="font-semibold text-slate-700">
+                        {{ data.assessor || 'Not assigned' }}
                     </span>
                 </div>
             </template>
 
-            <template
-                #cell-status="{
-                    data,
-                }"
-            >
+            <template #cell-status="{ data }">
                 <Tag
-                    :value="
-                        data.status
-                    "
-                    :severity="
-                        statusSeverity(
-                            data.status,
-                        )
-                    "
+                    :value="data.status"
+                    :severity="statusSeverity(data.status)"
                     rounded
                 />
             </template>
@@ -972,41 +714,24 @@ onBeforeUnmount(() => {
     </div>
 
     <Dialog
-        v-model:visible="
-            detailVisible
-        "
+        v-model:visible="detailVisible"
         modal
         header="Practical Assessment"
         class="w-[96vw] max-w-6xl"
         :draggable="false"
     >
-        <div
-            v-if="detailLoading"
-            class="py-12 text-center text-slate-500"
-        >
+        <div v-if="detailLoading" class="py-12 text-center text-slate-500">
             <i class="pi pi-spin pi-spinner mr-2"></i>
-            Loading practical
-            assessment...
+            Loading practical assessment...
         </div>
 
-        <div
-            v-else-if="
-                selectedAssessment
-            "
-            class="space-y-5"
-        >
-            <div
-                class="rounded-xl border border-slate-200 bg-slate-50 p-4"
-            >
+        <div v-else-if="selectedAssessment" class="space-y-5">
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                 <div
                     class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between"
                 >
-                    <div
-                        class="min-w-0"
-                    >
-                        <div
-                            class="flex items-start gap-2"
-                        >
+                    <div class="min-w-0">
+                        <div class="flex items-start gap-2">
                             <i
                                 class="pi pi-clipboard mt-1 shrink-0 text-blue-500"
                             ></i>
@@ -1014,22 +739,14 @@ onBeforeUnmount(() => {
                             <h2
                                 class="text-xl font-semibold break-words text-slate-900"
                             >
-                                {{
-                                    selectedAssessment.title
-                                }}
+                                {{ selectedAssessment.title }}
                             </h2>
                         </div>
                     </div>
 
                     <Tag
-                        :value="
-                            selectedAssessment.status
-                        "
-                        :severity="
-                            statusSeverity(
-                                selectedAssessment.status,
-                            )
-                        "
+                        :value="selectedAssessment.status"
+                        :severity="statusSeverity(selectedAssessment.status)"
                         rounded
                     />
                 </div>
@@ -1041,16 +758,11 @@ onBeforeUnmount(() => {
                         <p
                             class="mb-2 text-xs font-semibold tracking-wide text-slate-400 uppercase"
                         >
-                            Assessment
-                            Period
+                            Assessment Period
                         </p>
 
-                        <div
-                            class="space-y-2"
-                        >
-                            <div
-                                class="flex items-center gap-2"
-                            >
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-2">
                                 <Tag
                                     value="Started"
                                     severity="success"
@@ -1061,16 +773,12 @@ onBeforeUnmount(() => {
                                     class="text-sm font-semibold whitespace-nowrap text-slate-700"
                                 >
                                     {{
-                                        formatDate(
-                                            selectedAssessment.from_date,
-                                        )
+                                        formatDate(selectedAssessment.from_date)
                                     }}
                                 </span>
                             </div>
 
-                            <div
-                                class="flex items-center gap-2"
-                            >
+                            <div class="flex items-center gap-2">
                                 <Tag
                                     value="Ended"
                                     severity="danger"
@@ -1081,9 +789,7 @@ onBeforeUnmount(() => {
                                     class="text-sm font-semibold whitespace-nowrap text-slate-700"
                                 >
                                     {{
-                                        formatDate(
-                                            selectedAssessment.due_date,
-                                        )
+                                        formatDate(selectedAssessment.due_date)
                                     }}
                                 </span>
                             </div>
@@ -1097,14 +803,8 @@ onBeforeUnmount(() => {
                             Submitted
                         </p>
 
-                        <p
-                            class="mt-2 text-sm font-semibold text-slate-700"
-                        >
-                            {{
-                                formatDate(
-                                    selectedAssessment.date_taken,
-                                )
-                            }}
+                        <p class="mt-2 text-sm font-semibold text-slate-700">
+                            {{ formatDate(selectedAssessment.date_taken) }}
                         </p>
                     </div>
 
@@ -1115,14 +815,8 @@ onBeforeUnmount(() => {
                             Assessed
                         </p>
 
-                        <p
-                            class="mt-2 text-sm font-semibold text-slate-700"
-                        >
-                            {{
-                                formatDate(
-                                    selectedAssessment.date_assessed,
-                                )
-                            }}
+                        <p class="mt-2 text-sm font-semibold text-slate-700">
+                            {{ formatDate(selectedAssessment.date_assessed) }}
                         </p>
                     </div>
 
@@ -1136,78 +830,48 @@ onBeforeUnmount(() => {
                         <p
                             class="mt-2 flex items-center gap-2 text-sm font-semibold text-slate-700"
                         >
-                            <i
-                                class="pi pi-user text-blue-500"
-                            ></i>
+                            <i class="pi pi-user text-blue-500"></i>
 
-                            {{
-                                selectedAssessment.assessor ||
-                                'Not assigned'
-                            }}
+                            {{ selectedAssessment.assessor || 'Not assigned' }}
                         </p>
                     </div>
                 </div>
             </div>
 
             <Message
-                v-if="
-                    selectedAssessment.is_pending
-                "
+                v-if="selectedAssessment.is_pending"
                 severity="warn"
                 :closable="false"
             >
-                This assessment is
-                locked while waiting
-                for assessor grading.
+                This assessment is locked while waiting for assessor grading.
             </Message>
 
             <Message
-                v-if="
-                    selectedAssessment.is_completed
-                "
+                v-if="selectedAssessment.is_completed"
                 severity="success"
                 :closable="false"
             >
-                This assessment has
-                been graded.
+                This assessment has been graded.
             </Message>
 
             <div
-                v-if="
-                    selectedAssessment.instructions
-                "
+                v-if="selectedAssessment.instructions"
                 class="rounded-xl border border-slate-200 bg-white p-4"
             >
-                <h3
-                    class="font-semibold text-slate-900"
-                >
-                    Instructions
-                </h3>
+                <h3 class="font-semibold text-slate-900">Instructions</h3>
 
-                <p
-                    class="mt-2 whitespace-pre-line text-sm text-slate-700"
-                >
-                    {{
-                        selectedAssessment.instructions
-                    }}
+                <p class="mt-2 text-sm whitespace-pre-line text-slate-700">
+                    {{ selectedAssessment.instructions }}
                 </p>
             </div>
 
             <div
-                v-if="
-                    selectedAssessment.reference_files.length
-                "
+                v-if="selectedAssessment.reference_files.length"
                 class="rounded-xl border border-slate-200 bg-white p-4"
             >
-                <h3
-                    class="font-semibold text-slate-900"
-                >
-                    Reference Files
-                </h3>
+                <h3 class="font-semibold text-slate-900">Reference Files</h3>
 
-                <div
-                    class="mt-3 flex flex-wrap gap-2"
-                >
+                <div class="mt-3 flex flex-wrap gap-2">
                     <Button
                         v-for="file in selectedAssessment.reference_files"
                         :key="file.id"
@@ -1225,82 +889,51 @@ onBeforeUnmount(() => {
             </div>
 
             <div
-                v-if="
-                    selectedAssessment.result
-                "
+                v-if="selectedAssessment.result"
                 class="rounded-xl border border-slate-200 bg-white p-4"
             >
-                <h3
-                    class="font-semibold text-slate-900"
-                >
-                    Assessment Result
-                </h3>
+                <h3 class="font-semibold text-slate-900">Assessment Result</h3>
 
-                <div
-                    class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
-                >
-                    <div
-                        class="rounded-lg bg-slate-50 p-3"
-                    >
+                <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <div class="rounded-lg bg-slate-50 p-3">
                         <p
                             class="text-xs font-semibold tracking-wide text-slate-400 uppercase"
                         >
                             Score
                         </p>
 
-                        <p
-                            class="mt-1 text-lg font-semibold text-slate-800"
-                        >
-                            {{
-                                selectedAssessment.result.earned_points
-                            }}
+                        <p class="mt-1 text-lg font-semibold text-slate-800">
+                            {{ selectedAssessment.result.earned_points }}
                             /
-                            {{
-                                selectedAssessment.result.maximum_points
-                            }}
+                            {{ selectedAssessment.result.maximum_points }}
                         </p>
                     </div>
 
-                    <div
-                        class="rounded-lg bg-slate-50 p-3"
-                    >
+                    <div class="rounded-lg bg-slate-50 p-3">
                         <p
                             class="text-xs font-semibold tracking-wide text-slate-400 uppercase"
                         >
                             Percentage
                         </p>
 
-                        <p
-                            class="mt-1 text-lg font-semibold text-slate-800"
-                        >
-                            {{
-                                selectedAssessment.result.percentage ??
-                                0
-                            }}%
+                        <p class="mt-1 text-lg font-semibold text-slate-800">
+                            {{ selectedAssessment.result.percentage ?? 0 }}%
                         </p>
                     </div>
 
-                    <div
-                        class="rounded-lg bg-slate-50 p-3"
-                    >
+                    <div class="rounded-lg bg-slate-50 p-3">
                         <p
                             class="text-xs font-semibold tracking-wide text-slate-400 uppercase"
                         >
                             Passing Mark
                         </p>
 
-                        <p
-                            class="mt-1 text-lg font-semibold text-slate-800"
-                        >
-                            {{
-                                selectedAssessment.result.passing_mark
-                            }}%
+                        <p class="mt-1 text-lg font-semibold text-slate-800">
+                            {{ selectedAssessment.result.passing_mark }}%
                         </p>
                     </div>
 
-                    <div
-                        class="rounded-lg bg-slate-50 p-3"
-                    >
+                    <div class="rounded-lg bg-slate-50 p-3">
                         <p
                             class="mb-1 text-xs font-semibold tracking-wide text-slate-400 uppercase"
                         >
@@ -1308,12 +941,9 @@ onBeforeUnmount(() => {
                         </p>
 
                         <Tag
-                            :value="
-                                selectedAssessment.result.remarks
-                            "
+                            :value="selectedAssessment.result.remarks"
                             :severity="
-                                selectedAssessment.result.remarks ===
-                                'PASS'
+                                selectedAssessment.result.remarks === 'PASS'
                                     ? 'success'
                                     : 'danger'
                             "
@@ -1323,46 +953,30 @@ onBeforeUnmount(() => {
                 </div>
             </div>
 
-            <div
-                class="space-y-4"
-            >
+            <div class="space-y-4">
                 <div
-                    v-for="(
-                        item,
-                        index
-                    ) in selectedAssessment.items"
+                    v-for="(item, index) in selectedAssessment.items"
                     :key="item.id"
                     class="rounded-xl border border-slate-200 bg-white p-4"
                 >
-                    <div
-                        class="flex items-start justify-between gap-3"
-                    >
-                        <div
-                            class="min-w-0"
-                        >
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
                             <p
                                 class="text-xs font-semibold tracking-wide text-[#377EC0] uppercase"
                             >
                                 Item
-                                {{
-                                    index +
-                                    1
-                                }}
+                                {{ index + 1 }}
                             </p>
 
                             <p
                                 class="mt-1 font-semibold break-words whitespace-pre-line text-slate-800"
                             >
-                                {{
-                                    item.description
-                                }}
+                                {{ item.description }}
                             </p>
                         </div>
 
                         <Tag
-                            v-if="
-                                selectedAssessment.is_completed
-                            "
+                            v-if="selectedAssessment.is_completed"
                             :value="`${item.points ?? 0} / ${item.maximum_points ?? 0}`"
                             severity="info"
                             rounded
@@ -1370,17 +984,10 @@ onBeforeUnmount(() => {
                         />
                     </div>
 
-                    <div
-                        v-if="
-                            item.reference_file
-                        "
-                        class="mt-3"
-                    >
+                    <div v-if="item.reference_file" class="mt-3">
                         <Button
                             as="a"
-                            :href="
-                                item.reference_file.url
-                            "
+                            :href="item.reference_file.url"
                             target="_blank"
                             rel="noopener"
                             label="View Reference"
@@ -1391,155 +998,82 @@ onBeforeUnmount(() => {
                         />
                     </div>
 
-                    <div
-                        class="mt-4"
-                    >
+                    <div class="mt-4">
                         <label
                             class="mb-2 block text-sm font-semibold text-slate-700"
                         >
-                            Answer /
-                            Remarks
+                            Answer / Remarks
                         </label>
 
                         <Textarea
-                            v-model="
-                                remarks[
-                                    item.id
-                                ]
-                            "
+                            v-model="remarks[item.id]"
                             rows="4"
                             class="w-full"
-                            :disabled="
-                                !selectedAssessment.is_editable
-                            "
+                            :disabled="!selectedAssessment.is_editable"
                         />
                     </div>
 
-                    <div
-                        class="mt-4 space-y-3"
-                    >
-                        <div
-                            v-if="
-                                selectedAssessment.is_editable
-                            "
-                        >
+                    <div class="mt-4 space-y-3">
+                        <div v-if="selectedAssessment.is_editable">
                             <input
                                 :ref="
-                                    (
-                                        element,
-                                    ) =>
-                                        setEvidenceInput(
-                                            item.id,
-                                            element,
-                                        )
+                                    (element) =>
+                                        setEvidenceInput(item.id, element)
                                 "
                                 type="file"
-                                :accept="
-                                    evidenceAccept
-                                "
+                                :accept="evidenceAccept"
                                 class="hidden"
-                                :disabled="
-                                    savingItemId ===
-                                    item.id
-                                "
-                                @change="
-                                    handleEvidenceInput(
-                                        item.id,
-                                        $event,
-                                    )
-                                "
+                                :disabled="savingItemId === item.id"
+                                @change="handleEvidenceInput(item.id, $event)"
                             />
 
                             <button
-                                v-if="
-                                    !pendingFiles[
-                                        item.id
-                                    ]
-                                "
+                                v-if="!pendingFiles[item.id]"
                                 type="button"
                                 class="flex min-h-[190px] w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 text-center transition disabled:cursor-not-allowed disabled:opacity-60"
                                 :class="
-                                    draggingEvidence[
-                                        item.id
-                                    ]
+                                    draggingEvidence[item.id]
                                         ? 'border-blue-400 bg-blue-50'
                                         : 'border-slate-300 bg-slate-50 hover:border-blue-400 hover:bg-blue-50'
                                 "
-                                :disabled="
-                                    savingItemId ===
-                                    item.id
-                                "
-                                @click="
-                                    openEvidencePicker(
-                                        item.id,
-                                    )
-                                "
+                                :disabled="savingItemId === item.id"
+                                @click="openEvidencePicker(item.id)"
                                 @dragover="
-                                    handleEvidenceDragOver(
-                                        item.id,
-                                        $event,
-                                    )
+                                    handleEvidenceDragOver(item.id, $event)
                                 "
                                 @dragenter="
-                                    handleEvidenceDragOver(
-                                        item.id,
-                                        $event,
-                                    )
+                                    handleEvidenceDragOver(item.id, $event)
                                 "
                                 @dragleave="
-                                    handleEvidenceDragLeave(
-                                        item.id,
-                                        $event,
-                                    )
+                                    handleEvidenceDragLeave(item.id, $event)
                                 "
-                                @drop="
-                                    handleEvidenceDrop(
-                                        item.id,
-                                        $event,
-                                    )
-                                "
+                                @drop="handleEvidenceDrop(item.id, $event)"
                             >
                                 <span
                                     class="mb-3 flex size-12 items-center justify-center rounded-xl bg-blue-100 text-blue-700"
                                 >
-                                    <i
-                                        class="pi pi-cloud-upload text-xl"
-                                    ></i>
+                                    <i class="pi pi-cloud-upload text-xl"></i>
                                 </span>
 
-                                <span
-                                    class="font-semibold text-slate-800"
-                                >
-                                    Drag and drop
-                                    evidence here
+                                <span class="font-semibold text-slate-800">
+                                    Drag and drop evidence here
                                 </span>
 
-                                <span
-                                    class="mt-1 text-sm text-slate-500"
-                                >
-                                    or choose a
-                                    file from your
-                                    computer
+                                <span class="mt-1 text-sm text-slate-500">
+                                    or choose a file from your computer
                                 </span>
 
                                 <span
                                     class="mt-4 inline-flex items-center gap-2 rounded-lg border border-blue-300 bg-white px-4 py-2 text-sm font-semibold text-blue-700"
                                 >
-                                    <i
-                                        class="pi pi-folder-open"
-                                    ></i>
+                                    <i class="pi pi-folder-open"></i>
 
                                     Choose Evidence
                                 </span>
 
-                                <span
-                                    class="mt-3 text-xs text-slate-400"
-                                >
-                                    Images, PDF,
-                                    documents,
-                                    spreadsheets
-                                    or text ·
-                                    Maximum 20 MB
+                                <span class="mt-3 text-xs text-slate-400">
+                                    Images, PDF, documents, spreadsheets or text
+                                    · Maximum 20 MB
                                 </span>
                             </button>
 
@@ -1556,19 +1090,11 @@ onBeforeUnmount(() => {
                                         <img
                                             v-if="
                                                 isImageFile(
-                                                    pendingFiles[
-                                                        item.id
-                                                    ],
+                                                    pendingFiles[item.id],
                                                 ) &&
-                                                evidencePreviewUrls[
-                                                    item.id
-                                                ]
+                                                evidencePreviewUrls[item.id]
                                             "
-                                            :src="
-                                                evidencePreviewUrls[
-                                                    item.id
-                                                ]
-                                            "
+                                            :src="evidencePreviewUrls[item.id]"
                                             alt="Selected evidence preview"
                                             class="h-24 w-24 shrink-0 rounded-lg border border-emerald-200 bg-white object-contain"
                                         />
@@ -1580,26 +1106,20 @@ onBeforeUnmount(() => {
                                             <i
                                                 :class="[
                                                     selectedEvidenceIcon(
-                                                        pendingFiles[
-                                                            item.id
-                                                        ],
+                                                        pendingFiles[item.id],
                                                     ),
                                                     'text-2xl',
                                                 ]"
                                             ></i>
                                         </div>
 
-                                        <div
-                                            class="min-w-0"
-                                        >
+                                        <div class="min-w-0">
                                             <p
                                                 class="text-sm font-semibold text-emerald-900"
                                             >
                                                 {{
                                                     selectedEvidenceKind(
-                                                        pendingFiles[
-                                                            item.id
-                                                        ],
+                                                        pendingFiles[item.id],
                                                     )
                                                 }}
                                                 selected
@@ -1610,13 +1130,10 @@ onBeforeUnmount(() => {
                                             >
                                                 {{
                                                     selectedEvidenceSize(
-                                                        pendingFiles[
-                                                            item.id
-                                                        ],
+                                                        pendingFiles[item.id],
                                                     )
                                                 }}
-                                                · Ready
-                                                to save
+                                                · Ready to save
                                             </p>
                                         </div>
                                     </div>
@@ -1631,15 +1148,8 @@ onBeforeUnmount(() => {
                                             severity="secondary"
                                             outlined
                                             size="small"
-                                            :disabled="
-                                                savingItemId ===
-                                                item.id
-                                            "
-                                            @click="
-                                                openEvidencePicker(
-                                                    item.id,
-                                                )
-                                            "
+                                            :disabled="savingItemId === item.id"
+                                            @click="openEvidencePicker(item.id)"
                                         />
 
                                         <Button
@@ -1649,14 +1159,9 @@ onBeforeUnmount(() => {
                                             severity="secondary"
                                             text
                                             size="small"
-                                            :disabled="
-                                                savingItemId ===
-                                                item.id
-                                            "
+                                            :disabled="savingItemId === item.id"
                                             @click="
-                                                clearPendingEvidence(
-                                                    item.id,
-                                                )
+                                                clearPendingEvidence(item.id)
                                             "
                                         />
                                     </div>
@@ -1668,13 +1173,9 @@ onBeforeUnmount(() => {
                             class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
                         >
                             <Button
-                                v-if="
-                                    item.evidence_file
-                                "
+                                v-if="item.evidence_file"
                                 as="a"
-                                :href="
-                                    item.evidence_file.url
-                                "
+                                :href="item.evidence_file.url"
                                 target="_blank"
                                 rel="noopener"
                                 label="View Evidence"
@@ -1684,33 +1185,19 @@ onBeforeUnmount(() => {
                                 size="small"
                             />
 
-                            <div
-                                v-else
-                                class="hidden sm:block"
-                            ></div>
+                            <div v-else class="hidden sm:block"></div>
 
                             <Button
-                                v-if="
-                                    selectedAssessment.is_editable
-                                "
+                                v-if="selectedAssessment.is_editable"
                                 label="Save Item"
                                 icon="pi pi-save"
                                 severity="success"
-                                :loading="
-                                    savingItemId ===
-                                    item.id
-                                "
+                                :loading="savingItemId === item.id"
                                 :disabled="
-                                    savingItemId !==
-                                        null &&
-                                    savingItemId !==
-                                        item.id
+                                    savingItemId !== null &&
+                                    savingItemId !== item.id
                                 "
-                                @click="
-                                    saveItem(
-                                        item,
-                                    )
-                                "
+                                @click="saveItem(item)"
                             />
                         </div>
                     </div>
@@ -1718,45 +1205,30 @@ onBeforeUnmount(() => {
             </div>
 
             <div
-                v-if="
-                    selectedAssessment.is_editable
-                "
+                v-if="selectedAssessment.is_editable"
                 class="flex justify-end border-t border-slate-200 pt-4"
             >
                 <Button
                     label="Submit for Grading"
                     icon="pi pi-send"
                     severity="success"
-                    :disabled="
-                        savingItemId !==
-                        null
-                    "
-                    @click="
-                        submitVisible =
-                            true
-                    "
+                    :disabled="savingItemId !== null"
+                    @click="submitVisible = true"
                 />
             </div>
         </div>
     </Dialog>
 
     <Dialog
-        v-model:visible="
-            submitVisible
-        "
+        v-model:visible="submitVisible"
         modal
         header="Submit Practical Assessment"
         class="w-[94vw] max-w-md"
     >
-        <p
-            class="text-sm leading-6 text-slate-700"
-        >
-            Submit this practical
-            assessment for grading.
-            After submission, your
-            answers and evidence will
-            be locked while your
-            assessor reviews them.
+        <p class="text-sm leading-6 text-slate-700">
+            Submit this practical assessment for grading. After submission, your
+            answers and evidence will be locked while your assessor reviews
+            them.
         </p>
 
         <template #footer>
@@ -1765,28 +1237,17 @@ onBeforeUnmount(() => {
                 icon="pi pi-times"
                 severity="secondary"
                 outlined
-                :disabled="
-                    submitting
-                "
-                @click="
-                    submitVisible =
-                        false
-                "
+                :disabled="submitting"
+                @click="submitVisible = false"
             />
 
             <Button
                 label="Submit"
                 icon="pi pi-send"
                 severity="success"
-                :loading="
-                    submitting
-                "
-                :disabled="
-                    submitting
-                "
-                @click="
-                    submitAssessment
-                "
+                :loading="submitting"
+                :disabled="submitting"
+                @click="submitAssessment"
             />
         </template>
     </Dialog>

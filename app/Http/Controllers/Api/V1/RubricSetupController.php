@@ -17,8 +17,7 @@ class RubricSetupController extends Controller
 {
     public function __construct(
         private readonly DatatableService $datatableService,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -195,6 +194,7 @@ class RubricSetupController extends Controller
                         'item_order_no',
                     ]);
                 $criterion->maximum_points = $criterion->levels->max('item_point') ?? 0;
+
                 return $criterion;
             });
 
@@ -427,6 +427,7 @@ class RubricSetupController extends Controller
     {
         $id = trim((string) $request->session()->get('login_id', ''));
         $authId = $request->user()?->getAuthIdentifier();
+
         return $id !== '' ? $id : ($authId === null ? null : (string) $authId);
     }
 
@@ -479,6 +480,7 @@ class RubricSetupController extends Controller
 
         config(['database.default' => $connection]);
         DB::setDefaultConnection($connection);
+
         return DB::connection($connection);
     }
 }

@@ -1,63 +1,34 @@
 <?php
 
-
-
 namespace App\Http\Controllers\Api\V1;
 
-
-
 use App\Http\Controllers\Controller;
-
-use App\Services\DatatableService;
-
-use Illuminate\Database\ConnectionInterface;
-
-use Illuminate\Http\JsonResponse;
-
-use Illuminate\Http\Request;
-
-use Illuminate\Support\Facades\DB;
-
-use Symfony\Component\HttpFoundation\Response;
-
 use App\Models\Student;
-
+use App\Services\DatatableService;
 use Carbon\CarbonImmutable;
-
+use Illuminate\Database\ConnectionInterface;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
-
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-
 use Illuminate\Support\Str;
-
 use RuntimeException;
-
+use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
-
-
 class ActivitiesController extends Controller
-
 {
-
     public function __construct(
 
         private readonly DatatableService $datatableService,
 
-    ) {
-
-    }
-
-
+    ) {}
 
     /**
-
      * Return activities waiting for verification.
-
      */
-
     public function index(Request $request): JsonResponse
-
     {
 
         $db = $this->resolveSchoolConnection(
@@ -66,15 +37,11 @@ class ActivitiesController extends Controller
 
         );
 
-
-
         if ($db instanceof JsonResponse) {
 
             return $db;
 
         }
-
-
 
         /*
 
@@ -95,8 +62,6 @@ class ActivitiesController extends Controller
             ),
 
         );
-
-
 
         /*
 
@@ -127,8 +92,6 @@ class ActivitiesController extends Controller
             '/',
 
         );
-
-
 
         /*
 
@@ -194,8 +157,6 @@ class ActivitiesController extends Controller
 
                 'person_activity.revise_remarks',
 
-
-
                 'person.code_person',
 
                 'person.school_id_no',
@@ -208,39 +169,35 @@ class ActivitiesController extends Controller
 
                 'person.gender',
 
-
-
                 'activity.desc_activity',
 
             ]);
 
+        if (! $request->boolean('monitoring')) {
 
+            $query
 
-            if (! $request->boolean('monitoring')) {
+                ->where(
 
-                $query
+                    'person_activity.sto_validated',
 
-                    ->where(
+                    '!=',
 
-                        'person_activity.sto_validated',
+                    'Y',
 
-                        '!=',
+                )
 
-                        'Y',
+                ->where(
 
-                    )
+                    'person_activity.for_app',
 
-                    ->where(
+                    '=',
 
-                        'person_activity.for_app',
+                    'Y',
 
-                        '=',
+                );
 
-                        'Y',
-
-                    );
-
-            }
+        }
 
         $result = $this->datatableService->paginate(
 
@@ -274,57 +231,23 @@ class ActivitiesController extends Controller
 
             sortableColumns: [
 
-                'last_update' =>
+                'last_update' => 'person_activity.last_update',
 
-                    'person_activity.last_update',
+                'code_person' => 'person.code_person',
 
+                'school_id_no' => 'person.school_id_no',
 
+                'fname' => 'person.fname',
 
-                'code_person' =>
+                'lname' => 'person.lname',
 
-                    'person.code_person',
+                'desc_activity' => 'activity.desc_activity',
 
+                'filename' => 'person_activity.filename',
 
+                'start_date' => 'person_activity.start_date',
 
-                'school_id_no' =>
-
-                    'person.school_id_no',
-
-
-
-                'fname' =>
-
-                    'person.fname',
-
-
-
-                'lname' =>
-
-                    'person.lname',
-
-
-
-                'desc_activity' =>
-
-                    'activity.desc_activity',
-
-
-
-                'filename' =>
-
-                    'person_activity.filename',
-
-
-
-                'start_date' =>
-
-                    'person_activity.start_date',
-
-
-
-                'end_date' =>
-
-                    'person_activity.end_date',
+                'end_date' => 'person_activity.end_date',
 
             ],
 
@@ -334,8 +257,6 @@ class ActivitiesController extends Controller
 
         );
 
-
-
         $result = $this->datatableService->addRowNumbers(
 
             response: $result,
@@ -343,8 +264,6 @@ class ActivitiesController extends Controller
             key: 'index',
 
         );
-
-
 
         /*
 
@@ -380,8 +299,6 @@ class ActivitiesController extends Controller
 
                         : (array) $row;
 
-
-
                     /*
 
                      * Remove accidental directory components
@@ -414,13 +331,9 @@ class ActivitiesController extends Controller
 
                     );
 
-
-
                     $record['filename'] =
 
                         $filename;
-
-
 
                     $record['file_url'] =
 
@@ -440,8 +353,6 @@ class ActivitiesController extends Controller
 
                             : null;
 
-
-
                     return $record;
 
                 },
@@ -452,8 +363,6 @@ class ActivitiesController extends Controller
 
             ->all();
 
-
-
         return response()->json(
 
             $result,
@@ -462,343 +371,24 @@ class ActivitiesController extends Controller
 
     }
 
-
-
     /**
-
- * Return the authenticated student's activity summary.
-
- */
-
-public function studentDashboard(
-
-    Request $request,
-
-): JsonResponse {
-
-    $account = $request->user();
-
-
-
-    /*
-
-     * Only authenticated student accounts may use this
-
-     * endpoint.
-
+     * Return the authenticated student's activity summary.
      */
-
-    if (! $account instanceof Student) {
-
-        return response()->json(
-
-            [
-
-                'message' =>
-
-                    'Only student accounts may access this resource.',
-
-            ],
-
-            Response::HTTP_FORBIDDEN,
-
-        );
-
-    }
-
-
-
-    $db = $this->resolveSchoolConnection(
-
-        $request,
-
-    );
-
-
-
-    if ($db instanceof JsonResponse) {
-
-        return $db;
-
-    }
-
-
-
-    $studentId = (string) $account
-
-        ->getAuthIdentifier();
-
-
-
-    /*
-
-     * Count every activity belonging to the currently
-
-     * authenticated student.
-
-     */
-
-    $total = $db
-
-        ->table('person_activity')
-
-        ->where(
-
-            'person_id',
-
-            $studentId,
-
-        )
-
-        ->count();
-
-
-
-    /*
-
-     * Return only the student's 10 most recent activities.
-
-     */
-
-    $activities = $db
-
-        ->table('person_activity')
-
-        ->leftJoin(
-
-            'activity',
-
-            'person_activity.activity_id',
-
-            '=',
-
-            'activity.id',
-
-        )
-
-        ->where(
-
-            'person_activity.person_id',
-
-            $studentId,
-
-        )
-
-        ->select([
-
-            'person_activity.id',
-
-            'person_activity.activity_id',
-
-            'person_activity.filename',
-
-            'person_activity.start_date',
-
-            'person_activity.end_date',
-
-            'person_activity.last_update',
-
-            'person_activity.sto_validated',
-
-            'person_activity.for_app',
-
-            'person_activity.revise_remarks',
-
-            'activity.desc_activity',
-
-        ])
-
-        ->orderByDesc(
-
-            'person_activity.last_update',
-
-        )
-
-        ->limit(10)
-
-        ->get()
-
-        ->map(
-
-            function (object $activity): array {
-
-                $validated = strtoupper(
-
-                    trim(
-
-                        (string) (
-
-                            $activity->sto_validated
-
-                            ?? ''
-
-                        ),
-
-                    ),
-
-                );
-
-
-
-                $forApproval = strtoupper(
-
-                    trim(
-
-                        (string) (
-
-                            $activity->for_app
-
-                            ?? ''
-
-                        ),
-
-                    ),
-
-                );
-
-
-
-                $remarks = trim(
-
-                    (string) (
-
-                        $activity->revise_remarks
-
-                        ?? ''
-
-                    ),
-
-                );
-
-
-
-                if ($validated === 'Y') {
-
-                    $status = 'Verified';
-
-                } elseif ($forApproval === 'Y') {
-
-                    $status = 'For Verification';
-
-                } elseif ($remarks !== '') {
-
-                    $status = 'For Revision';
-
-                } else {
-
-                    $status = 'Draft';
-
-                }
-
-
-
-                return [
-
-                    'id' => $activity->id,
-
-
-
-                    'activity_id' =>
-
-                        $activity->activity_id,
-
-
-
-                    'description' =>
-
-                        $activity->desc_activity
-
-                        ?? 'Activity',
-
-
-
-                    'filename' =>
-
-                        $activity->filename,
-
-
-
-                    'start_date' =>
-
-                        $activity->start_date,
-
-
-
-                    'end_date' =>
-
-                        $activity->end_date,
-
-
-
-                    'last_update' =>
-
-                        $activity->last_update,
-
-
-
-                    'sto_validated' =>
-
-                        $activity->sto_validated,
-
-
-
-                    'for_app' =>
-
-                        $activity->for_app,
-
-
-
-                    'revise_remarks' =>
-
-                        $remarks,
-
-
-
-                    'status' => $status,
-
-                ];
-
-            },
-
-        )
-
-        ->values();
-
-
-
-    return response()->json([
-
-        'total' => $total,
-
-        'data' => $activities,
-
-    ]);
-
-}
-
-
-
-
-
-    /**
-
-     * Return only the authenticated student's activity records.
-
-     */
-
-    public function studentIndex(
+    public function studentDashboard(
 
         Request $request,
 
     ): JsonResponse {
-        $request->validate([
-            'status' => ['nullable', 'in:Verified,Pending,For Revision'],
-        ]);
-
 
         $account = $request->user();
 
+        /*
 
+         * Only authenticated student accounts may use this
+
+         * endpoint.
+
+         */
 
         if (! $account instanceof Student) {
 
@@ -806,9 +396,7 @@ public function studentDashboard(
 
                 [
 
-                    'message' =>
-
-                        'Only student accounts may access this resource.',
+                    'message' => 'Only student accounts may access this resource.',
 
                 ],
 
@@ -818,15 +406,11 @@ public function studentDashboard(
 
         }
 
-
-
         $db = $this->resolveSchoolConnection(
 
             $request,
 
         );
-
-
 
         if ($db instanceof JsonResponse) {
 
@@ -834,13 +418,251 @@ public function studentDashboard(
 
         }
 
-
-
         $studentId = (string) $account
 
             ->getAuthIdentifier();
 
+        /*
 
+         * Count every activity belonging to the currently
+
+         * authenticated student.
+
+         */
+
+        $total = $db
+
+            ->table('person_activity')
+
+            ->where(
+
+                'person_id',
+
+                $studentId,
+
+            )
+
+            ->count();
+
+        /*
+
+         * Return only the student's 10 most recent activities.
+
+         */
+
+        $activities = $db
+
+            ->table('person_activity')
+
+            ->leftJoin(
+
+                'activity',
+
+                'person_activity.activity_id',
+
+                '=',
+
+                'activity.id',
+
+            )
+
+            ->where(
+
+                'person_activity.person_id',
+
+                $studentId,
+
+            )
+
+            ->select([
+
+                'person_activity.id',
+
+                'person_activity.activity_id',
+
+                'person_activity.filename',
+
+                'person_activity.start_date',
+
+                'person_activity.end_date',
+
+                'person_activity.last_update',
+
+                'person_activity.sto_validated',
+
+                'person_activity.for_app',
+
+                'person_activity.revise_remarks',
+
+                'activity.desc_activity',
+
+            ])
+
+            ->orderByDesc(
+
+                'person_activity.last_update',
+
+            )
+
+            ->limit(10)
+
+            ->get()
+
+            ->map(
+
+                function (object $activity): array {
+
+                    $validated = strtoupper(
+
+                        trim(
+
+                            (string) (
+
+                                $activity->sto_validated
+
+                                ?? ''
+
+                            ),
+
+                        ),
+
+                    );
+
+                    $forApproval = strtoupper(
+
+                        trim(
+
+                            (string) (
+
+                                $activity->for_app
+
+                                ?? ''
+
+                            ),
+
+                        ),
+
+                    );
+
+                    $remarks = trim(
+
+                        (string) (
+
+                            $activity->revise_remarks
+
+                            ?? ''
+
+                        ),
+
+                    );
+
+                    if ($validated === 'Y') {
+
+                        $status = 'Verified';
+
+                    } elseif ($forApproval === 'Y') {
+
+                        $status = 'For Verification';
+
+                    } elseif ($remarks !== '') {
+
+                        $status = 'For Revision';
+
+                    } else {
+
+                        $status = 'Draft';
+
+                    }
+
+                    return [
+
+                        'id' => $activity->id,
+
+                        'activity_id' => $activity->activity_id,
+
+                        'description' => $activity->desc_activity
+
+                            ?? 'Activity',
+
+                        'filename' => $activity->filename,
+
+                        'start_date' => $activity->start_date,
+
+                        'end_date' => $activity->end_date,
+
+                        'last_update' => $activity->last_update,
+
+                        'sto_validated' => $activity->sto_validated,
+
+                        'for_app' => $activity->for_app,
+
+                        'revise_remarks' => $remarks,
+
+                        'status' => $status,
+
+                    ];
+
+                },
+
+            )
+
+            ->values();
+
+        return response()->json([
+
+            'total' => $total,
+
+            'data' => $activities,
+
+        ]);
+
+    }
+
+    /**
+     * Return only the authenticated student's activity records.
+     */
+    public function studentIndex(
+
+        Request $request,
+
+    ): JsonResponse {
+        $request->validate([
+            'status' => ['nullable', 'in:Verified,Pending,For Revision'],
+        ]);
+
+        $account = $request->user();
+
+        if (! $account instanceof Student) {
+
+            return response()->json(
+
+                [
+
+                    'message' => 'Only student accounts may access this resource.',
+
+                ],
+
+                Response::HTTP_FORBIDDEN,
+
+            );
+
+        }
+
+        $db = $this->resolveSchoolConnection(
+
+            $request,
+
+        );
+
+        if ($db instanceof JsonResponse) {
+
+            return $db;
+
+        }
+
+        $studentId = (string) $account
+
+            ->getAuthIdentifier();
 
         $query = $db
 
@@ -915,8 +737,6 @@ public function studentDashboard(
             }
         }
 
-
-
         $result = $this->datatableService->paginate(
 
             query: $query,
@@ -941,25 +761,15 @@ public function studentDashboard(
 
             sortableColumns: [
 
-                'desc_activity' =>
+                'desc_activity' => 'activity.desc_activity',
 
-                    'activity.desc_activity',
+                'start_date' => 'person_activity.start_date',
 
-                'start_date' =>
+                'end_date' => 'person_activity.end_date',
 
-                    'person_activity.start_date',
+                'last_update' => 'person_activity.last_update',
 
-                'end_date' =>
-
-                    'person_activity.end_date',
-
-                'last_update' =>
-
-                    'person_activity.last_update',
-
-                'sto_validated' =>
-
-                    'person_activity.sto_validated',
+                'sto_validated' => 'person_activity.sto_validated',
 
             ],
 
@@ -969,8 +779,6 @@ public function studentDashboard(
 
         );
 
-
-
         $activityBaseUrl =
 
             $this->studentActivityBaseUrl(
@@ -978,8 +786,6 @@ public function studentDashboard(
                 $request,
 
             );
-
-
 
         $result['data'] = collect(
 
@@ -1000,8 +806,6 @@ public function studentDashboard(
                         ? get_object_vars($row)
 
                         : (array) $row;
-
-
 
                     $filename = basename(
 
@@ -1027,13 +831,9 @@ public function studentDashboard(
 
                     );
 
-
-
                     $record['filename'] =
 
                         $filename;
-
-
 
                     $record['file_url'] =
 
@@ -1045,9 +845,9 @@ public function studentDashboard(
 
                                 $activityBaseUrl
 
-                                . '/'
+                                .'/'
 
-                                . rawurlencode(
+                                .rawurlencode(
 
                                     $filename,
 
@@ -1057,8 +857,6 @@ public function studentDashboard(
 
                             : null;
 
-
-
                     $record['status'] =
 
                         $this->studentActivityStatus(
@@ -1066,8 +864,6 @@ public function studentDashboard(
                             $record,
 
                         );
-
-
 
                     $record['can_edit'] =
 
@@ -1077,8 +873,6 @@ public function studentDashboard(
 
                         );
 
-
-
                     $record['can_delete'] =
 
                         ! $this->studentActivityIsVerified(
@@ -1086,8 +880,6 @@ public function studentDashboard(
                             $record,
 
                         );
-
-
 
                     return $record;
 
@@ -1099,8 +891,6 @@ public function studentDashboard(
 
             ->all();
 
-
-
         return response()->json(
 
             $result,
@@ -1109,14 +899,9 @@ public function studentDashboard(
 
     }
 
-
-
     /**
-
      * Return activity choices for the authenticated student's form.
-
      */
-
     public function studentOptions(
 
         Request $request,
@@ -1125,17 +910,13 @@ public function studentDashboard(
 
         $account = $request->user();
 
-
-
         if (! $account instanceof Student) {
 
             return response()->json(
 
                 [
 
-                    'message' =>
-
-                        'Only student accounts may access this resource.',
+                    'message' => 'Only student accounts may access this resource.',
 
                 ],
 
@@ -1145,23 +926,17 @@ public function studentDashboard(
 
         }
 
-
-
         $db = $this->resolveSchoolConnection(
 
             $request,
 
         );
 
-
-
         if ($db instanceof JsonResponse) {
 
             return $db;
 
         }
-
-
 
         $activities = $db
 
@@ -1183,8 +958,6 @@ public function studentDashboard(
 
             ]);
 
-
-
         return response()->json([
 
             'data' => $activities,
@@ -1193,14 +966,9 @@ public function studentDashboard(
 
     }
 
-
-
     /**
-
      * Create an activity submission for the authenticated student.
-
      */
-
     public function studentStore(
 
         Request $request,
@@ -1209,17 +977,13 @@ public function studentDashboard(
 
         $account = $request->user();
 
-
-
         if (! $account instanceof Student) {
 
             return response()->json(
 
                 [
 
-                    'message' =>
-
-                        'Only student accounts may access this resource.',
+                    'message' => 'Only student accounts may access this resource.',
 
                 ],
 
@@ -1228,8 +992,6 @@ public function studentDashboard(
             );
 
         }
-
-
 
         $validated = $request->validate([
 
@@ -1293,21 +1055,13 @@ public function studentDashboard(
 
         ], [
 
-            'confirm_authenticity.accepted' =>
+            'confirm_authenticity.accepted' => 'You must confirm the authenticity and responsibility notice.',
 
-                'You must confirm the authenticity and responsibility notice.',
+            'file.required' => 'Attach activity evidence before submitting.',
 
-            'file.required' =>
-
-                'Attach activity evidence before submitting.',
-
-            'file.max' =>
-
-                'The activity evidence must not exceed 20 MB.',
+            'file.max' => 'The activity evidence must not exceed 20 MB.',
 
         ]);
-
-
 
         $db = $this->resolveSchoolConnection(
 
@@ -1315,21 +1069,15 @@ public function studentDashboard(
 
         );
 
-
-
         if ($db instanceof JsonResponse) {
 
             return $db;
 
         }
 
-
-
         $studentId = (string) $account
 
             ->getAuthIdentifier();
-
-
 
         $activityExists = $db
 
@@ -1345,17 +1093,13 @@ public function studentDashboard(
 
             ->exists();
 
-
-
         if (! $activityExists) {
 
             return response()->json(
 
                 [
 
-                    'message' =>
-
-                        'The selected activity could not be found.',
+                    'message' => 'The selected activity could not be found.',
 
                 ],
 
@@ -1365,15 +1109,11 @@ public function studentDashboard(
 
         }
 
-
-
         $uploadedFile = $request->file(
 
             'file',
 
         );
-
-
 
         if (
 
@@ -1387,9 +1127,7 @@ public function studentDashboard(
 
                 [
 
-                    'message' =>
-
-                        'The selected activity evidence is invalid.',
+                    'message' => 'The selected activity evidence is invalid.',
 
                 ],
 
@@ -1399,15 +1137,11 @@ public function studentDashboard(
 
         }
 
-
-
         $timestamp = CarbonImmutable::now(
 
             'Asia/Manila',
 
         );
-
-
 
         $activityRecordId =
 
@@ -1417,11 +1151,7 @@ public function studentDashboard(
 
             );
 
-
-
         $filename = null;
-
-
 
         try {
 
@@ -1430,8 +1160,6 @@ public function studentDashboard(
                 $request,
 
             );
-
-
 
             $filename =
 
@@ -1445,43 +1173,29 @@ public function studentDashboard(
 
                 );
 
-
-
             $db
 
                 ->table('person_activity')
 
                 ->insert([
 
-                    'id' =>
+                    'id' => $activityRecordId,
 
-                        $activityRecordId,
+                    'person_id' => $studentId,
 
-                    'person_id' =>
+                    'activity_id' => $validated['activity_id'],
 
-                        $studentId,
+                    'start_date' => $validated['start_date'],
 
-                    'activity_id' =>
+                    'end_date' => $validated['end_date'],
 
-                        $validated['activity_id'],
+                    'remarks' => filled(
 
-                    'start_date' =>
+                        $validated['remarks']
 
-                        $validated['start_date'],
+                        ?? null,
 
-                    'end_date' =>
-
-                        $validated['end_date'],
-
-                    'remarks' =>
-
-                        filled(
-
-                            $validated['remarks']
-
-                            ?? null,
-
-                        )
+                    )
 
                             ? trim(
 
@@ -1495,33 +1209,21 @@ public function studentDashboard(
 
                             : null,
 
-                    'filename' =>
+                    'filename' => $filename,
 
-                        $filename,
+                    'current' => 'Y',
 
-                    'current' =>
+                    'sto_validated' => 'N',
 
-                        'Y',
+                    'for_app' => 'Y',
 
-                    'sto_validated' =>
+                    'revise_remarks' => '',
 
-                        'N',
+                    'last_update' => $timestamp->format(
 
-                    'for_app' =>
+                        'Y-m-d H:i:s',
 
-                        'Y',
-
-                    'revise_remarks' =>
-
-                        '',
-
-                    'last_update' =>
-
-                        $timestamp->format(
-
-                            'Y-m-d H:i:s',
-
-                        ),
+                    ),
 
                 ]);
 
@@ -1539,23 +1241,15 @@ public function studentDashboard(
 
             }
 
-
-
             report($exception);
-
-
 
             return response()->json(
 
                 [
 
-                    'message' =>
+                    'message' => 'Unable to submit the activity.',
 
-                        'Unable to submit the activity.',
-
-                    'error' =>
-
-                        config('app.debug')
+                    'error' => config('app.debug')
 
                             ? $exception
 
@@ -1571,21 +1265,15 @@ public function studentDashboard(
 
         }
 
-
-
         return response()->json(
 
             [
 
-                'message' =>
-
-                    'Activity submitted for verification.',
+                'message' => 'Activity submitted for verification.',
 
                 'data' => [
 
-                    'id' =>
-
-                        $activityRecordId,
+                    'id' => $activityRecordId,
 
                 ],
 
@@ -1597,14 +1285,9 @@ public function studentDashboard(
 
     }
 
-
-
     /**
-
      * Update or resubmit a non-verified activity owned by the student.
-
      */
-
     public function studentUpdate(
 
         Request $request,
@@ -1615,17 +1298,13 @@ public function studentDashboard(
 
         $account = $request->user();
 
-
-
         if (! $account instanceof Student) {
 
             return response()->json(
 
                 [
 
-                    'message' =>
-
-                        'Only student accounts may access this resource.',
+                    'message' => 'Only student accounts may access this resource.',
 
                 ],
 
@@ -1634,8 +1313,6 @@ public function studentDashboard(
             );
 
         }
-
-
 
         $validated = $request->validate([
 
@@ -1709,17 +1386,11 @@ public function studentDashboard(
 
         ], [
 
-            'confirm_authenticity.accepted' =>
+            'confirm_authenticity.accepted' => 'You must confirm the authenticity and responsibility notice.',
 
-                'You must confirm the authenticity and responsibility notice.',
-
-            'file.max' =>
-
-                'The activity evidence must not exceed 20 MB.',
+            'file.max' => 'The activity evidence must not exceed 20 MB.',
 
         ]);
-
-
 
         $db = $this->resolveSchoolConnection(
 
@@ -1727,21 +1398,15 @@ public function studentDashboard(
 
         );
 
-
-
         if ($db instanceof JsonResponse) {
 
             return $db;
 
         }
 
-
-
         $studentId = (string) $account
 
             ->getAuthIdentifier();
-
-
 
         $existing = $db
 
@@ -1765,17 +1430,13 @@ public function studentDashboard(
 
             ->first();
 
-
-
         if (! $existing) {
 
             return response()->json(
 
                 [
 
-                    'message' =>
-
-                        'The activity could not be found.',
+                    'message' => 'The activity could not be found.',
 
                 ],
 
@@ -1784,8 +1445,6 @@ public function studentDashboard(
             );
 
         }
-
-
 
         if (
 
@@ -1811,9 +1470,7 @@ public function studentDashboard(
 
                 [
 
-                    'message' =>
-
-                        'Verified activities can no longer be edited.',
+                    'message' => 'Verified activities can no longer be edited.',
 
                 ],
 
@@ -1822,8 +1479,6 @@ public function studentDashboard(
             );
 
         }
-
-
 
         $activityExists = $db
 
@@ -1839,17 +1494,13 @@ public function studentDashboard(
 
             ->exists();
 
-
-
         if (! $activityExists) {
 
             return response()->json(
 
                 [
 
-                    'message' =>
-
-                        'The selected activity could not be found.',
+                    'message' => 'The selected activity could not be found.',
 
                 ],
 
@@ -1858,8 +1509,6 @@ public function studentDashboard(
             );
 
         }
-
-
 
         $oldFilename = basename(
 
@@ -1885,23 +1534,17 @@ public function studentDashboard(
 
         );
 
-
-
         $uploadedFile = $request->file(
 
             'file',
 
         );
 
-
-
         $removeExisting = $request->boolean(
 
             'remove_file',
 
         );
-
-
 
         if (
 
@@ -1915,9 +1558,7 @@ public function studentDashboard(
 
                 [
 
-                    'message' =>
-
-                        'Attach replacement activity evidence before removing the existing file.',
+                    'message' => 'Attach replacement activity evidence before removing the existing file.',
 
                 ],
 
@@ -1926,8 +1567,6 @@ public function studentDashboard(
             );
 
         }
-
-
 
         if (
 
@@ -1941,9 +1580,7 @@ public function studentDashboard(
 
                 [
 
-                    'message' =>
-
-                        'Attach activity evidence before resubmitting.',
+                    'message' => 'Attach activity evidence before resubmitting.',
 
                 ],
 
@@ -1953,19 +1590,13 @@ public function studentDashboard(
 
         }
 
-
-
         $timestamp = CarbonImmutable::now(
 
             'Asia/Manila',
 
         );
 
-
-
         $newFilename = null;
-
-
 
         try {
 
@@ -1980,22 +1611,17 @@ public function studentDashboard(
                 ) {
 
                     throw new RuntimeException(
-
                         'The replacement activity evidence is invalid.',
 
                     );
 
                 }
 
-
-
                 $disk = $this->studentActivityDisk(
 
                     $request,
 
                 );
-
-
 
                 $newFilename =
 
@@ -2011,31 +1637,21 @@ public function studentDashboard(
 
             }
 
-
-
             $updateData = [
 
-                'activity_id' =>
+                'activity_id' => $validated['activity_id'],
 
-                    $validated['activity_id'],
+                'start_date' => $validated['start_date'],
 
-                'start_date' =>
+                'end_date' => $validated['end_date'],
 
-                    $validated['start_date'],
+                'remarks' => filled(
 
-                'end_date' =>
+                    $validated['remarks']
 
-                    $validated['end_date'],
+                    ?? null,
 
-                'remarks' =>
-
-                    filled(
-
-                        $validated['remarks']
-
-                        ?? null,
-
-                    )
+                )
 
                         ? trim(
 
@@ -2049,29 +1665,19 @@ public function studentDashboard(
 
                         : null,
 
-                'sto_validated' =>
+                'sto_validated' => 'N',
 
-                    'N',
+                'for_app' => 'Y',
 
-                'for_app' =>
+                'revise_remarks' => '',
 
-                    'Y',
+                'last_update' => $timestamp->format(
 
-                'revise_remarks' =>
+                    'Y-m-d H:i:s',
 
-                    '',
-
-                'last_update' =>
-
-                    $timestamp->format(
-
-                        'Y-m-d H:i:s',
-
-                    ),
+                ),
 
             ];
-
-
 
             if ($newFilename) {
 
@@ -2080,8 +1686,6 @@ public function studentDashboard(
                     $newFilename;
 
             }
-
-
 
             $db
 
@@ -2123,23 +1727,15 @@ public function studentDashboard(
 
             }
 
-
-
             report($exception);
-
-
 
             return response()->json(
 
                 [
 
-                    'message' =>
+                    'message' => 'Unable to update the activity.',
 
-                        'Unable to update the activity.',
-
-                    'error' =>
-
-                        config('app.debug')
+                    'error' => config('app.debug')
 
                             ? $exception
 
@@ -2154,8 +1750,6 @@ public function studentDashboard(
             );
 
         }
-
-
 
         if (
 
@@ -2177,26 +1771,17 @@ public function studentDashboard(
 
         }
 
-
-
         return response()->json([
 
-            'message' =>
-
-                'Activity submitted for verification.',
+            'message' => 'Activity submitted for verification.',
 
         ]);
 
     }
 
-
-
     /**
-
      * Delete a non-verified activity owned by the authenticated student.
-
      */
-
     public function studentDestroy(
 
         Request $request,
@@ -2207,17 +1792,13 @@ public function studentDashboard(
 
         $account = $request->user();
 
-
-
         if (! $account instanceof Student) {
 
             return response()->json(
 
                 [
 
-                    'message' =>
-
-                        'Only student accounts may access this resource.',
+                    'message' => 'Only student accounts may access this resource.',
 
                 ],
 
@@ -2227,15 +1808,11 @@ public function studentDashboard(
 
         }
 
-
-
         $db = $this->resolveSchoolConnection(
 
             $request,
 
         );
-
-
 
         if ($db instanceof JsonResponse) {
 
@@ -2243,13 +1820,9 @@ public function studentDashboard(
 
         }
 
-
-
         $studentId = (string) $account
 
             ->getAuthIdentifier();
-
-
 
         $activity = $db
 
@@ -2273,17 +1846,13 @@ public function studentDashboard(
 
             ->first();
 
-
-
         if (! $activity) {
 
             return response()->json(
 
                 [
 
-                    'message' =>
-
-                        'The activity could not be found.',
+                    'message' => 'The activity could not be found.',
 
                 ],
 
@@ -2292,8 +1861,6 @@ public function studentDashboard(
             );
 
         }
-
-
 
         if (
 
@@ -2319,9 +1886,7 @@ public function studentDashboard(
 
                 [
 
-                    'message' =>
-
-                        'Verified activities cannot be deleted.',
+                    'message' => 'Verified activities cannot be deleted.',
 
                 ],
 
@@ -2330,8 +1895,6 @@ public function studentDashboard(
             );
 
         }
-
-
 
         $filename = basename(
 
@@ -2357,15 +1920,11 @@ public function studentDashboard(
 
         );
 
-
-
         $timestamp = CarbonImmutable::now(
 
             'Asia/Manila',
 
         );
-
-
 
         $db->transaction(
 
@@ -2403,8 +1962,6 @@ public function studentDashboard(
 
                     ->delete();
 
-
-
                 if (
 
                     $db
@@ -2425,41 +1982,25 @@ public function studentDashboard(
 
                         ->insert([
 
-                            'id' =>
+                            'id' => (string) Str::uuid(),
 
-                                (string) Str::uuid(),
+                            'trans_table' => 'person_activity',
 
-                            'trans_table' =>
+                            'trans_id' => $activityRecordId,
 
-                                'person_activity',
+                            'person_id' => $studentId,
 
-                            'trans_id' =>
+                            'login_id' => $studentId,
 
-                                $activityRecordId,
+                            'last_update' => $timestamp->format(
 
-                            'person_id' =>
+                                'Y-m-d H:i:s',
 
-                                $studentId,
+                            ),
 
-                            'login_id' =>
+                            'synced' => 'N',
 
-                                $studentId,
-
-                            'last_update' =>
-
-                                $timestamp->format(
-
-                                    'Y-m-d H:i:s',
-
-                                ),
-
-                            'synced' =>
-
-                                'N',
-
-                            'activity_desc' =>
-
-                                'delete',
+                            'activity_desc' => 'delete',
 
                         ]);
 
@@ -2468,8 +2009,6 @@ public function studentDashboard(
             },
 
         );
-
-
 
         if ($filename !== '') {
 
@@ -2483,26 +2022,17 @@ public function studentDashboard(
 
         }
 
-
-
         return response()->json([
 
-            'message' =>
-
-                'Activity deleted successfully.',
+            'message' => 'Activity deleted successfully.',
 
         ]);
 
     }
 
-
-
     /**
-
      * Return activity options for the Monitoring filter.
-
      */
-
     public function activityOptions(
 
         Request $request,
@@ -2515,15 +2045,11 @@ public function studentDashboard(
 
         );
 
-
-
         if ($db instanceof JsonResponse) {
 
             return $db;
 
         }
-
-
 
         $activities = $db
 
@@ -2545,8 +2071,6 @@ public function studentDashboard(
 
             ->get();
 
-
-
         return response()->json([
 
             'data' => $activities,
@@ -2555,10 +2079,7 @@ public function studentDashboard(
 
     }
 
-
-
     /**
-
      * Verify a submitted activity.
 
      *
@@ -2574,9 +2095,7 @@ public function studentDashboard(
      * revise_remarks = ''
 
      * last_update = current date and time
-
      */
-
     public function verify(
 
         Request $request,
@@ -2591,15 +2110,11 @@ public function studentDashboard(
 
         );
 
-
-
         if ($db instanceof JsonResponse) {
 
             return $db;
 
         }
-
-
 
         $activityExists = $db
 
@@ -2615,17 +2130,13 @@ public function studentDashboard(
 
             ->exists();
 
-
-
-        if (!$activityExists) {
+        if (! $activityExists) {
 
             return response()->json(
 
                 [
 
-                    'message' =>
-
-                        'The activity could not be found.',
+                    'message' => 'The activity could not be found.',
 
                 ],
 
@@ -2634,8 +2145,6 @@ public function studentDashboard(
             );
 
         }
-
-
 
         $db
 
@@ -2657,34 +2166,23 @@ public function studentDashboard(
 
                 'revise_remarks' => '',
 
+                'last_update' => now()->format(
 
+                    'Y-m-d H:i:s',
 
-                'last_update' =>
-
-                    now()->format(
-
-                        'Y-m-d H:i:s',
-
-                    ),
+                ),
 
             ]);
 
-
-
         return response()->json([
 
-            'message' =>
-
-                'The activity has been validated.',
+            'message' => 'The activity has been validated.',
 
         ]);
 
     }
 
-
-
     /**
-
      * Return an activity to the student for revision.
 
      *
@@ -2698,9 +2196,7 @@ public function studentDashboard(
      * revise_remarks = submitted remarks
 
      * last_update = current date and time
-
      */
-
     public function revise(
 
         Request $request,
@@ -2725,15 +2221,11 @@ public function studentDashboard(
 
             [
 
-                'revise_remarks.required' =>
-
-                    'Reason for revision is required.',
+                'revise_remarks.required' => 'Reason for revision is required.',
 
             ],
 
         );
-
-
 
         $db = $this->resolveSchoolConnection(
 
@@ -2741,15 +2233,11 @@ public function studentDashboard(
 
         );
 
-
-
         if ($db instanceof JsonResponse) {
 
             return $db;
 
         }
-
-
 
         $activityExists = $db
 
@@ -2765,17 +2253,13 @@ public function studentDashboard(
 
             ->exists();
 
-
-
-        if (!$activityExists) {
+        if (! $activityExists) {
 
             return response()->json(
 
                 [
 
-                    'message' =>
-
-                        'The activity could not be found.',
+                    'message' => 'The activity could not be found.',
 
                 ],
 
@@ -2784,8 +2268,6 @@ public function studentDashboard(
             );
 
         }
-
-
 
         $db
 
@@ -2803,41 +2285,27 @@ public function studentDashboard(
 
                 'for_app' => 'N',
 
-
-
                 'revise_remarks' => trim(
 
                     $validated['revise_remarks'],
 
                 ),
 
+                'last_update' => now()->format(
 
+                    'Y-m-d H:i:s',
 
-                'last_update' =>
-
-                    now()->format(
-
-                        'Y-m-d H:i:s',
-
-                    ),
+                ),
 
             ]);
 
-
-
         return response()->json([
 
-            'message' =>
-
-                'The activity has been saved.',
+            'message' => 'The activity has been saved.',
 
         ]);
 
     }
-
-
-
-
 
     private function studentActivityStatus(
 
@@ -2869,8 +2337,6 @@ public function studentDashboard(
 
         }
 
-
-
         $remarks = trim(
 
             (string) (
@@ -2882,8 +2348,6 @@ public function studentDashboard(
             ),
 
         );
-
-
 
         $forApp = strtoupper(
 
@@ -2901,8 +2365,6 @@ public function studentDashboard(
 
         );
 
-
-
         if (
 
             $remarks !== ''
@@ -2915,21 +2377,15 @@ public function studentDashboard(
 
         }
 
-
-
         if ($forApp === 'Y') {
 
             return 'Pending';
 
         }
 
-
-
         return 'Draft';
 
     }
-
-
 
     private function studentActivityIsVerified(
 
@@ -2943,8 +2399,6 @@ public function studentDashboard(
 
             : ($record['sto_validated'] ?? '');
 
-
-
         return strtoupper(
 
             trim(
@@ -2956,8 +2410,6 @@ public function studentDashboard(
         ) === 'Y';
 
     }
-
-
 
     private function studentActivityBaseUrl(
 
@@ -2979,8 +2431,6 @@ public function studentDashboard(
 
         );
 
-
-
         $configured = trim(
 
             (string) config(
@@ -2992,8 +2442,6 @@ public function studentDashboard(
             ),
 
         );
-
-
 
         if ($configured === '') {
 
@@ -3011,8 +2459,6 @@ public function studentDashboard(
 
         }
 
-
-
         if ($configured === '') {
 
             $configured = trim(
@@ -3028,8 +2474,6 @@ public function studentDashboard(
             );
 
         }
-
-
 
         if ($configured === '') {
 
@@ -3047,8 +2491,6 @@ public function studentDashboard(
 
         }
 
-
-
         return rtrim(
 
             $configured,
@@ -3058,8 +2500,6 @@ public function studentDashboard(
         );
 
     }
-
-
 
     private function studentActivityDisk(
 
@@ -3081,8 +2521,6 @@ public function studentDashboard(
 
         );
 
-
-
         $school = config(
 
             "schools.schools.{$schoolCode}",
@@ -3090,8 +2528,6 @@ public function studentDashboard(
             [],
 
         );
-
-
 
         $storage = is_array($school)
 
@@ -3106,8 +2542,6 @@ public function studentDashboard(
             ? $school['storage']
 
             : [];
-
-
 
         if (
 
@@ -3131,8 +2565,6 @@ public function studentDashboard(
 
         }
 
-
-
         if ($storage === []) {
 
             $legacyStorage = config(
@@ -3142,8 +2574,6 @@ public function studentDashboard(
                 [],
 
             );
-
-
 
             $storage = is_array(
 
@@ -3157,8 +2587,6 @@ public function studentDashboard(
 
         }
 
-
-
         $ftp = is_array(
 
             $storage['ftp'] ?? null,
@@ -3169,8 +2597,6 @@ public function studentDashboard(
 
             : [];
 
-
-
         $activity = is_array(
 
             $storage['activity'] ?? null,
@@ -3180,8 +2606,6 @@ public function studentDashboard(
             ? $storage['activity']
 
             : [];
-
-
 
         $host = trim(
 
@@ -3201,8 +2625,6 @@ public function studentDashboard(
 
         );
 
-
-
         $username = trim(
 
             (string) (
@@ -3221,8 +2643,6 @@ public function studentDashboard(
 
         );
 
-
-
         $password = (string) (
 
             $ftp['password']
@@ -3237,8 +2657,6 @@ public function studentDashboard(
 
         );
 
-
-
         $port = (int) (
 
             $ftp['port']
@@ -3252,8 +2670,6 @@ public function studentDashboard(
             )
 
         );
-
-
 
         $root = trim(
 
@@ -3272,8 +2688,6 @@ public function studentDashboard(
             ),
 
         );
-
-
 
         if (
 
@@ -3306,14 +2720,11 @@ public function studentDashboard(
         ) {
 
             throw new RuntimeException(
-
                 'Selected school activity storage is incomplete.',
 
             );
 
         }
-
-
 
         return Storage::build([
 
@@ -3341,8 +2752,6 @@ public function studentDashboard(
 
     }
 
-
-
     private function uniqueStudentActivityId(
 
         ConnectionInterface $db,
@@ -3365,13 +2774,9 @@ public function studentDashboard(
 
         );
 
-
-
         return $id;
 
     }
-
-
 
     private function storeStudentActivityFile(
 
@@ -3389,8 +2794,6 @@ public function studentDashboard(
 
         );
 
-
-
         $extension = preg_replace(
 
             '/[^a-z0-9]/',
@@ -3401,11 +2804,7 @@ public function studentDashboard(
 
         ) ?: 'bin';
 
-
-
         $candidateTime = $timestamp;
-
-
 
         do {
 
@@ -3413,17 +2812,15 @@ public function studentDashboard(
 
                 'sam_'
 
-                . $candidateTime->format(
+                .$candidateTime->format(
 
                     'Ymd_His',
 
                 )
 
-                . '.'
+                .'.'
 
-                . $extension;
-
-
+                .$extension;
 
             if ($disk->exists($filename)) {
 
@@ -3435,39 +2832,27 @@ public function studentDashboard(
 
         } while ($disk->exists($filename));
 
-
-
         $realPath = $file->getRealPath();
-
-
 
         if (! $realPath) {
 
             throw new RuntimeException(
-
                 'Unable to locate the selected activity evidence.',
 
             );
 
         }
 
-
-
         $stream = fopen($realPath, 'rb');
-
-
 
         if ($stream === false) {
 
             throw new RuntimeException(
-
                 'Unable to read the selected activity evidence.',
 
             );
 
         }
-
-
 
         try {
 
@@ -3485,8 +2870,6 @@ public function studentDashboard(
 
         }
 
-
-
         if (
 
             ! $stored
@@ -3496,20 +2879,15 @@ public function studentDashboard(
         ) {
 
             throw new RuntimeException(
-
                 'The activity evidence could not be stored on the selected school server.',
 
             );
 
         }
 
-
-
         return $filename;
 
     }
-
-
 
     private function deleteStudentActivityFile(
 
@@ -3537,15 +2915,11 @@ public function studentDashboard(
 
         );
 
-
-
         if ($filename === '') {
 
             return;
 
         }
-
-
 
         try {
 
@@ -3554,8 +2928,6 @@ public function studentDashboard(
                 $request,
 
             );
-
-
 
             if ($disk->exists($filename)) {
 
@@ -3570,8 +2942,6 @@ public function studentDashboard(
         }
 
     }
-
-
 
     private function resolveSchoolConnection(
 
@@ -3593,17 +2963,13 @@ public function studentDashboard(
 
         );
 
-
-
         if ($schoolCode === '') {
 
             return response()->json(
 
                 [
 
-                    'message' =>
-
-                        'No school has been selected.',
+                    'message' => 'No school has been selected.',
 
                 ],
 
@@ -3613,8 +2979,6 @@ public function studentDashboard(
 
         }
 
-
-
         $schools = config(
 
             'schools.schools',
@@ -3623,17 +2987,13 @@ public function studentDashboard(
 
         );
 
-
-
-        if (!is_array($schools)) {
+        if (! is_array($schools)) {
 
             return response()->json(
 
                 [
 
-                    'message' =>
-
-                        'School configuration is unavailable.',
+                    'message' => 'School configuration is unavailable.',
 
                 ],
 
@@ -3643,29 +3003,19 @@ public function studentDashboard(
 
         }
 
-
-
         $school =
 
             $schools[$schoolCode] ?? null;
 
-
-
-        if (!is_array($school)) {
+        if (! is_array($school)) {
 
             return response()->json(
 
                 [
 
-                    'message' =>
+                    'message' => 'The selected school is not configured.',
 
-                        'The selected school is not configured.',
-
-
-
-                    'schoolCode' =>
-
-                        $schoolCode,
+                    'schoolCode' => $schoolCode,
 
                 ],
 
@@ -3695,7 +3045,7 @@ public function studentDashboard(
 
             $configuredCode === '' ||
 
-            !hash_equals(
+            ! hash_equals(
 
                 $configuredCode,
 
@@ -3709,9 +3059,7 @@ public function studentDashboard(
 
                 [
 
-                    'message' =>
-
-                        'The selected school code is invalid.',
+                    'message' => 'The selected school code is invalid.',
 
                 ],
 
@@ -3721,17 +3069,13 @@ public function studentDashboard(
 
         }
 
-
-
         $connection =
 
             $school['connection'] ?? null;
 
-
-
         if (
 
-            !is_string($connection) ||
+            ! is_string($connection) ||
 
             $connection === ''
 
@@ -3741,15 +3085,9 @@ public function studentDashboard(
 
                 [
 
-                    'message' =>
+                    'message' => 'The school database connection is missing.',
 
-                        'The school database connection is missing.',
-
-
-
-                    'schoolCode' =>
-
-                        $schoolCode,
+                    'schoolCode' => $schoolCode,
 
                 ],
 
@@ -3758,8 +3096,6 @@ public function studentDashboard(
             );
 
         }
-
-
 
         $connectionConfig = config(
 
@@ -3767,29 +3103,17 @@ public function studentDashboard(
 
         );
 
-
-
-        if (!is_array($connectionConfig)) {
+        if (! is_array($connectionConfig)) {
 
             return response()->json(
 
                 [
 
-                    'message' =>
+                    'message' => 'The school database connection is not configured.',
 
-                        'The school database connection is not configured.',
+                    'schoolCode' => $schoolCode,
 
-
-
-                    'schoolCode' =>
-
-                        $schoolCode,
-
-
-
-                    'connection' =>
-
-                        $connection,
+                    'connection' => $connection,
 
                 ],
 
@@ -3799,25 +3123,17 @@ public function studentDashboard(
 
         }
 
-
-
         config([
 
-            'database.default' =>
-
-                $connection,
+            'database.default' => $connection,
 
         ]);
-
-
 
         DB::setDefaultConnection(
 
             $connection,
 
         );
-
-
 
         return DB::connection(
 
@@ -3826,5 +3142,4 @@ public function studentDashboard(
         );
 
     }
-
-}   
+}

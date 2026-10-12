@@ -29,8 +29,7 @@ return Application::configure(
              * Register route middleware aliases.
              */
             $middleware->alias([
-                'account.type' =>
-                    EnsureAccountType::class,
+                'account.type' => EnsureAccountType::class,
             ]);
 
             /*
@@ -52,8 +51,7 @@ return Application::configure(
     ->withExceptions(
         function (Exceptions $exceptions): void {
             $exceptions->shouldRenderJsonWhen(
-                fn (Request $request): bool =>
-                    $request->is('api/*') ||
+                fn (Request $request): bool => $request->is('api/*') ||
                     $request->expectsJson(),
             );
         },

@@ -8,10 +8,7 @@ import { computed, onMounted, ref } from 'vue';
 import Calendar from '@/components/Calendar.vue';
 import Datatable from '@/components/Datatable.vue';
 
-import type {
-    DataTableColumn,
-    DataTableRow,
-} from '@/types';
+import type { DataTableColumn, DataTableRow } from '@/types';
 import type { CalendarEvent } from '@/types/calendar';
 
 defineOptions({
@@ -102,15 +99,12 @@ async function loadEvents(): Promise<void> {
     errorMessage.value = '';
 
     try {
-        const response = await axios.get<EventsResponse>(
-            `${API_BASE}/events`,
-            {
-                params: {
-                    month: month.value,
-                },
-                ...requestConfig(),
+        const response = await axios.get<EventsResponse>(`${API_BASE}/events`, {
+            params: {
+                month: month.value,
             },
-        );
+            ...requestConfig(),
+        });
 
         events.value = response.data.data;
     } catch (error: unknown) {
@@ -187,21 +181,14 @@ function formatDate(value: string): string {
     }).format(new Date(year, monthValue - 1, day));
 }
 
-function getErrorMessage(
-    error: unknown,
-    fallback: string,
-): string {
+function getErrorMessage(error: unknown, fallback: string): string {
     if (!axios.isAxiosError(error)) {
         return fallback;
     }
 
     return (
-        (
-            error.response?.data as
-                | { message?: string }
-                | undefined
-        )?.message
-        || fallback
+        (error.response?.data as { message?: string } | undefined)?.message ||
+        fallback
     );
 }
 
@@ -269,15 +256,14 @@ onMounted(() => void loadEvents());
                     <span
                         :class="[
                             'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold',
-                            value === 'Revise'
-                                || value === 'For Revision'
+                            value === 'Revise' || value === 'For Revision'
                                 ? 'bg-red-100 text-red-700'
-                                : value === 'Validated'
-                                    || value === 'Completed'
-                                    || value === 'Verified'
-                                    || value === 'Signed'
-                                    ? 'bg-emerald-100 text-emerald-700'
-                                    : 'bg-amber-100 text-amber-700',
+                                : value === 'Validated' ||
+                                    value === 'Completed' ||
+                                    value === 'Verified' ||
+                                    value === 'Signed'
+                                  ? 'bg-emerald-100 text-emerald-700'
+                                  : 'bg-amber-100 text-amber-700',
                         ]"
                     >
                         {{ value }}

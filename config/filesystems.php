@@ -1,4 +1,5 @@
 <?php
+
 /*
 |--------------------------------------------------------------------------
 | School FTP Disks
@@ -96,7 +97,7 @@ foreach ($schools as $diskCode => $environmentPrefix) {
                 ($parentRoot === ''
                     ? ''
                     : $parentRoot)
-                . '/photos';
+                .'/photos';
         }
     }
     /*
@@ -171,6 +172,7 @@ foreach ($schools as $diskCode => $environmentPrefix) {
         ],
     );
 }
+
 return [
     /*
     |--------------------------------------------------------------------------
@@ -212,14 +214,13 @@ return [
                 'root' => storage_path(
                     'app/public',
                 ),
-                'url' =>
-                    rtrim(
-                        env(
-                            'APP_URL',
-                            'http://localhost',
-                        ),
-                        '/',
-                    ).
+                'url' => rtrim(
+                    env(
+                        'APP_URL',
+                        'http://localhost',
+                    ),
+                    '/',
+                ).
                     '/storage',
                 'visibility' => 'public',
                 'throw' => false,
@@ -250,11 +251,10 @@ return [
                 'endpoint' => env(
                     'AWS_ENDPOINT',
                 ),
-                'use_path_style_endpoint' =>
-                    env(
-                        'AWS_USE_PATH_STYLE_ENDPOINT',
-                        false,
-                    ),
+                'use_path_style_endpoint' => env(
+                    'AWS_USE_PATH_STYLE_ENDPOINT',
+                    false,
+                ),
                 'throw' => false,
                 'report' => false,
             ],
@@ -270,7 +270,6 @@ return [
     |--------------------------------------------------------------------------
     */
     'links' => [
-        public_path('storage') =>
-            storage_path('app/public'),
+        public_path('storage') => storage_path('app/public'),
     ],
 ];

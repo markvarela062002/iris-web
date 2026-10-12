@@ -173,15 +173,17 @@ const profileImage = computed(() => {
         return student.value.avatar || student.value.profile_image;
     }
 
-    const gender = String(student.value.gender ?? '').trim().toUpperCase();
+    const gender = String(student.value.gender ?? '')
+        .trim()
+        .toUpperCase();
 
     if (gender === 'F') {
-return '/images/female.png';
-}
+        return '/images/female.png';
+    }
 
     if (gender === 'M') {
-return '/images/male.png';
-}
+        return '/images/male.png';
+    }
 
     return '/images/default-user.png';
 });
@@ -423,8 +425,8 @@ async function loadActivities(): Promise<void> {
         );
 
         if (activitiesController !== controller) {
-return;
-}
+            return;
+        }
 
         activitiesTotal.value = Number(response.data.total) || 0;
         activities.value = Array.isArray(response.data.data)
@@ -432,16 +434,19 @@ return;
             : [];
     } catch (error: unknown) {
         if (isCancelled(error) || activitiesController !== controller) {
-return;
-}
+            return;
+        }
 
         activities.value = [];
         activitiesTotal.value = null;
-        activitiesError.value = errorMessage(error, 'Unable to load activities.');
+        activitiesError.value = errorMessage(
+            error,
+            'Unable to load activities.',
+        );
     } finally {
         if (activitiesController === controller) {
-activitiesLoading.value = false;
-}
+            activitiesLoading.value = false;
+        }
     }
 }
 
@@ -459,8 +464,8 @@ async function loadDocuments(): Promise<void> {
         );
 
         if (documentsController !== controller) {
-return;
-}
+            return;
+        }
 
         documentsTotal.value = Number(response.data.total) || 0;
         documents.value = Array.isArray(response.data.data)
@@ -468,8 +473,8 @@ return;
             : [];
     } catch (error: unknown) {
         if (isCancelled(error) || documentsController !== controller) {
-return;
-}
+            return;
+        }
 
         documents.value = [];
         documentsTotal.value = null;
@@ -479,8 +484,8 @@ return;
         );
     } finally {
         if (documentsController === controller) {
-documentsLoading.value = false;
-}
+            documentsLoading.value = false;
+        }
     }
 }
 
@@ -498,8 +503,8 @@ async function loadOtg(): Promise<void> {
         );
 
         if (otgController !== controller) {
-return;
-}
+            return;
+        }
 
         otgPercentage.value = Math.min(
             100,
@@ -512,8 +517,8 @@ return;
             : [];
     } catch (error: unknown) {
         if (isCancelled(error) || otgController !== controller) {
-return;
-}
+            return;
+        }
 
         otgTasks.value = [];
         otgPercentage.value = null;
@@ -522,8 +527,8 @@ return;
         otgError.value = errorMessage(error, 'Unable to load OTG progress.');
     } finally {
         if (otgController === controller) {
-otgLoading.value = false;
-}
+            otgLoading.value = false;
+        }
     }
 }
 
@@ -541,8 +546,8 @@ async function loadJournals(): Promise<void> {
         );
 
         if (journalsController !== controller) {
-return;
-}
+            return;
+        }
 
         journalsTotal.value = Number(response.data.total) || 0;
         journals.value = Array.isArray(response.data.data)
@@ -550,29 +555,31 @@ return;
             : [];
     } catch (error: unknown) {
         if (isCancelled(error) || journalsController !== controller) {
-return;
-}
+            return;
+        }
 
         journals.value = [];
         journalsTotal.value = null;
         journalsError.value = errorMessage(error, 'Unable to load journals.');
     } finally {
         if (journalsController === controller) {
-journalsLoading.value = false;
-}
+            journalsLoading.value = false;
+        }
     }
 }
 
 function formatDate(value: string | null): string {
     if (!value) {
-return '—';
-}
+        return '—';
+    }
 
-    const date = new Date(value.includes('T') ? value : value.replace(' ', 'T'));
+    const date = new Date(
+        value.includes('T') ? value : value.replace(' ', 'T'),
+    );
 
     if (Number.isNaN(date.getTime())) {
-return value;
-}
+        return value;
+    }
 
     return new Intl.DateTimeFormat('en-PH', {
         timeZone: 'Asia/Manila',
@@ -584,14 +591,16 @@ return value;
 
 function formatDateTime(value: string | null): string {
     if (!value) {
-return '—';
-}
+        return '—';
+    }
 
-    const date = new Date(value.includes('T') ? value : value.replace(' ', 'T'));
+    const date = new Date(
+        value.includes('T') ? value : value.replace(' ', 'T'),
+    );
 
     if (Number.isNaN(date.getTime())) {
-return value;
-}
+        return value;
+    }
 
     return new Intl.DateTimeFormat('en-PH', {
         timeZone: 'Asia/Manila',
@@ -609,8 +618,8 @@ function formatActivityPeriod(activity: StudentActivity): string {
     const end = formatDate(activity.end_date);
 
     if (start === '—' && end === '—') {
-return '—';
-}
+        return '—';
+    }
 
     return start === end ? start : `${start} – ${end}`;
 }
@@ -642,8 +651,8 @@ function otgDescription(task: StudentOtgTask): string {
     const value = task.description || task.desc_task || '';
 
     if (!value) {
-return '—';
-}
+        return '—';
+    }
 
     try {
         return decodeURIComponent(value.replace(/\+/g, ' '));
@@ -667,37 +676,31 @@ function journalTime(journal: StudentJournal): string {
     const end = journal.journal_time_to?.trim();
 
     if (!start && !end) {
-return '—';
-}
+        return '—';
+    }
 
     if (!end) {
-return start || '—';
-}
+        return start || '—';
+    }
 
     return `${start || '—'} – ${end}`;
 }
 
 function openDownload(url: unknown): void {
     if (typeof url !== 'string' || url.trim() === '') {
-return;
-}
+        return;
+    }
 
     window.open(url, '_blank', 'noopener,noreferrer');
 }
 
-function handleActivityAction(
-    action: string,
-    row: DataTableRow,
-): void {
+function handleActivityAction(action: string, row: DataTableRow): void {
     if (action === 'download') {
         openDownload(row.file_url);
     }
 }
 
-function handleJournalAction(
-    action: string,
-    row: DataTableRow,
-): void {
+function handleJournalAction(action: string, row: DataTableRow): void {
     if (action === 'download') {
         openDownload(row.evidence_url);
     }
@@ -717,8 +720,8 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
     if (clockInterval) {
-clearInterval(clockInterval);
-}
+        clearInterval(clockInterval);
+    }
 
     activitiesController?.abort();
     documentsController?.abort();
@@ -761,14 +764,16 @@ clearInterval(clockInterval);
                         <div
                             class="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-bold tracking-[0.14em] text-blue-100 uppercase backdrop-blur-sm"
                         >
-                            <span class="size-1.5 rounded-full bg-emerald-400"></span>
+                            <span
+                                class="size-1.5 rounded-full bg-emerald-400"
+                            ></span>
                             {{ student.role || 'Cadet' }}
                         </div>
                         <p class="text-sm font-medium text-blue-100/80">
                             Welcome back,
                         </p>
                         <h1
-                            class="mt-1 break-words text-2xl leading-tight font-bold tracking-tight text-white sm:text-3xl"
+                            class="mt-1 text-2xl leading-tight font-bold tracking-tight break-words text-white sm:text-3xl"
                         >
                             {{ displayName }}
                         </h1>
@@ -800,10 +805,12 @@ clearInterval(clockInterval);
                                 ]"
                             ></i>
                         </div>
-                        <p class="text-[10px] font-bold tracking-wider text-blue-100/65 uppercase">
+                        <p
+                            class="text-[10px] font-bold tracking-wider text-blue-100/65 uppercase"
+                        >
                             {{ item.label }}
                         </p>
-                        <p class="mt-1 break-words text-sm font-semibold">
+                        <p class="mt-1 text-sm font-semibold break-words">
                             {{ item.value }}
                         </p>
                     </div>
@@ -819,60 +826,123 @@ clearInterval(clockInterval);
         </section>
 
         <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <Card class="overflow-hidden !rounded-2xl !border-0 !bg-orange-500 !text-white shadow-lg">
+            <Card
+                class="overflow-hidden !rounded-2xl !border-0 !bg-orange-500 !text-white shadow-lg"
+            >
                 <template #content>
                     <div class="flex min-h-40 flex-col p-1">
                         <div class="flex items-start justify-between">
-                            <span class="flex size-11 items-center justify-center rounded-xl bg-white/15">
+                            <span
+                                class="flex size-11 items-center justify-center rounded-xl bg-white/15"
+                            >
                                 <i class="pi pi-bolt text-xl"></i>
                             </span>
-                            <span class="rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-bold uppercase">Total</span>
+                            <span
+                                class="rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-bold uppercase"
+                                >Total</span
+                            >
                         </div>
-                        <div class="mt-auto pt-5" :aria-busy="activitiesLoading">
-                            <i v-if="activitiesLoading" class="pi pi-spin pi-spinner text-3xl"></i>
-                            <span v-else-if="activitiesError" class="text-sm font-semibold">Unavailable</span>
-                            <strong v-else class="text-4xl leading-none">{{ activitiesTotal }}</strong>
-                            <p class="mt-2 text-sm font-semibold text-white/90">Submitted Activities</p>
+                        <div
+                            class="mt-auto pt-5"
+                            :aria-busy="activitiesLoading"
+                        >
+                            <i
+                                v-if="activitiesLoading"
+                                class="pi pi-spin pi-spinner text-3xl"
+                            ></i>
+                            <span
+                                v-else-if="activitiesError"
+                                class="text-sm font-semibold"
+                                >Unavailable</span
+                            >
+                            <strong v-else class="text-4xl leading-none">{{
+                                activitiesTotal
+                            }}</strong>
+                            <p class="mt-2 text-sm font-semibold text-white/90">
+                                Submitted Activities
+                            </p>
                         </div>
                     </div>
                 </template>
             </Card>
 
-            <Card class="overflow-hidden !rounded-2xl !border-0 !bg-emerald-500 !text-white shadow-lg">
+            <Card
+                class="overflow-hidden !rounded-2xl !border-0 !bg-emerald-500 !text-white shadow-lg"
+            >
                 <template #content>
                     <div class="flex min-h-40 flex-col p-1">
                         <div class="flex items-start justify-between">
-                            <span class="flex size-11 items-center justify-center rounded-xl bg-white/15">
+                            <span
+                                class="flex size-11 items-center justify-center rounded-xl bg-white/15"
+                            >
                                 <i class="pi pi-file-arrow-up text-xl"></i>
                             </span>
-                            <span class="rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-bold uppercase">Total</span>
+                            <span
+                                class="rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-bold uppercase"
+                                >Total</span
+                            >
                         </div>
                         <div class="mt-auto pt-5" :aria-busy="documentsLoading">
-                            <i v-if="documentsLoading" class="pi pi-spin pi-spinner text-3xl"></i>
-                            <span v-else-if="documentsError" class="text-sm font-semibold">Unavailable</span>
-                            <strong v-else class="text-4xl leading-none">{{ documentsTotal }}</strong>
-                            <p class="mt-2 text-sm font-semibold text-white/90">Uploaded Documents</p>
+                            <i
+                                v-if="documentsLoading"
+                                class="pi pi-spin pi-spinner text-3xl"
+                            ></i>
+                            <span
+                                v-else-if="documentsError"
+                                class="text-sm font-semibold"
+                                >Unavailable</span
+                            >
+                            <strong v-else class="text-4xl leading-none">{{
+                                documentsTotal
+                            }}</strong>
+                            <p class="mt-2 text-sm font-semibold text-white/90">
+                                Uploaded Documents
+                            </p>
                         </div>
                     </div>
                 </template>
             </Card>
 
-            <Card class="overflow-hidden !rounded-2xl !border-0 !bg-red-500 !text-white shadow-lg">
+            <Card
+                class="overflow-hidden !rounded-2xl !border-0 !bg-red-500 !text-white shadow-lg"
+            >
                 <template #content>
                     <div class="flex min-h-40 flex-col p-1">
                         <div class="flex items-start justify-between">
-                            <span class="flex size-11 items-center justify-center rounded-xl bg-white/15">
+                            <span
+                                class="flex size-11 items-center justify-center rounded-xl bg-white/15"
+                            >
                                 <i class="pi pi-bookmark text-xl"></i>
                             </span>
-                            <span class="rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-bold uppercase">Progress</span>
+                            <span
+                                class="rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-bold uppercase"
+                                >Progress</span
+                            >
                         </div>
                         <div class="mt-auto pt-5" :aria-busy="otgLoading">
-                            <i v-if="otgLoading" class="pi pi-spin pi-spinner text-3xl"></i>
-                            <span v-else-if="otgError" class="text-sm font-semibold">Unavailable</span>
+                            <i
+                                v-if="otgLoading"
+                                class="pi pi-spin pi-spinner text-3xl"
+                            ></i>
+                            <span
+                                v-else-if="otgError"
+                                class="text-sm font-semibold"
+                                >Unavailable</span
+                            >
                             <template v-else>
-                                <div class="flex items-end justify-between gap-3">
-                                    <strong class="text-4xl leading-none">{{ otgPercentage }}%</strong>
-                                    <span class="text-xs font-semibold text-white/85">{{ otgCompleted }}/{{ otgTotal }} tasks</span>
+                                <div
+                                    class="flex items-end justify-between gap-3"
+                                >
+                                    <strong class="text-4xl leading-none"
+                                        >{{ otgPercentage }}%</strong
+                                    >
+                                    <span
+                                        class="text-xs font-semibold text-white/85"
+                                        >{{ otgCompleted }}/{{
+                                            otgTotal
+                                        }}
+                                        tasks</span
+                                    >
                                 </div>
                                 <ProgressBar
                                     :value="otgPercentage ?? 0"
@@ -880,26 +950,46 @@ clearInterval(clockInterval);
                                     class="mt-3 !h-2 !bg-white/20"
                                 />
                             </template>
-                            <p class="mt-2 text-sm font-semibold text-white/90">OTG Task Completion</p>
+                            <p class="mt-2 text-sm font-semibold text-white/90">
+                                OTG Task Completion
+                            </p>
                         </div>
                     </div>
                 </template>
             </Card>
 
-            <Card class="overflow-hidden !rounded-2xl !border-0 !bg-blue-500 !text-white shadow-lg">
+            <Card
+                class="overflow-hidden !rounded-2xl !border-0 !bg-blue-500 !text-white shadow-lg"
+            >
                 <template #content>
                     <div class="flex min-h-40 flex-col p-1">
                         <div class="flex items-start justify-between">
-                            <span class="flex size-11 items-center justify-center rounded-xl bg-white/15">
+                            <span
+                                class="flex size-11 items-center justify-center rounded-xl bg-white/15"
+                            >
                                 <i class="pi pi-book text-xl"></i>
                             </span>
-                            <span class="rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-bold uppercase">Total</span>
+                            <span
+                                class="rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-bold uppercase"
+                                >Total</span
+                            >
                         </div>
                         <div class="mt-auto pt-5" :aria-busy="journalsLoading">
-                            <i v-if="journalsLoading" class="pi pi-spin pi-spinner text-3xl"></i>
-                            <span v-else-if="journalsError" class="text-sm font-semibold">Unavailable</span>
-                            <strong v-else class="text-4xl leading-none">{{ journalsTotal }}</strong>
-                            <p class="mt-2 text-sm font-semibold text-white/90">Daily Journals</p>
+                            <i
+                                v-if="journalsLoading"
+                                class="pi pi-spin pi-spinner text-3xl"
+                            ></i>
+                            <span
+                                v-else-if="journalsError"
+                                class="text-sm font-semibold"
+                                >Unavailable</span
+                            >
+                            <strong v-else class="text-4xl leading-none">{{
+                                journalsTotal
+                            }}</strong>
+                            <p class="mt-2 text-sm font-semibold text-white/90">
+                                Daily Journals
+                            </p>
                         </div>
                     </div>
                 </template>
@@ -907,7 +997,10 @@ clearInterval(clockInterval);
         </section>
 
         <section class="space-y-5">
-            <div v-if="activitiesError" class="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+            <div
+                v-if="activitiesError"
+                class="rounded-xl bg-red-50 p-3 text-sm text-red-700"
+            >
                 {{ activitiesError }}
             </div>
 
@@ -974,7 +1067,10 @@ clearInterval(clockInterval);
                 </template>
             </Datatable>
 
-            <div v-if="documentsError" class="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+            <div
+                v-if="documentsError"
+                class="rounded-xl bg-red-50 p-3 text-sm text-red-700"
+            >
                 {{ documentsError }}
             </div>
 
@@ -1077,7 +1173,10 @@ clearInterval(clockInterval);
                 </template>
             </Datatable>
 
-            <div v-if="otgError" class="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+            <div
+                v-if="otgError"
+                class="rounded-xl bg-red-50 p-3 text-sm text-red-700"
+            >
                 {{ otgError }}
             </div>
 
@@ -1113,12 +1212,12 @@ clearInterval(clockInterval);
                 </template>
 
                 <template #cell-description="{ data }">
-                    <div class="min-w-0 max-w-2xl">
+                    <div class="max-w-2xl min-w-0">
                         <p class="font-semibold text-slate-800">
                             {{ otgReference(data) }}
                         </p>
                         <p
-                            class="mt-1 line-clamp-2 break-words text-sm leading-5 text-slate-600"
+                            class="mt-1 line-clamp-2 text-sm leading-5 break-words text-slate-600"
                             :title="otgDescription(data)"
                         >
                             {{ otgDescription(data) }}
@@ -1142,7 +1241,10 @@ clearInterval(clockInterval);
                 </template>
             </Datatable>
 
-            <div v-if="journalsError" class="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+            <div
+                v-if="journalsError"
+                class="rounded-xl bg-red-50 p-3 text-sm text-red-700"
+            >
                 {{ journalsError }}
             </div>
 

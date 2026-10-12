@@ -50,7 +50,9 @@ class CorrectAnswerFrequencyController extends Controller
         $db = $this->connection($request);
         abort_unless($db->table('bs_course')->where('id', $courseId)->exists(), 404, 'Exam package not found.');
         $rows = $db->table('bs_topic')->where('bs_course_id', $courseId)->orderBy('order_no')->orderBy('id')->get(['id', 'desc_topic']);
-        $rows->each(function ($row): void { $row->desc_topic = $this->decode($row->desc_topic); });
+        $rows->each(function ($row): void {
+            $row->desc_topic = $this->decode($row->desc_topic);
+        });
 
         return response()->json(['data' => $rows]);
     }
@@ -185,5 +187,4 @@ class CorrectAnswerFrequencyController extends Controller
             'show_options' => $context->randomize === 'N', 'recalculated_at' => now('Asia/Manila')->toIso8601String()],
             'warnings' => $warnings, 'items' => $items];
     }
-
 }

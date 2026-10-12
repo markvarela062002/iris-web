@@ -10,11 +10,7 @@ import { onBeforeUnmount, onMounted, ref } from 'vue';
 import Datatable from '@/components/Datatable.vue';
 import { dashboard } from '@/routes';
 
-import type {
-    DataTableAction,
-    DataTableColumn,
-    DataTableRow,
-} from '@/types';
+import type { DataTableAction, DataTableColumn, DataTableRow } from '@/types';
 
 defineOptions({
     inheritAttrs: false,
@@ -148,8 +144,7 @@ async function loadStudents(pageNumber = 1): Promise<void> {
         totalRecords.value = response.data.meta.total;
         perPage.value = response.data.meta.perPage;
         first.value =
-            (response.data.meta.currentPage - 1) *
-            response.data.meta.perPage;
+            (response.data.meta.currentPage - 1) * response.data.meta.perPage;
     } catch (error: unknown) {
         if (
             axios.isCancel(error) ||
@@ -214,9 +209,7 @@ function manageTrainingRecord(student: DataTableRow): void {
         return;
     }
 
-    router.visit(
-        `/monitoring/otg-updates/${encodeURIComponent(personId)}`,
-    );
+    router.visit(`/monitoring/otg-updates/${encodeURIComponent(personId)}`);
 }
 
 function viewEtrb(student: DataTableRow): void {
@@ -259,16 +252,10 @@ function getStudentFullName(student: DataTableRow): string {
     return (lastName || otherNames).toUpperCase();
 }
 
-function getStudentInitials(student: DataTableRow): string {
-    const firstName = String(student.fname ?? '').trim();
-    const lastName = String(student.lname ?? '').trim();
-    const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`;
-
-    return initials.toUpperCase() || 'ST';
-}
-
 function getStudentAvatar(gender: unknown): string {
-    const normalizedGender = String(gender ?? '').trim().toUpperCase();
+    const normalizedGender = String(gender ?? '')
+        .trim()
+        .toUpperCase();
 
     if (normalizedGender === 'M' || normalizedGender === 'MALE') {
         return '/images/male-cadet.png';
@@ -363,8 +350,7 @@ function getErrorMessage(error: unknown, fallback: string): string {
     }
 
     const responseData = error.response?.data as
-        | { message?: string }
-        | undefined;
+        { message?: string } | undefined;
 
     return responseData?.message || fallback;
 }
@@ -468,7 +454,11 @@ onBeforeUnmount(() => {
                         <i class="pi pi-book text-[#377EC0]"></i>
                         <span class="font-semibold text-slate-700">
                             {{ getWorkbookCount(data) }}
-                            {{ getWorkbookCount(data) === 1 ? 'Workbook' : 'Workbooks' }}
+                            {{
+                                getWorkbookCount(data) === 1
+                                    ? 'Workbook'
+                                    : 'Workbooks'
+                            }}
                         </span>
                     </div>
                     <div class="text-xs font-medium text-slate-500">
@@ -482,15 +472,22 @@ onBeforeUnmount(() => {
 
             <template #cell-completion_percentage="{ data }">
                 <div class="min-w-[210px]">
-                    <div class="flex items-center justify-between gap-3 text-sm">
+                    <div
+                        class="flex items-center justify-between gap-3 text-sm"
+                    >
                         <span class="font-semibold text-slate-700">
-                            {{ getCompletedTaskCount(data) }} / {{ getTaskCount(data) }}
+                            {{ getCompletedTaskCount(data) }} /
+                            {{ getTaskCount(data) }}
                         </span>
                         <span class="font-bold text-[#21365A]">
-                            {{ formatPercentage(getCompletionPercentage(data)) }}
+                            {{
+                                formatPercentage(getCompletionPercentage(data))
+                            }}
                         </span>
                     </div>
-                    <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
+                    <div
+                        class="mt-2 h-2 overflow-hidden rounded-full bg-slate-200"
+                    >
                         <div
                             class="h-full rounded-full bg-green-700 transition-all"
                             :style="{

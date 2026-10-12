@@ -93,7 +93,7 @@ return [
                 : [],
         ],
 
-/*
+        /*
          * UPH school connection.
          */
         'uph' => [
@@ -142,7 +142,7 @@ return [
                 : [],
         ],
 
-/*
+        /*
          * UPHSD school connection.
          */
         'uphsd' => [

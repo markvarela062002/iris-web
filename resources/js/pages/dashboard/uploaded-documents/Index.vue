@@ -9,21 +9,12 @@ import PrimeTag from 'primevue/tag';
 import Textarea from 'primevue/textarea';
 import Toast from 'primevue/toast';
 import { useToast } from 'primevue/usetoast';
-import {
-    computed,
-    onBeforeUnmount,
-    onMounted,
-    ref,
-} from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
 import Datatable from '@/components/Datatable.vue';
 import { dashboard } from '@/routes';
 
-import type {
-    DataTableAction,
-    DataTableColumn,
-    DataTableRow,
-} from '@/types';
+import type { DataTableAction, DataTableColumn, DataTableRow } from '@/types';
 
 defineOptions({
     inheritAttrs: false,
@@ -91,12 +82,9 @@ const perPage = ref(10);
 const search = ref('');
 
 const sortField = ref('date_uploaded');
-const sortDirection = ref<'asc' | 'desc'>(
-    'desc',
-);
+const sortDirection = ref<'asc' | 'desc'>('desc');
 
-const selectedDocument =
-    ref<DataTableRow | null>(null);
+const selectedDocument = ref<DataTableRow | null>(null);
 
 const filesDialogVisible = ref(false);
 const verifyDialogVisible = ref(false);
@@ -107,9 +95,7 @@ const reviseError = ref('');
 
 const errorMessage = ref('');
 
-let requestController:
-    | AbortController
-    | null = null;
+let requestController: AbortController | null = null;
 
 /*
 |--------------------------------------------------------------------------
@@ -166,13 +152,8 @@ const actions: DataTableAction[] = [
         icon: 'pi pi-download',
         severity: 'info',
 
-        visible: (
-            row: DataTableRow,
-        ): boolean => {
-            return (
-                getUploadedFiles(row).length >
-                0
-            );
+        visible: (row: DataTableRow): boolean => {
+            return getUploadedFiles(row).length > 0;
         },
     },
 
@@ -185,13 +166,8 @@ const actions: DataTableAction[] = [
         icon: 'pi pi-download',
         severity: 'secondary',
 
-        visible: (
-            row: DataTableRow,
-        ): boolean => {
-            return (
-                getUploadedFiles(row).length ===
-                0
-            );
+        visible: (row: DataTableRow): boolean => {
+            return getUploadedFiles(row).length === 0;
         },
 
         disabled: (): boolean => true,
@@ -219,11 +195,7 @@ const actions: DataTableAction[] = [
 ];
 
 const currentPage = computed(() => {
-    return (
-        Math.floor(
-            first.value / perPage.value,
-        ) + 1
-    );
+    return Math.floor(first.value / perPage.value) + 1;
 });
 
 const selectedStudentName = computed(() => {
@@ -231,21 +203,15 @@ const selectedStudentName = computed(() => {
         return '';
     }
 
-    return getStudentFullName(
-        selectedDocument.value,
-    );
+    return getStudentFullName(selectedDocument.value);
 });
 
-const selectedFiles = computed<
-    UploadedFile[]
->(() => {
+const selectedFiles = computed<UploadedFile[]>(() => {
     if (!selectedDocument.value) {
         return [];
     }
 
-    return getUploadedFiles(
-        selectedDocument.value,
-    );
+    return getUploadedFiles(selectedDocument.value);
 });
 
 /*
@@ -254,79 +220,55 @@ const selectedFiles = computed<
 |--------------------------------------------------------------------------
 */
 
-async function loadDocuments(
-    pageNumber = 1,
-): Promise<void> {
+async function loadDocuments(pageNumber = 1): Promise<void> {
     requestController?.abort();
 
-    const controller =
-        new AbortController();
+    const controller = new AbortController();
 
     requestController = controller;
     loading.value = true;
     errorMessage.value = '';
 
     try {
-        const response =
-            await axios.get<DocumentApiResponse>(
-                '/api/v1/dashboard/datatable/uploaded-documents',
-                {
-                    signal:
-                        controller.signal,
+        const response = await axios.get<DocumentApiResponse>(
+            '/api/v1/dashboard/datatable/uploaded-documents',
+            {
+                signal: controller.signal,
 
-                    params: {
-                        page: pageNumber,
+                params: {
+                    page: pageNumber,
 
-                        per_page:
-                            perPage.value,
+                    per_page: perPage.value,
 
-                        search:
-                            search.value,
+                    search: search.value,
 
-                        sort_field:
-                            sortField.value,
+                    sort_field: sortField.value,
 
-                        sort_direction:
-                            sortDirection.value,
-                    },
-
-                    headers: {
-                        Accept:
-                            'application/json',
-
-                        'X-Requested-With':
-                            'XMLHttpRequest',
-                    },
-
-                    withCredentials: true,
+                    sort_direction: sortDirection.value,
                 },
-            );
 
-        documents.value =
-            response.data.data;
+                headers: {
+                    Accept: 'application/json',
 
-        totalRecords.value =
-            response.data.meta.total;
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
 
-        perPage.value =
-            response.data.meta.perPage;
+                withCredentials: true,
+            },
+        );
+
+        documents.value = response.data.data;
+
+        totalRecords.value = response.data.meta.total;
+
+        perPage.value = response.data.meta.perPage;
 
         first.value =
-            (
-                response.data.meta
-                    .currentPage - 1
-            ) *
-            response.data.meta.perPage;
+            (response.data.meta.currentPage - 1) * response.data.meta.perPage;
     } catch (error: unknown) {
         if (
             axios.isCancel(error) ||
-            (
-                axios.isAxiosError(
-                    error,
-                ) &&
-                error.code ===
-                    'ERR_CANCELED'
-            )
+            (axios.isAxiosError(error) && error.code === 'ERR_CANCELED')
         ) {
             return;
         }
@@ -334,21 +276,14 @@ async function loadDocuments(
         documents.value = [];
         totalRecords.value = 0;
 
-        errorMessage.value =
-            getErrorMessage(
-                error,
-                'Unable to load uploaded documents.',
-            );
-
-        console.error(
-            'Unable to load uploaded documents:',
+        errorMessage.value = getErrorMessage(
             error,
+            'Unable to load uploaded documents.',
         );
+
+        console.error('Unable to load uploaded documents:', error);
     } finally {
-        if (
-            requestController ===
-            controller
-        ) {
+        if (requestController === controller) {
             loading.value = false;
         }
     }
@@ -360,37 +295,24 @@ async function loadDocuments(
 |--------------------------------------------------------------------------
 */
 
-function handlePage(
-    event: DataTablePageEvent,
-): void {
+function handlePage(event: DataTablePageEvent): void {
     perPage.value = event.rows;
     first.value = event.first;
 
-    void loadDocuments(
-        event.page + 1,
-    );
+    void loadDocuments(event.page + 1);
 }
 
-function handleSort(
-    event: DataTableSortEvent,
-): void {
-    sortField.value =
-        event.sortField ||
-        'date_uploaded';
+function handleSort(event: DataTableSortEvent): void {
+    sortField.value = event.sortField || 'date_uploaded';
 
-    sortDirection.value =
-        event.sortOrder === -1
-            ? 'desc'
-            : 'asc';
+    sortDirection.value = event.sortOrder === -1 ? 'desc' : 'asc';
 
     first.value = 0;
 
     void loadDocuments(1);
 }
 
-function handleSearch(
-    value: string,
-): void {
+function handleSearch(value: string): void {
     search.value = value;
     first.value = 0;
 
@@ -403,7 +325,6 @@ function handleSearch(
 |--------------------------------------------------------------------------
 */
 
-
 function navigateToDocumentList(): void {
     router.visit('/monitoring/uploaded-documents');
 }
@@ -414,10 +335,7 @@ function navigateToDocumentList(): void {
 |--------------------------------------------------------------------------
 */
 
-function handleAction(
-    action: string,
-    document: DataTableRow,
-): void {
+function handleAction(action: string, document: DataTableRow): void {
     errorMessage.value = '';
 
     /*
@@ -428,14 +346,10 @@ function handleAction(
         return;
     }
 
-    selectedDocument.value =
-        document;
+    selectedDocument.value = document;
 
     if (action === 'view-files') {
-        if (
-            getUploadedFiles(document)
-                .length === 0
-        ) {
+        if (getUploadedFiles(document).length === 0) {
             selectedDocument.value = null;
 
             return;
@@ -447,8 +361,7 @@ function handleAction(
     }
 
     if (action === 'verify') {
-        verifyDialogVisible.value =
-            true;
+        verifyDialogVisible.value = true;
 
         return;
     }
@@ -457,32 +370,23 @@ function handleAction(
         reviseRemarks.value = '';
         reviseError.value = '';
 
-        reviseDialogVisible.value =
-            true;
+        reviseDialogVisible.value = true;
     }
 }
 
-function openUploadedFiles(
-    document: DataTableRow,
-): void {
-    const files =
-        getUploadedFiles(document);
+function openUploadedFiles(document: DataTableRow): void {
+    const files = getUploadedFiles(document);
 
     if (files.length === 0) {
         selectedDocument.value = null;
 
-        errorMessage.value =
-            'This record does not have an uploaded file.';
+        errorMessage.value = 'This record does not have an uploaded file.';
 
         return;
     }
 
     if (files.length === 1) {
-        window.open(
-            files[0].url,
-            '_blank',
-            'noopener,noreferrer',
-        );
+        window.open(files[0].url, '_blank', 'noopener,noreferrer');
 
         selectedDocument.value = null;
 
@@ -513,12 +417,10 @@ function closeVerifyDialog(): void {
 }
 
 async function verifyDocument(): Promise<void> {
-    const documentId =
-        getSelectedDocumentId();
+    const documentId = getSelectedDocumentId();
 
     if (!documentId) {
-        errorMessage.value =
-            'The selected document ID is missing.';
+        errorMessage.value = 'The selected document ID is missing.';
 
         return;
     }
@@ -527,48 +429,41 @@ async function verifyDocument(): Promise<void> {
     errorMessage.value = '';
 
     try {
-        const response =
-            await axios.patch<{
-                message: string;
-            }>(
-                `/api/v1/dashboard/uploaded-documents/${encodeURIComponent(
-                    documentId,
-                )}/verify`,
-                {},
-                {
-                    headers: {
-                        Accept:
-                            'application/json',
+        const response = await axios.patch<{
+            message: string;
+        }>(
+            `/api/v1/dashboard/uploaded-documents/${encodeURIComponent(
+                documentId,
+            )}/verify`,
+            {},
+            {
+                headers: {
+                    Accept: 'application/json',
 
-                        'X-Requested-With':
-                            'XMLHttpRequest',
-                    },
-
-                    withCredentials: true,
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
-            );
+
+                withCredentials: true,
+            },
+        );
 
         toast.add({
             severity: 'success',
             summary: 'Document Verified',
-            detail:
-                response.data.message ||
-                'The document has been validated.',
+            detail: response.data.message || 'The document has been validated.',
             life: 4000,
         });
 
-        verifyDialogVisible.value =
-            false;
+        verifyDialogVisible.value = false;
 
         selectedDocument.value = null;
 
         await reloadCurrentPage();
     } catch (error: unknown) {
-        errorMessage.value =
-            getErrorMessage(
-                error,
-                'Failed to validate the file.',
-            );
+        errorMessage.value = getErrorMessage(
+            error,
+            'Failed to validate the file.',
+        );
     } finally {
         actionLoading.value = false;
     }
@@ -594,21 +489,16 @@ function closeReviseDialog(): void {
 async function reviseDocument(): Promise<void> {
     reviseError.value = '';
 
-    if (
-        reviseRemarks.value.trim() === ''
-    ) {
-        reviseError.value =
-            'Reason for revision is required.';
+    if (reviseRemarks.value.trim() === '') {
+        reviseError.value = 'Reason for revision is required.';
 
         return;
     }
 
-    const documentId =
-        getSelectedDocumentId();
+    const documentId = getSelectedDocumentId();
 
     if (!documentId) {
-        reviseError.value =
-            'The selected document ID is missing.';
+        reviseError.value = 'The selected document ID is missing.';
 
         return;
     }
@@ -617,29 +507,25 @@ async function reviseDocument(): Promise<void> {
     errorMessage.value = '';
 
     try {
-        const response =
-            await axios.patch<{
-                message: string;
-            }>(
-                `/api/v1/dashboard/uploaded-documents/${encodeURIComponent(
-                    documentId,
-                )}/revise`,
-                {
-                    revise_remarks:
-                        reviseRemarks.value.trim(),
-                },
-                {
-                    headers: {
-                        Accept:
-                            'application/json',
+        const response = await axios.patch<{
+            message: string;
+        }>(
+            `/api/v1/dashboard/uploaded-documents/${encodeURIComponent(
+                documentId,
+            )}/revise`,
+            {
+                revise_remarks: reviseRemarks.value.trim(),
+            },
+            {
+                headers: {
+                    Accept: 'application/json',
 
-                        'X-Requested-With':
-                            'XMLHttpRequest',
-                    },
-
-                    withCredentials: true,
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
-            );
+
+                withCredentials: true,
+            },
+        );
 
         toast.add({
             severity: 'warn',
@@ -650,8 +536,7 @@ async function reviseDocument(): Promise<void> {
             life: 4000,
         });
 
-        reviseDialogVisible.value =
-            false;
+        reviseDialogVisible.value = false;
 
         reviseRemarks.value = '';
         reviseError.value = '';
@@ -659,35 +544,21 @@ async function reviseDocument(): Promise<void> {
 
         await reloadCurrentPage();
     } catch (error: unknown) {
-        const validationMessage =
-            getValidationMessage(
-                error,
-                'revise_remarks',
-            );
+        const validationMessage = getValidationMessage(error, 'revise_remarks');
 
         reviseError.value =
             validationMessage ??
-            getErrorMessage(
-                error,
-                'Failed to save the record.',
-            );
+            getErrorMessage(error, 'Failed to save the record.');
     } finally {
         actionLoading.value = false;
     }
 }
 
 async function reloadCurrentPage(): Promise<void> {
-    await loadDocuments(
-        currentPage.value,
-    );
+    await loadDocuments(currentPage.value);
 
-    if (
-        documents.value.length === 0 &&
-        currentPage.value > 1
-    ) {
-        await loadDocuments(
-            currentPage.value - 1,
-        );
+    if (documents.value.length === 0 && currentPage.value > 1) {
+        await loadDocuments(currentPage.value - 1);
     }
 }
 
@@ -697,22 +568,12 @@ async function reloadCurrentPage(): Promise<void> {
 |--------------------------------------------------------------------------
 */
 
-function getStudentFullName(
-    document: DataTableRow,
-): string {
-    const lastName = String(
-        document.lname ?? '',
-    ).trim();
+function getStudentFullName(document: DataTableRow): string {
+    const lastName = String(document.lname ?? '').trim();
 
-    const otherNames = [
-        document.fname,
-        document.mname,
-    ]
+    const otherNames = [document.fname, document.mname]
         .filter((name) => {
-            return (
-                typeof name === 'string' &&
-                name.trim() !== ''
-            );
+            return typeof name === 'string' && name.trim() !== '';
         })
         .map((name) => {
             return String(name).trim();
@@ -723,63 +584,37 @@ function getStudentFullName(
         return `${lastName}, ${otherNames}`.toUpperCase();
     }
 
-    return (
-        lastName || otherNames
-    ).toUpperCase();
+    return (lastName || otherNames).toUpperCase();
 }
 
-function getStudentInitials(
-    document: DataTableRow,
-): string {
-    const firstName = String(
-        document.fname ?? '',
-    ).trim();
+function getStudentInitials(document: DataTableRow): string {
+    const firstName = String(document.fname ?? '').trim();
 
-    const lastName = String(
-        document.lname ?? '',
-    ).trim();
+    const lastName = String(document.lname ?? '').trim();
 
-    const initials =
-        `${firstName.charAt(0)}${lastName.charAt(0)}`;
+    const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`;
 
-    return (
-        initials.toUpperCase() ||
-        'ST'
-    );
+    return initials.toUpperCase() || 'ST';
 }
 
-function getStudentAvatar(
-    gender: unknown,
-): string | null {
-    const normalizedGender = String(
-        gender ?? '',
-    )
+function getStudentAvatar(gender: unknown): string | null {
+    const normalizedGender = String(gender ?? '')
         .trim()
         .toUpperCase();
 
-    if (
-        normalizedGender === 'M' ||
-        normalizedGender === 'MALE'
-    ) {
+    if (normalizedGender === 'M' || normalizedGender === 'MALE') {
         return '/images/male-cadet.png';
     }
 
-    if (
-        normalizedGender === 'F' ||
-        normalizedGender === 'FEMALE'
-    ) {
+    if (normalizedGender === 'F' || normalizedGender === 'FEMALE') {
         return '/images/female-cadet.png';
     }
 
     return null;
 }
 
-function getSchoolIdLabel(
-    value: unknown,
-): string {
-    const schoolId = String(
-        value ?? '',
-    ).trim();
+function getSchoolIdLabel(value: unknown): string {
+    const schoolId = String(value ?? '').trim();
 
     return schoolId || 'No School ID';
 }
@@ -790,86 +625,50 @@ function getSchoolIdLabel(
 |--------------------------------------------------------------------------
 */
 
-function getUploadedFiles(
-    document: DataTableRow,
-): UploadedFile[] {
+function getUploadedFiles(document: DataTableRow): UploadedFile[] {
     if (!Array.isArray(document.files)) {
         return [];
     }
 
-    return document.files.flatMap(
-        (candidate): UploadedFile[] => {
-            if (
-                candidate === null ||
-                typeof candidate !==
-                    'object'
-            ) {
-                return [];
-            }
+    return document.files.flatMap((candidate): UploadedFile[] => {
+        if (candidate === null || typeof candidate !== 'object') {
+            return [];
+        }
 
-            const file =
-                candidate as Record<
-                    string,
-                    unknown
-                >;
+        const file = candidate as Record<string, unknown>;
 
-            const name = String(
-                file.name ?? '',
-            ).trim();
+        const name = String(file.name ?? '').trim();
 
-            const url = String(
-                file.url ?? '',
-            ).trim();
+        const url = String(file.url ?? '').trim();
 
-            const label = String(
-                file.label ??
-                    'View or download file',
-            ).trim();
+        const label = String(file.label ?? 'View or download file').trim();
 
-            if (
-                name === '' ||
-                url === ''
-            ) {
-                return [];
-            }
+        if (name === '' || url === '') {
+            return [];
+        }
 
-            return [
-                {
-                    name,
-                    url,
-                    label,
-                },
-            ];
-        },
-    );
+        return [
+            {
+                name,
+                url,
+                label,
+            },
+        ];
+    });
 }
 
-function getUploadedFileIcon(
-    filename: string,
-): string {
-    const extension =
-        filename
-            .split('.')
-            .pop()
-            ?.trim()
-            .toLowerCase() ?? '';
+function getUploadedFileIcon(filename: string): string {
+    const extension = filename.split('.').pop()?.trim().toLowerCase() ?? '';
 
     if (extension === 'pdf') {
         return 'pi pi-file-pdf';
     }
 
-    if (
-        extension === 'doc' ||
-        extension === 'docx'
-    ) {
+    if (extension === 'doc' || extension === 'docx') {
         return 'pi pi-file-word';
     }
 
-    if (
-        extension === 'xls' ||
-        extension === 'xlsx' ||
-        extension === 'csv'
-    ) {
+    if (extension === 'xls' || extension === 'xlsx' || extension === 'csv') {
         return 'pi pi-file-excel';
     }
 
@@ -883,11 +682,7 @@ function getUploadedFileIcon(
         return 'pi pi-image';
     }
 
-    if (
-        extension === 'zip' ||
-        extension === 'rar' ||
-        extension === '7z'
-    ) {
+    if (extension === 'zip' || extension === 'rar' || extension === '7z') {
         return 'pi pi-box';
     }
 
@@ -900,67 +695,38 @@ function getUploadedFileIcon(
 |--------------------------------------------------------------------------
 */
 
-function formatUploadedDate(
-    dateValue: unknown,
-    timeValue: unknown,
-): string {
-    const date = String(
-        dateValue ?? '',
-    ).trim();
+function formatUploadedDate(dateValue: unknown, timeValue: unknown): string {
+    const date = String(dateValue ?? '').trim();
 
-    const time = String(
-        timeValue ?? '',
-    ).trim();
+    const time = String(timeValue ?? '').trim();
 
-    if (
-        !date ||
-        date === '1970-01-01'
-    ) {
+    if (!date || date === '1970-01-01') {
         return '—';
     }
 
-    const combinedValue = time
-        ? `${date} ${time}`
-        : date;
+    const combinedValue = time ? `${date} ${time}` : date;
 
-    const normalizedValue =
-        combinedValue.replace(
-            ' ',
-            'T',
-        );
+    const normalizedValue = combinedValue.replace(' ', 'T');
 
-    const parsedDate =
-        new Date(normalizedValue);
+    const parsedDate = new Date(normalizedValue);
 
-    if (
-        Number.isNaN(
-            parsedDate.getTime(),
-        )
-    ) {
+    if (Number.isNaN(parsedDate.getTime())) {
         return combinedValue;
     }
 
-    return new Intl.DateTimeFormat(
-        'en-PH',
-        {
-            timeZone:
-                'Asia/Manila',
+    return new Intl.DateTimeFormat('en-PH', {
+        timeZone: 'Asia/Manila',
 
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
 
-            hour: time
-                ? '2-digit'
-                : undefined,
+        hour: time ? '2-digit' : undefined,
 
-            minute: time
-                ? '2-digit'
-                : undefined,
+        minute: time ? '2-digit' : undefined,
 
-            hour12: true,
-        },
-    ).format(parsedDate);
+        hour12: true,
+    }).format(parsedDate);
 }
 
 /*
@@ -970,55 +736,35 @@ function formatUploadedDate(
 */
 
 function getSelectedDocumentId(): string {
-    return String(
-        selectedDocument.value?.id ?? '',
-    ).trim();
+    return String(selectedDocument.value?.id ?? '').trim();
 }
 
-function getErrorMessage(
-    error: unknown,
-    fallback: string,
-): string {
+function getErrorMessage(error: unknown, fallback: string): string {
     if (!axios.isAxiosError(error)) {
         return fallback;
     }
 
-    const responseData =
-        error.response?.data as
-            | {
-                  message?: string;
-              }
-            | undefined;
+    const responseData = error.response?.data as
+        | {
+              message?: string;
+          }
+        | undefined;
 
-    return (
-        responseData?.message ||
-        fallback
-    );
+    return responseData?.message || fallback;
 }
 
-function getValidationMessage(
-    error: unknown,
-    field: string,
-): string | null {
+function getValidationMessage(error: unknown, field: string): string | null {
     if (!axios.isAxiosError(error)) {
         return null;
     }
 
-    const responseData =
-        error.response?.data as
-            | {
-                  errors?: Record<
-                      string,
-                      string[]
-                  >;
-              }
-            | undefined;
+    const responseData = error.response?.data as
+        | {
+              errors?: Record<string, string[]>;
+          }
+        | undefined;
 
-    return (
-        responseData
-            ?.errors?.[field]?.[0] ??
-        null
-    );
+    return responseData?.errors?.[field]?.[0] ?? null;
 }
 
 /*
@@ -1058,31 +804,31 @@ onBeforeUnmount(() => {
         <!-- DOCUMENTS DATATABLE -->
 
         <Datatable
-    title="Documents Verification"
-    description="Review, verify, or return uploaded student documents for revision."
-    header-icon="pi pi-file-check"
-    search-placeholder="Search uploaded documents..."
-    empty-title="No documents to verify"
-    empty-description="There are no uploaded documents waiting for verification."
-    empty-icon="pi pi-file-check"
-    table-min-width="1200px"
-    actions-width="170px"
-    actions-header="Actions"
-    data-key="id"
-    lazy
-    :loading="loading"
-    :data="documents"
-    :columns="columns"
-    :actions="actions"
-    :total-records="totalRecords"
-    :first="first"
-    :rows="perPage"
-    :rows-per-page-options="[10, 20, 50, 100]"
-    @page="handlePage"
-    @sort="handleSort"
-    @search="handleSearch"
-    @action="handleAction"
->
+            title="Documents Verification"
+            description="Review, verify, or return uploaded student documents for revision."
+            header-icon="pi pi-file-check"
+            search-placeholder="Search uploaded documents..."
+            empty-title="No documents to verify"
+            empty-description="There are no uploaded documents waiting for verification."
+            empty-icon="pi pi-file-check"
+            table-min-width="1200px"
+            actions-width="170px"
+            actions-header="Actions"
+            data-key="id"
+            lazy
+            :loading="loading"
+            :data="documents"
+            :columns="columns"
+            :actions="actions"
+            :total-records="totalRecords"
+            :first="first"
+            :rows="perPage"
+            :rows-per-page-options="[10, 20, 50, 100]"
+            @page="handlePage"
+            @sort="handleSort"
+            @search="handleSearch"
+            @action="handleAction"
+        >
             <!-- HEADER ACTIONS -->
 
             <template #header-actions>
@@ -1099,25 +845,11 @@ onBeforeUnmount(() => {
             <!-- STUDENT INFORMATION -->
 
             <template #cell-fname="{ data }">
-                <div
-                    class="flex items-center gap-3"
-                >
+                <div class="flex items-center gap-3">
                     <Avatar
-                        v-if="
-                            getStudentAvatar(
-                                data.gender,
-                            )
-                        "
-                        :image="
-                            getStudentAvatar(
-                                data.gender,
-                            ) ?? undefined
-                        "
-                        :aria-label="
-                            getStudentFullName(
-                                data,
-                            )
-                        "
+                        v-if="getStudentAvatar(data.gender)"
+                        :image="getStudentAvatar(data.gender) ?? undefined"
+                        :aria-label="getStudentFullName(data)"
                         shape="circle"
                         size="large"
                         class="shrink-0"
@@ -1125,57 +857,35 @@ onBeforeUnmount(() => {
 
                     <Avatar
                         v-else
-                        :label="
-                            getStudentInitials(
-                                data,
-                            )
-                        "
+                        :label="getStudentInitials(data)"
                         shape="circle"
                         size="large"
                         class="shrink-0 !bg-[#377EC0]/10 !text-xs !font-bold !text-[#377EC0]"
                     />
 
                     <div class="min-w-0">
-                        <p
-                            class="truncate font-semibold text-slate-700"
-                        >
-                            {{
-                                getStudentFullName(
-                                    data,
-                                ) || '—'
-                            }}
+                        <p class="truncate font-semibold text-slate-700">
+                            {{ getStudentFullName(data) || '—' }}
                         </p>
 
-                        <div
-    class="mt-1 flex flex-nowrap items-center gap-1.5"
->
-    <PrimeTag
-        :value="
-            getSchoolIdLabel(
-                data.school_id_no,
-            )
-        "
-        severity="info"
-        icon="pi pi-id-card"
-        rounded
-        class="shrink-0 !whitespace-nowrap !px-2 !py-0.5 !text-xs !font-semibold"
-    />
-</div>
+                        <div class="mt-1 flex flex-nowrap items-center gap-1.5">
+                            <PrimeTag
+                                :value="getSchoolIdLabel(data.school_id_no)"
+                                severity="info"
+                                icon="pi pi-id-card"
+                                rounded
+                                class="shrink-0 !px-2 !py-0.5 !text-xs !font-semibold !whitespace-nowrap"
+                            />
+                        </div>
                     </div>
                 </div>
             </template>
 
             <!-- FILE DESCRIPTION -->
 
-            <template
-                #cell-file_desc="{ value }"
-            >
-                <div
-                    class="flex min-w-0 items-start gap-2"
-                >
-                    <i
-                        class="pi pi-file mt-0.5 shrink-0 text-[#377EC0]"
-                    ></i>
+            <template #cell-file_desc="{ value }">
+                <div class="flex min-w-0 items-start gap-2">
+                    <i class="pi pi-file mt-0.5 shrink-0 text-[#377EC0]"></i>
 
                     <span
                         class="min-w-0 font-medium break-words whitespace-normal text-slate-700"
@@ -1187,14 +897,8 @@ onBeforeUnmount(() => {
 
             <!-- REQUIREMENT TYPE -->
 
-            <template
-                #cell-desc_requirement="{
-                    value,
-                }"
-            >
-                <div
-                    class="flex min-w-0 items-start gap-2"
-                >
+            <template #cell-desc_requirement="{ value }">
+                <div class="flex min-w-0 items-start gap-2">
                     <i
                         class="pi pi-list-check mt-0.5 shrink-0 text-emerald-500"
                     ></i>
@@ -1209,18 +913,12 @@ onBeforeUnmount(() => {
 
             <!-- DATE UPLOADED -->
 
-            <template
-                #cell-date_uploaded="{ data }"
-            >
-                <div
-                    class="flex items-center gap-2"
-                >
-                    <i
-                        class="pi pi-clock text-lg text-yellow-500"
-                    ></i>
+            <template #cell-date_uploaded="{ data }">
+                <div class="flex items-center gap-2">
+                    <i class="pi pi-clock text-lg text-yellow-500"></i>
 
                     <span
-                        class="whitespace-nowrap text-sm font-medium text-slate-600"
+                        class="text-sm font-medium whitespace-nowrap text-slate-600"
                     >
                         {{
                             formatUploadedDate(
@@ -1236,9 +934,7 @@ onBeforeUnmount(() => {
         <!-- MULTIPLE FILES DIALOG -->
 
         <Dialog
-            v-model:visible="
-                filesDialogVisible
-            "
+            v-model:visible="filesDialogVisible"
             modal
             header="Uploaded Files"
             class="w-[min(92vw,560px)]"
@@ -1246,13 +942,8 @@ onBeforeUnmount(() => {
         >
             <div class="space-y-3">
                 <Button
-                    v-for="(
-                        file,
-                        index
-                    ) in selectedFiles"
-                    :key="
-                        `${file.name}-${index}`
-                    "
+                    v-for="(file, index) in selectedFiles"
+                    :key="`${file.name}-${index}`"
                     as="a"
                     :href="file.url"
                     target="_blank"
@@ -1263,33 +954,23 @@ onBeforeUnmount(() => {
                 >
                     <i
                         :class="[
-                            getUploadedFileIcon(
-                                file.name,
-                            ),
+                            getUploadedFileIcon(file.name),
                             'shrink-0 text-lg',
                         ]"
                     ></i>
 
-                    <span
-                        class="min-w-0 text-left"
-                    >
-                        <span
-                            class="block text-xs font-semibold"
-                        >
+                    <span class="min-w-0 text-left">
+                        <span class="block text-xs font-semibold">
                             Document
                             {{ index + 1 }}
                         </span>
 
-                        <span
-                            class="block truncate font-semibold"
-                        >
+                        <span class="block truncate font-semibold">
                             {{ file.name }}
                         </span>
                     </span>
 
-                    <i
-                        class="pi pi-external-link ml-auto shrink-0"
-                    ></i>
+                    <i class="pi pi-external-link ml-auto shrink-0"></i>
                 </Button>
             </div>
         </Dialog>
@@ -1297,50 +978,33 @@ onBeforeUnmount(() => {
         <!-- VERIFY DIALOG -->
 
         <Dialog
-            v-model:visible="
-                verifyDialogVisible
-            "
+            v-model:visible="verifyDialogVisible"
             modal
             header="Notice of Verification"
             :draggable="false"
             :closable="!actionLoading"
-            :dismissable-mask="
-                !actionLoading
-            "
+            :dismissable-mask="!actionLoading"
             class="w-[min(92vw,560px)]"
         >
             <div class="space-y-4">
-                <Message
-                    severity="info"
-                    :closable="false"
-                >
-                    By marking the submitted
-                    information and documents from
-                    the student as
-                    <strong>verified</strong>, I
-                    confirm their accuracy,
-                    truthfulness, and authenticity
-                    based solely on the information
-                    available to me.
+                <Message severity="info" :closable="false">
+                    By marking the submitted information and documents from the
+                    student as
+                    <strong>verified</strong>, I confirm their accuracy,
+                    truthfulness, and authenticity based solely on the
+                    information available to me.
                 </Message>
 
                 <div
                     v-if="selectedDocument"
                     class="rounded-xl border border-slate-200 p-4"
                 >
-                    <p
-                        class="text-xs font-semibold text-slate-400 uppercase"
-                    >
+                    <p class="text-xs font-semibold text-slate-400 uppercase">
                         Student
                     </p>
 
-                    <p
-                        class="mt-1 font-semibold text-slate-700"
-                    >
-                        {{
-                            selectedStudentName ||
-                            '—'
-                        }}
+                    <p class="mt-1 font-semibold text-slate-700">
+                        {{ selectedStudentName || '—' }}
                     </p>
 
                     <p
@@ -1349,13 +1013,8 @@ onBeforeUnmount(() => {
                         Document
                     </p>
 
-                    <p
-                        class="mt-1 text-sm text-slate-600"
-                    >
-                        {{
-                            selectedDocument.file_desc ||
-                            '—'
-                        }}
+                    <p class="mt-1 text-sm text-slate-600">
+                        {{ selectedDocument.file_desc || '—' }}
                     </p>
                 </div>
             </div>
@@ -1386,16 +1045,12 @@ onBeforeUnmount(() => {
         <!-- REVISION DIALOG -->
 
         <Dialog
-            v-model:visible="
-                reviseDialogVisible
-            "
+            v-model:visible="reviseDialogVisible"
             modal
             header="Revision Details"
             :draggable="false"
             :closable="!actionLoading"
-            :dismissable-mask="
-                !actionLoading
-            "
+            :dismissable-mask="!actionLoading"
             class="w-[min(92vw,560px)]"
         >
             <div class="space-y-4">
@@ -1403,19 +1058,12 @@ onBeforeUnmount(() => {
                     v-if="selectedDocument"
                     class="rounded-xl border border-slate-200 bg-slate-50 p-4"
                 >
-                    <p
-                        class="text-xs font-semibold text-slate-400 uppercase"
-                    >
+                    <p class="text-xs font-semibold text-slate-400 uppercase">
                         Student
                     </p>
 
-                    <p
-                        class="mt-1 font-semibold text-slate-700"
-                    >
-                        {{
-                            selectedStudentName ||
-                            '—'
-                        }}
+                    <p class="mt-1 font-semibold text-slate-700">
+                        {{ selectedStudentName || '—' }}
                     </p>
 
                     <p
@@ -1424,13 +1072,8 @@ onBeforeUnmount(() => {
                         Document
                     </p>
 
-                    <p
-                        class="mt-1 text-sm text-slate-600"
-                    >
-                        {{
-                            selectedDocument.file_desc ||
-                            '—'
-                        }}
+                    <p class="mt-1 text-sm text-slate-600">
+                        {{ selectedDocument.file_desc || '—' }}
                     </p>
                 </div>
 
@@ -1441,11 +1084,7 @@ onBeforeUnmount(() => {
                     >
                         Reason for revision
 
-                        <span
-                            class="text-red-500"
-                        >
-                            *
-                        </span>
+                        <span class="text-red-500"> * </span>
                     </label>
 
                     <Textarea
@@ -1455,17 +1094,9 @@ onBeforeUnmount(() => {
                         auto-resize
                         fluid
                         placeholder="Enter the reason this document must be revised..."
-                        :invalid="
-                            Boolean(
-                                reviseError,
-                            )
-                        "
-                        :disabled="
-                            actionLoading
-                        "
-                        @input="
-                            reviseError = ''
-                        "
+                        :invalid="Boolean(reviseError)"
+                        :disabled="actionLoading"
+                        @input="reviseError = ''"
                     />
 
                     <Message

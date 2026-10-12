@@ -7,18 +7,12 @@ import Message from 'primevue/message';
 import Select from 'primevue/select';
 import PrimeTag from 'primevue/tag';
 
-import {
-    onMounted,
-    ref,
-} from 'vue';
+import { onMounted, ref } from 'vue';
 
 import Datatable from '@/components/Datatable.vue';
 import { dashboard } from '@/routes';
 
-import type {
-    DataTableColumn,
-    DataTableRow,
-} from '@/types';
+import type { DataTableColumn, DataTableRow } from '@/types';
 
 /*
 |--------------------------------------------------------------------------
@@ -71,10 +65,9 @@ type ReportResponse = {
     data: DataTableRow[];
 };
 
-type ReportColumn =
-    DataTableColumn & {
-        slotName: string;
-    };
+type ReportColumn = DataTableColumn & {
+    slotName: string;
+};
 
 /*
 |--------------------------------------------------------------------------
@@ -82,17 +75,13 @@ type ReportColumn =
 |--------------------------------------------------------------------------
 */
 
-const reportOptions =
-    ref<Option[]>([]);
+const reportOptions = ref<Option[]>([]);
 
-const yearOptions =
-    ref<number[]>([]);
+const yearOptions = ref<number[]>([]);
 
-const departmentOptions =
-    ref<string[]>([]);
+const departmentOptions = ref<string[]>([]);
 
-const genderOptions =
-    ref<string[]>([]);
+const genderOptions = ref<string[]>([]);
 
 /*
 |--------------------------------------------------------------------------
@@ -105,26 +94,19 @@ const genderOptions =
  *
  * 1 = Percent Deployment
  */
-const selectedReport =
-    ref<number | null>(1);
+const selectedReport = ref<number | null>(1);
 
 /*
  * Default CCI Year:
  * current year.
  */
-const currentYear =
-    new Date().getFullYear();
+const currentYear = new Date().getFullYear();
 
-const selectedYear =
-    ref<number | null>(
-        currentYear,
-    );
+const selectedYear = ref<number | null>(currentYear);
 
-const selectedDepartment =
-    ref<string | null>(null);
+const selectedDepartment = ref<string | null>(null);
 
-const selectedGender =
-    ref<string | null>(null);
+const selectedGender = ref<string | null>(null);
 
 /*
 |--------------------------------------------------------------------------
@@ -132,11 +114,9 @@ const selectedGender =
 |--------------------------------------------------------------------------
 */
 
-const columns =
-    ref<ReportColumn[]>([]);
+const columns = ref<ReportColumn[]>([]);
 
-const rows =
-    ref<DataTableRow[]>([]);
+const rows = ref<DataTableRow[]>([]);
 
 const loading = ref(false);
 
@@ -150,33 +130,26 @@ const errorMessage = ref('');
 
 async function loadOptions(): Promise<void> {
     try {
-        const response =
-            await axios.get<OptionsResponse>(
-                '/api/v1/monitoring/reports/options',
-                {
-                    headers: {
-                        Accept:
-                            'application/json',
+        const response = await axios.get<OptionsResponse>(
+            '/api/v1/monitoring/reports/options',
+            {
+                headers: {
+                    Accept: 'application/json',
 
-                        'X-Requested-With':
-                            'XMLHttpRequest',
-                    },
-
-                    withCredentials: true,
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
-            );
 
-        reportOptions.value =
-            response.data.reports;
+                withCredentials: true,
+            },
+        );
 
-        yearOptions.value =
-            response.data.years;
+        reportOptions.value = response.data.reports;
 
-        departmentOptions.value =
-            response.data.departments;
+        yearOptions.value = response.data.years;
 
-        genderOptions.value =
-            response.data.genders;
+        departmentOptions.value = response.data.departments;
+
+        genderOptions.value = response.data.genders;
 
         /*
          * Prefer the current year.
@@ -186,28 +159,17 @@ async function loadOptions(): Promise<void> {
          * years, use the latest available
          * year instead.
          */
-        if (
-            yearOptions.value.includes(
-                currentYear,
-            )
-        ) {
+        if (yearOptions.value.includes(currentYear)) {
+            selectedYear.value = currentYear;
+        } else if (yearOptions.value.length > 0) {
             selectedYear.value =
-                currentYear;
-        } else if (
-            yearOptions.value.length > 0
-        ) {
-            selectedYear.value =
-                yearOptions.value[
-                    yearOptions.value.length -
-                        1
-                ];
+                yearOptions.value[yearOptions.value.length - 1];
         }
     } catch (error: unknown) {
-        errorMessage.value =
-            getErrorMessage(
-                error,
-                'Unable to load report options.',
-            );
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to load report options.',
+        );
     }
 }
 
@@ -219,8 +181,7 @@ async function loadOptions(): Promise<void> {
 
 async function loadReport(): Promise<void> {
     if (!selectedReport.value) {
-        errorMessage.value =
-            'Please select a report.';
+        errorMessage.value = 'Please select a report.';
 
         return;
     }
@@ -229,35 +190,28 @@ async function loadReport(): Promise<void> {
     errorMessage.value = '';
 
     try {
-        const response =
-            await axios.get<ReportResponse>(
-                '/api/v1/monitoring/reports',
-                {
-                    params: {
-                        report_type:
-                            selectedReport.value,
+        const response = await axios.get<ReportResponse>(
+            '/api/v1/monitoring/reports',
+            {
+                params: {
+                    report_type: selectedReport.value,
 
-                        batch_no:
-                            selectedYear.value,
+                    batch_no: selectedYear.value,
 
-                        dept:
-                            selectedDepartment.value,
+                    dept: selectedDepartment.value,
 
-                        gender:
-                            selectedGender.value,
-                    },
-
-                    headers: {
-                        Accept:
-                            'application/json',
-
-                        'X-Requested-With':
-                            'XMLHttpRequest',
-                    },
-
-                    withCredentials: true,
+                    gender: selectedGender.value,
                 },
-            );
+
+                headers: {
+                    Accept: 'application/json',
+
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+
+                withCredentials: true,
+            },
+        );
 
         /*
          * Reports have dynamic columns.
@@ -275,36 +229,27 @@ async function loadReport(): Promise<void> {
          * activity_0
          * → cell-activity_0
          */
-        columns.value =
-            response.data.columns.map(
-                (column) => {
-                    return {
-                        ...column,
+        columns.value = response.data.columns.map((column) => {
+            return {
+                ...column,
 
-                        slotName:
-                            `cell-${column.field}`,
+                slotName: `cell-${column.field}`,
 
-                        class: [
-                            column.class,
-                            'min-w-[170px] whitespace-normal',
-                        ]
-                            .filter(Boolean)
-                            .join(' '),
-                    };
-                },
-            );
+                class: [column.class, 'min-w-[170px] whitespace-normal']
+                    .filter(Boolean)
+                    .join(' '),
+            };
+        });
 
-        rows.value =
-            response.data.data;
+        rows.value = response.data.data;
     } catch (error: unknown) {
         columns.value = [];
         rows.value = [];
 
-        errorMessage.value =
-            getErrorMessage(
-                error,
-                'Unable to generate the report.',
-            );
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to generate the report.',
+        );
     } finally {
         loading.value = false;
     }
@@ -316,9 +261,7 @@ async function loadReport(): Promise<void> {
 |--------------------------------------------------------------------------
 */
 
-function getReportIcon(
-    field: string,
-): string {
+function getReportIcon(field: string): string {
     /*
      * Percent Deployment.
      */
@@ -343,11 +286,7 @@ function getReportIcon(
      * Activities Summary.
      */
 
-    if (
-        field.startsWith(
-            'activity_',
-        )
-    ) {
+    if (field.startsWith('activity_')) {
         return 'pi pi-list-check';
     }
 
@@ -355,11 +294,7 @@ function getReportIcon(
      * Wastage Distribution.
      */
 
-    if (
-        field.startsWith(
-            'wastage_',
-        )
-    ) {
+    if (field.startsWith('wastage_')) {
         return 'pi pi-exclamation-circle';
     }
 
@@ -384,9 +319,7 @@ function getReportIcon(
 |--------------------------------------------------------------------------
 */
 
-function getReportIconClass(
-    field: string,
-): string {
+function getReportIconClass(field: string): string {
     /*
      * Informational.
      */
@@ -402,9 +335,7 @@ function getReportIconClass(
     if (
         field === 'cci' ||
         field === 'deployed' ||
-        field.startsWith(
-            'activity_',
-        ) ||
+        field.startsWith('activity_') ||
         field === 'after_cci'
     ) {
         return 'text-green-500';
@@ -416,9 +347,7 @@ function getReportIconClass(
 
     if (
         field === 'wastage' ||
-        field.startsWith(
-            'wastage_',
-        ) ||
+        field.startsWith('wastage_') ||
         field === 'before_cci'
     ) {
         return 'text-red-500';
@@ -433,14 +362,8 @@ function getReportIconClass(
 |--------------------------------------------------------------------------
 */
 
-function formatReportValue(
-    value: unknown,
-): string {
-    if (
-        value === null ||
-        value === undefined ||
-        value === ''
-    ) {
+function formatReportValue(value: unknown): string {
+    if (value === null || value === undefined || value === '') {
         return '0';
     }
 
@@ -453,29 +376,18 @@ function formatReportValue(
 |--------------------------------------------------------------------------
 */
 
-function getErrorMessage(
-    error: unknown,
-    fallback: string,
-): string {
-    if (
-        !axios.isAxiosError(
-            error,
-        )
-    ) {
+function getErrorMessage(error: unknown, fallback: string): string {
+    if (!axios.isAxiosError(error)) {
         return fallback;
     }
 
-    const data =
-        error.response?.data as
-            | {
-                  message?: string;
-              }
-            | undefined;
+    const data = error.response?.data as
+        | {
+              message?: string;
+          }
+        | undefined;
 
-    return (
-        data?.message ??
-        fallback
-    );
+    return data?.message ?? fallback;
 }
 
 /*
@@ -512,9 +424,7 @@ onMounted(async () => {
             v-if="errorMessage"
             severity="error"
             closable
-            @close="
-                errorMessage = ''
-            "
+            @close="errorMessage = ''"
         >
             {{ errorMessage }}
         </Message>
@@ -542,14 +452,10 @@ onMounted(async () => {
             <!-- HEADER FILTERS -->
 
             <template #header-actions>
-                <div
-                    class="flex flex-col gap-4 xl:flex-row xl:items-end"
-                >
+                <div class="flex flex-col gap-4 xl:flex-row xl:items-end">
                     <!-- SELECT REPORT -->
 
-                    <div
-                        class="flex min-w-[260px] flex-col gap-2"
-                    >
+                    <div class="flex min-w-[260px] flex-col gap-2">
                         <label
                             for="report-type"
                             class="text-sm font-semibold text-slate-700"
@@ -559,12 +465,8 @@ onMounted(async () => {
 
                         <Select
                             id="report-type"
-                            v-model="
-                                selectedReport
-                            "
-                            :options="
-                                reportOptions
-                            "
+                            v-model="selectedReport"
+                            :options="reportOptions"
                             option-label="label"
                             option-value="value"
                             placeholder="Select report"
@@ -574,9 +476,7 @@ onMounted(async () => {
 
                     <!-- CCI YEAR -->
 
-                    <div
-                        class="flex min-w-[130px] flex-col gap-2"
-                    >
+                    <div class="flex min-w-[130px] flex-col gap-2">
                         <label
                             for="report-year"
                             class="text-sm font-semibold text-slate-700"
@@ -586,12 +486,8 @@ onMounted(async () => {
 
                         <Select
                             id="report-year"
-                            v-model="
-                                selectedYear
-                            "
-                            :options="
-                                yearOptions
-                            "
+                            v-model="selectedYear"
+                            :options="yearOptions"
                             placeholder="Year"
                             class="w-full"
                         />
@@ -599,9 +495,7 @@ onMounted(async () => {
 
                     <!-- DEPARTMENT -->
 
-                    <div
-                        class="flex min-w-[150px] flex-col gap-2"
-                    >
+                    <div class="flex min-w-[150px] flex-col gap-2">
                         <label
                             for="report-department"
                             class="text-sm font-semibold text-slate-700"
@@ -611,12 +505,8 @@ onMounted(async () => {
 
                         <Select
                             id="report-department"
-                            v-model="
-                                selectedDepartment
-                            "
-                            :options="
-                                departmentOptions
-                            "
+                            v-model="selectedDepartment"
+                            :options="departmentOptions"
                             placeholder="All"
                             show-clear
                             class="w-full"
@@ -625,9 +515,7 @@ onMounted(async () => {
 
                     <!-- GENDER -->
 
-                    <div
-                        class="flex min-w-[150px] flex-col gap-2"
-                    >
+                    <div class="flex min-w-[150px] flex-col gap-2">
                         <label
                             for="report-gender"
                             class="text-sm font-semibold text-slate-700"
@@ -637,12 +525,8 @@ onMounted(async () => {
 
                         <Select
                             id="report-gender"
-                            v-model="
-                                selectedGender
-                            "
-                            :options="
-                                genderOptions
-                            "
+                            v-model="selectedGender"
+                            :options="genderOptions"
                             placeholder="All"
                             show-clear
                             class="w-full"
@@ -667,22 +551,13 @@ onMounted(async () => {
             <template
                 v-for="column in columns"
                 :key="column.field"
-                v-slot:[column.slotName]="{
-                    value,
-                }"
+                v-slot:[column.slotName]="{ value }"
             >
                 <!-- PERCENT DEPLOYMENT -->
 
                 <PrimeTag
-                    v-if="
-                        column.field ===
-                        'percentage'
-                    "
-                    :value="
-                        formatReportValue(
-                            value,
-                        )
-                    "
+                    v-if="column.field === 'percentage'"
+                    :value="formatReportValue(value)"
                     severity="info"
                     icon="pi pi-chart-line"
                     class="!px-3 !py-1 !text-sm !font-semibold"
@@ -690,32 +565,19 @@ onMounted(async () => {
 
                 <!-- NORMAL REPORT METRIC -->
 
-                <div
-                    v-else
-                    class="flex items-center gap-2"
-                >
+                <div v-else class="flex items-center gap-2">
                     <i
                         :class="[
-                            getReportIcon(
-                                column.field,
-                            ),
+                            getReportIcon(column.field),
 
-                            getReportIconClass(
-                                column.field,
-                            ),
+                            getReportIconClass(column.field),
 
                             'shrink-0 text-lg',
                         ]"
                     ></i>
 
-                    <span
-                        class="font-semibold text-slate-700"
-                    >
-                        {{
-                            formatReportValue(
-                                value,
-                            )
-                        }}
+                    <span class="font-semibold text-slate-700">
+                        {{ formatReportValue(value) }}
                     </span>
                 </div>
             </template>

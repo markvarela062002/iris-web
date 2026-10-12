@@ -6,7 +6,14 @@ import FileUpload from 'primevue/fileupload';
 import PrimeImage from 'primevue/image';
 import Message from 'primevue/message';
 import Textarea from 'primevue/textarea';
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import {
+    computed,
+    nextTick,
+    onBeforeUnmount,
+    onMounted,
+    ref,
+    watch,
+} from 'vue';
 
 type MessageListItem = {
     inbox_id: string;
@@ -106,10 +113,22 @@ const emit = defineEmits<{
 const API = '/api/v1/student/alerts/messages';
 const POLL_INTERVAL_MS = 5000;
 const MAX_ATTACHMENT_SIZE = 20 * 1024 * 1024;
-const ACCEPTED_ATTACHMENT_STRING = '.jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv';
+const ACCEPTED_ATTACHMENT_STRING =
+    '.jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv';
 const ACCEPTED_EXTENSIONS = new Set([
-    'jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx',
-    'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv',
+    'jpg',
+    'jpeg',
+    'png',
+    'gif',
+    'pdf',
+    'doc',
+    'docx',
+    'xls',
+    'xlsx',
+    'ppt',
+    'pptx',
+    'txt',
+    'csv',
 ]);
 
 const inbox = ref<InboxDetails | null>(null);
@@ -130,13 +149,17 @@ let pollTimer: number | null = null;
 let requestRunning = false;
 let loadedInboxId = '';
 
-const participantName = computed(() =>
-    props.conversation.recipient_full_name?.trim() ||
-    participantFallbackName(props.conversation),
+const participantName = computed(
+    () =>
+        props.conversation.recipient_full_name?.trim() ||
+        participantFallbackName(props.conversation),
 );
 
-const subject = computed(() =>
-    inbox.value?.subject?.trim() || props.conversation.subj_inbox?.trim() || 'No subject',
+const subject = computed(
+    () =>
+        inbox.value?.subject?.trim() ||
+        props.conversation.subj_inbox?.trim() ||
+        'No subject',
 );
 
 const threadItems = computed<ThreadItem[]>(() => {
@@ -144,7 +167,9 @@ const threadItems = computed<ThreadItem[]>(() => {
 
     if (inbox.value) {
         items.push({
-            id: inbox.value.inbox_id || `original-${props.conversation.inbox_id}`,
+            id:
+                inbox.value.inbox_id ||
+                `original-${props.conversation.inbox_id}`,
             content: cleanLegacyText(inbox.value.content) || 'Attachment',
             date: inbox.value.date,
             sender_id: inbox.value.sender_id,
@@ -158,16 +183,22 @@ const threadItems = computed<ThreadItem[]>(() => {
             content: cleanLegacyText(reply.reply_msg) || 'Attachment',
             date: reply.reply_date,
             sender_id: reply.sender_id,
-            attachments: Array.isArray(reply.attachments) ? reply.attachments : [],
+            attachments: Array.isArray(reply.attachments)
+                ? reply.attachments
+                : [],
         });
     }
 
-    return items.sort((a, b) => timestampValue(a.date) - timestampValue(b.date));
+    return items.sort(
+        (a, b) => timestampValue(a.date) - timestampValue(b.date),
+    );
 });
 
 function participantFallbackName(conversation: MessageListItem): string {
     const type = String(
-        conversation.recipient_account_type || conversation.recipient_type || 'User',
+        conversation.recipient_account_type ||
+            conversation.recipient_type ||
+            'User',
     ).trim();
     const id = String(conversation.recipient_id ?? '').trim();
 
@@ -188,29 +219,34 @@ function cleanLegacyText(value: string | null | undefined): string {
 }
 
 function initials(value: string | null | undefined): string {
-    const parts = String(value ?? '').trim().split(/\s+/).filter(Boolean);
+    const parts = String(value ?? '')
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
 
     if (parts.length === 0) {
-return 'US';
-}
+        return 'US';
+    }
 
     if (parts.length === 1) {
-return parts[0].slice(0, 2).toUpperCase();
-}
+        return parts[0].slice(0, 2).toUpperCase();
+    }
 
     return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase();
 }
 
 function genderAvatar(gender: string | null | undefined): string | null {
-    const value = String(gender ?? '').trim().toUpperCase();
+    const value = String(gender ?? '')
+        .trim()
+        .toUpperCase();
 
     if (value === 'M' || value === 'MALE') {
-return '/images/male-cadet.png';
-}
+        return '/images/male-cadet.png';
+    }
 
     if (value === 'F' || value === 'FEMALE') {
-return '/images/female-cadet.png';
-}
+        return '/images/female-cadet.png';
+    }
 
     return null;
 }
@@ -219,22 +255,22 @@ function avatarSource(): string | null {
     const photo = String(props.conversation.recipient_photo_url ?? '').trim();
 
     if (photo && !failedAvatarSources.value.has(photo)) {
-return photo;
-}
+        return photo;
+    }
 
     const fallback = genderAvatar(props.conversation.recipient_gender);
 
     if (fallback && !failedAvatarSources.value.has(fallback)) {
-return fallback;
-}
+        return fallback;
+    }
 
     return null;
 }
 
 function markAvatarFailed(source: string | null): void {
     if (!source) {
-return;
-}
+        return;
+    }
 
     const next = new Set(failedAvatarSources.value);
     next.add(source);
@@ -243,10 +279,11 @@ return;
 
 function timestampValue(value: string | null): number {
     if (!value) {
-return 0;
-}
+        return 0;
+    }
 
-    const normalized = value.length === 10 ? `${value}T00:00:00` : value.replace(' ', 'T');
+    const normalized =
+        value.length === 10 ? `${value}T00:00:00` : value.replace(' ', 'T');
     const parsed = new Date(normalized);
 
     return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
@@ -254,10 +291,11 @@ return 0;
 
 function parseDate(value: string | null): Date | null {
     if (!value) {
-return null;
-}
+        return null;
+    }
 
-    const normalized = value.length === 10 ? `${value}T00:00:00` : value.replace(' ', 'T');
+    const normalized =
+        value.length === 10 ? `${value}T00:00:00` : value.replace(' ', 'T');
     const parsed = new Date(normalized);
 
     return Number.isNaN(parsed.getTime()) ? null : parsed;
@@ -267,16 +305,19 @@ function formatTime(value: string | null): string {
     const date = parseDate(value);
 
     return date
-        ? date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-        : value ?? '';
+        ? date.toLocaleTimeString('en-US', {
+              hour: 'numeric',
+              minute: '2-digit',
+          })
+        : (value ?? '');
 }
 
 function formatDate(value: string | null): string {
     const date = parseDate(value);
 
     if (!date) {
-return '';
-}
+        return '';
+    }
 
     const today = new Date();
 
@@ -285,8 +326,8 @@ return '';
         date.getMonth() === today.getMonth() &&
         date.getDate() === today.getDate()
     ) {
-return 'Today';
-}
+        return 'Today';
+    }
 
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 1);
@@ -296,20 +337,25 @@ return 'Today';
         date.getMonth() === yesterday.getMonth() &&
         date.getDate() === yesterday.getDate()
     ) {
-return 'Yesterday';
-}
+        return 'Yesterday';
+    }
 
     return date.toLocaleDateString('en-US', {
-        month: 'long', day: 'numeric', year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
     });
 }
 
 function shouldShowDate(index: number): boolean {
     if (index === 0) {
-return true;
-}
+        return true;
+    }
 
-    return formatDate(threadItems.value[index].date) !== formatDate(threadItems.value[index - 1].date);
+    return (
+        formatDate(threadItems.value[index].date) !==
+        formatDate(threadItems.value[index - 1].date)
+    );
 }
 
 function isMine(item: ThreadItem): boolean {
@@ -317,7 +363,9 @@ function isMine(item: ThreadItem): boolean {
 }
 
 function isImageAttachment(attachment: MessageAttachment): boolean {
-    const name = String(attachment.file_desc || attachment.filename || '').trim().toLowerCase();
+    const name = String(attachment.file_desc || attachment.filename || '')
+        .trim()
+        .toLowerCase();
 
     return /\.(jpg|jpeg|png|gif|webp)$/i.test(name);
 }
@@ -329,14 +377,22 @@ function threadSignature(
 ): string {
     return JSON.stringify({
         inbox: nextInbox,
-        attachments: nextAttachments.map((item) => [item.id, item.filename, item.url]),
+        attachments: nextAttachments.map((item) => [
+            item.id,
+            item.filename,
+            item.url,
+        ]),
         replies: nextReplies.map((item) => [
             item.reply_id,
             item.reply_msg,
             item.reply_date,
             item.date_read,
             item.sender_id,
-            (item.attachments ?? []).map((file) => [file.id, file.filename, file.url]),
+            (item.attachments ?? []).map((file) => [
+                file.id,
+                file.filename,
+                file.url,
+            ]),
         ]),
     });
 }
@@ -350,36 +406,42 @@ function errorText(error: unknown): string {
         const message = error.response?.data?.message;
 
         if (typeof message === 'string' && message.trim() !== '') {
-return message;
-}
+            return message;
+        }
     }
 
-    return error instanceof Error ? error.message : 'Unable to load the conversation.';
+    return error instanceof Error
+        ? error.message
+        : 'Unable to load the conversation.';
 }
 
 async function scrollToBottom(): Promise<void> {
     await nextTick();
 
     if (!messageScroller.value) {
-return;
-}
+        return;
+    }
 
     messageScroller.value.scrollTop = messageScroller.value.scrollHeight;
 }
 
 async function loadConversation(initial = false): Promise<void> {
-    if (!props.conversation.inbox_id || !props.currentUserId || requestRunning) {
-return;
-}
+    if (
+        !props.conversation.inbox_id ||
+        !props.currentUserId ||
+        requestRunning
+    ) {
+        return;
+    }
 
     const requestInboxId = props.conversation.inbox_id;
     requestRunning = true;
 
     if (initial) {
-initialLoading.value = true;
-} else {
-backgroundRefreshing.value = true;
-}
+        initialLoading.value = true;
+    } else {
+        backgroundRefreshing.value = true;
+    }
 
     try {
         const response = await axios.get<ThreadResponse>(
@@ -389,13 +451,15 @@ backgroundRefreshing.value = true;
 
         const nextInbox = response.data.data?.inbox ?? null;
         const nextAttachments = Array.isArray(response.data.data?.attachments)
-            ? response.data.data?.attachments ?? []
+            ? (response.data.data?.attachments ?? [])
             : [];
         const nextReplies = Array.isArray(response.data.data?.replies)
-            ? response.data.data?.replies ?? []
+            ? (response.data.data?.replies ?? [])
             : [];
 
-        const changed = threadSignature(nextInbox, nextAttachments, nextReplies) !== currentSignature();
+        const changed =
+            threadSignature(nextInbox, nextAttachments, nextReplies) !==
+            currentSignature();
 
         if (changed) {
             inbox.value = nextInbox;
@@ -410,8 +474,8 @@ backgroundRefreshing.value = true;
         loadedInboxId = requestInboxId;
     } catch (error) {
         if (initial || !inbox.value) {
-errorMessage.value = errorText(error);
-}
+            errorMessage.value = errorText(error);
+        }
     } finally {
         requestRunning = false;
         initialLoading.value = false;
@@ -428,7 +492,9 @@ function attachmentKey(file: File): string {
 }
 
 function createAttachment(file: File): SelectedAttachment {
-    const isImage = file.type.toLowerCase().startsWith('image/') || /\.(jpg|jpeg|png|gif)$/i.test(file.name);
+    const isImage =
+        file.type.toLowerCase().startsWith('image/') ||
+        /\.(jpg|jpeg|png|gif)$/i.test(file.name);
 
     return {
         key: attachmentKey(file),
@@ -441,8 +507,8 @@ function createAttachment(file: File): SelectedAttachment {
 function clearReplyFiles(): void {
     for (const attachment of replyFiles.value) {
         if (attachment.previewUrl) {
-URL.revokeObjectURL(attachment.previewUrl);
-}
+            URL.revokeObjectURL(attachment.previewUrl);
+        }
     }
 
     replyFiles.value = [];
@@ -451,10 +517,12 @@ URL.revokeObjectURL(attachment.previewUrl);
 
 function removeReplyFile(attachment: SelectedAttachment): void {
     if (attachment.previewUrl) {
-URL.revokeObjectURL(attachment.previewUrl);
-}
+        URL.revokeObjectURL(attachment.previewUrl);
+    }
 
-    replyFiles.value = replyFiles.value.filter((item) => item.key !== attachment.key);
+    replyFiles.value = replyFiles.value.filter(
+        (item) => item.key !== attachment.key,
+    );
 }
 
 function onReplyFilesSelected(event: FileUploadSelectEvent): void {
@@ -478,8 +546,8 @@ function onReplyFilesSelected(event: FileUploadSelectEvent): void {
 
         if (existing.has(attachment.key)) {
             if (attachment.previewUrl) {
-URL.revokeObjectURL(attachment.previewUrl);
-}
+                URL.revokeObjectURL(attachment.previewUrl);
+            }
 
             continue;
         }
@@ -491,16 +559,16 @@ URL.revokeObjectURL(attachment.previewUrl);
     replyFileUpload.value?.clear();
 
     if (rejected.length > 0) {
-errorMessage.value = rejected.join('. ');
-}
+        errorMessage.value = rejected.join('. ');
+    }
 }
 
 async function sendReply(): Promise<void> {
     const content = replyMessage.value.trim();
 
     if (sending.value || isBlocked.value) {
-return;
-}
+        return;
+    }
 
     if (!content && replyFiles.value.length === 0) {
         errorMessage.value = 'Enter a reply or attach a file.';
@@ -549,19 +617,19 @@ function openAttachment(attachment: MessageAttachment): void {
 
 function handleVisibilityChange(): void {
     if (document.visibilityState === 'visible') {
-void loadConversation(false);
-}
+        void loadConversation(false);
+    }
 }
 
 function startPolling(): void {
     if (pollTimer !== null) {
-window.clearInterval(pollTimer);
-}
+        window.clearInterval(pollTimer);
+    }
 
     pollTimer = window.setInterval(() => {
         if (document.visibilityState === 'visible') {
-void loadConversation(false);
-}
+            void loadConversation(false);
+        }
     }, POLL_INTERVAL_MS);
 }
 
@@ -569,8 +637,8 @@ watch(
     () => props.conversation.inbox_id,
     async (nextInboxId) => {
         if (!nextInboxId || nextInboxId === loadedInboxId) {
-return;
-}
+            return;
+        }
 
         inbox.value = null;
         threadAttachments.value = [];
@@ -591,8 +659,8 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
     if (pollTimer !== null) {
-window.clearInterval(pollTimer);
-}
+        window.clearInterval(pollTimer);
+    }
 
     document.removeEventListener('visibilitychange', handleVisibilityChange);
     clearReplyFiles();
@@ -600,8 +668,12 @@ window.clearInterval(pollTimer);
 </script>
 
 <template>
-    <main class="flex h-full min-h-0 min-w-0 overflow-hidden flex-col bg-[#F4F8FD]">
-        <header class="flex shrink-0 items-center gap-3 border-b border-slate-200 bg-white px-4 py-3">
+    <main
+        class="flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-[#F4F8FD]"
+    >
+        <header
+            class="flex shrink-0 items-center gap-3 border-b border-slate-200 bg-white px-4 py-3"
+        >
             <Button
                 type="button"
                 icon="pi pi-angle-left"
@@ -632,7 +704,9 @@ window.clearInterval(pollTimer);
 
             <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-2">
-                    <p class="truncate font-bold text-slate-900">{{ participantName }}</p>
+                    <p class="truncate font-bold text-slate-900">
+                        {{ participantName }}
+                    </p>
                     <i
                         v-if="backgroundRefreshing"
                         class="pi pi-spin pi-spinner text-[10px] text-slate-400"
@@ -653,7 +727,12 @@ window.clearInterval(pollTimer);
             />
         </header>
 
-        <Message v-if="errorMessage" severity="error" :closable="false" class="m-3 shrink-0">
+        <Message
+            v-if="errorMessage"
+            severity="error"
+            :closable="false"
+            class="m-3 shrink-0"
+        >
             {{ errorMessage }}
         </Message>
 
@@ -669,7 +748,9 @@ window.clearInterval(pollTimer);
             v-else-if="isBlocked"
             class="flex flex-1 flex-col items-center justify-center px-6 text-center"
         >
-            <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-50">
+            <div
+                class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-50"
+            >
                 <i class="pi pi-user-minus text-2xl text-red-500"></i>
             </div>
             <p class="text-lg font-bold text-slate-900">User blocked</p>
@@ -681,11 +762,16 @@ window.clearInterval(pollTimer);
         <div
             v-else
             ref="messageScroller"
-            class="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-3 py-4 sm:px-5"
+            class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-3 py-4 sm:px-5"
         >
             <div v-for="(item, index) in threadItems" :key="item.id">
-                <div v-if="shouldShowDate(index)" class="my-4 flex justify-center">
-                    <span class="rounded-full bg-slate-200/80 px-3 py-1 text-[11px] font-semibold text-slate-500">
+                <div
+                    v-if="shouldShowDate(index)"
+                    class="my-4 flex justify-center"
+                >
+                    <span
+                        class="rounded-full bg-slate-200/80 px-3 py-1 text-[11px] font-semibold text-slate-500"
+                    >
                         {{ formatDate(item.date) }}
                     </span>
                 </div>
@@ -693,7 +779,9 @@ window.clearInterval(pollTimer);
                 <div
                     :class="[
                         'mb-1.5 flex w-full items-end gap-2',
-                        isMine(item) ? 'justify-end pl-12' : 'justify-start pr-12',
+                        isMine(item)
+                            ? 'justify-end pl-12'
+                            : 'justify-start pr-12',
                     ]"
                 >
                     <div
@@ -718,24 +806,38 @@ window.clearInterval(pollTimer);
 
                     <div
                         :class="[
-                            'max-w-[78%] rounded-2xl px-3.5 pb-2 pt-2.5 shadow-sm',
+                            'max-w-[78%] rounded-2xl px-3.5 pt-2.5 pb-2 shadow-sm',
                             isMine(item)
                                 ? 'rounded-br-md bg-[#377EC0] text-white'
                                 : 'rounded-bl-md border border-slate-200 bg-white text-slate-800',
                         ]"
                     >
-                        <p class="whitespace-pre-wrap break-words text-sm leading-5">
+                        <p
+                            class="text-sm leading-5 break-words whitespace-pre-wrap"
+                        >
                             {{ item.content }}
                         </p>
 
-                        <div v-if="item.attachments.length > 0" class="mt-2 space-y-1.5">
-                            <template v-for="attachment in item.attachments" :key="attachment.id">
+                        <div
+                            v-if="item.attachments.length > 0"
+                            class="mt-2 space-y-1.5"
+                        >
+                            <template
+                                v-for="attachment in item.attachments"
+                                :key="attachment.id"
+                            >
                                 <Button
                                     v-if="!isImageAttachment(attachment)"
                                     type="button"
-                                    :label="attachment.file_desc || attachment.filename || 'Attachment'"
+                                    :label="
+                                        attachment.file_desc ||
+                                        attachment.filename ||
+                                        'Attachment'
+                                    "
                                     icon="pi pi-paperclip"
-                                    :severity="isMine(item) ? 'secondary' : 'info'"
+                                    :severity="
+                                        isMine(item) ? 'secondary' : 'info'
+                                    "
                                     size="small"
                                     outlined
                                     class="w-full justify-start overflow-hidden"
@@ -750,7 +852,11 @@ window.clearInterval(pollTimer);
                                 >
                                     <PrimeImage
                                         :src="attachment.url || ''"
-                                        :alt="attachment.file_desc || attachment.filename || 'Image attachment'"
+                                        :alt="
+                                            attachment.file_desc ||
+                                            attachment.filename ||
+                                            'Image attachment'
+                                        "
                                         image-class="max-h-72 max-w-full rounded-xl object-cover"
                                     />
                                 </Button>
@@ -760,11 +866,16 @@ window.clearInterval(pollTimer);
                         <div
                             :class="[
                                 'mt-1 flex items-center justify-end gap-1 text-[10px]',
-                                isMine(item) ? 'text-blue-100' : 'text-slate-400',
+                                isMine(item)
+                                    ? 'text-blue-100'
+                                    : 'text-slate-400',
                             ]"
                         >
                             <span>{{ formatTime(item.date) }}</span>
-                            <i v-if="isMine(item)" class="pi pi-check-circle text-[10px]"></i>
+                            <i
+                                v-if="isMine(item)"
+                                class="pi pi-check-circle text-[10px]"
+                            ></i>
                         </div>
                     </div>
                 </div>
@@ -775,7 +886,10 @@ window.clearInterval(pollTimer);
             v-if="!initialLoading && !isBlocked"
             class="shrink-0 border-t border-slate-200 bg-white p-3"
         >
-            <div v-if="replyFiles.length > 0" class="mb-2 rounded-2xl bg-slate-50 p-2">
+            <div
+                v-if="replyFiles.length > 0"
+                class="mb-2 rounded-2xl bg-slate-50 p-2"
+            >
                 <div class="flex flex-wrap gap-2">
                     <div
                         v-for="attachment in replyFiles"
@@ -795,12 +909,16 @@ window.clearInterval(pollTimer);
                         </div>
                         <div
                             v-else
-                            class="flex h-20 min-w-[180px] max-w-[240px] items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 pr-9"
+                            class="flex h-20 max-w-[240px] min-w-[180px] items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 pr-9"
                         >
-                            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#377EC0]/10">
+                            <div
+                                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#377EC0]/10"
+                            >
                                 <i class="pi pi-file text-[#377EC0]"></i>
                             </div>
-                            <span class="min-w-0 flex-1 truncate text-xs font-semibold text-slate-700">
+                            <span
+                                class="min-w-0 flex-1 truncate text-xs font-semibold text-slate-700"
+                            >
                                 {{ attachment.file.name }}
                             </span>
                         </div>
@@ -810,7 +928,7 @@ window.clearInterval(pollTimer);
                             severity="secondary"
                             rounded
                             size="small"
-                            class="!absolute -right-2 -top-2 !h-7 !w-7"
+                            class="!absolute -top-2 -right-2 !h-7 !w-7"
                             aria-label="Remove attachment"
                             @click="removeReplyFile(attachment)"
                         />
@@ -858,7 +976,7 @@ window.clearInterval(pollTimer);
                     v-model="replyMessage"
                     auto-resize
                     rows="1"
-                    class="min-h-[44px] max-h-32 flex-1 overflow-y-auto"
+                    class="max-h-32 min-h-[44px] flex-1 overflow-y-auto"
                     placeholder="Type a message..."
                     @keydown.enter.exact.prevent="sendReply"
                 />
@@ -869,7 +987,10 @@ window.clearInterval(pollTimer);
                     severity="success"
                     rounded
                     :loading="sending"
-                    :disabled="sending || (!replyMessage.trim() && replyFiles.length === 0)"
+                    :disabled="
+                        sending ||
+                        (!replyMessage.trim() && replyFiles.length === 0)
+                    "
                     aria-label="Send reply"
                     @click="sendReply"
                 />

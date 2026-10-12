@@ -117,23 +117,17 @@ class JournalsController extends Controller
         }
 
         $sortableColumns = [
-            'date_journal' =>
-                'person_journal.date_journal',
+            'date_journal' => 'person_journal.date_journal',
 
-            'student_name' =>
-                'person.lname',
+            'student_name' => 'person.lname',
 
-            'school_id_no' =>
-                'person.school_id_no',
+            'school_id_no' => 'person.school_id_no',
 
-            'department' =>
-                'person.dept',
+            'department' => 'person.dept',
 
-            'journal_time' =>
-                'person_journal.journal_time',
+            'journal_time' => 'person_journal.journal_time',
 
-            'status' =>
-                'person_journal.esig_file',
+            'status' => 'person_journal.esig_file',
         ];
 
         $sortField = (string) (
@@ -178,7 +172,6 @@ class JournalsController extends Controller
             });
         }
 
-
         $paginator = $query
             ->orderBy(
                 $sortColumn,
@@ -195,11 +188,10 @@ class JournalsController extends Controller
             $paginator->items(),
         )
             ->map(
-                fn (object $journal): array =>
-                    $this->transformJournal(
-                        journal: $journal,
-                        evidenceBaseUrl: $evidenceBaseUrl,
-                    ),
+                fn (object $journal): array => $this->transformJournal(
+                    journal: $journal,
+                    evidenceBaseUrl: $evidenceBaseUrl,
+                ),
             )
             ->values();
 
@@ -207,39 +199,29 @@ class JournalsController extends Controller
             'data' => $records,
 
             'meta' => [
-                'currentPage' =>
-                    $paginator->currentPage(),
+                'currentPage' => $paginator->currentPage(),
 
-                'lastPage' =>
-                    $paginator->lastPage(),
+                'lastPage' => $paginator->lastPage(),
 
-                'perPage' =>
-                    $paginator->perPage(),
+                'perPage' => $paginator->perPage(),
 
-                'total' =>
-                    $paginator->total(),
+                'total' => $paginator->total(),
 
-                'from' =>
-                    $paginator->firstItem(),
+                'from' => $paginator->firstItem(),
 
-                'to' =>
-                    $paginator->lastItem(),
+                'to' => $paginator->lastItem(),
             ],
 
             'links' => [
-                'first' =>
-                    $paginator->url(1),
+                'first' => $paginator->url(1),
 
-                'last' =>
-                    $paginator->url(
-                        $paginator->lastPage(),
-                    ),
+                'last' => $paginator->url(
+                    $paginator->lastPage(),
+                ),
 
-                'previous' =>
-                    $paginator->previousPageUrl(),
+                'previous' => $paginator->previousPageUrl(),
 
-                'next' =>
-                    $paginator->nextPageUrl(),
+                'next' => $paginator->nextPageUrl(),
             ],
         ]);
     }
@@ -255,8 +237,7 @@ class JournalsController extends Controller
         if (! $account instanceof Student) {
             return response()->json(
                 [
-                    'message' =>
-                        'Only student accounts may access this resource.',
+                    'message' => 'Only student accounts may access this resource.',
                 ],
                 HttpResponse::HTTP_FORBIDDEN,
             );
@@ -317,12 +298,10 @@ class JournalsController extends Controller
             ->limit(10)
             ->get()
             ->map(
-                fn (object $journal): array =>
-                    $this->transformJournal(
-                        journal: $journal,
-                        evidenceBaseUrl:
-                            $evidenceBaseUrl,
-                    ),
+                fn (object $journal): array => $this->transformJournal(
+                    journal: $journal,
+                    evidenceBaseUrl: $evidenceBaseUrl,
+                ),
             )
             ->values();
 
@@ -346,8 +325,7 @@ class JournalsController extends Controller
         if (! $account instanceof Student) {
             return response()->json(
                 [
-                    'message' =>
-                        'Only student accounts may access this resource.',
+                    'message' => 'Only student accounts may access this resource.',
                 ],
                 HttpResponse::HTTP_FORBIDDEN,
             );
@@ -413,8 +391,7 @@ class JournalsController extends Controller
         if (! $account instanceof Student) {
             return response()->json(
                 [
-                    'message' =>
-                        'Only student accounts may access this resource.',
+                    'message' => 'Only student accounts may access this resource.',
                 ],
                 HttpResponse::HTTP_FORBIDDEN,
             );
@@ -464,8 +441,7 @@ class JournalsController extends Controller
         if (! $account instanceof Student) {
             return response()->json(
                 [
-                    'message' =>
-                        'Only student accounts may access this resource.',
+                    'message' => 'Only student accounts may access this resource.',
                 ],
                 HttpResponse::HTTP_FORBIDDEN,
             );
@@ -608,87 +584,66 @@ class JournalsController extends Controller
             ->table('person_journal')
             ->insert([
                 'id' => $journalId,
-                'date_journal' =>
-                    $validated['date_journal'],
+                'date_journal' => $validated['date_journal'],
                 'person_id' => $studentId,
                 'file_name' => null,
                 'login_id' => $studentId,
                 'lat_long' => null,
-                'pos_fix' =>
-                    $this->nullableString(
-                        $validated['pos_fix'] ?? null,
-                    ),
-                'course_speed' =>
-                    $this->nullableString(
-                        $validated['course_speed'] ?? null,
-                    ),
-                'activities' =>
-                    trim($validated['activities']),
+                'pos_fix' => $this->nullableString(
+                    $validated['pos_fix'] ?? null,
+                ),
+                'course_speed' => $this->nullableString(
+                    $validated['course_speed'] ?? null,
+                ),
+                'activities' => trim($validated['activities']),
                 'esig_file' => null,
-                'key_areas' =>
-                    $this->nullableString(
-                        $validated['key_areas'] ?? null,
-                    ),
-                'sto_name' =>
-                    $this->nullableString(
-                        $validated['sto_name'] ?? null,
-                    ),
-                'vessel_name' =>
-                    trim($validated['vessel_name']),
-                'ship_lat' =>
-                    $this->nullableString(
-                        $validated['ship_lat'] ?? null,
-                    ),
-                'ship_long' =>
-                    $this->nullableString(
-                        $validated['ship_long'] ?? null,
-                    ),
-                'ship_vicinity' =>
-                    $this->nullableString(
-                        $validated['ship_vicinity'] ?? null,
-                    ),
-                'journal_time' =>
-                    $validated['journal_time'],
-                'journal_time_to' =>
-                    $validated['journal_time_to'],
+                'key_areas' => $this->nullableString(
+                    $validated['key_areas'] ?? null,
+                ),
+                'sto_name' => $this->nullableString(
+                    $validated['sto_name'] ?? null,
+                ),
+                'vessel_name' => trim($validated['vessel_name']),
+                'ship_lat' => $this->nullableString(
+                    $validated['ship_lat'] ?? null,
+                ),
+                'ship_long' => $this->nullableString(
+                    $validated['ship_long'] ?? null,
+                ),
+                'ship_vicinity' => $this->nullableString(
+                    $validated['ship_vicinity'] ?? null,
+                ),
+                'journal_time' => $validated['journal_time'],
+                'journal_time_to' => $validated['journal_time_to'],
                 'hrs' => $hours,
                 'fo_do' => null,
-                'fo_rob' =>
-                    $this->nullableString(
-                        $validated['fo_rob'] ?? null,
-                    ),
-                'fo_dob' =>
-                    $this->nullableString(
-                        $validated['fo_dob'] ?? null,
-                    ),
-                'fo_lob' =>
-                    $this->nullableString(
-                        $validated['fo_lob'] ?? null,
-                    ),
-                'average_rpm' =>
-                    $this->nullableString(
-                        $validated['average_rpm'] ?? null,
-                    ),
-                'average_speed' =>
-                    $this->nullableString(
-                        $validated['average_speed'] ?? null,
-                    ),
-                'port_depart' =>
-                    $this->nullableString(
-                        $validated['port_depart'] ?? null,
-                    ),
-                'port_dest' =>
-                    $this->nullableString(
-                        $validated['port_dest'] ?? null,
-                    ),
-                'fo_cons' =>
-                    $this->nullableString(
-                        $validated['fo_cons'] ?? null,
-                    ),
-                'do_cons' =>
-                    $this->nullableString(
-                        $validated['do_cons'] ?? null,
-                    ),
+                'fo_rob' => $this->nullableString(
+                    $validated['fo_rob'] ?? null,
+                ),
+                'fo_dob' => $this->nullableString(
+                    $validated['fo_dob'] ?? null,
+                ),
+                'fo_lob' => $this->nullableString(
+                    $validated['fo_lob'] ?? null,
+                ),
+                'average_rpm' => $this->nullableString(
+                    $validated['average_rpm'] ?? null,
+                ),
+                'average_speed' => $this->nullableString(
+                    $validated['average_speed'] ?? null,
+                ),
+                'port_depart' => $this->nullableString(
+                    $validated['port_depart'] ?? null,
+                ),
+                'port_dest' => $this->nullableString(
+                    $validated['port_dest'] ?? null,
+                ),
+                'fo_cons' => $this->nullableString(
+                    $validated['fo_cons'] ?? null,
+                ),
+                'do_cons' => $this->nullableString(
+                    $validated['do_cons'] ?? null,
+                ),
                 'gdrive_link' => null,
             ]);
 
@@ -699,16 +654,13 @@ class JournalsController extends Controller
 
         return response()->json(
             [
-                'message' =>
-                    'Daily journal added successfully.',
-                'data' =>
-                    $this->transformJournalForEdit(
-                        journal: $created,
-                        personTaskBaseUrl:
-                            $this->personTaskBaseUrl(
-                                $school,
-                            ),
+                'message' => 'Daily journal added successfully.',
+                'data' => $this->transformJournalForEdit(
+                    journal: $created,
+                    personTaskBaseUrl: $this->personTaskBaseUrl(
+                        $school,
                     ),
+                ),
             ],
             HttpResponse::HTTP_CREATED,
         );
@@ -729,8 +681,7 @@ class JournalsController extends Controller
         if (! $account instanceof Student) {
             return response()->json(
                 [
-                    'message' =>
-                        'Only student accounts may access this resource.',
+                    'message' => 'Only student accounts may access this resource.',
                 ],
                 HttpResponse::HTTP_FORBIDDEN,
             );
@@ -775,8 +726,7 @@ class JournalsController extends Controller
         if (! $account instanceof Student) {
             return response()->json(
                 [
-                    'message' =>
-                        'Only student accounts may access this resource.',
+                    'message' => 'Only student accounts may access this resource.',
                 ],
                 HttpResponse::HTTP_FORBIDDEN,
             );
@@ -820,8 +770,7 @@ class JournalsController extends Controller
         if (! $account instanceof Student) {
             return response()->json(
                 [
-                    'message' =>
-                        'Only student accounts may access this resource.',
+                    'message' => 'Only student accounts may access this resource.',
                 ],
                 HttpResponse::HTTP_FORBIDDEN,
             );
@@ -869,8 +818,7 @@ class JournalsController extends Controller
         if (! $account instanceof Student) {
             return response()->json(
                 [
-                    'message' =>
-                        'Only student accounts may access this resource.',
+                    'message' => 'Only student accounts may access this resource.',
                 ],
                 HttpResponse::HTTP_FORBIDDEN,
             );
@@ -941,8 +889,7 @@ class JournalsController extends Controller
         }
 
         return response()->json([
-            'message' =>
-                'Daily journal deleted successfully.',
+            'message' => 'Daily journal deleted successfully.',
         ]);
     }
 
@@ -962,8 +909,7 @@ class JournalsController extends Controller
         );
 
         $request->merge([
-            'person_id' =>
-                (string) $account->getAuthIdentifier(),
+            'person_id' => (string) $account->getAuthIdentifier(),
             'school_id' => null,
         ]);
 
@@ -1060,32 +1006,23 @@ class JournalsController extends Controller
                 ));
 
                 return [
-                    'id' =>
-                        (string) $student->id,
+                    'id' => (string) $student->id,
 
-                    'school_id_no' =>
-                        $student->school_id_no,
+                    'school_id_no' => $student->school_id_no,
 
-                    'fname' =>
-                        $student->fname,
+                    'fname' => $student->fname,
 
-                    'mname' =>
-                        $student->mname,
+                    'mname' => $student->mname,
 
-                    'lname' =>
-                        $student->lname,
+                    'lname' => $student->lname,
 
-                    'gender' =>
-                        $student->gender,
+                    'gender' => $student->gender,
 
-                    'dept' =>
-                        $student->dept,
+                    'dept' => $student->dept,
 
-                    'name' =>
-                        $name,
+                    'name' => $name,
 
-                    'label' =>
-                        $schoolId !== ''
+                    'label' => $schoolId !== ''
                             ? "{$name} ({$schoolId})"
                             : $name,
                 ];
@@ -1261,82 +1198,60 @@ class JournalsController extends Controller
             ->table('person_journal')
             ->where('id', $journalId)
             ->update([
-                'date_journal' =>
-                    $validated['date_journal'],
-                'journal_time' =>
-                    $validated['journal_time'],
-                'journal_time_to' =>
-                    $validated['journal_time_to'],
-                'hrs' =>
-                    $hours,
-                'vessel_name' =>
-                    trim($validated['vessel_name']),
-                'ship_lat' =>
-                    $this->nullableString(
-                        $validated['ship_lat'] ?? null,
-                    ),
-                'ship_long' =>
-                    $this->nullableString(
-                        $validated['ship_long'] ?? null,
-                    ),
-                'ship_vicinity' =>
-                    $this->nullableString(
-                        $validated['ship_vicinity'] ?? null,
-                    ),
-                'port_depart' =>
-                    $this->nullableString(
-                        $validated['port_depart'] ?? null,
-                    ),
-                'port_dest' =>
-                    $this->nullableString(
-                        $validated['port_dest'] ?? null,
-                    ),
-                'pos_fix' =>
-                    $this->nullableString(
-                        $validated['pos_fix'] ?? null,
-                    ),
-                'course_speed' =>
-                    $this->nullableString(
-                        $validated['course_speed'] ?? null,
-                    ),
-                'fo_rob' =>
-                    $this->nullableString(
-                        $validated['fo_rob'] ?? null,
-                    ),
-                'fo_dob' =>
-                    $this->nullableString(
-                        $validated['fo_dob'] ?? null,
-                    ),
-                'fo_lob' =>
-                    $this->nullableString(
-                        $validated['fo_lob'] ?? null,
-                    ),
-                'fo_cons' =>
-                    $this->nullableString(
-                        $validated['fo_cons'] ?? null,
-                    ),
-                'do_cons' =>
-                    $this->nullableString(
-                        $validated['do_cons'] ?? null,
-                    ),
-                'average_rpm' =>
-                    $this->nullableString(
-                        $validated['average_rpm'] ?? null,
-                    ),
-                'average_speed' =>
-                    $this->nullableString(
-                        $validated['average_speed'] ?? null,
-                    ),
-                'activities' =>
-                    trim($validated['activities']),
-                'key_areas' =>
-                    $this->nullableString(
-                        $validated['key_areas'] ?? null,
-                    ),
-                'sto_name' =>
-                    $this->nullableString(
-                        $validated['sto_name'] ?? null,
-                    ),
+                'date_journal' => $validated['date_journal'],
+                'journal_time' => $validated['journal_time'],
+                'journal_time_to' => $validated['journal_time_to'],
+                'hrs' => $hours,
+                'vessel_name' => trim($validated['vessel_name']),
+                'ship_lat' => $this->nullableString(
+                    $validated['ship_lat'] ?? null,
+                ),
+                'ship_long' => $this->nullableString(
+                    $validated['ship_long'] ?? null,
+                ),
+                'ship_vicinity' => $this->nullableString(
+                    $validated['ship_vicinity'] ?? null,
+                ),
+                'port_depart' => $this->nullableString(
+                    $validated['port_depart'] ?? null,
+                ),
+                'port_dest' => $this->nullableString(
+                    $validated['port_dest'] ?? null,
+                ),
+                'pos_fix' => $this->nullableString(
+                    $validated['pos_fix'] ?? null,
+                ),
+                'course_speed' => $this->nullableString(
+                    $validated['course_speed'] ?? null,
+                ),
+                'fo_rob' => $this->nullableString(
+                    $validated['fo_rob'] ?? null,
+                ),
+                'fo_dob' => $this->nullableString(
+                    $validated['fo_dob'] ?? null,
+                ),
+                'fo_lob' => $this->nullableString(
+                    $validated['fo_lob'] ?? null,
+                ),
+                'fo_cons' => $this->nullableString(
+                    $validated['fo_cons'] ?? null,
+                ),
+                'do_cons' => $this->nullableString(
+                    $validated['do_cons'] ?? null,
+                ),
+                'average_rpm' => $this->nullableString(
+                    $validated['average_rpm'] ?? null,
+                ),
+                'average_speed' => $this->nullableString(
+                    $validated['average_speed'] ?? null,
+                ),
+                'activities' => trim($validated['activities']),
+                'key_areas' => $this->nullableString(
+                    $validated['key_areas'] ?? null,
+                ),
+                'sto_name' => $this->nullableString(
+                    $validated['sto_name'] ?? null,
+                ),
             ]);
 
         $updated = $this->findJournalOrFail(
@@ -1345,15 +1260,13 @@ class JournalsController extends Controller
         );
 
         return response()->json([
-            'message' =>
-                'Daily journal saved successfully.',
-            'data' =>
-                $this->transformJournalForEdit(
-                    journal: $updated,
-                    personTaskBaseUrl: $this->personTaskBaseUrl(
-                        $school,
-                    ),
+            'message' => 'Daily journal saved successfully.',
+            'data' => $this->transformJournalForEdit(
+                journal: $updated,
+                personTaskBaseUrl: $this->personTaskBaseUrl(
+                    $school,
                 ),
+            ),
         ]);
     }
 
@@ -1440,15 +1353,13 @@ class JournalsController extends Controller
         );
 
         return response()->json([
-            'message' =>
-                'Objective evidence uploaded successfully.',
-            'data' =>
-                $this->transformJournalForEdit(
-                    journal: $updated,
-                    personTaskBaseUrl: $this->personTaskBaseUrl(
-                        $school,
-                    ),
+            'message' => 'Objective evidence uploaded successfully.',
+            'data' => $this->transformJournalForEdit(
+                journal: $updated,
+                personTaskBaseUrl: $this->personTaskBaseUrl(
+                    $school,
                 ),
+            ),
         ]);
     }
 
@@ -1507,10 +1418,8 @@ class JournalsController extends Controller
                 ->table('person_journal')
                 ->where('id', $journalId)
                 ->update([
-                    'sto_name' =>
-                        trim($validated['sto_name']),
-                    'esig_file' =>
-                        $newFilename,
+                    'sto_name' => trim($validated['sto_name']),
+                    'esig_file' => $newFilename,
                 ]);
         } catch (Throwable $exception) {
             $this->deleteRemoteFileQuietly(
@@ -1527,15 +1436,13 @@ class JournalsController extends Controller
         );
 
         return response()->json([
-            'message' =>
-                'STO signature saved. The journal is now validated.',
-            'data' =>
-                $this->transformJournalForEdit(
-                    journal: $updated,
-                    personTaskBaseUrl: $this->personTaskBaseUrl(
-                        $school,
-                    ),
+            'message' => 'STO signature saved. The journal is now validated.',
+            'data' => $this->transformJournalForEdit(
+                journal: $updated,
+                personTaskBaseUrl: $this->personTaskBaseUrl(
+                    $school,
                 ),
+            ),
         ]);
     }
 
@@ -1588,8 +1495,7 @@ class JournalsController extends Controller
             && $schoolId === ''
         ) {
             throw ValidationException::withMessages([
-                'student' =>
-                    'A student or exact school ID is required.',
+                'student' => 'A student or exact school ID is required.',
             ]);
         }
 
@@ -1752,11 +1658,9 @@ class JournalsController extends Controller
                 'school' => $school,
                 'journals' => $journals,
 
-                'dateFrom' =>
-                    $validated['date_from'] ?? null,
+                'dateFrom' => $validated['date_from'] ?? null,
 
-                'dateTo' =>
-                    $validated['date_to'] ?? null,
+                'dateTo' => $validated['date_to'] ?? null,
             ],
         )->render();
 
@@ -1786,19 +1690,15 @@ class JournalsController extends Controller
             $pdf,
             HttpResponse::HTTP_OK,
             [
-                'Content-Type' =>
-                    'application/pdf',
+                'Content-Type' => 'application/pdf',
 
-                'Content-Disposition' =>
-                    'inline; filename="'.
+                'Content-Disposition' => 'inline; filename="'.
                     $filename.
                     '"',
 
-                'Cache-Control' =>
-                    'private, no-store, no-cache, must-revalidate',
+                'Cache-Control' => 'private, no-store, no-cache, must-revalidate',
 
-                'Pragma' =>
-                    'no-cache',
+                'Pragma' => 'no-cache',
             ],
         );
     }
@@ -2020,82 +1920,59 @@ class JournalsController extends Controller
         );
 
         return [
-            'id' =>
-                (string) $journal->id,
+            'id' => (string) $journal->id,
 
-            'person_id' =>
-                (string) $journal->person_id,
+            'person_id' => (string) $journal->person_id,
 
-            'date_journal' =>
+            'date_journal' => $journal->date_journal,
+
+            'school_id_no' => $journal->school_id_no,
+
+            'fname' => $journal->fname,
+
+            'mname' => $journal->mname,
+
+            'lname' => $journal->lname,
+
+            'gender' => $journal->gender,
+
+            'department' => $journal->dept,
+
+            'student_name' => $this->studentName(
+                $journal,
+            ),
+
+            'vessel_name' => $journal->vessel_name,
+
+            'journal_time' => $journal->journal_time,
+
+            'journal_time_to' => $journal->journal_time_to,
+
+            'duty_hours' => $this->calculateDutyHours(
                 $journal->date_journal,
-
-            'school_id_no' =>
-                $journal->school_id_no,
-
-            'fname' =>
-                $journal->fname,
-
-            'mname' =>
-                $journal->mname,
-
-            'lname' =>
-                $journal->lname,
-
-            'gender' =>
-                $journal->gender,
-
-            'department' =>
-                $journal->dept,
-
-            'student_name' =>
-                $this->studentName(
-                    $journal,
-                ),
-
-            'vessel_name' =>
-                $journal->vessel_name,
-
-            'journal_time' =>
                 $journal->journal_time,
-
-            'journal_time_to' =>
                 $journal->journal_time_to,
+            ),
 
-            'duty_hours' =>
-                $this->calculateDutyHours(
-                    $journal->date_journal,
-                    $journal->journal_time,
-                    $journal->journal_time_to,
-                ),
+            'port_depart' => $journal->port_depart,
 
-            'port_depart' =>
-                $journal->port_depart,
+            'port_dest' => $journal->port_dest,
 
-            'port_dest' =>
-                $journal->port_dest,
+            'activities' => $journal->activities,
 
-            'activities' =>
-                $journal->activities,
+            'key_areas' => $journal->key_areas,
 
-            'key_areas' =>
-                $journal->key_areas,
+            'file_name' => $fileName,
 
-            'file_name' =>
-                $fileName,
+            'evidence_url' => $evidenceUrl,
 
-            'evidence_url' =>
-                $evidenceUrl,
+            'evidence_source' => $evidenceSource,
 
-            'evidence_source' =>
-                $evidenceSource,
-
-            'status' =>
-                $isValidated
+            'status' => $isValidated
                     ? 'Validated'
                     : 'Pending',
 
-            'validated' =>
-                $isValidated,
+            'validated' => $isValidated,
         ];
     }
 
@@ -2193,12 +2070,11 @@ class JournalsController extends Controller
             ),
             'sto_name' => $journal->sto_name,
             'file_name' => $fileName,
-            'gdrive_link' => $journal->gdrive_link ?? null, 
+            'gdrive_link' => $journal->gdrive_link ?? null,
             'evidence_url' => $evidenceUrl,
             'evidence_source' => $evidenceSource,
             'officer_signature_file' => $officerSignature,
-            'officer_signature_url' =>
-                $officerSignature !== ''
+            'officer_signature_url' => $officerSignature !== ''
                     ? $this->personTaskFileUrl(
                         filename: $officerSignature,
                         personTaskBaseUrl: $personTaskBaseUrl,
@@ -2296,13 +2172,11 @@ class JournalsController extends Controller
             $student->mname ?? null,
         ])
             ->filter(
-                fn ($value): bool =>
-                    is_string($value)
+                fn ($value): bool => is_string($value)
                     && trim($value) !== '',
             )
             ->map(
-                fn (string $value): string =>
-                    trim($value),
+                fn (string $value): string => trim($value),
             )
             ->implode(' ');
 
@@ -2408,10 +2282,9 @@ class JournalsController extends Controller
             trim((string) $signature),
         );
 
-        return (
+        return
             $value !== ''
-            && $value !== 'null'
-        );
+            && $value !== 'null';
     }
 
     private function nullableString(

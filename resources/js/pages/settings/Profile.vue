@@ -31,9 +31,7 @@ const user = computed(() => page.props.auth.user);
 <template>
     <Head title="Profile settings" />
 
-    <h1 class="sr-only">
-        Profile settings
-    </h1>
+    <h1 class="sr-only">Profile settings</h1>
 
     <div class="flex flex-col space-y-6">
         <Heading
@@ -49,9 +47,7 @@ const user = computed(() => page.props.auth.user);
         >
             <!-- FIRST NAME -->
             <div class="grid gap-2">
-                <Label for="fname">
-                    First name
-                </Label>
+                <Label for="fname"> First name </Label>
 
                 <Input
                     id="fname"
@@ -64,17 +60,12 @@ const user = computed(() => page.props.auth.user);
                     placeholder="First name"
                 />
 
-                <InputError
-                    class="mt-2"
-                    :message="errors.fname"
-                />
+                <InputError class="mt-2" :message="errors.fname" />
             </div>
 
             <!-- MIDDLE NAME -->
             <div class="grid gap-2">
-                <Label for="mname">
-                    Middle name
-                </Label>
+                <Label for="mname"> Middle name </Label>
 
                 <Input
                     id="mname"
@@ -86,17 +77,12 @@ const user = computed(() => page.props.auth.user);
                     placeholder="Middle name"
                 />
 
-                <InputError
-                    class="mt-2"
-                    :message="errors.mname"
-                />
+                <InputError class="mt-2" :message="errors.mname" />
             </div>
 
             <!-- LAST NAME -->
             <div class="grid gap-2">
-                <Label for="lname">
-                    Last name
-                </Label>
+                <Label for="lname"> Last name </Label>
 
                 <Input
                     id="lname"
@@ -109,17 +95,12 @@ const user = computed(() => page.props.auth.user);
                     placeholder="Last name"
                 />
 
-                <InputError
-                    class="mt-2"
-                    :message="errors.lname"
-                />
+                <InputError class="mt-2" :message="errors.lname" />
             </div>
 
             <!-- EMAIL -->
             <div class="grid gap-2">
-                <Label for="email">
-                    Email address
-                </Label>
+                <Label for="email"> Email address </Label>
 
                 <Input
                     id="email"
@@ -131,10 +112,7 @@ const user = computed(() => page.props.auth.user);
                     placeholder="Email address"
                 />
 
-                <InputError
-                    class="mt-2"
-                    :message="errors.email"
-                />
+                <InputError class="mt-2" :message="errors.email" />
             </div>
 
             <!-- SAVE BUTTON -->
@@ -144,11 +122,7 @@ const user = computed(() => page.props.auth.user);
                     :disabled="processing"
                     data-test="update-profile-button"
                 >
-                    {{
-                        processing
-                            ? 'Saving...'
-                            : 'Save'
-                    }}
+                    {{ processing ? 'Saving...' : 'Save' }}
                 </Button>
             </div>
         </Form>

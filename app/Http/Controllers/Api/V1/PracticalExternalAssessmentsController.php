@@ -3,45 +3,29 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-
 use App\Services\ExternalAssessmentAccessService;
 use App\Services\IrisEmailService;
-
 use Illuminate\Database\ConnectionInterface;
-
 use Illuminate\Database\Query\Builder;
-
 use Illuminate\Http\JsonResponse;
-
 use Illuminate\Http\Request;
-
 use Illuminate\Support\Collection;
-
 use Illuminate\Support\Facades\DB;
-
 use Illuminate\Support\Str;
-
 use Illuminate\Validation\ValidationException;
-
 use Symfony\Component\HttpFoundation\Response;
-
 use Throwable;
 
 class PracticalExternalAssessmentsController extends Controller
-
 {
-
     public function __construct(
 
         private readonly ExternalAssessmentAccessService $externalAssessmentAccessService,
         private readonly IrisEmailService $irisEmailService,
 
-    ) {
-
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
-
     {
 
         $database = $this->database($request);
@@ -258,15 +242,11 @@ class PracticalExternalAssessmentsController extends Controller
 
                     ),
 
-                    'title_assess' =>
-
-                        $row->title_assess
+                    'title_assess' => $row->title_assess
 
                         ?: 'Untitled Practical Assessment',
 
-                    'grade_system' =>
-
-                        $row->grade_system
+                    'grade_system' => $row->grade_system
 
                         ?: 'Checklist',
 
@@ -286,21 +266,17 @@ class PracticalExternalAssessmentsController extends Controller
 
                         && strtoupper((string) $row->done) === 'N',
 
-                    'is_completed' =>
+                    'is_completed' => strtoupper(
 
-                        strtoupper(
+                        (string) $row->done,
 
-                            (string) $row->done,
+                    ) === 'Y',
 
-                        ) === 'Y',
+                    'is_pending' => strtoupper(
 
-                    'is_pending' =>
+                        (string) $row->for_assess,
 
-                        strtoupper(
-
-                            (string) $row->for_assess,
-
-                        ) === 'Y',
+                    ) === 'Y',
 
                 ];
 
@@ -349,9 +325,7 @@ class PracticalExternalAssessmentsController extends Controller
     }
 
     /** Available practical assessment templates for one external examinee. */
-
     public function options(Request $request): JsonResponse
-
     {
 
         $database = $this->database($request);
@@ -375,9 +349,7 @@ class PracticalExternalAssessmentsController extends Controller
     }
 
     /** Schedule one external practical assessment and copy its grading items. */
-
     public function store(Request $request): JsonResponse
-
     {
 
         $database = $this->database($request);
@@ -405,13 +377,11 @@ class PracticalExternalAssessmentsController extends Controller
         if (! empty($data['from_date']) && ! empty($data['due_date']) && $data['due_date'] < $data['from_date']) {
 
             throw ValidationException::withMessages(['due_date' => 'Due date must be on or after the start date.']);
-
         }
 
         if (! $database->table('p_assess_h')->where('id', $data['p_assess_h_id'])->exists()) {
 
             throw ValidationException::withMessages(['p_assess_h_id' => 'Select an existing practical assessment.']);
-
         }
 
         $id = (string) Str::uuid();
@@ -577,9 +547,7 @@ class PracticalExternalAssessmentsController extends Controller
     }
 
     /** Editable header values, separate from the grading response. */
-
     public function edit(Request $request, string $assessmentId): JsonResponse
-
     {
 
         $database = $this->database($request);
@@ -615,7 +583,6 @@ class PracticalExternalAssessmentsController extends Controller
     }
 
     public function update(Request $request, string $assessmentId): JsonResponse
-
     {
 
         $database = $this->database($request);
@@ -643,13 +610,11 @@ class PracticalExternalAssessmentsController extends Controller
         if (! empty($data['from_date']) && ! empty($data['due_date']) && $data['due_date'] < $data['from_date']) {
 
             throw ValidationException::withMessages(['due_date' => 'Due date must be on or after the start date.']);
-
         }
 
         if (! $database->table('p_assess_h')->where('id', $data['p_assess_h_id'])->exists()) {
 
             throw ValidationException::withMessages(['p_assess_h_id' => 'Select an existing practical assessment.']);
-
         }
 
         $database->transaction(function () use ($database, $data, $assessmentId, $request): void {
@@ -723,7 +688,6 @@ class PracticalExternalAssessmentsController extends Controller
     }
 
     private function ensureEditable(object $record): void
-
     {
 
         if (strtoupper((string) ($record->for_assess ?? '')) === 'Y'
@@ -731,7 +695,6 @@ class PracticalExternalAssessmentsController extends Controller
             || strtoupper((string) ($record->done ?? '')) !== 'N') {
 
             throw ValidationException::withMessages([
-
                 'assessment' => 'Only assessments that have not been submitted or graded can be edited.',
 
             ]);
@@ -926,9 +889,7 @@ class PracticalExternalAssessmentsController extends Controller
 
             ->filter(
 
-                fn (array $file): bool =>
-
-                    $file['name'] !== '',
+                fn (array $file): bool => $file['name'] !== '',
 
             )
 
@@ -942,9 +903,7 @@ class PracticalExternalAssessmentsController extends Controller
 
                     'id' => (string) $item->id,
 
-                    'assessment_item_id' =>
-
-                        (string) $item->assess_d_id,
+                    'assessment_item_id' => (string) $item->assess_d_id,
 
                     'description' => $this->decodeLegacyText(
 
@@ -964,9 +923,7 @@ class PracticalExternalAssessmentsController extends Controller
 
                         : 0,
 
-                    'maximum_points' =>
-
-                        is_numeric($item->maximum_points)
+                    'maximum_points' => is_numeric($item->maximum_points)
 
                             ? (float) $item->maximum_points
 
@@ -1006,9 +963,7 @@ class PracticalExternalAssessmentsController extends Controller
 
         $earnedPoints = (float) $normalizedItems->sum(
 
-            fn (array $item): float =>
-
-                (float) $item['points'],
+            fn (array $item): float => (float) $item['points'],
 
         );
 
@@ -1056,9 +1011,7 @@ class PracticalExternalAssessmentsController extends Controller
 
                 ],
 
-                'title' =>
-
-                    $assessment->title_assess
+                'title' => $assessment->title_assess
 
                     ?: 'Untitled Practical Assessment',
 
@@ -1068,9 +1021,7 @@ class PracticalExternalAssessmentsController extends Controller
 
                 ),
 
-                'grade_system' =>
-
-                    $assessment->grade_system
+                'grade_system' => $assessment->grade_system
 
                     ?: 'Checklist',
 
@@ -1080,21 +1031,17 @@ class PracticalExternalAssessmentsController extends Controller
 
                 'due_date' => $assessment->due_date,
 
-                'is_completed' =>
+                'is_completed' => strtoupper(
 
-                    strtoupper(
+                    (string) $assessment->done,
 
-                        (string) $assessment->done,
+                ) === 'Y',
 
-                    ) === 'Y',
+                'is_pending' => strtoupper(
 
-                'is_pending' =>
+                    (string) $assessment->for_assess,
 
-                    strtoupper(
-
-                        (string) $assessment->for_assess,
-
-                    ) === 'Y',
+                ) === 'Y',
 
                 'items' => $normalizedItems,
 
@@ -1104,21 +1051,19 @@ class PracticalExternalAssessmentsController extends Controller
 
                 'result' => [
 
-                    'earned_points' => $earnedPoints,
+                'earned_points' => $earnedPoints,
 
-                    'maximum_points' => $maximumPoints,
+                'maximum_points' => $maximumPoints,
 
-                    'percentage' => $percentage,
+                'percentage' => $percentage,
 
-                    'passing_mark' => $passingMark,
+                'passing_mark' => $passingMark,
 
-                    'remarks' =>
+                'remarks' => $percentage >= $passingMark
 
-                        $percentage >= $passingMark
+                        ? 'PASS'
 
-                            ? 'PASS'
-
-                            : 'FAIL',
+                        : 'FAIL',
 
                 ],
 
@@ -1255,7 +1200,6 @@ class PracticalExternalAssessmentsController extends Controller
                     ) {
 
                         throw ValidationException::withMessages([
-
                             'assessment' => [
 
                                 'This practical assessment has already been graded.',
@@ -1304,16 +1248,13 @@ class PracticalExternalAssessmentsController extends Controller
 
                         ->keyBy(
 
-                            fn (object $item): string =>
-
-                                (string) $item->id,
+                            fn (object $item): string => (string) $item->id,
 
                         );
 
                     if ($items->isEmpty()) {
 
                         throw ValidationException::withMessages([
-
                             'grades' => [
 
                                 'This assessment does not contain any grading items.',
@@ -1330,9 +1271,7 @@ class PracticalExternalAssessmentsController extends Controller
 
                     )->keyBy(
 
-                        fn (array $grade): string =>
-
-                            (string) $grade['item_id'],
+                        fn (array $grade): string => (string) $grade['item_id'],
 
                     );
 
@@ -1361,7 +1300,6 @@ class PracticalExternalAssessmentsController extends Controller
                     ) {
 
                         throw ValidationException::withMessages([
-
                             'grades' => [
 
                                 'The submitted grading items do not match this assessment.',
@@ -1424,9 +1362,7 @@ class PracticalExternalAssessmentsController extends Controller
 
                             ->keyBy(
 
-                                fn (object $option): string =>
-
-                                    (string) $option->id,
+                                fn (object $option): string => (string) $option->id,
 
                             );
 
@@ -1467,7 +1403,6 @@ class PracticalExternalAssessmentsController extends Controller
                             if ($points > $maximum) {
 
                                 throw ValidationException::withMessages([
-
                                     'grades' => [
 
                                         "An item grade cannot exceed {$maximum} points.",
@@ -1506,9 +1441,7 @@ class PracticalExternalAssessmentsController extends Controller
 
                             foreach (
 
-                                $selections
-
-                                as $criterionId => $optionId
+                                $selections as $criterionId => $optionId
 
                             ) {
 
@@ -1537,7 +1470,6 @@ class PracticalExternalAssessmentsController extends Controller
                                 ) {
 
                                     throw ValidationException::withMessages([
-
                                         'grades' => [
 
                                             'An invalid rubric option was submitted.',
@@ -1563,7 +1495,6 @@ class PracticalExternalAssessmentsController extends Controller
                                 ) {
 
                                     throw ValidationException::withMessages([
-
                                         'grades' => [
 
                                             'Only one rating can be selected for each rubric criterion.',
@@ -1620,9 +1551,7 @@ class PracticalExternalAssessmentsController extends Controller
 
                         ->update([
 
-                            'date_assessed' =>
-
-                                now()->toDateString(),
+                            'date_assessed' => now()->toDateString(),
 
                             'total_pts' => $totalPoints,
 
@@ -1648,9 +1577,7 @@ class PracticalExternalAssessmentsController extends Controller
 
                         'total_points' => $totalPoints,
 
-                        'next_assessment_id' =>
-
-                            $nextAssessmentId
+                        'next_assessment_id' => $nextAssessmentId
 
                                 ? (string) $nextAssessmentId
 
@@ -1665,16 +1592,13 @@ class PracticalExternalAssessmentsController extends Controller
         } catch (ValidationException $exception) {
 
             throw $exception;
-
         } catch (Throwable $exception) {
 
             report($exception);
 
             return response()->json([
 
-                'message' =>
-
-                    'The external practical assessment could not be saved.',
+                'message' => 'The external practical assessment could not be saved.',
 
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
 
@@ -1682,9 +1606,7 @@ class PracticalExternalAssessmentsController extends Controller
 
         return response()->json([
 
-            'message' =>
-
-                'The external practical assessment was graded successfully.',
+            'message' => 'The external practical assessment was graded successfully.',
 
             'data' => $result,
 
@@ -1844,11 +1766,8 @@ class PracticalExternalAssessmentsController extends Controller
 
                 ->groupBy(
 
-                    fn (object $option): string =>
-
-                        (string) $option
-
-                            ->rubrics_criterion_id,
+                    fn (object $option): string => (string) $option
+                        ->rubrics_criterion_id,
 
                 );
 
@@ -1866,13 +1785,9 @@ class PracticalExternalAssessmentsController extends Controller
 
                         'id' => (string) $criterion->id,
 
-                        'title' =>
+                        'title' => $criterion->criterion_title,
 
-                            $criterion->criterion_title,
-
-                        'description' =>
-
-                            $criterion->criterion_desc,
+                        'description' => $criterion->criterion_desc,
 
                         'options' => collect(
 
@@ -1890,19 +1805,12 @@ class PracticalExternalAssessmentsController extends Controller
 
                                 fn (object $option): array => [
 
-                                    'id' =>
+                                    'id' => (string) $option->id,
 
-                                        (string) $option->id,
+                                    'title' => $option->item_title,
 
-                                    'title' =>
-
-                                        $option->item_title,
-
-                                    'points' =>
-
-                                        (float) $option
-
-                                            ->item_point,
+                                    'points' => (float) $option
+                                        ->item_point,
 
                                 ],
 
@@ -1940,9 +1848,7 @@ class PracticalExternalAssessmentsController extends Controller
 
             return (float) $items->sum(
 
-                fn (array $item): float =>
-
-                    (float) $item[
+                fn (array $item): float => (float) $item[
 
                         'maximum_points'
 
@@ -1998,9 +1904,7 @@ class PracticalExternalAssessmentsController extends Controller
 
             ->map(
 
-                fn ($name): string =>
-
-                    trim((string) $name),
+                fn ($name): string => trim((string) $name),
 
             )
 
@@ -2115,5 +2019,4 @@ class PracticalExternalAssessmentsController extends Controller
         );
 
     }
-
 }

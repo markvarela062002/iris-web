@@ -12,9 +12,7 @@ use Illuminate\Validation\ValidationException;
 
 class QuestionActivationController extends Controller
 {
-    public function __construct(private readonly DatatableService $datatableService)
-    {
-    }
+    public function __construct(private readonly DatatableService $datatableService) {}
 
     public function options(Request $request): JsonResponse
     {
@@ -32,6 +30,7 @@ class QuestionActivationController extends Controller
                 'id' => (string) $row->id,
                 'desc_topic' => $this->decode((string) $row->desc_topic),
             ]);
+
         return response()->json(['data' => $data]);
     }
 
@@ -88,9 +87,11 @@ class QuestionActivationController extends Controller
             })->all();
             // Include E, and expose all marked correct options if legacy data is inconsistent.
             $row['correct_answers'] = collect($row['options'])->where('correct', true)->pluck('letter')->all();
+
             return $row;
         })->values()->all();
         $result['summary'] = $this->summary($db, $scope);
+
         return response()->json($result);
     }
 
@@ -104,6 +105,7 @@ class QuestionActivationController extends Controller
         abort_unless((clone $query)->exists(), 404, 'The question is not in the selected subject.');
         // Preserve last_update, matching legacy flag updates and avoiding shifted chart dates.
         $query->update([$data['field'] => $data['value']]);
+
         return response()->json(['message' => 'Question updated.', 'summary' => $this->summary($db, $scope)]);
     }
 
@@ -123,6 +125,7 @@ class QuestionActivationController extends Controller
         }
         // Search and pagination are intentionally not part of bulk scope.
         $changed = $query->update([$data['field'] => $data['value']]);
+
         return response()->json([
             'message' => $data['field'] === 'active'
                 ? 'Activation updated for all questions in the selected subject.'
@@ -138,6 +141,7 @@ class QuestionActivationController extends Controller
             ->where('bs_course_id', $scope['bs_course_id'])
             ->selectRaw("COUNT(*) AS total, COALESCE(SUM(active = 'Y'), 0) AS active, COALESCE(SUM(for_item = 'Y'), 0) AS for_item, COALESCE(SUM(level = 1), 0) AS easy_total")
             ->first();
+
         return [
             'total' => (int) $row->total,
             'active' => (int) $row->active,
@@ -153,6 +157,7 @@ class QuestionActivationController extends Controller
             || ! $db->table('bs_topic')->where('id', $data['bs_topic_id'])->where('bs_course_id', $data['bs_course_id'])->exists()) {
             throw ValidationException::withMessages(['bs_topic_id' => 'Select a valid subject belonging to the exam package.']);
         }
+
         return $data;
     }
 
@@ -163,9 +168,12 @@ class QuestionActivationController extends Controller
 
     private function imageUrl(Request $request, string $filename): ?string
     {
-        if ($filename === '') return null;
+        if ($filename === '') {
+            return null;
+        }
         $code = strtoupper(trim((string) $request->session()->get('school_code')));
         $base = config("schools.schools.{$code}.files.question_images_url");
+
         return $base ? rtrim((string) $base, '/').'/'.rawurlencode($filename) : null;
     }
 
@@ -178,6 +186,7 @@ class QuestionActivationController extends Controller
         abort_unless(hash_equals(strtoupper((string) ($school['code'] ?? $code)), $code), 403, 'The selected school code is invalid.');
         $connection = $school['connection'] ?? null;
         abort_unless(is_string($connection) && is_array(config("database.connections.{$connection}")), 500, 'The school database connection is unavailable.');
+
         return DB::connection($connection);
     }
 }

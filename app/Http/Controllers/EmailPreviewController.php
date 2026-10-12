@@ -13,8 +13,7 @@ class EmailPreviewController extends Controller
 {
     public function __construct(
         private readonly IrisEmailService $irisEmailService,
-    ) {
-    }
+    ) {}
 
     public function index(): Response
     {

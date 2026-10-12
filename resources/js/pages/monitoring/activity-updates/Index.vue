@@ -1,25 +1,14 @@
 <script setup lang="ts">
-import {
-    Head,
-    router,
-} from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import axios from 'axios';
 import Avatar from 'primevue/avatar';
 import Button from 'primevue/button';
 import Message from 'primevue/message';
 import PrimeTag from 'primevue/tag';
-import {
-    onBeforeUnmount,
-    onMounted,
-    ref,
-} from 'vue';
+import { onBeforeUnmount, onMounted, ref } from 'vue';
 import Datatable from '@/components/Datatable.vue';
 import { dashboard } from '@/routes';
-import type {
-    DataTableAction,
-    DataTableColumn,
-    DataTableRow,
-} from '@/types';
+import type { DataTableAction, DataTableColumn, DataTableRow } from '@/types';
 
 /*
 |--------------------------------------------------------------------------
@@ -99,14 +88,11 @@ const search = ref('');
 
 const sortField = ref('last_update');
 
-const sortDirection = ref<'asc' | 'desc'>(
-    'desc',
-);
+const sortDirection = ref<'asc' | 'desc'>('desc');
 
 const errorMessage = ref('');
 
-let requestController: AbortController | null =
-    null;
+let requestController: AbortController | null = null;
 
 /*
 |--------------------------------------------------------------------------
@@ -160,13 +146,8 @@ const columns: DataTableColumn[] = [
 |--------------------------------------------------------------------------
 */
 
-const hasUploadedFile = (
-    row: DataTableRow,
-): boolean => {
-    return (
-        typeof row.file_url === 'string' &&
-        row.file_url.trim() !== ''
-    );
+const hasUploadedFile = (row: DataTableRow): boolean => {
+    return typeof row.file_url === 'string' && row.file_url.trim() !== '';
 };
 
 const actions: DataTableAction[] = [
@@ -196,9 +177,7 @@ const actions: DataTableAction[] = [
 |--------------------------------------------------------------------------
 */
 
-async function loadActivities(
-    pageNumber = 1,
-): Promise<void> {
+async function loadActivities(pageNumber = 1): Promise<void> {
     /*
      * Cancel an older request if another request
      * starts before it finishes.
@@ -216,54 +195,42 @@ async function loadActivities(
     errorMessage.value = '';
 
     try {
-        const response =
-            await axios.get<ActivityApiResponse>(
-                '/api/v1/monitoring/datatable/activity-updates',
-                {
-                    signal: controller.signal,
+        const response = await axios.get<ActivityApiResponse>(
+            '/api/v1/monitoring/datatable/activity-updates',
+            {
+                signal: controller.signal,
 
-                    params: {
-                        page: pageNumber,
-                        per_page: perPage.value,
-                        search: search.value,
-                        sort_field:
-                            sortField.value,
-                        sort_direction:
-                            sortDirection.value,
-                        monitoring: true,
-                    },
-
-                    headers: {
-                        Accept:
-                            'application/json',
-
-                        'X-Requested-With':
-                            'XMLHttpRequest',
-                    },
-
-                    withCredentials: true,
+                params: {
+                    page: pageNumber,
+                    per_page: perPage.value,
+                    search: search.value,
+                    sort_field: sortField.value,
+                    sort_direction: sortDirection.value,
+                    monitoring: true,
                 },
-            );
+
+                headers: {
+                    Accept: 'application/json',
+
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+
+                withCredentials: true,
+            },
+        );
 
         /*
          * Laravel returned our rows.
          * Put them inside Vue state.
          */
-        activities.value =
-            response.data.data;
+        activities.value = response.data.data;
 
-        totalRecords.value =
-            response.data.meta.total;
+        totalRecords.value = response.data.meta.total;
 
-        perPage.value =
-            response.data.meta.perPage;
+        perPage.value = response.data.meta.perPage;
 
         first.value =
-            (
-                response.data.meta.currentPage -
-                1
-            ) *
-            response.data.meta.perPage;
+            (response.data.meta.currentPage - 1) * response.data.meta.perPage;
     } catch (error: unknown) {
         /*
          * A canceled request is intentional.
@@ -271,10 +238,7 @@ async function loadActivities(
          */
         if (
             axios.isCancel(error) ||
-            (
-                axios.isAxiosError(error) &&
-                error.code === 'ERR_CANCELED'
-            )
+            (axios.isAxiosError(error) && error.code === 'ERR_CANCELED')
         ) {
             return;
         }
@@ -282,17 +246,11 @@ async function loadActivities(
         activities.value = [];
         totalRecords.value = 0;
 
-        errorMessage.value =
-            'Unable to load activity updates.';
+        errorMessage.value = 'Unable to load activity updates.';
 
-        console.error(
-            'Unable to load activity updates:',
-            error,
-        );
+        console.error('Unable to load activity updates:', error);
     } finally {
-        if (
-            requestController === controller
-        ) {
+        if (requestController === controller) {
             loading.value = false;
         }
     }
@@ -304,36 +262,24 @@ async function loadActivities(
 |--------------------------------------------------------------------------
 */
 
-function handlePage(
-    event: DataTablePageEvent,
-): void {
+function handlePage(event: DataTablePageEvent): void {
     perPage.value = event.rows;
     first.value = event.first;
 
-    void loadActivities(
-        event.page + 1,
-    );
+    void loadActivities(event.page + 1);
 }
 
-function handleSort(
-    event: DataTableSortEvent,
-): void {
-    sortField.value =
-        event.sortField || 'last_update';
+function handleSort(event: DataTableSortEvent): void {
+    sortField.value = event.sortField || 'last_update';
 
-    sortDirection.value =
-        event.sortOrder === -1
-            ? 'desc'
-            : 'asc';
+    sortDirection.value = event.sortOrder === -1 ? 'desc' : 'asc';
 
     first.value = 0;
 
     void loadActivities(1);
 }
 
-function handleSearch(
-    value: string,
-): void {
+function handleSearch(value: string): void {
     search.value = value;
     first.value = 0;
 
@@ -346,10 +292,7 @@ function handleSearch(
 |--------------------------------------------------------------------------
 */
 
-function handleAction(
-    action: string,
-    activity: DataTableRow,
-): void {
+function handleAction(action: string, activity: DataTableRow): void {
     errorMessage.value = '';
 
     /*
@@ -365,25 +308,16 @@ function handleAction(
     }
 }
 
-function openUploadedFile(
-    activity: DataTableRow,
-): void {
-    const fileUrl = String(
-        activity.file_url ?? '',
-    ).trim();
+function openUploadedFile(activity: DataTableRow): void {
+    const fileUrl = String(activity.file_url ?? '').trim();
 
     if (!fileUrl) {
-        errorMessage.value =
-            'This activity does not have an uploaded file.';
+        errorMessage.value = 'This activity does not have an uploaded file.';
 
         return;
     }
 
-    window.open(
-        fileUrl,
-        '_blank',
-        'noopener,noreferrer',
-    );
+    window.open(fileUrl, '_blank', 'noopener,noreferrer');
 }
 
 /*
@@ -393,9 +327,7 @@ function openUploadedFile(
 */
 
 function navigateToVerification(): void {
-    router.visit(
-        '/dashboard/activity-updates',
-    );
+    router.visit('/dashboard/activity-updates');
 }
 
 /*
@@ -404,22 +336,12 @@ function navigateToVerification(): void {
 |--------------------------------------------------------------------------
 */
 
-function getStudentFullName(
-    activity: DataTableRow,
-): string {
-    const lastName = String(
-        activity.lname ?? '',
-    ).trim();
+function getStudentFullName(activity: DataTableRow): string {
+    const lastName = String(activity.lname ?? '').trim();
 
-    const otherNames = [
-        activity.fname,
-        activity.mname,
-    ]
+    const otherNames = [activity.fname, activity.mname]
         .filter((name) => {
-            return (
-                typeof name === 'string' &&
-                name.trim() !== ''
-            );
+            return typeof name === 'string' && name.trim() !== '';
         })
         .map((name) => {
             return String(name).trim();
@@ -433,19 +355,12 @@ function getStudentFullName(
     return (lastName || otherNames).toUpperCase();
 }
 
-function getStudentInitials(
-    activity: DataTableRow,
-): string {
-    const firstName = String(
-        activity.fname ?? '',
-    ).trim();
+function getStudentInitials(activity: DataTableRow): string {
+    const firstName = String(activity.fname ?? '').trim();
 
-    const lastName = String(
-        activity.lname ?? '',
-    ).trim();
+    const lastName = String(activity.lname ?? '').trim();
 
-    const initials =
-        `${firstName.charAt(0)}${lastName.charAt(0)}`;
+    const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`;
 
     return initials.toUpperCase() || 'ST';
 }
@@ -466,12 +381,8 @@ function getStudentAvatar(gender: unknown): string {
     return '/images/default-cadet.png';
 }
 
-function getSchoolIdLabel(
-    value: unknown,
-): string {
-    const schoolId = String(
-        value ?? '',
-    ).trim();
+function getSchoolIdLabel(value: unknown): string {
+    const schoolId = String(value ?? '').trim();
 
     return schoolId || 'No School ID';
 }
@@ -482,27 +393,18 @@ function getSchoolIdLabel(
 |--------------------------------------------------------------------------
 */
 
-function isVerified(
-    activity: DataTableRow,
-): boolean {
-    return String(
-        activity.sto_validated ?? '',
-    )
-        .trim()
-        .toUpperCase() === 'Y';
+function isVerified(activity: DataTableRow): boolean {
+    return (
+        String(activity.sto_validated ?? '')
+            .trim()
+            .toUpperCase() === 'Y'
+    );
 }
 
-function hasRevisionRemarks(
-    activity: DataTableRow,
-): boolean {
-    const remarks = String(
-        activity.revise_remarks ?? '',
-    ).trim();
+function hasRevisionRemarks(activity: DataTableRow): boolean {
+    const remarks = String(activity.revise_remarks ?? '').trim();
 
-    return (
-        remarks !== '' &&
-        remarks !== '-'
-    );
+    return remarks !== '' && remarks !== '-';
 }
 
 /*
@@ -511,23 +413,16 @@ function hasRevisionRemarks(
 |--------------------------------------------------------------------------
 */
 
-function formatDate(
-    value: unknown,
-): string {
-    if (
-        !value ||
-        value === '1970-01-01' ||
-        value === '1970-01-01 00:00:00'
-    ) {
+function formatDate(value: unknown): string {
+    if (!value || value === '1970-01-01' || value === '1970-01-01 00:00:00') {
         return '—';
     }
 
     const rawValue = String(value);
 
-    const normalizedValue =
-        rawValue.includes('T')
-            ? rawValue
-            : rawValue.replace(' ', 'T');
+    const normalizedValue = rawValue.includes('T')
+        ? rawValue
+        : rawValue.replace(' ', 'T');
 
     const date = new Date(normalizedValue);
 
@@ -535,15 +430,12 @@ function formatDate(
         return rawValue;
     }
 
-    return new Intl.DateTimeFormat(
-        'en-PH',
-        {
-            timeZone: 'Asia/Manila',
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-        },
-    ).format(date);
+    return new Intl.DateTimeFormat('en-PH', {
+        timeZone: 'Asia/Manila',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+    }).format(date);
 }
 
 /*
@@ -598,12 +490,7 @@ onBeforeUnmount(() => {
             :total-records="totalRecords"
             :first="first"
             :rows="perPage"
-            :rows-per-page-options="[
-                10,
-                20,
-                50,
-                100,
-            ]"
+            :rows-per-page-options="[10, 20, 50, 100]"
             @page="handlePage"
             @sort="handleSort"
             @search="handleSearch"
@@ -618,9 +505,7 @@ onBeforeUnmount(() => {
                     icon="pi pi-check-circle"
                     severity="info"
                     size="small"
-                    @click="
-                        navigateToVerification
-                    "
+                    @click="navigateToVerification"
                 />
             </template>
             <!-- STUDENT INFORMATION -->
@@ -628,19 +513,9 @@ onBeforeUnmount(() => {
             <template #cell-fname="{ data }">
                 <div class="flex items-center gap-3">
                     <Avatar
-                        v-if="
-                            getStudentAvatar(
-                                data.gender,
-                            )
-                        "
-                        :image="
-                            getStudentAvatar(
-                                data.gender,
-                            ) ?? undefined
-                        "
-                        :aria-label="
-                            getStudentFullName(data)
-                        "
+                        v-if="getStudentAvatar(data.gender)"
+                        :image="getStudentAvatar(data.gender) ?? undefined"
+                        :aria-label="getStudentFullName(data)"
                         shape="circle"
                         size="large"
                         class="shrink-0"
@@ -648,34 +523,20 @@ onBeforeUnmount(() => {
 
                     <Avatar
                         v-else
-                        :label="
-                            getStudentInitials(data)
-                        "
+                        :label="getStudentInitials(data)"
                         shape="circle"
                         size="large"
                         class="shrink-0 !bg-[#377EC0]/10 !text-xs !font-bold !text-[#377EC0]"
                     />
 
                     <div class="min-w-0">
-                        <p
-                            class="truncate font-semibold text-slate-700"
-                        >
-                            {{
-                                getStudentFullName(
-                                    data,
-                                ) || '—'
-                            }}
+                        <p class="truncate font-semibold text-slate-700">
+                            {{ getStudentFullName(data) || '—' }}
                         </p>
 
-                        <div
-                            class="mt-1 flex flex-wrap items-center gap-1.5"
-                        >
+                        <div class="mt-1 flex flex-wrap items-center gap-1.5">
                             <PrimeTag
-                                :value="
-                                    getSchoolIdLabel(
-                                        data.school_id_no,
-                                    )
-                                "
+                                :value="getSchoolIdLabel(data.school_id_no)"
                                 severity="info"
                                 icon="pi pi-id-card"
                                 class="!px-2 !py-0.5 !text-xs !font-semibold"
@@ -684,13 +545,9 @@ onBeforeUnmount(() => {
                     </div>
                 </div>
             </template>
-                        <!-- ACTIVITY -->
-            <template
-                #cell-desc_activity="{ value }"
-            >
-                <div
-                    class="flex min-w-0 items-start gap-2 whitespace-normal"
-                >
+            <!-- ACTIVITY -->
+            <template #cell-desc_activity="{ value }">
+                <div class="flex min-w-0 items-start gap-2 whitespace-normal">
                     <i
                         class="pi pi-list-check mt-0.5 shrink-0 text-green-500"
                     ></i>
@@ -703,13 +560,9 @@ onBeforeUnmount(() => {
                 </div>
             </template>
             <!-- ACTIVITY PERIOD -->
-            <template
-                #cell-start_date="{ data }"
-            >
+            <template #cell-start_date="{ data }">
                 <div class="space-y-2">
-                    <div
-                        class="flex items-center gap-2"
-                    >
+                    <div class="flex items-center gap-2">
                         <PrimeTag
                             value="Started"
                             severity="success"
@@ -717,19 +570,13 @@ onBeforeUnmount(() => {
                         />
 
                         <span
-                            class="whitespace-nowrap text-sm font-medium text-slate-600"
+                            class="text-sm font-medium whitespace-nowrap text-slate-600"
                         >
-                            {{
-                                formatDate(
-                                    data.start_date,
-                                )
-                            }}
+                            {{ formatDate(data.start_date) }}
                         </span>
                     </div>
 
-                    <div
-                        class="flex items-center gap-2"
-                    >
+                    <div class="flex items-center gap-2">
                         <PrimeTag
                             value="Ended"
                             severity="danger"
@@ -737,21 +584,15 @@ onBeforeUnmount(() => {
                         />
 
                         <span
-                            class="whitespace-nowrap text-sm font-medium text-slate-600"
+                            class="text-sm font-medium whitespace-nowrap text-slate-600"
                         >
-                            {{
-                                formatDate(
-                                    data.end_date,
-                                )
-                            }}
+                            {{ formatDate(data.end_date) }}
                         </span>
                     </div>
                 </div>
             </template>
             <!-- VERIFIED STATUS -->
-            <template
-                #cell-sto_validated="{ data }"
-            >
+            <template #cell-sto_validated="{ data }">
                 <PrimeTag
                     v-if="isVerified(data)"
                     value="Verified"
@@ -760,9 +601,7 @@ onBeforeUnmount(() => {
                 />
 
                 <PrimeTag
-                    v-else-if="
-                        hasRevisionRemarks(data)
-                    "
+                    v-else-if="hasRevisionRemarks(data)"
                     value="Revise"
                     severity="danger"
                     icon="pi pi-undo"
@@ -776,25 +615,15 @@ onBeforeUnmount(() => {
                 />
             </template>
             <!-- REMARKS -->
-            <template
-                #cell-revise_remarks="{ value }"
-            >
+            <template #cell-revise_remarks="{ value }">
                 <span
-                    v-if="
-                        value &&
-                        String(value).trim() !== '-'
-                    "
+                    v-if="value && String(value).trim() !== '-'"
                     class="text-sm font-medium text-slate-700"
                 >
                     {{ value }}
                 </span>
 
-                <span
-                    v-else
-                    class="text-slate-400"
-                >
-                    —
-                </span>
+                <span v-else class="text-slate-400"> — </span>
             </template>
         </Datatable>
     </div>

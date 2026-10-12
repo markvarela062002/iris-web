@@ -19,8 +19,7 @@ class QuestionBankController extends Controller
 {
     public function __construct(
         private readonly DatatableService $datatableService,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -94,6 +93,7 @@ class QuestionBankController extends Controller
                     'answer' => (string) ($answer->answer ?? 'N'),
                     'image_url' => $this->imageUrl($request, $answer->filename ?? null),
                 ])->all();
+
             return $record;
         })->values()->all();
 
@@ -108,6 +108,7 @@ class QuestionBankController extends Controller
         }
 
         $courses = $db->table('bs_course')->orderBy('name_course')->get(['id', 'name_course']);
+
         return response()->json(['courses' => $courses]);
     }
 
@@ -405,6 +406,7 @@ class QuestionBankController extends Controller
                 'decision' => '', 'revised_to_id' => '', 'revised_from_id' => '',
             ];
         }
+
         return $payload;
     }
 
@@ -429,6 +431,7 @@ class QuestionBankController extends Controller
         }
         $base = config('schools.schools.'.strtolower($schoolCode).'.files.question_images_url')
             ?? config('schools.schools.'.strtoupper($schoolCode).'.files.question_images_url');
+
         return $base ? rtrim((string) $base, '/').'/'.rawurlencode($filename) : null;
     }
 
@@ -451,6 +454,7 @@ class QuestionBankController extends Controller
         }
         config(['database.default' => $connection]);
         DB::setDefaultConnection($connection);
+
         return DB::connection($connection);
     }
 
@@ -466,6 +470,7 @@ class QuestionBankController extends Controller
                 return $code;
             }
         }
+
         return response()->json(['message' => 'The selected school is not configured.'], Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 

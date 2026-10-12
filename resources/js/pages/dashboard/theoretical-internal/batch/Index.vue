@@ -17,7 +17,6 @@ import Message from 'primevue/message';
 import Select from 'primevue/select';
 import PrimeTag from 'primevue/tag';
 
-
 import {
     computed,
     onBeforeUnmount,
@@ -317,8 +316,8 @@ const selectedCourse = computed(() => {
 const dateRange = computed<Date[] | null>({
     get() {
         if (!form.access_exp_date_from) {
-return null;
-}
+            return null;
+        }
 
         const parseLocalDate = (value: string): Date => {
             const [year, month, day] = value.split('-').map(Number);
@@ -1216,7 +1215,6 @@ onBeforeUnmount(() => {
                         >
                             Duration in minutes
                             <span class="text-red-500">*</span>
-                            
                         </label>
 
                         <InputNumber

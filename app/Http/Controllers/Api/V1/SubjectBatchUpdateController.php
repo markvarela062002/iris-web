@@ -17,7 +17,9 @@ class SubjectBatchUpdateController extends Controller
     {
         $db = $this->schoolConnection($request);
         $admin = $this->isAdministrator($request);
-        if (! $admin) $this->companyScope($request, $db);
+        if (! $admin) {
+            $this->companyScope($request, $db);
+        }
 
         return response()->json([
             'is_administrator' => $admin,
@@ -32,6 +34,7 @@ class SubjectBatchUpdateController extends Controller
     {
         $db = $this->schoolConnection($request);
         $companyId = $this->companyScope($request, $db);
+
         return response()->json([
             // Preserve legacy empty-string scope; NULL is not treated as ''.
             'data' => $db->table('bs_course')->where('company_id', $companyId)
@@ -54,6 +57,7 @@ class SubjectBatchUpdateController extends Controller
                 'no_quest' => $row->no_quest === null ? null : (float) $row->no_quest,
                 'passing_mark' => $row->passing_mark === null ? null : (float) $row->passing_mark,
             ]);
+
         return response()->json(['data' => $data]);
     }
 
@@ -119,8 +123,10 @@ class SubjectBatchUpdateController extends Controller
                     'passing_mark' => (float) $row['passing_mark'],
                 ]);
             }
+
             return $changed;
         });
+
         return response()->json(['message' => 'The subject batch has been saved.', 'changed' => $changed]);
     }
 
@@ -131,41 +137,42 @@ class SubjectBatchUpdateController extends Controller
     }
 
     /** Resolve role ONLY from trusted login state, never from request inputs. */
-private function isAdministrator(Request $request): bool
-{
-    $user = $request->user();
+    private function isAdministrator(Request $request): bool
+    {
+        $user = $request->user();
 
-    abort_unless($user, 401, 'Authentication is required.');
+        abort_unless($user, 401, 'Authentication is required.');
 
-    $loginTypeId = trim(
-        (string) $user->login_type_id,
-    );
+        $loginTypeId = trim(
+            (string) $user->login_type_id,
+        );
 
-    abort_if(
-        $loginTypeId === '',
-        403,
-        'This login has no assigned role.',
-    );
+        abort_if(
+            $loginTypeId === '',
+            403,
+            'This login has no assigned role.',
+        );
 
-    $role = $this->schoolConnection($request)
-        ->table('login_type')
-        ->where('id', $loginTypeId)
-        ->value('code_type');
+        $role = $this->schoolConnection($request)
+            ->table('login_type')
+            ->where('id', $loginTypeId)
+            ->value('code_type');
 
-    abort_if(
-        $role === null,
-        403,
-        'The assigned login role could not be found.',
-    );
+        abort_if(
+            $role === null,
+            403,
+            'The assigned login role could not be found.',
+        );
 
-    return trim((string) $role) === 'Administrator';
-}
+        return trim((string) $role) === 'Administrator';
+    }
 
     private function companyScope(Request $request, ConnectionInterface $db): string
     {
         if (! $this->isAdministrator($request)) {
             $id = trim((string) ($request->session()->get('company_id') ?? $request->user()?->company_id ?? ''));
             abort_if($id === '', 403, 'No company is assigned to this login.');
+
             return $id;
         }
         $validated = $request->validate(['company_id' => ['nullable', 'string']]);
@@ -173,10 +180,11 @@ private function isAdministrator(Request $request): bool
         if ($id !== '' && ! $db->table('company')->where('id', $id)->where('cat_company_id', self::SCHOOL_CATEGORY)->exists()) {
             throw ValidationException::withMessages(['company_id' => 'Select a valid school/company.']);
         }
+
         return $id;
     }
 
-    private function decode(string $value): string 
+    private function decode(string $value): string
     {
         return str_replace(['andxx', 'apostrophexx'], ['&', "'"], urldecode($value));
     }
@@ -190,6 +198,7 @@ private function isAdministrator(Request $request): bool
         abort_unless(hash_equals(strtoupper((string) ($school['code'] ?? $code)), $code), 403, 'The selected school code is invalid.');
         $connection = $school['connection'] ?? null;
         abort_unless(is_string($connection) && is_array(config("database.connections.{$connection}")), 500, 'The school database connection is unavailable.');
+
         return DB::connection($connection);
     }
 }

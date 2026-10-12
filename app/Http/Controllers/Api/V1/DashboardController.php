@@ -15,8 +15,7 @@ class DashboardController extends Controller
 {
     public function __construct(
         private readonly DatatableService $datatableService,
-    ) {
-    }
+    ) {}
 
     /**
      * Return dashboard totals and student records from the database
@@ -622,182 +621,182 @@ class DashboardController extends Controller
      * Counts all existing records, not only pending verification records.
      */
     public function yearlyReport(Request $request): JsonResponse
-{
-    $validated = $request->validate([
-        'year' => [
-            'sometimes',
-            'required',
-            'integer',
-            'min:1900',
-            'max:9998',
-        ],
-    ]);
+    {
+        $validated = $request->validate([
+            'year' => [
+                'sometimes',
+                'required',
+                'integer',
+                'min:1900',
+                'max:9998',
+            ],
+        ]);
 
-    $db = $this->resolveSchoolConnection($request);
+        $db = $this->resolveSchoolConnection($request);
 
-    if ($db instanceof JsonResponse) {
-        return $db;
-    }
+        if ($db instanceof JsonResponse) {
+            return $db;
+        }
 
-    $year = (int) ($validated['year'] ?? now()->year);
-    $start = sprintf('%04d-01-01 00:00:00', $year);
-    $end = sprintf('%04d-01-01 00:00:00', $year + 1);
+        $year = (int) ($validated['year'] ?? now()->year);
+        $start = sprintf('%04d-01-01 00:00:00', $year);
+        $end = sprintf('%04d-01-01 00:00:00', $year + 1);
 
-    $activityCounts = $this->monthlyReportCounts(
-        $db,
-        'person_activity',
-        'last_update',
-        $start,
-        $end,
-    );
+        $activityCounts = $this->monthlyReportCounts(
+            $db,
+            'person_activity',
+            'last_update',
+            $start,
+            $end,
+        );
 
-    $documentCounts = $this->monthlyReportCounts(
-        $db,
-        'file_upload',
-        'last_update',
-        $start,
-        $end,
-    );
+        $documentCounts = $this->monthlyReportCounts(
+            $db,
+            'file_upload',
+            'last_update',
+            $start,
+            $end,
+        );
 
-    $journalCounts = $this->monthlyReportCounts(
-        $db,
-        'person_journal',
-        'date_journal',
-        $start,
-        $end,
-    );
+        $journalCounts = $this->monthlyReportCounts(
+            $db,
+            'person_journal',
+            'date_journal',
+            $start,
+            $end,
+        );
 
-    // Matches your dashboard OTG conditions.
-    $otgCounts = $db
-        ->table('person_task as pt')
-        ->where('pt.completed', '>=', $start)
-        ->where('pt.completed', '<', $end)
-        ->whereExists(function ($query): void {
-            $query
-                ->selectRaw('1')
-                ->from('person_task_file as ptf')
-                ->whereColumn(
-                    'ptf.person_task_id',
-                    'pt.id',
-                );
-        })
-        ->whereExists(function ($query): void {
-            $query
-                ->selectRaw('1')
-                ->from('person_task_proof as ptp')
-                ->whereColumn(
-                    'ptp.person_task_id',
-                    'pt.id',
-                );
-        })
-        ->selectRaw(
-            'MONTH(pt.completed) AS month_number, COUNT(*) AS total',
-        )
-        ->groupByRaw('MONTH(pt.completed)')
-        ->pluck('total', 'month_number')
-        ->all();
+        // Matches your dashboard OTG conditions.
+        $otgCounts = $db
+            ->table('person_task as pt')
+            ->where('pt.completed', '>=', $start)
+            ->where('pt.completed', '<', $end)
+            ->whereExists(function ($query): void {
+                $query
+                    ->selectRaw('1')
+                    ->from('person_task_file as ptf')
+                    ->whereColumn(
+                        'ptf.person_task_id',
+                        'pt.id',
+                    );
+            })
+            ->whereExists(function ($query): void {
+                $query
+                    ->selectRaw('1')
+                    ->from('person_task_proof as ptp')
+                    ->whereColumn(
+                        'ptp.person_task_id',
+                        'pt.id',
+                    );
+            })
+            ->selectRaw(
+                'MONTH(pt.completed) AS month_number, COUNT(*) AS total',
+            )
+            ->groupByRaw('MONTH(pt.completed)')
+            ->pluck('total', 'month_number')
+            ->all();
 
-    $labels = [
-        'January',
-        'February',
-        'March',
-        'April',
-        'May',
-        'June',
-        'July',
-        'August',
-        'September',
-        'October',
-        'November',
-        'December',
-    ];
-
-    $monthly = [];
-    $activities = [];
-    $documents = [];
-    $journals = [];
-    $otg = [];
-
-    foreach ($labels as $index => $label) {
-        $month = $index + 1;
-
-        $activityTotal = (int) ($activityCounts[$month] ?? 0);
-        $documentTotal = (int) ($documentCounts[$month] ?? 0);
-        $journalTotal = (int) ($journalCounts[$month] ?? 0);
-        $otgTotal = (int) ($otgCounts[$month] ?? 0);
-
-        $activities[] = $activityTotal;
-        $documents[] = $documentTotal;
-        $journals[] = $journalTotal;
-        $otg[] = $otgTotal;
-
-        $monthly[] = [
-            'month' => $month,
-            'label' => $label,
-            'activities' => $activityTotal,
-            'uploaded_documents' => $documentTotal,
-            'daily_journals' => $journalTotal,
-            'otg_updates' => $otgTotal,
+        $labels = [
+            'January',
+            'February',
+            'March',
+            'April',
+            'May',
+            'June',
+            'July',
+            'August',
+            'September',
+            'October',
+            'November',
+            'December',
         ];
+
+        $monthly = [];
+        $activities = [];
+        $documents = [];
+        $journals = [];
+        $otg = [];
+
+        foreach ($labels as $index => $label) {
+            $month = $index + 1;
+
+            $activityTotal = (int) ($activityCounts[$month] ?? 0);
+            $documentTotal = (int) ($documentCounts[$month] ?? 0);
+            $journalTotal = (int) ($journalCounts[$month] ?? 0);
+            $otgTotal = (int) ($otgCounts[$month] ?? 0);
+
+            $activities[] = $activityTotal;
+            $documents[] = $documentTotal;
+            $journals[] = $journalTotal;
+            $otg[] = $otgTotal;
+
+            $monthly[] = [
+                'month' => $month,
+                'label' => $label,
+                'activities' => $activityTotal,
+                'uploaded_documents' => $documentTotal,
+                'daily_journals' => $journalTotal,
+                'otg_updates' => $otgTotal,
+            ];
+        }
+
+        return response()->json([
+            'year' => $year,
+
+            'school_code' => strtoupper(
+                trim((string) $request->session()->get('school_code')),
+            ),
+
+            'scope' => 'All activity, document, and journal records; OTG requires a completed date, file, and proof.',
+
+            'date_fields' => [
+                'activities' => 'person_activity.last_update',
+                'uploaded_documents' => 'file_upload.last_update',
+                'daily_journals' => 'person_journal.date_journal',
+                'otg_updates' => 'person_task.completed',
+            ],
+
+            'monthly' => $monthly,
+
+            'totals' => [
+                'activities' => array_sum($activities),
+                'uploaded_documents' => array_sum($documents),
+                'daily_journals' => array_sum($journals),
+                'otg_updates' => array_sum($otg),
+            ],
+
+            'chart' => [
+                'labels' => $labels,
+
+                'datasets' => [
+                    [
+                        'label' => 'Activities',
+                        'data' => $activities,
+                        'backgroundColor' => '#FF6B00',
+                        'borderColor' => '#FF6B00',
+                    ],
+                    [
+                        'label' => 'Uploaded Documents',
+                        'data' => $documents,
+                        'backgroundColor' => '#00BF8F',
+                        'borderColor' => '#00BF8F',
+                    ],
+                    [
+                        'label' => 'OTG Updates',
+                        'data' => $otg,
+                        'backgroundColor' => '#FF293D',
+                        'borderColor' => '#FF293D',
+                    ],
+                    [
+                        'label' => 'Daily Journals',
+                        'data' => $journals,
+                        'backgroundColor' => '#347EFF',
+                        'borderColor' => '#347EFF',
+                    ],
+                ],
+            ],
+        ]);
     }
-
-    return response()->json([
-        'year' => $year,
-
-        'school_code' => strtoupper(
-            trim((string) $request->session()->get('school_code')),
-        ),
-
-        'scope' => 'All activity, document, and journal records; OTG requires a completed date, file, and proof.',
-
-        'date_fields' => [
-            'activities' => 'person_activity.last_update',
-            'uploaded_documents' => 'file_upload.last_update',
-            'daily_journals' => 'person_journal.date_journal',
-            'otg_updates' => 'person_task.completed',
-        ],
-
-        'monthly' => $monthly,
-
-        'totals' => [
-            'activities' => array_sum($activities),
-            'uploaded_documents' => array_sum($documents),
-            'daily_journals' => array_sum($journals),
-            'otg_updates' => array_sum($otg),
-        ],
-
-        'chart' => [
-            'labels' => $labels,
-
-            'datasets' => [
-    [
-        'label' => 'Activities',
-        'data' => $activities,
-        'backgroundColor' => '#FF6B00',
-        'borderColor' => '#FF6B00',
-    ],
-    [
-        'label' => 'Uploaded Documents',
-        'data' => $documents,
-        'backgroundColor' => '#00BF8F',
-        'borderColor' => '#00BF8F',
-    ],
-    [
-        'label' => 'OTG Updates',
-        'data' => $otg,
-        'backgroundColor' => '#FF293D',
-        'borderColor' => '#FF293D',
-    ],
-    [
-        'label' => 'Daily Journals',
-        'data' => $journals,
-        'backgroundColor' => '#347EFF',
-        'borderColor' => '#347EFF',
-    ],
-],
-        ],
-    ]);
-}
 
     /**
      * Table and date-column names are supplied only by this controller.

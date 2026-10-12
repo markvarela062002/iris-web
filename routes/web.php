@@ -1,48 +1,49 @@
 <?php
+
 use App\Http\Controllers\Api\V1\ActivitiesController;
+use App\Http\Controllers\Api\V1\ActivityTypesController;
+use App\Http\Controllers\Api\V1\AlertCalendarController;
+use App\Http\Controllers\Api\V1\AlertSetupController;
+use App\Http\Controllers\Api\V1\AnnouncementsController;
+use App\Http\Controllers\Api\V1\CorrectAnswerFrequencyController;
 use App\Http\Controllers\Api\V1\DashboardController;
+use App\Http\Controllers\Api\V1\DifficultyLevelController;
+use App\Http\Controllers\Api\V1\DiscriminabilityIndexController;
 use App\Http\Controllers\Api\V1\DocumentsController;
+use App\Http\Controllers\Api\V1\ExamPackageController;
+use App\Http\Controllers\Api\V1\ExamPackagesSummaryController;
+use App\Http\Controllers\Api\V1\ExamResultsSummaryController;
+use App\Http\Controllers\Api\V1\ExamSessionController;
+use App\Http\Controllers\Api\V1\ItemAnalysisController;
+use App\Http\Controllers\Api\V1\ItemAnalysisHistoryController;
 use App\Http\Controllers\Api\V1\JournalsController;
+use App\Http\Controllers\Api\V1\MessageController;
 use App\Http\Controllers\Api\V1\OtgController;
 use App\Http\Controllers\Api\V1\OtgPrintController;
-use App\Http\Controllers\Api\V1\RemoteFileController;
-use App\Http\Controllers\Api\V1\TheoreticalAssessmentsController;
-use App\Http\Controllers\Api\V1\TheoreticalExternalAssessmentsController;
-use App\Http\Controllers\Api\V1\PracticalInternalAssessmentsController;
-use App\Http\Controllers\Api\V1\PracticalExternalAssessmentsController;
-use App\Http\Controllers\Api\V1\TheoreticalBatchController;
-use App\Http\Controllers\Api\V1\TheoreticalExternalBatchController;
-use App\Http\Controllers\Api\V1\PracticalInternalBatchController;
-use App\Http\Controllers\Api\V1\PracticalExternalBatchController;
-use App\Http\Controllers\Api\V1\ReportsController;
-use App\Http\Controllers\Api\V1\ExamSessionController;
-use App\Http\Controllers\Api\V1\ExamPackageController;
 use App\Http\Controllers\Api\V1\PracticalAssessmentSetupController;
-use App\Http\Controllers\Api\V1\RubricSetupController;
-use App\Http\Controllers\Api\V1\QuestionBankController;
-use App\Http\Controllers\Api\V1\QuestionUploadController;
+use App\Http\Controllers\Api\V1\PracticalExternalAssessmentsController;
+use App\Http\Controllers\Api\V1\PracticalExternalBatchController;
+use App\Http\Controllers\Api\V1\PracticalInternalAssessmentsController;
+use App\Http\Controllers\Api\V1\PracticalInternalBatchController;
 use App\Http\Controllers\Api\V1\QuestionActivationController;
-use App\Http\Controllers\Api\V1\SubjectBatchUpdateController;
-use App\Http\Controllers\Api\V1\StudentsController;
-use App\Http\Controllers\Api\V1\StudentBatchUploadController;
-use App\Http\Controllers\Api\V1\ItemAnalysisHistoryController;
+use App\Http\Controllers\Api\V1\QuestionBankController;
 use App\Http\Controllers\Api\V1\QuestionListController;
-use App\Http\Controllers\Api\V1\ItemAnalysisController;
-use App\Http\Controllers\Api\V1\DiscriminabilityIndexController;
-use App\Http\Controllers\Api\V1\DifficultyLevelController;
-use App\Http\Controllers\Api\V1\CorrectAnswerFrequencyController;
-use App\Http\Controllers\Api\V1\ExamResultsSummaryController;
-use App\Http\Controllers\Api\V1\ExamPackagesSummaryController;
-use App\Http\Controllers\Api\V1\StudentListReportController;
-use App\Http\Controllers\Api\V1\ActivityTypesController;
+use App\Http\Controllers\Api\V1\QuestionUploadController;
+use App\Http\Controllers\Api\V1\RemoteFileController;
+use App\Http\Controllers\Api\V1\ReportsController;
 use App\Http\Controllers\Api\V1\RequirementTypesController;
-use App\Http\Controllers\Api\V1\AlertSetupController;
-use App\Http\Controllers\Api\V1\AlertCalendarController;
-use App\Http\Controllers\Api\V1\AnnouncementsController;
-use App\Http\Controllers\Api\V1\MessageController;
-use App\Http\Controllers\EmailPreviewController;
-use App\Http\Controllers\Api\V1\TrbOtgContentController;
+use App\Http\Controllers\Api\V1\RubricSetupController;
+use App\Http\Controllers\Api\V1\StudentBatchUploadController;
+use App\Http\Controllers\Api\V1\StudentListReportController;
+use App\Http\Controllers\Api\V1\StudentsController;
+use App\Http\Controllers\Api\V1\SubjectBatchUpdateController;
+use App\Http\Controllers\Api\V1\TheoreticalAssessmentsController;
+use App\Http\Controllers\Api\V1\TheoreticalBatchController;
+use App\Http\Controllers\Api\V1\TheoreticalExternalAssessmentsController;
+use App\Http\Controllers\Api\V1\TheoreticalExternalBatchController;
 use App\Http\Controllers\Api\V1\TheoreticalExternalExamController;
+use App\Http\Controllers\Api\V1\TrbOtgContentController;
+use App\Http\Controllers\EmailPreviewController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/login')->name('home');
@@ -195,13 +196,13 @@ Route::middleware(['auth', 'account.type:administrator'])->group(function (): vo
     Route::post('/api/v1/alerts/messages/{inboxId}/replies', [MessageController::class, 'storeMessageReply'])->name('api.v1.alerts.messages.replies.store');
     Route::delete('/api/v1/alerts/messages/{inboxId}/history', [MessageController::class, 'deleteConversationHistory'])->where('inboxId', '[A-Za-z0-9-]+');
     Route::delete('/api/v1/alerts/messages/{inboxId}/original', [MessageController::class, 'deleteOriginalMessage'])->where('inboxId', '[A-Za-z0-9-]+');
-    Route::delete('/api/v1/alerts/messages/{inboxId}/replies/{replyId}', [MessageController::class, 'deleteMessageReply'])->where(['inboxId' =>'[A-Za-z0-9-]+', 'replyId' =>'[A-Za-z0-9-]+']);
+    Route::delete('/api/v1/alerts/messages/{inboxId}/replies/{replyId}', [MessageController::class, 'deleteMessageReply'])->where(['inboxId' => '[A-Za-z0-9-]+', 'replyId' => '[A-Za-z0-9-]+']);
 
     // Monitoring
     Route::inertia('/monitoring/activity-updates', 'monitoring/activity-updates/Index')->name('monitoring.activity-updates');
     Route::inertia('/monitoring/uploaded-documents', 'monitoring/uploaded-documents/Index')->name('monitoring.uploaded-documents');
     Route::inertia('/monitoring/otg-updates', 'monitoring/otg-updates/Index')->name('monitoring.otg-updates');
-    Route::inertia('/monitoring/otg-updates/{studentId}', 'monitoring/otg-updates/Show', ['studentId' => fn () => (string) request()->route('studentId'), ])->whereUuid('studentId')->name('monitoring.otg-updates.show');
+    Route::inertia('/monitoring/otg-updates/{studentId}', 'monitoring/otg-updates/Show', ['studentId' => fn () => (string) request()->route('studentId')])->whereUuid('studentId')->name('monitoring.otg-updates.show');
     Route::inertia('/monitoring/daily-journals', 'dashboard/daily-journals/Index')->name('monitoring.daily-journals');
     Route::inertia('/monitoring/reports', 'monitoring/reports/Index')->name('monitoring.reports');
 
@@ -256,7 +257,7 @@ Route::middleware(['auth', 'account.type:administrator'])->group(function (): vo
     // Databases — Students
     Route::inertia('/databases/students/datatable', 'databases/students/datatable/Index')->name('databases.students');
     Route::inertia('/databases/students/profile/new', 'databases/students/profile/Index', ['studentId' => null])->name('databases.students.profile.create');
-    Route::inertia('/databases/students/profile/{studentId}', 'databases/students/profile/Index', ['studentId' => fn () =>(string) request()->route('studentId')])->whereUuid('studentId')->name('databases.students.edit');
+    Route::inertia('/databases/students/profile/{studentId}', 'databases/students/profile/Index', ['studentId' => fn () => (string) request()->route('studentId')])->whereUuid('studentId')->name('databases.students.edit');
     Route::post('/api/v1/databases/students', [StudentsController::class, 'store'])->name('api.v1.databases.students.store');
     Route::get('/api/v1/databases/datatable/students', [StudentsController::class, 'index'])->name('api.v1.databases.datatable.students');
     Route::get('/api/v1/databases/students/options', [StudentsController::class, 'options'])->name('api.v1.databases.students.options');
@@ -488,9 +489,9 @@ Route::prefix('/api/v1/assessment-setup/subject-batch')->group(function (): void
 });
 if (app()->environment('local')) {
     Route::middleware(['auth', 'account.type:administrator'])->group(function (): void {
-        Route::get('/email-preview', [EmailPreviewController::class, 'index'],)->name('email-preview\\.index');
-        Route::get('/email-preview/{template}', [EmailPreviewController::class, 'preview'],)->name('email-preview\\.preview');
-        Route::post('/email-preview/send', [EmailPreviewController::class, 'send'],)->middleware('throttle:10, 1')->name('email-preview\\.send');
+        Route::get('/email-preview', [EmailPreviewController::class, 'index'])->name('email-preview\\.index');
+        Route::get('/email-preview/{template}', [EmailPreviewController::class, 'preview'])->name('email-preview\\.preview');
+        Route::post('/email-preview/send', [EmailPreviewController::class, 'send'])->middleware('throttle:10, 1')->name('email-preview\\.send');
     });
 }
 require __DIR__.'/settings.php';

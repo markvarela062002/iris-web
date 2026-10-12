@@ -16,6 +16,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class ItemAnalysisHistoryController extends Controller
 {
     private const VIEW_ABILITY = 'item-analysis-history.view';
+
     private const DELETE_ABILITY = 'item-analysis-history.delete';
 
     private function connection(Request $request): Connection
@@ -97,7 +98,9 @@ class ItemAnalysisHistoryController extends Controller
         $db = $this->connection($request);
         abort_unless($db->table('bs_course')->where('id', $courseId)->exists(), 404, 'Exam package not found.');
         $rows = $db->table('bs_topic')->where('bs_course_id', $courseId)->orderBy('order_no')->get(['id', 'desc_topic']);
-        $rows->each(function ($row): void { $row->desc_topic = $this->decode($row->desc_topic); });
+        $rows->each(function ($row): void {
+            $row->desc_topic = $this->decode($row->desc_topic);
+        });
 
         return response()->json(['data' => $rows]);
     }
@@ -263,13 +266,17 @@ class ItemAnalysisHistoryController extends Controller
             $write(['Exam Session', $h->session_code, 'Exam Package', $h->name_course, 'Subject', $h->desc_topic]);
             $write(['Originally Analyzed', $h->date_analyzed, 'Analyzed By', $h->analyzed_by]);
             $write(['Group Percentage', $h->pct, 'Metric Mode', $report['summary']['metric_mode'], 'Recalculated At', $report['summary']['recalculated_at']]);
-            foreach ($report['warnings'] as $warning) { $write(['Note', $warning]); }
+            foreach ($report['warnings'] as $warning) {
+                $write(['Note', $warning]);
+            }
             $write(['No.', 'Question', 'Appearances', 'Group', 'Correct', 'Percentage', 'DF', 'DF Remarks', 'DS', 'DS Remarks', 'Decision', 'A', 'B', 'C', 'D', 'E']);
             foreach ($report['items'] as $item) {
                 foreach (['upper', 'lower'] as $group) {
                     $values = [$item['index'], $item['question'], $item['appearances'], ucfirst($group), $item[$group.'_correct'], $item[$group.'_pct'],
                         $item['df'], $item['df_remarks'], $item['ds'], $item['ds_remarks'], $item['decision']];
-                    foreach (['A', 'B', 'C', 'D', 'E'] as $letter) { $values[] = $report['summary']['show_options'] ? $item['options'][$letter][$group] : null; }
+                    foreach (['A', 'B', 'C', 'D', 'E'] as $letter) {
+                        $values[] = $report['summary']['show_options'] ? $item['options'][$letter][$group] : null;
+                    }
                     $write($values);
                 }
             }

@@ -105,16 +105,62 @@ const itemForm = reactive({
 
 const gradingSystems = ['Checklist', 'Points', 'Rubrics'];
 const columns: DataTableColumn[] = [
-    { field: 'title_assess', header: 'Title', sortable: true, searchable: true, class: 'min-w-[300px]' },
-    { field: 'grade_system', header: 'Grading System', sortable: true, searchable: true, class: 'min-w-[180px]' },
-    { field: 'rubrics_name', header: 'Rubric', sortable: false, searchable: true, class: 'min-w-[220px]' },
-    { field: 'total_items', header: 'Items', sortable: false, searchable: false, class: 'min-w-[110px]' },
-    { field: 'passing_mark', header: 'Passing Mark', sortable: true, searchable: false, class: 'min-w-[160px]' },
-    { field: 'total_attachments', header: 'Files', sortable: false, searchable: false, class: 'min-w-[110px]' },
+    {
+        field: 'title_assess',
+        header: 'Title',
+        sortable: true,
+        searchable: true,
+        class: 'min-w-[300px]',
+    },
+    {
+        field: 'grade_system',
+        header: 'Grading System',
+        sortable: true,
+        searchable: true,
+        class: 'min-w-[180px]',
+    },
+    {
+        field: 'rubrics_name',
+        header: 'Rubric',
+        sortable: false,
+        searchable: true,
+        class: 'min-w-[220px]',
+    },
+    {
+        field: 'total_items',
+        header: 'Items',
+        sortable: false,
+        searchable: false,
+        class: 'min-w-[110px]',
+    },
+    {
+        field: 'passing_mark',
+        header: 'Passing Mark',
+        sortable: true,
+        searchable: false,
+        class: 'min-w-[160px]',
+    },
+    {
+        field: 'total_attachments',
+        header: 'Files',
+        sortable: false,
+        searchable: false,
+        class: 'min-w-[110px]',
+    },
 ];
 const actions: DataTableAction[] = [
-    { key: 'edit', label: 'Edit assessment', icon: 'pi pi-pencil', severity: 'warn' },
-    { key: 'delete', label: 'Delete assessment', icon: 'pi pi-trash', severity: 'danger' },
+    {
+        key: 'edit',
+        label: 'Edit assessment',
+        icon: 'pi pi-pencil',
+        severity: 'warn',
+    },
+    {
+        key: 'delete',
+        label: 'Delete assessment',
+        icon: 'pi pi-trash',
+        severity: 'danger',
+    },
 ];
 
 const currentPage = computed(() => Math.floor(first.value / perPage.value) + 1);
@@ -127,8 +173,8 @@ const itemDialogTitle = computed(() =>
 
 function handleGradingSystemChange(): void {
     if (form.grade_system !== 'Rubrics') {
-form.rubrics_id = '';
-}
+        form.rubrics_id = '';
+    }
 
     form.passing_mark = form.grade_system === 'Checklist' ? 100 : 75;
 }
@@ -159,16 +205,19 @@ async function loadAssessments(page = 1): Promise<void> {
             (response.data.meta.currentPage - 1) * response.data.meta.perPage;
     } catch (error: unknown) {
         if (isCanceled(error)) {
-return;
-}
+            return;
+        }
 
         assessments.value = [];
         totalRecords.value = 0;
-        errorMessage.value = getErrorMessage(error, 'Unable to load practical assessments.');
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to load practical assessments.',
+        );
     } finally {
         if (requestController === controller) {
-loading.value = false;
-}
+            loading.value = false;
+        }
     }
 }
 
@@ -180,7 +229,10 @@ async function loadOptions(): Promise<void> {
         );
         rubrics.value = response.data.data.rubrics;
     } catch (error: unknown) {
-        errorMessage.value = getErrorMessage(error, 'Unable to load rubric options.');
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to load rubric options.',
+        );
     }
 }
 
@@ -202,8 +254,8 @@ function handleSearch(value: string): void {
 }
 function handleAction(action: string, row: DataTableRow): void {
     if (action === 'edit') {
-openEditAssessment(row);
-}
+        openEditAssessment(row);
+    }
 
     if (action === 'delete') {
         selectedAssessment.value = row;
@@ -233,24 +285,24 @@ async function saveAssessment(): Promise<void> {
     assessmentErrors.value = {};
 
     if (!form.title_assess.trim()) {
-assessmentErrors.value.title_assess = 'Title is required.';
-}
+        assessmentErrors.value.title_assess = 'Title is required.';
+    }
 
     if (!form.grade_system) {
-assessmentErrors.value.grade_system = 'Grading system is required.';
-}
+        assessmentErrors.value.grade_system = 'Grading system is required.';
+    }
 
     if (form.grade_system === 'Rubrics' && !form.rubrics_id) {
-assessmentErrors.value.rubrics_id = 'Rubric is required.';
-}
+        assessmentErrors.value.rubrics_id = 'Rubric is required.';
+    }
 
     if (form.passing_mark === null) {
-assessmentErrors.value.passing_mark = 'Passing mark is required.';
-}
+        assessmentErrors.value.passing_mark = 'Passing mark is required.';
+    }
 
     if (Object.keys(assessmentErrors.value).length) {
-return;
-}
+        return;
+    }
 
     const wasNew = !form.id;
     saving.value = true;
@@ -260,19 +312,35 @@ return;
             title_assess: form.title_assess.trim(),
             instruction_assess: form.instruction_assess.trim(),
             grade_system: form.grade_system,
-            rubrics_id: form.grade_system === 'Rubrics' ? form.rubrics_id : null,
+            rubrics_id:
+                form.grade_system === 'Rubrics' ? form.rubrics_id : null,
             passing_mark: form.passing_mark,
         };
         const response = wasNew
-            ? await axios.post<{ id: string; message: string }>(API_BASE, payload, requestConfig())
-            : await axios.put<{ id: string; message: string }>(`${API_BASE}/${encodeURIComponent(form.id)}`, payload, requestConfig());
+            ? await axios.post<{ id: string; message: string }>(
+                  API_BASE,
+                  payload,
+                  requestConfig(),
+              )
+            : await axios.put<{ id: string; message: string }>(
+                  `${API_BASE}/${encodeURIComponent(form.id)}`,
+                  payload,
+                  requestConfig(),
+              );
         form.id = response.data.id;
-        notify('success', wasNew ? 'Assessment Created' : 'Assessment Updated', response.data.message);
+        notify(
+            'success',
+            wasNew ? 'Assessment Created' : 'Assessment Updated',
+            response.data.message,
+        );
         await loadAssessments(wasNew ? 1 : currentPage.value);
         await loadChildren();
     } catch (error: unknown) {
         assessmentErrors.value = getValidationErrors(error);
-        errorMessage.value = getErrorMessage(error, 'Unable to save the assessment.');
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to save the assessment.',
+        );
     } finally {
         saving.value = false;
     }
@@ -282,19 +350,25 @@ async function deleteAssessment(): Promise<void> {
     const id = String(selectedAssessment.value?.id ?? '');
 
     if (!id) {
-return;
-}
+        return;
+    }
 
     saving.value = true;
 
     try {
-        const response = await axios.delete<{ message: string }>(`${API_BASE}/${encodeURIComponent(id)}`, requestConfig());
+        const response = await axios.delete<{ message: string }>(
+            `${API_BASE}/${encodeURIComponent(id)}`,
+            requestConfig(),
+        );
         assessmentDeleteVisible.value = false;
         selectedAssessment.value = null;
         notify('success', 'Assessment Deleted', response.data.message);
         await reloadCurrentPage();
     } catch (error: unknown) {
-        errorMessage.value = getErrorMessage(error, 'Unable to delete the assessment.');
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to delete the assessment.',
+        );
     } finally {
         saving.value = false;
     }
@@ -302,20 +376,29 @@ return;
 
 async function loadChildren(): Promise<void> {
     if (!form.id) {
-return;
-}
+        return;
+    }
 
     childLoading.value = true;
 
     try {
         const [itemsResponse, attachmentsResponse] = await Promise.all([
-            axios.get<{ data: AssessmentItem[] }>(`${API_BASE}/${encodeURIComponent(form.id)}/items`, requestConfig()),
-            axios.get<{ data: Attachment[] }>(`${API_BASE}/${encodeURIComponent(form.id)}/attachments`, requestConfig()),
+            axios.get<{ data: AssessmentItem[] }>(
+                `${API_BASE}/${encodeURIComponent(form.id)}/items`,
+                requestConfig(),
+            ),
+            axios.get<{ data: Attachment[] }>(
+                `${API_BASE}/${encodeURIComponent(form.id)}/attachments`,
+                requestConfig(),
+            ),
         ]);
         items.value = itemsResponse.data.data;
         attachments.value = attachmentsResponse.data.data;
     } catch (error: unknown) {
-        errorMessage.value = getErrorMessage(error, 'Unable to load assessment details.');
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to load assessment details.',
+        );
     } finally {
         childLoading.value = false;
     }
@@ -341,26 +424,26 @@ function openEditItem(item: AssessmentItem): void {
 
 async function saveItem(): Promise<void> {
     if (!form.id) {
-return;
-}
+        return;
+    }
 
     itemErrors.value = {};
 
     if (!itemForm.item_d.trim()) {
-itemErrors.value.item_d = 'Description is required.';
-}
+        itemErrors.value.item_d = 'Description is required.';
+    }
 
     if (itemForm.prio === null) {
-itemErrors.value.prio = 'Order number is required.';
-}
+        itemErrors.value.prio = 'Order number is required.';
+    }
 
     if (form.grade_system === 'Points' && itemForm.point_d === null) {
-itemErrors.value.point_d = 'Maximum score is required.';
-}
+        itemErrors.value.point_d = 'Maximum score is required.';
+    }
 
     if (Object.keys(itemErrors.value).length) {
-return;
-}
+        return;
+    }
 
     childLoading.value = true;
 
@@ -368,11 +451,10 @@ return;
         if (itemFile.value) {
             const upload = new FormData();
             upload.append('file', itemFile.value);
-            const uploaded = await axios.post<{ filename: string; file_url: string }>(
-                `${API_BASE}/item-files`,
-                upload,
-                multipartConfig(),
-            );
+            const uploaded = await axios.post<{
+                filename: string;
+                file_url: string;
+            }>(`${API_BASE}/item-files`, upload, multipartConfig());
             itemForm.filename_d = uploaded.data.filename;
             itemForm.file_url = uploaded.data.file_url;
         }
@@ -385,16 +467,31 @@ return;
             prio: itemForm.prio,
         };
         const response = itemForm.id
-            ? await axios.put<{ message: string }>(`${base}/${encodeURIComponent(itemForm.id)}`, payload, requestConfig())
-            : await axios.post<{ message: string }>(base, payload, requestConfig());
-        notify('success', itemForm.id ? 'Item Updated' : 'Item Added', response.data.message);
+            ? await axios.put<{ message: string }>(
+                  `${base}/${encodeURIComponent(itemForm.id)}`,
+                  payload,
+                  requestConfig(),
+              )
+            : await axios.post<{ message: string }>(
+                  base,
+                  payload,
+                  requestConfig(),
+              );
+        notify(
+            'success',
+            itemForm.id ? 'Item Updated' : 'Item Added',
+            response.data.message,
+        );
         itemDialogVisible.value = false;
         resetItem();
         await loadChildren();
         await loadAssessments(currentPage.value);
     } catch (error: unknown) {
         itemErrors.value = getValidationErrors(error);
-        errorMessage.value = getErrorMessage(error, 'Unable to save the assessment item.');
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to save the assessment item.',
+        );
     } finally {
         childLoading.value = false;
     }
@@ -402,8 +499,8 @@ return;
 
 async function deleteItem(): Promise<void> {
     if (!form.id || !selectedItem.value?.id) {
-return;
-}
+        return;
+    }
 
     childLoading.value = true;
 
@@ -418,7 +515,10 @@ return;
         await loadChildren();
         await loadAssessments(currentPage.value);
     } catch (error: unknown) {
-        errorMessage.value = getErrorMessage(error, 'Unable to delete the item.');
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to delete the item.',
+        );
     } finally {
         childLoading.value = false;
     }
@@ -426,8 +526,8 @@ return;
 
 async function uploadAttachment(): Promise<void> {
     if (!form.id || !attachmentFile.value) {
-return;
-}
+        return;
+    }
 
     childLoading.value = true;
 
@@ -444,7 +544,10 @@ return;
         await loadChildren();
         await loadAssessments(currentPage.value);
     } catch (error: unknown) {
-        errorMessage.value = getErrorMessage(error, 'Unable to upload the attachment.');
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to upload the attachment.',
+        );
     } finally {
         childLoading.value = false;
     }
@@ -452,8 +555,8 @@ return;
 
 async function deleteAttachment(): Promise<void> {
     if (!form.id || !selectedAttachment.value?.id) {
-return;
-}
+        return;
+    }
 
     childLoading.value = true;
 
@@ -468,7 +571,10 @@ return;
         await loadChildren();
         await loadAssessments(currentPage.value);
     } catch (error: unknown) {
-        errorMessage.value = getErrorMessage(error, 'Unable to remove the attachment.');
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to remove the attachment.',
+        );
     } finally {
         childLoading.value = false;
     }
@@ -478,14 +584,29 @@ function onItemFile(event: Event): void {
     itemFile.value = (event.target as HTMLInputElement).files?.[0] ?? null;
 }
 function onAttachmentFile(event: Event): void {
-    attachmentFile.value = (event.target as HTMLInputElement).files?.[0] ?? null;
+    attachmentFile.value =
+        (event.target as HTMLInputElement).files?.[0] ?? null;
 }
 function resetAssessment(): void {
-    Object.assign(form, { id: '', title_assess: '', instruction_assess: '', grade_system: '', rubrics_id: '', passing_mark: null });
+    Object.assign(form, {
+        id: '',
+        title_assess: '',
+        instruction_assess: '',
+        grade_system: '',
+        rubrics_id: '',
+        passing_mark: null,
+    });
     assessmentErrors.value = {};
 }
 function resetItem(): void {
-    Object.assign(itemForm, { id: '', item_d: '', filename_d: '', file_url: '', point_d: null, prio: null });
+    Object.assign(itemForm, {
+        id: '',
+        item_d: '',
+        filename_d: '',
+        file_url: '',
+        point_d: null,
+        prio: null,
+    });
     itemFile.value = null;
     itemErrors.value = {};
 }
@@ -493,35 +614,66 @@ async function reloadCurrentPage(): Promise<void> {
     await loadAssessments(currentPage.value);
 
     if (!assessments.value.length && currentPage.value > 1) {
-await loadAssessments(currentPage.value - 1);
-}
+        await loadAssessments(currentPage.value - 1);
+    }
 }
 function requestConfig() {
-    return { headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, withCredentials: true };
+    return {
+        headers: {
+            Accept: 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        withCredentials: true,
+    };
 }
 function multipartConfig() {
-    return { headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, withCredentials: true };
+    return {
+        headers: {
+            Accept: 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        withCredentials: true,
+    };
 }
 function isCanceled(error: unknown): boolean {
-    return axios.isCancel(error) || (axios.isAxiosError(error) && error.code === 'ERR_CANCELED');
+    return (
+        axios.isCancel(error) ||
+        (axios.isAxiosError(error) && error.code === 'ERR_CANCELED')
+    );
 }
 function getErrorMessage(error: unknown, fallback: string): string {
     if (!axios.isAxiosError(error)) {
-return fallback;
-}
+        return fallback;
+    }
 
-    return (error.response?.data as { message?: string } | undefined)?.message || fallback;
+    return (
+        (error.response?.data as { message?: string } | undefined)?.message ||
+        fallback
+    );
 }
 function getValidationErrors(error: unknown): Errors {
     if (!axios.isAxiosError(error)) {
-return {};
-}
+        return {};
+    }
 
-    const errors = (error.response?.data as { errors?: Record<string, string[]> } | undefined)?.errors ?? {};
+    const errors =
+        (
+            error.response?.data as
+                { errors?: Record<string, string[]> } | undefined
+        )?.errors ?? {};
 
-    return Object.fromEntries(Object.entries(errors).map(([key, value]) => [key, value[0] ?? 'Invalid value.']));
+    return Object.fromEntries(
+        Object.entries(errors).map(([key, value]) => [
+            key,
+            value[0] ?? 'Invalid value.',
+        ]),
+    );
 }
-function notify(severity: 'success' | 'warn', summary: string, detail: string): void {
+function notify(
+    severity: 'success' | 'warn',
+    summary: string,
+    detail: string,
+): void {
     toast.add({ severity, summary, detail, life: 4000 });
 }
 
@@ -535,8 +687,16 @@ onBeforeUnmount(() => requestController?.abort());
     <Head title="Practical Assessment Setup" />
     <Toast position="top-right" />
 
-    <div class="flex h-full min-h-0 flex-1 flex-col gap-4 overflow-y-auto bg-[#F8FAFC] p-4 lg:p-5">
-        <Message v-if="errorMessage" severity="error" closable @close="errorMessage = ''">{{ errorMessage }}</Message>
+    <div
+        class="flex h-full min-h-0 flex-1 flex-col gap-4 overflow-y-auto bg-[#F8FAFC] p-4 lg:p-5"
+    >
+        <Message
+            v-if="errorMessage"
+            severity="error"
+            closable
+            @close="errorMessage = ''"
+            >{{ errorMessage }}</Message
+        >
 
         <Datatable
             title="Practical Assessment Setup"
@@ -565,100 +725,457 @@ onBeforeUnmount(() => requestController?.abort());
             @action="handleAction"
         >
             <template #header-actions>
-                <Button label="Create Practical Assessment" icon="pi pi-plus" severity="success" size="small" @click="openCreateAssessment" />
+                <Button
+                    label="Create Practical Assessment"
+                    icon="pi pi-plus"
+                    severity="success"
+                    size="small"
+                    @click="openCreateAssessment"
+                />
             </template>
-            <template #cell-title_assess="{ value }"><span class="font-semibold text-slate-700">{{ value || '—' }}</span></template>
-            <template #cell-grade_system="{ value }"><PrimeTag :value="String(value || '—')" :severity="value === 'Points' ? 'info' : value === 'Rubrics' ? 'warn' : 'success'" rounded /></template>
-            <template #cell-rubrics_name="{ value }">{{ value || '—' }}</template>
-            <template #cell-total_items="{ value }"><PrimeTag :value="String(value ?? 0)" severity="info" rounded /></template>
-            <template #cell-passing_mark="{ value }"><span class="font-semibold">{{ value ?? 0 }}%</span></template>
-            <template #cell-total_attachments="{ value }"><PrimeTag :value="String(value ?? 0)" severity="secondary" icon="pi pi-paperclip" rounded /></template>
+            <template #cell-title_assess="{ value }"
+                ><span class="font-semibold text-slate-700">{{
+                    value || '—'
+                }}</span></template
+            >
+            <template #cell-grade_system="{ value }"
+                ><PrimeTag
+                    :value="String(value || '—')"
+                    :severity="
+                        value === 'Points'
+                            ? 'info'
+                            : value === 'Rubrics'
+                              ? 'warn'
+                              : 'success'
+                    "
+                    rounded
+            /></template>
+            <template #cell-rubrics_name="{ value }">{{
+                value || '—'
+            }}</template>
+            <template #cell-total_items="{ value }"
+                ><PrimeTag :value="String(value ?? 0)" severity="info" rounded
+            /></template>
+            <template #cell-passing_mark="{ value }"
+                ><span class="font-semibold">{{ value ?? 0 }}%</span></template
+            >
+            <template #cell-total_attachments="{ value }"
+                ><PrimeTag
+                    :value="String(value ?? 0)"
+                    severity="secondary"
+                    icon="pi pi-paperclip"
+                    rounded
+            /></template>
         </Datatable>
 
-        <Dialog v-model:visible="assessmentDialogVisible" modal :header="dialogTitle" :draggable="false" :closable="!saving" class="w-[min(97vw,1100px)]">
+        <Dialog
+            v-model:visible="assessmentDialogVisible"
+            modal
+            :header="dialogTitle"
+            :draggable="false"
+            :closable="!saving"
+            class="w-[min(97vw,1100px)]"
+        >
             <div class="grid gap-4 md:grid-cols-2">
                 <div class="md:col-span-2">
-                    <label class="mb-2 block text-sm font-semibold">Title</label>
-                    <InputText v-model="form.title_assess" class="w-full" :invalid="Boolean(assessmentErrors.title_assess)" />
-                    <small v-if="assessmentErrors.title_assess" class="text-red-500">{{ assessmentErrors.title_assess }}</small>
+                    <label class="mb-2 block text-sm font-semibold"
+                        >Title</label
+                    >
+                    <InputText
+                        v-model="form.title_assess"
+                        class="w-full"
+                        :invalid="Boolean(assessmentErrors.title_assess)"
+                    />
+                    <small
+                        v-if="assessmentErrors.title_assess"
+                        class="text-red-500"
+                        >{{ assessmentErrors.title_assess }}</small
+                    >
                 </div>
                 <div class="md:col-span-2">
-                    <label class="mb-2 block text-sm font-semibold">Instructions</label>
-                    <Textarea v-model="form.instruction_assess" rows="4" class="w-full" auto-resize />
+                    <label class="mb-2 block text-sm font-semibold"
+                        >Instructions</label
+                    >
+                    <Textarea
+                        v-model="form.instruction_assess"
+                        rows="4"
+                        class="w-full"
+                        auto-resize
+                    />
                 </div>
                 <div>
-                    <label class="mb-2 block text-sm font-semibold">Grading System</label>
-                    <Select v-model="form.grade_system" :options="gradingSystems" placeholder="Select grading system" class="w-full" @change="handleGradingSystemChange" />
-                    <small v-if="assessmentErrors.grade_system" class="text-red-500">{{ assessmentErrors.grade_system }}</small>
+                    <label class="mb-2 block text-sm font-semibold"
+                        >Grading System</label
+                    >
+                    <Select
+                        v-model="form.grade_system"
+                        :options="gradingSystems"
+                        placeholder="Select grading system"
+                        class="w-full"
+                        @change="handleGradingSystemChange"
+                    />
+                    <small
+                        v-if="assessmentErrors.grade_system"
+                        class="text-red-500"
+                        >{{ assessmentErrors.grade_system }}</small
+                    >
                 </div>
                 <div v-if="form.grade_system === 'Rubrics'">
-                    <label class="mb-2 block text-sm font-semibold">Rubric</label>
-                    <Select v-model="form.rubrics_id" :options="rubrics" option-label="rubrics_name" option-value="id" placeholder="Select rubric" filter class="w-full" />
-                    <small v-if="assessmentErrors.rubrics_id" class="text-red-500">{{ assessmentErrors.rubrics_id }}</small>
+                    <label class="mb-2 block text-sm font-semibold"
+                        >Rubric</label
+                    >
+                    <Select
+                        v-model="form.rubrics_id"
+                        :options="rubrics"
+                        option-label="rubrics_name"
+                        option-value="id"
+                        placeholder="Select rubric"
+                        filter
+                        class="w-full"
+                    />
+                    <small
+                        v-if="assessmentErrors.rubrics_id"
+                        class="text-red-500"
+                        >{{ assessmentErrors.rubrics_id }}</small
+                    >
                 </div>
                 <div>
-                    <label class="mb-2 block text-sm font-semibold">Passing Mark (%)</label>
-                    <InputNumber v-model="form.passing_mark" :min="0" :max="100" :use-grouping="false" class="w-full" />
-                    <small v-if="assessmentErrors.passing_mark" class="text-red-500">{{ assessmentErrors.passing_mark }}</small>
+                    <label class="mb-2 block text-sm font-semibold"
+                        >Passing Mark (%)</label
+                    >
+                    <InputNumber
+                        v-model="form.passing_mark"
+                        :min="0"
+                        :max="100"
+                        :use-grouping="false"
+                        class="w-full"
+                    />
+                    <small
+                        v-if="assessmentErrors.passing_mark"
+                        class="text-red-500"
+                        >{{ assessmentErrors.passing_mark }}</small
+                    >
                 </div>
             </div>
 
             <div class="mt-6 border-t border-slate-200 pt-5">
                 <div class="mb-3 flex items-center justify-between">
-                    <div><h3 class="font-bold text-slate-800">Attachments</h3><p class="text-sm text-slate-500">PDF, PNG, JPG, or JPEG up to 10 MB.</p></div>
+                    <div>
+                        <h3 class="font-bold text-slate-800">Attachments</h3>
+                        <p class="text-sm text-slate-500">
+                            PDF, PNG, JPG, or JPEG up to 10 MB.
+                        </p>
+                    </div>
                     <div class="flex items-center gap-2">
-                        <input type="file" accept=".pdf,.png,.jpg,.jpeg" :disabled="!form.id || childLoading" class="max-w-[260px] text-sm" @change="onAttachmentFile" />
-                        <Button label="Upload" icon="pi pi-upload" size="small" :disabled="!form.id || !attachmentFile" :loading="childLoading" @click="uploadAttachment" />
+                        <input
+                            type="file"
+                            accept=".pdf,.png,.jpg,.jpeg"
+                            :disabled="!form.id || childLoading"
+                            class="max-w-[260px] text-sm"
+                            @change="onAttachmentFile"
+                        />
+                        <Button
+                            label="Upload"
+                            icon="pi pi-upload"
+                            size="small"
+                            :disabled="!form.id || !attachmentFile"
+                            :loading="childLoading"
+                            @click="uploadAttachment"
+                        />
                     </div>
                 </div>
-                <Message v-if="!form.id" severity="info" :closable="false">Save the assessment before adding files or items.</Message>
+                <Message v-if="!form.id" severity="info" :closable="false"
+                    >Save the assessment before adding files or items.</Message
+                >
                 <div v-else class="flex flex-wrap gap-2">
-                    <div v-for="file in attachments" :key="file.id" class="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                        <a v-if="file.file_url" :href="file.file_url" target="_blank" rel="noopener noreferrer" class="text-sm font-medium text-[#377EC0]">{{ file.assess_h_file }}</a>
+                    <div
+                        v-for="file in attachments"
+                        :key="file.id"
+                        class="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
+                    >
+                        <a
+                            v-if="file.file_url"
+                            :href="file.file_url"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="text-sm font-medium text-[#377EC0]"
+                            >{{ file.assess_h_file }}</a
+                        >
                         <span v-else>{{ file.assess_h_file }}</span>
-                        <Button icon="pi pi-trash" severity="danger" text rounded size="small" @click="selectedAttachment = file; attachmentDeleteVisible = true" />
+                        <Button
+                            icon="pi pi-trash"
+                            severity="danger"
+                            text
+                            rounded
+                            size="small"
+                            @click="
+                                selectedAttachment = file;
+                                attachmentDeleteVisible = true;
+                            "
+                        />
                     </div>
-                    <span v-if="!attachments.length" class="text-sm text-slate-500">No attachments.</span>
+                    <span
+                        v-if="!attachments.length"
+                        class="text-sm text-slate-500"
+                        >No attachments.</span
+                    >
                 </div>
             </div>
 
             <div class="mt-6 border-t border-slate-200 pt-5">
                 <div class="mb-3 flex items-center justify-between">
-                    <div><h3 class="font-bold text-slate-800">Assessment Items</h3><p class="text-sm text-slate-500">Items are displayed according to their order number.</p></div>
-                    <Button label="Add Item" icon="pi pi-plus" size="small" :disabled="!form.id" @click="openNewItem" />
+                    <div>
+                        <h3 class="font-bold text-slate-800">
+                            Assessment Items
+                        </h3>
+                        <p class="text-sm text-slate-500">
+                            Items are displayed according to their order number.
+                        </p>
+                    </div>
+                    <Button
+                        label="Add Item"
+                        icon="pi pi-plus"
+                        size="small"
+                        :disabled="!form.id"
+                        @click="openNewItem"
+                    />
                 </div>
-                <div v-if="form.id" class="overflow-x-auto rounded-xl border border-slate-200">
+                <div
+                    v-if="form.id"
+                    class="overflow-x-auto rounded-xl border border-slate-200"
+                >
                     <table class="w-full min-w-[850px] text-left text-sm">
-                        <thead class="bg-slate-50"><tr><th class="px-4 py-3">Item</th><th class="px-4 py-3">File</th><th class="px-4 py-3 text-center">Max. Score</th><th class="px-4 py-3 text-center">Order</th><th class="px-4 py-3 text-center">Actions</th></tr></thead>
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th class="px-4 py-3">Item</th>
+                                <th class="px-4 py-3">File</th>
+                                <th class="px-4 py-3 text-center">
+                                    Max. Score
+                                </th>
+                                <th class="px-4 py-3 text-center">Order</th>
+                                <th class="px-4 py-3 text-center">Actions</th>
+                            </tr>
+                        </thead>
                         <tbody>
-                            <tr v-if="childLoading"><td colspan="5" class="px-4 py-6 text-center">Loading...</td></tr>
-                            <tr v-else-if="!items.length"><td colspan="5" class="px-4 py-6 text-center text-slate-500">No assessment items.</td></tr>
-                            <tr v-for="item in items" :key="item.id" class="border-t border-slate-200">
-                                <td class="px-4 py-3 font-medium">{{ item.item_d }}</td>
-                                <td class="px-4 py-3"><a v-if="item.file_url" :href="item.file_url" target="_blank" rel="noopener noreferrer" class="text-[#377EC0]">View file</a><span v-else>—</span></td>
-                                <td class="px-4 py-3 text-center">{{ item.point_d }}</td><td class="px-4 py-3 text-center">{{ item.prio }}</td>
-                                <td class="px-4 py-3"><div class="flex justify-center gap-2"><Button icon="pi pi-pencil" severity="warn" rounded size="small" @click="openEditItem(item)" /><Button icon="pi pi-trash" severity="danger" rounded size="small" @click="selectedItem = item; itemDeleteVisible = true" /></div></td>
+                            <tr v-if="childLoading">
+                                <td colspan="5" class="px-4 py-6 text-center">
+                                    Loading...
+                                </td>
+                            </tr>
+                            <tr v-else-if="!items.length">
+                                <td
+                                    colspan="5"
+                                    class="px-4 py-6 text-center text-slate-500"
+                                >
+                                    No assessment items.
+                                </td>
+                            </tr>
+                            <tr
+                                v-for="item in items"
+                                :key="item.id"
+                                class="border-t border-slate-200"
+                            >
+                                <td class="px-4 py-3 font-medium">
+                                    {{ item.item_d }}
+                                </td>
+                                <td class="px-4 py-3">
+                                    <a
+                                        v-if="item.file_url"
+                                        :href="item.file_url"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="text-[#377EC0]"
+                                        >View file</a
+                                    ><span v-else>—</span>
+                                </td>
+                                <td class="px-4 py-3 text-center">
+                                    {{ item.point_d }}
+                                </td>
+                                <td class="px-4 py-3 text-center">
+                                    {{ item.prio }}
+                                </td>
+                                <td class="px-4 py-3">
+                                    <div class="flex justify-center gap-2">
+                                        <Button
+                                            icon="pi pi-pencil"
+                                            severity="warn"
+                                            rounded
+                                            size="small"
+                                            @click="openEditItem(item)"
+                                        /><Button
+                                            icon="pi pi-trash"
+                                            severity="danger"
+                                            rounded
+                                            size="small"
+                                            @click="
+                                                selectedItem = item;
+                                                itemDeleteVisible = true;
+                                            "
+                                        />
+                                    </div>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <template #footer><Button label="Close" severity="secondary" outlined @click="assessmentDialogVisible = false" /><Button label="Save" icon="pi pi-save" severity="success" :loading="saving" @click="saveAssessment" /></template>
+            <template #footer
+                ><Button
+                    label="Close"
+                    severity="secondary"
+                    outlined
+                    @click="assessmentDialogVisible = false" /><Button
+                    label="Save"
+                    icon="pi pi-save"
+                    severity="success"
+                    :loading="saving"
+                    @click="saveAssessment"
+            /></template>
         </Dialog>
 
-        <Dialog v-model:visible="itemDialogVisible" modal :header="itemDialogTitle" class="w-[min(94vw,700px)]">
+        <Dialog
+            v-model:visible="itemDialogVisible"
+            modal
+            :header="itemDialogTitle"
+            class="w-[min(94vw,700px)]"
+        >
             <div class="grid gap-4 sm:grid-cols-2">
-                <div class="sm:col-span-2"><label class="mb-2 block text-sm font-semibold">Description</label><Textarea v-model="itemForm.item_d" rows="3" class="w-full" /><small v-if="itemErrors.item_d" class="text-red-500">{{ itemErrors.item_d }}</small></div>
-                <div><label class="mb-2 block text-sm font-semibold">Maximum Score</label><InputNumber v-model="itemForm.point_d" :min="0" :use-grouping="false" class="w-full" :disabled="form.grade_system !== 'Points'" /><small v-if="itemErrors.point_d" class="text-red-500">{{ itemErrors.point_d }}</small></div>
-                <div><label class="mb-2 block text-sm font-semibold">Order No.</label><InputNumber v-model="itemForm.prio" :min="1" :use-grouping="false" class="w-full" /><small v-if="itemErrors.prio" class="text-red-500">{{ itemErrors.prio }}</small></div>
-                <div class="sm:col-span-2"><label class="mb-2 block text-sm font-semibold">Supporting File</label><input type="file" accept=".pdf,.png,.jpg,.jpeg" class="w-full text-sm" @change="onItemFile" /><a v-if="itemForm.file_url" :href="itemForm.file_url" target="_blank" rel="noopener noreferrer" class="mt-2 block text-sm text-[#377EC0]">View current file</a><small v-if="itemErrors.file" class="text-red-500">{{ itemErrors.file }}</small></div>
+                <div class="sm:col-span-2">
+                    <label class="mb-2 block text-sm font-semibold"
+                        >Description</label
+                    ><Textarea
+                        v-model="itemForm.item_d"
+                        rows="3"
+                        class="w-full"
+                    /><small v-if="itemErrors.item_d" class="text-red-500">{{
+                        itemErrors.item_d
+                    }}</small>
+                </div>
+                <div>
+                    <label class="mb-2 block text-sm font-semibold"
+                        >Maximum Score</label
+                    ><InputNumber
+                        v-model="itemForm.point_d"
+                        :min="0"
+                        :use-grouping="false"
+                        class="w-full"
+                        :disabled="form.grade_system !== 'Points'"
+                    /><small v-if="itemErrors.point_d" class="text-red-500">{{
+                        itemErrors.point_d
+                    }}</small>
+                </div>
+                <div>
+                    <label class="mb-2 block text-sm font-semibold"
+                        >Order No.</label
+                    ><InputNumber
+                        v-model="itemForm.prio"
+                        :min="1"
+                        :use-grouping="false"
+                        class="w-full"
+                    /><small v-if="itemErrors.prio" class="text-red-500">{{
+                        itemErrors.prio
+                    }}</small>
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="mb-2 block text-sm font-semibold"
+                        >Supporting File</label
+                    ><input
+                        type="file"
+                        accept=".pdf,.png,.jpg,.jpeg"
+                        class="w-full text-sm"
+                        @change="onItemFile"
+                    /><a
+                        v-if="itemForm.file_url"
+                        :href="itemForm.file_url"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="mt-2 block text-sm text-[#377EC0]"
+                        >View current file</a
+                    ><small v-if="itemErrors.file" class="text-red-500">{{
+                        itemErrors.file
+                    }}</small>
+                </div>
             </div>
-            <template #footer><Button label="Cancel" severity="secondary" outlined @click="itemDialogVisible = false" /><Button label="Save" icon="pi pi-save" severity="success" :loading="childLoading" @click="saveItem" /></template>
+            <template #footer
+                ><Button
+                    label="Cancel"
+                    severity="secondary"
+                    outlined
+                    @click="itemDialogVisible = false" /><Button
+                    label="Save"
+                    icon="pi pi-save"
+                    severity="success"
+                    :loading="childLoading"
+                    @click="saveItem"
+            /></template>
         </Dialog>
 
-        <Dialog v-model:visible="assessmentDeleteVisible" modal header="Delete Practical Assessment" :draggable="false" class="w-[min(92vw,520px)]"><Message severity="warn" :closable="false">Delete <strong>{{ selectedAssessment?.title_assess || 'this assessment' }}</strong>? Remove all items and attachments first.</Message><template #footer><Button label="Cancel" severity="secondary" outlined @click="assessmentDeleteVisible = false" /><Button label="Delete" icon="pi pi-trash" severity="danger" :loading="saving" @click="deleteAssessment" /></template></Dialog>
-        <Dialog v-model:visible="itemDeleteVisible" modal header="Delete Assessment Item" class="w-[min(92vw,520px)]"><Message severity="warn" :closable="false">Delete this assessment item?</Message><template #footer><Button label="Cancel" severity="secondary" outlined @click="itemDeleteVisible = false" /><Button label="Delete" icon="pi pi-trash" severity="danger" :loading="childLoading" @click="deleteItem" /></template></Dialog>
-        <Dialog v-model:visible="attachmentDeleteVisible" modal header="Remove Attachment" class="w-[min(92vw,520px)]"><Message severity="warn" :closable="false">Remove <strong>{{ selectedAttachment?.assess_h_file || 'this attachment' }}</strong> from the assessment?</Message><template #footer><Button label="Cancel" severity="secondary" outlined @click="attachmentDeleteVisible = false" /><Button label="Remove" icon="pi pi-trash" severity="danger" :loading="childLoading" @click="deleteAttachment" /></template></Dialog>
+        <Dialog
+            v-model:visible="assessmentDeleteVisible"
+            modal
+            header="Delete Practical Assessment"
+            :draggable="false"
+            class="w-[min(92vw,520px)]"
+            ><Message severity="warn" :closable="false"
+                >Delete
+                <strong>{{
+                    selectedAssessment?.title_assess || 'this assessment'
+                }}</strong
+                >? Remove all items and attachments first.</Message
+            ><template #footer
+                ><Button
+                    label="Cancel"
+                    severity="secondary"
+                    outlined
+                    @click="assessmentDeleteVisible = false" /><Button
+                    label="Delete"
+                    icon="pi pi-trash"
+                    severity="danger"
+                    :loading="saving"
+                    @click="deleteAssessment" /></template
+        ></Dialog>
+        <Dialog
+            v-model:visible="itemDeleteVisible"
+            modal
+            header="Delete Assessment Item"
+            class="w-[min(92vw,520px)]"
+            ><Message severity="warn" :closable="false"
+                >Delete this assessment item?</Message
+            ><template #footer
+                ><Button
+                    label="Cancel"
+                    severity="secondary"
+                    outlined
+                    @click="itemDeleteVisible = false" /><Button
+                    label="Delete"
+                    icon="pi pi-trash"
+                    severity="danger"
+                    :loading="childLoading"
+                    @click="deleteItem" /></template
+        ></Dialog>
+        <Dialog
+            v-model:visible="attachmentDeleteVisible"
+            modal
+            header="Remove Attachment"
+            class="w-[min(92vw,520px)]"
+            ><Message severity="warn" :closable="false"
+                >Remove
+                <strong>{{
+                    selectedAttachment?.assess_h_file || 'this attachment'
+                }}</strong>
+                from the assessment?</Message
+            ><template #footer
+                ><Button
+                    label="Cancel"
+                    severity="secondary"
+                    outlined
+                    @click="attachmentDeleteVisible = false" /><Button
+                    label="Remove"
+                    icon="pi pi-trash"
+                    severity="danger"
+                    :loading="childLoading"
+                    @click="deleteAttachment" /></template
+        ></Dialog>
     </div>
 </template>

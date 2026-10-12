@@ -4,42 +4,27 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Services\IrisEmailService;
-
 use Illuminate\Database\ConnectionInterface;
-
 use Illuminate\Database\Query\Builder;
-
 use Illuminate\Http\JsonResponse;
-
 use Illuminate\Http\Request;
-
 use Illuminate\Support\Facades\DB;
-
 use Illuminate\Support\Facades\Storage;
-
 use Illuminate\Support\Str;
-
 use Illuminate\Validation\ValidationException;
-
 use Symfony\Component\HttpFoundation\Response;
-
 use Throwable;
 
 class PracticalInternalAssessmentsController extends Controller
 {
     public function __construct(
         private readonly IrisEmailService $irisEmailService,
-    ) {
-    }
+    ) {}
 
     /**
-
      * Display pending Practical Internal assessments.
-
      */
-
     public function index(Request $request): JsonResponse
-
     {
 
         $database = $this->database($request);
@@ -342,13 +327,9 @@ class PracticalInternalAssessmentsController extends Controller
 
                     ),
 
-                    'is_completed' =>
+                    'is_completed' => strtoupper((string) $row->done) === 'Y',
 
-                        strtoupper((string) $row->done) === 'Y',
-
-                    'is_pending' =>
-
-                        strtoupper((string) $row->for_assess) === 'Y',
+                    'is_pending' => strtoupper((string) $row->for_assess) === 'Y',
 
                 ];
 
@@ -397,9 +378,7 @@ class PracticalInternalAssessmentsController extends Controller
     }
 
     /** Choices for scheduling an enrolled student's practical assessment. */
-
     public function options(Request $request): JsonResponse
-
     {
 
         $database = $this->database($request);
@@ -449,9 +428,7 @@ class PracticalInternalAssessmentsController extends Controller
     }
 
     /** Schedule one practical assessment and copy its grading items. */
-
     public function store(Request $request): JsonResponse
-
     {
 
         $database = $this->database($request);
@@ -473,7 +450,6 @@ class PracticalInternalAssessmentsController extends Controller
         if (! empty($data['from_date']) && ! empty($data['due_date']) && $data['due_date'] < $data['from_date']) {
 
             throw ValidationException::withMessages(['due_date' => 'Due date must be on or after the start date.']);
-
         }
 
         $student = $database->table('person')->where('id', $data['person_id'])
@@ -487,7 +463,6 @@ class PracticalInternalAssessmentsController extends Controller
         if (! $student || ! $assessment) {
 
             throw ValidationException::withMessages([
-
                 'person_id' => 'Select an existing student and practical assessment.',
 
             ]);
@@ -649,11 +624,8 @@ class PracticalInternalAssessmentsController extends Controller
     }
 
     /**
-
      * Return an assessment and its grading items.
-
      */
-
     public function show(
 
         Request $request,
@@ -868,9 +840,7 @@ class PracticalInternalAssessmentsController extends Controller
 
             ->filter(
 
-                fn (array $file): bool =>
-
-                    $file['name'] !== '',
+                fn (array $file): bool => $file['name'] !== '',
 
             )
 
@@ -884,9 +854,7 @@ class PracticalInternalAssessmentsController extends Controller
 
                     'id' => (string) $item->id,
 
-                    'assessment_item_id' =>
-
-                        (string) $item->assess_d_id,
+                    'assessment_item_id' => (string) $item->assess_d_id,
 
                     'description' => $this->decodeLegacyText(
 
@@ -906,9 +874,7 @@ class PracticalInternalAssessmentsController extends Controller
 
                         : 0,
 
-                    'maximum_points' =>
-
-                        is_numeric($item->maximum_points)
+                    'maximum_points' => is_numeric($item->maximum_points)
 
                             ? (float) $item->maximum_points
 
@@ -948,9 +914,7 @@ class PracticalInternalAssessmentsController extends Controller
 
         $earnedPoints = (float) $normalizedItems->sum(
 
-            fn (array $item): float =>
-
-                (float) $item['points'],
+            fn (array $item): float => (float) $item['points'],
 
         );
 
@@ -988,9 +952,7 @@ class PracticalInternalAssessmentsController extends Controller
 
                     ),
 
-                    'school_id_no' =>
-
-                        $assessment->school_id_no
+                    'school_id_no' => $assessment->school_id_no
 
                         ?: $assessment->code_person,
 
@@ -1020,21 +982,17 @@ class PracticalInternalAssessmentsController extends Controller
 
                 'due_date' => $assessment->due_date,
 
-                'is_completed' =>
+                'is_completed' => strtoupper(
 
-                    strtoupper(
+                    (string) $assessment->done,
 
-                        (string) $assessment->done,
+                ) === 'Y',
 
-                    ) === 'Y',
+                'is_pending' => strtoupper(
 
-                'is_pending' =>
+                    (string) $assessment->for_assess,
 
-                    strtoupper(
-
-                        (string) $assessment->for_assess,
-
-                    ) === 'Y',
+                ) === 'Y',
 
                 'items' => $normalizedItems,
 
@@ -1044,19 +1002,19 @@ class PracticalInternalAssessmentsController extends Controller
 
                 'result' => [
 
-                    'earned_points' => $earnedPoints,
+                'earned_points' => $earnedPoints,
 
-                    'maximum_points' => $maximumPoints,
+                'maximum_points' => $maximumPoints,
 
-                    'percentage' => $percentage,
+                'percentage' => $percentage,
 
-                    'passing_mark' => $passingMark,
+                'passing_mark' => $passingMark,
 
-                    'remarks' => $percentage >= $passingMark
+                'remarks' => $percentage >= $passingMark
 
-                        ? 'PASS'
+                    ? 'PASS'
 
-                        : 'FAIL',
+                    : 'FAIL',
 
                 ],
 
@@ -1067,11 +1025,8 @@ class PracticalInternalAssessmentsController extends Controller
     }
 
     /**
-
      * Save grades and complete an assessment.
-
      */
-
     public function grade(
 
         Request $request,
@@ -1201,7 +1156,6 @@ class PracticalInternalAssessmentsController extends Controller
                     ) {
 
                         throw ValidationException::withMessages([
-
                             'assessment' => [
 
                                 'This practical assessment has already been graded.',
@@ -1250,16 +1204,13 @@ class PracticalInternalAssessmentsController extends Controller
 
                         ->keyBy(
 
-                            fn (object $item): string =>
-
-                                (string) $item->id,
+                            fn (object $item): string => (string) $item->id,
 
                         );
 
                     if ($items->isEmpty()) {
 
                         throw ValidationException::withMessages([
-
                             'grades' => [
 
                                 'This assessment does not contain any grading items.',
@@ -1276,9 +1227,7 @@ class PracticalInternalAssessmentsController extends Controller
 
                     )->keyBy(
 
-                        fn (array $grade): string =>
-
-                            (string) $grade['item_id'],
+                        fn (array $grade): string => (string) $grade['item_id'],
 
                     );
 
@@ -1334,9 +1283,7 @@ class PracticalInternalAssessmentsController extends Controller
 
                             ->keyBy(
 
-                                fn (object $item): string =>
-
-                                    (string) $item->id,
+                                fn (object $item): string => (string) $item->id,
 
                             );
 
@@ -1379,7 +1326,6 @@ class PracticalInternalAssessmentsController extends Controller
                             if ($points > $maximum) {
 
                                 throw ValidationException::withMessages([
-
                                     'grades' => [
 
                                         "The grade for an item cannot exceed {$maximum} points.",
@@ -1427,7 +1373,6 @@ class PracticalInternalAssessmentsController extends Controller
                                 if ($rubricItem === null) {
 
                                     throw ValidationException::withMessages([
-
                                         'grades' => [
 
                                             'An invalid rubric option was submitted.',
@@ -1506,9 +1451,7 @@ class PracticalInternalAssessmentsController extends Controller
 
                         'total_points' => $totalPoints,
 
-                        'next_assessment_id' =>
-
-                            $nextAssessmentId
+                        'next_assessment_id' => $nextAssessmentId
 
                                 ? (string) $nextAssessmentId
 
@@ -1523,16 +1466,13 @@ class PracticalInternalAssessmentsController extends Controller
         } catch (ValidationException $exception) {
 
             throw $exception;
-
         } catch (Throwable $exception) {
 
             report($exception);
 
             return response()->json([
 
-                'message' =>
-
-                    'The practical assessment could not be saved.',
+                'message' => 'The practical assessment could not be saved.',
 
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
 
@@ -1540,9 +1480,7 @@ class PracticalInternalAssessmentsController extends Controller
 
         return response()->json([
 
-            'message' =>
-
-                'The practical assessment was graded successfully.',
+            'message' => 'The practical assessment was graded successfully.',
 
             'data' => $result,
 
@@ -1551,9 +1489,7 @@ class PracticalInternalAssessmentsController extends Controller
     }
 
     /** Student list for the authenticated enrolled student only. */
-
     public function studentIndex(Request $request): JsonResponse
-
     {
 
         $database = $this->database($request);
@@ -1699,9 +1635,7 @@ class PracticalInternalAssessmentsController extends Controller
     }
 
     /** Return one practical assessment owned by the authenticated student. */
-
     public function studentShow(Request $request, string $assessmentId): JsonResponse
-
     {
 
         $database = $this->database($request);
@@ -1835,9 +1769,7 @@ class PracticalInternalAssessmentsController extends Controller
     }
 
     /** Save the student's answer and optional evidence for one owned item. */
-
     public function studentSaveItem(Request $request, string $assessmentId, string $itemId): JsonResponse
-
     {
 
         $database = $this->database($request);
@@ -1897,9 +1829,7 @@ class PracticalInternalAssessmentsController extends Controller
     }
 
     /** Submit an owned practical assessment for assessor grading. */
-
     public function studentSubmit(Request $request, string $assessmentId): JsonResponse
-
     {
 
         $database = $this->database($request);
@@ -1935,7 +1865,6 @@ class PracticalInternalAssessmentsController extends Controller
     }
 
     private function studentPersonId(Request $request): string
-
     {
 
         $personId = trim((string) ($request->user()?->getAuthIdentifier() ?? ''));
@@ -1947,7 +1876,6 @@ class PracticalInternalAssessmentsController extends Controller
     }
 
     private function studentAssessment(ConnectionInterface $database, string $personId, string $assessmentId): object
-
     {
 
         $assessment = $database->table('person_assess_h')
@@ -1979,25 +1907,21 @@ class PracticalInternalAssessmentsController extends Controller
     }
 
     private function assertStudentAssessmentEditable(object $assessment): void
-
     {
 
         if (strtoupper((string) ($assessment->done ?? 'N')) === 'Y') {
 
             throw ValidationException::withMessages(['assessment' => ['This practical assessment has already been graded.']]);
-
         }
 
         if (strtoupper((string) ($assessment->for_assess ?? 'N')) === 'Y') {
 
             throw ValidationException::withMessages(['assessment' => ['This practical assessment has already been submitted for grading.']]);
-
         }
 
     }
 
     private function personTaskDisk(Request $request): string
-
     {
 
         $schoolCode = strtolower(trim((string) $request->session()->get('school_code', '')));
@@ -2013,7 +1937,6 @@ class PracticalInternalAssessmentsController extends Controller
     }
 
     private function normalDate(mixed $value): ?string
-
     {
 
         $date = trim((string) ($value ?? ''));
@@ -2023,11 +1946,8 @@ class PracticalInternalAssessmentsController extends Controller
     }
 
     /**
-
      * Resolve the database selected during login.
-
      */
-
     private function database(
 
         Request $request,
@@ -2111,11 +2031,8 @@ class PracticalInternalAssessmentsController extends Controller
     }
 
     /**
-
      * Retrieve rubric criteria and their available ratings.
-
      */
-
     private function rubricCriteria(
 
         ConnectionInterface $database,
@@ -2186,9 +2103,7 @@ class PracticalInternalAssessmentsController extends Controller
 
                 ->groupBy(
 
-                    fn (object $item): string =>
-
-                        (string) $item->rubrics_criterion_id,
+                    fn (object $item): string => (string) $item->rubrics_criterion_id,
 
                 );
 
@@ -2256,9 +2171,7 @@ class PracticalInternalAssessmentsController extends Controller
 
             return (float) $items->sum(
 
-                fn (array $item): float =>
-
-                    (float) $item['maximum_points'],
+                fn (array $item): float => (float) $item['maximum_points'],
 
             );
 
@@ -2289,7 +2202,6 @@ class PracticalInternalAssessmentsController extends Controller
     }
 
     private function studentName(object $student): string
-
     {
 
         $lastName = trim(
@@ -2308,9 +2220,7 @@ class PracticalInternalAssessmentsController extends Controller
 
             ->map(
 
-                fn ($name): string =>
-
-                    trim((string) $name),
+                fn ($name): string => trim((string) $name),
 
             )
 
@@ -2425,5 +2335,4 @@ class PracticalInternalAssessmentsController extends Controller
         );
 
     }
-
 }

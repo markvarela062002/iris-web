@@ -12,22 +12,12 @@ import PrimeTag from 'primevue/tag';
 import Toast from 'primevue/toast';
 import ToggleSwitch from 'primevue/toggleswitch';
 import { useToast } from 'primevue/usetoast';
-import {
-    computed,
-    onBeforeUnmount,
-    onMounted,
-    reactive,
-    ref,
-} from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 
 import Datatable from '@/components/Datatable.vue';
 import { dashboard } from '@/routes';
 
-import type {
-    DataTableAction,
-    DataTableColumn,
-    DataTableRow,
-} from '@/types';
+import type { DataTableAction, DataTableColumn, DataTableRow } from '@/types';
 
 defineOptions({
     inheritAttrs: false,
@@ -83,29 +73,22 @@ type FileSelectEvent = {
     files: File[];
 };
 
-type Errors =
-    Record<string, string>;
+type Errors = Record<string, string>;
 
-const DATATABLE_URL =
-    '/api/v1/setup/requirement-types/datatable';
+const DATATABLE_URL = '/api/v1/setup/requirement-types/datatable';
 
-const API_BASE =
-    '/api/v1/setup/requirement-types';
-
+const API_BASE = '/api/v1/setup/requirement-types';
 
 const ACCEPTED_TEMPLATE_TYPES =
     '.jpg,.jpeg,.png,.gif,.bmp,.pdf,.doc,.docx,.xls,.xlsx,.csv';
 
 const toast = useToast();
 
-const requirementTypes =
-    ref<DataTableRow[]>([]);
+const requirementTypes = ref<DataTableRow[]>([]);
 
-const ranks =
-    ref<LookupOption[]>([]);
+const ranks = ref<LookupOption[]>([]);
 
-const vesselTypes =
-    ref<LookupOption[]>([]);
+const vesselTypes = ref<LookupOption[]>([]);
 
 const loading = ref(false);
 const optionsLoading = ref(false);
@@ -119,32 +102,20 @@ const first = ref(0);
 const perPage = ref(10);
 const search = ref('');
 
-const sortField =
-    ref('desc_requirement');
+const sortField = ref('desc_requirement');
 
-const sortDirection =
-    ref<'asc' | 'desc'>(
-        'asc',
-    );
+const sortDirection = ref<'asc' | 'desc'>('asc');
 
 const dialogVisible = ref(false);
 const deleteVisible = ref(false);
 
-const selectedRequirementType =
-    ref<DataTableRow | null>(
-        null,
-    );
+const selectedRequirementType = ref<DataTableRow | null>(null);
 
-const selectedTemplateFile =
-    ref<File | null>(
-        null,
-    );
+const selectedTemplateFile = ref<File | null>(null);
 
-const fileUploadKey =
-    ref(0);
+const fileUploadKey = ref(0);
 
-const formErrors =
-    ref<Errors>({});
+const formErrors = ref<Errors>({});
 
 const form = reactive({
     id: '',
@@ -159,13 +130,9 @@ const form = reactive({
     template_url: '',
 });
 
-let requestController:
-    | AbortController
-    | null = null;
+let requestController: AbortController | null = null;
 
-let optionsController:
-    | AbortController
-    | null = null;
+let optionsController: AbortController | null = null;
 
 const columns: DataTableColumn[] = [
     {
@@ -241,77 +208,45 @@ const actions: DataTableAction[] = [
     },
 ];
 
-const currentPage = computed(
-    () =>
-        Math.floor(
-            first.value /
-                perPage.value,
-        ) + 1,
+const currentPage = computed(() => Math.floor(first.value / perPage.value) + 1);
+
+const dialogTitle = computed(() =>
+    form.id ? 'Edit Requirement Type' : 'Create Requirement Type',
 );
 
-const dialogTitle = computed(
-    () =>
-        form.id
-            ? 'Edit Requirement Type'
-            : 'Create Requirement Type',
-);
-
-async function loadRequirementTypes(
-    page = 1,
-): Promise<void> {
+async function loadRequirementTypes(page = 1): Promise<void> {
     requestController?.abort();
 
-    const controller =
-        new AbortController();
+    const controller = new AbortController();
 
-    requestController =
-        controller;
+    requestController = controller;
 
     loading.value = true;
     errorMessage.value = '';
 
     try {
-        const response =
-            await axios.get<ApiListResponse>(
-                DATATABLE_URL,
-                {
-                    signal:
-                        controller.signal,
+        const response = await axios.get<ApiListResponse>(DATATABLE_URL, {
+            signal: controller.signal,
 
-                    params: {
-                        page,
-                        per_page:
-                            perPage.value,
-                        search:
-                            search.value,
-                        sort_field:
-                            sortField.value,
-                        sort_direction:
-                            sortDirection.value,
-                    },
+            params: {
+                page,
+                per_page: perPage.value,
+                search: search.value,
+                sort_field: sortField.value,
+                sort_direction: sortDirection.value,
+            },
 
-                    ...requestConfig(),
-                },
-            );
+            ...requestConfig(),
+        });
 
-        requirementTypes.value =
-            response.data.data;
+        requirementTypes.value = response.data.data;
 
-        totalRecords.value =
-            response.data.meta.total;
+        totalRecords.value = response.data.meta.total;
 
-        perPage.value =
-            response.data.meta
-                .perPage;
+        perPage.value = response.data.meta.perPage;
 
         first.value =
-            (
-                response.data.meta
-                    .currentPage -
-                1
-            ) *
-            response.data.meta
-                .perPage;
+            (response.data.meta.currentPage - 1) * response.data.meta.perPage;
     } catch (error: unknown) {
         if (isCanceled(error)) {
             return;
@@ -320,16 +255,12 @@ async function loadRequirementTypes(
         requirementTypes.value = [];
         totalRecords.value = 0;
 
-        errorMessage.value =
-            getErrorMessage(
-                error,
-                'Unable to load requirement types.',
-            );
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to load requirement types.',
+        );
     } finally {
-        if (
-            requestController ===
-            controller
-        ) {
+        if (requestController === controller) {
             loading.value = false;
         }
     }
@@ -338,97 +269,67 @@ async function loadRequirementTypes(
 async function loadOptions(): Promise<void> {
     optionsController?.abort();
 
-    const controller =
-        new AbortController();
+    const controller = new AbortController();
 
-    optionsController =
-        controller;
+    optionsController = controller;
 
     optionsLoading.value = true;
 
     try {
-        const response =
-            await axios.get<OptionsResponse>(
-                `${API_BASE}/options`,
-                {
-                    signal:
-                        controller.signal,
+        const response = await axios.get<OptionsResponse>(
+            `${API_BASE}/options`,
+            {
+                signal: controller.signal,
 
-                    ...requestConfig(),
-                },
-            );
+                ...requestConfig(),
+            },
+        );
 
-        ranks.value =
-            response.data.data.ranks;
+        ranks.value = response.data.data.ranks;
 
-        vesselTypes.value =
-            response.data.data
-                .vesselTypes;
+        vesselTypes.value = response.data.data.vesselTypes;
     } catch (error: unknown) {
         if (isCanceled(error)) {
             return;
         }
 
-        errorMessage.value =
-            getErrorMessage(
-                error,
-                'Unable to load requirement setup options.',
-            );
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to load requirement setup options.',
+        );
     } finally {
-        if (
-            optionsController ===
-            controller
-        ) {
+        if (optionsController === controller) {
             optionsLoading.value = false;
         }
     }
 }
 
-function handlePage(
-    event: PageEvent,
-): void {
-    perPage.value =
-        event.rows;
+function handlePage(event: PageEvent): void {
+    perPage.value = event.rows;
 
-    first.value =
-        event.first;
+    first.value = event.first;
 
-    void loadRequirementTypes(
-        event.page + 1,
-    );
+    void loadRequirementTypes(event.page + 1);
 }
 
-function handleSort(
-    event: SortEvent,
-): void {
-    sortField.value =
-        event.sortField
-        ||
-        'desc_requirement';
+function handleSort(event: SortEvent): void {
+    sortField.value = event.sortField || 'desc_requirement';
 
-    sortDirection.value =
-        event.sortOrder === -1
-            ? 'desc'
-            : 'asc';
+    sortDirection.value = event.sortOrder === -1 ? 'desc' : 'asc';
 
     first.value = 0;
 
     void loadRequirementTypes(1);
 }
 
-function handleSearch(
-    value: string,
-): void {
+function handleSearch(value: string): void {
     search.value = value;
     first.value = 0;
 
     void loadRequirementTypes(1);
 }
 
-function handleAction(
-    action: string,
-    row: DataTableRow,
-): void {
+function handleAction(action: string, row: DataTableRow): void {
     if (action === 'edit') {
         openEdit(row);
 
@@ -436,234 +337,119 @@ function handleAction(
     }
 
     if (action === 'delete') {
-        selectedRequirementType.value =
-            row;
+        selectedRequirementType.value = row;
 
-        deleteVisible.value =
-            true;
+        deleteVisible.value = true;
     }
 }
 
 function openCreate(): void {
     resetForm();
 
-    dialogVisible.value =
-        true;
+    dialogVisible.value = true;
 }
 
-function openEdit(
-    row: DataTableRow,
-): void {
+function openEdit(row: DataTableRow): void {
     formErrors.value = {};
     selectedTemplateFile.value = null;
     fileUploadKey.value += 1;
 
-    form.id =
-        String(row.id ?? '');
+    form.id = String(row.id ?? '');
 
-    form.code_requirement =
-        String(
-            row.code_requirement
-            ?? '',
-        );
+    form.code_requirement = String(row.code_requirement ?? '');
 
-    form.desc_requirement =
-        String(
-            row.desc_requirement
-            ?? '',
-        );
+    form.desc_requirement = String(row.desc_requirement ?? '');
 
-    form.cci_reqd =
-        String(
-            row.cci_reqd
-            ?? 'Y',
-        ) === 'Y';
+    form.cci_reqd = String(row.cci_reqd ?? 'Y') === 'Y';
 
-    form.rank_id =
-        row.rank_id
-            ? String(row.rank_id)
-            : null;
+    form.rank_id = row.rank_id ? String(row.rank_id) : null;
 
-    form.vessel_type =
-        row.vessel_type
-            ? String(
-                row.vessel_type,
-            )
-            : null;
+    form.vessel_type = row.vessel_type ? String(row.vessel_type) : null;
 
-    form.cat_requirement =
-        String(
-            row.cat_requirement
-            ?? '',
-        );
+    form.cat_requirement = String(row.cat_requirement ?? '');
 
-    const priority =
-        Number(row.prio ?? 1);
+    const priority = Number(row.prio ?? 1);
 
-    form.prio =
-        Number.isFinite(priority)
-            ? priority
-            : 1;
+    form.prio = Number.isFinite(priority) ? priority : 1;
 
-    form.template =
-        String(
-            row.template
-            ?? '',
-        );
+    form.template = String(row.template ?? '');
 
-    form.template_url =
-        String(
-            row.template_url
-            ?? '',
-        );
+    form.template_url = String(row.template_url ?? '');
 
-    dialogVisible.value =
-        true;
+    dialogVisible.value = true;
 }
 
-function handleTemplateSelect(
-    event: FileSelectEvent,
-): void {
-    const file =
-        event.files?.[0]
-        ?? null;
+function handleTemplateSelect(event: FileSelectEvent): void {
+    const file = event.files?.[0] ?? null;
 
-    selectedTemplateFile.value =
-        file;
+    selectedTemplateFile.value = file;
 
-    delete formErrors.value
-        .template_file;
+    delete formErrors.value.template_file;
 }
 
 async function saveRequirementType(): Promise<void> {
     formErrors.value = {};
     errorMessage.value = '';
 
-    if (
-        !form.code_requirement
-            .trim()
-    ) {
-        formErrors.value
-            .code_requirement =
-            'Code is required.';
+    if (!form.code_requirement.trim()) {
+        formErrors.value.code_requirement = 'Code is required.';
     }
 
-    if (
-        !form.desc_requirement
-            .trim()
-    ) {
-        formErrors.value
-            .desc_requirement =
-            'Description is required.';
+    if (!form.desc_requirement.trim()) {
+        formErrors.value.desc_requirement = 'Description is required.';
     }
 
-    if (
-        Object.keys(
-            formErrors.value,
-        ).length
-    ) {
+    if (Object.keys(formErrors.value).length) {
         return;
     }
 
     saving.value = true;
 
-    const wasNew =
-        !form.id;
+    const wasNew = !form.id;
 
-    const payload =
-        new FormData();
+    const payload = new FormData();
 
-    payload.append(
-        'code_requirement',
-        form.code_requirement.trim(),
-    );
+    payload.append('code_requirement', form.code_requirement.trim());
 
-    payload.append(
-        'desc_requirement',
-        form.desc_requirement.trim(),
-    );
+    payload.append('desc_requirement', form.desc_requirement.trim());
 
-    payload.append(
-        'cci_reqd',
-        form.cci_reqd
-            ? 'Y'
-            : 'N',
-    );
+    payload.append('cci_reqd', form.cci_reqd ? 'Y' : 'N');
 
-    payload.append(
-        'rank_id',
-        form.rank_id
-        ?? '',
-    );
+    payload.append('rank_id', form.rank_id ?? '');
 
-    payload.append(
-        'vessel_type',
-        form.vessel_type
-        ?? '',
-    );
+    payload.append('vessel_type', form.vessel_type ?? '');
 
-    payload.append(
-        'cat_requirement',
-        form.cat_requirement.trim(),
-    );
+    payload.append('cat_requirement', form.cat_requirement.trim());
 
-    payload.append(
-        'prio',
-        form.prio !== null
-            ? String(form.prio)
-            : '',
-    );
+    payload.append('prio', form.prio !== null ? String(form.prio) : '');
 
-    if (
-        selectedTemplateFile.value
-    ) {
-        payload.append(
-            'template_file',
-            selectedTemplateFile.value,
-        );
+    if (selectedTemplateFile.value) {
+        payload.append('template_file', selectedTemplateFile.value);
     }
 
     if (!wasNew) {
-        payload.append(
-            '_method',
-            'PUT',
-        );
+        payload.append('_method', 'PUT');
     }
 
     try {
-        const response =
-            await axios.post<{
-                message: string;
-                data: DataTableRow;
-            }>(
-                wasNew
-                    ? API_BASE
-                    : `${API_BASE}/${encodeURIComponent(
-                        form.id,
-                    )}`,
-                payload,
-                requestConfig(),
-            );
+        const response = await axios.post<{
+            message: string;
+            data: DataTableRow;
+        }>(
+            wasNew ? API_BASE : `${API_BASE}/${encodeURIComponent(form.id)}`,
+            payload,
+            requestConfig(),
+        );
 
-        const data =
-            response.data.data;
+        const data = response.data.data;
 
-        form.id =
-            String(data.id ?? '');
+        form.id = String(data.id ?? '');
 
-        form.template =
-            String(
-                data.template ?? '',
-            );
+        form.template = String(data.template ?? '');
 
-        form.template_url =
-            String(
-                data.template_url
-                ?? '',
-            );
+        form.template_url = String(data.template_url ?? '');
 
-        selectedTemplateFile.value =
-            null;
+        selectedTemplateFile.value = null;
 
         fileUploadKey.value += 1;
 
@@ -672,38 +458,25 @@ async function saveRequirementType(): Promise<void> {
             summary: wasNew
                 ? 'Requirement Type Created'
                 : 'Requirement Type Updated',
-            detail:
-                response.data.message,
+            detail: response.data.message,
             life: 4000,
         });
 
-        await loadRequirementTypes(
-            wasNew
-                ? 1
-                : currentPage.value,
-        );
+        await loadRequirementTypes(wasNew ? 1 : currentPage.value);
     } catch (error: unknown) {
-        formErrors.value =
-            getValidationErrors(
-                error,
-            );
+        formErrors.value = getValidationErrors(error);
 
-        errorMessage.value =
-            getErrorMessage(
-                error,
-                'Unable to save the requirement type.',
-            );
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to save the requirement type.',
+        );
     } finally {
         saving.value = false;
     }
 }
 
 async function deleteRequirementType(): Promise<void> {
-    const id = String(
-        selectedRequirementType.value
-            ?.id
-        ?? '',
-    );
+    const id = String(selectedRequirementType.value?.id ?? '');
 
     if (!id) {
         return;
@@ -713,96 +486,67 @@ async function deleteRequirementType(): Promise<void> {
     errorMessage.value = '';
 
     try {
-        const response =
-            await axios.delete<{
-                message: string;
-            }>(
-                `${API_BASE}/${encodeURIComponent(
-                    id,
-                )}`,
-                requestConfig(),
-            );
+        const response = await axios.delete<{
+            message: string;
+        }>(`${API_BASE}/${encodeURIComponent(id)}`, requestConfig());
 
-        deleteVisible.value =
-            false;
+        deleteVisible.value = false;
 
-        selectedRequirementType.value =
-            null;
+        selectedRequirementType.value = null;
 
         toast.add({
             severity: 'success',
-            summary:
-                'Requirement Type Deleted',
-            detail:
-                response.data.message,
+            summary: 'Requirement Type Deleted',
+            detail: response.data.message,
             life: 4000,
         });
 
         await reloadCurrentPage();
     } catch (error: unknown) {
-        errorMessage.value =
-            getErrorMessage(
-                error,
-                'Unable to delete the requirement type.',
-            );
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to delete the requirement type.',
+        );
     } finally {
         deleting.value = false;
     }
 }
 
-function openTemplate(
-    row: DataTableRow,
-): void {
-    const url = String(
-        row.template_url
-        ?? '',
-    ).trim();
+function openTemplate(row: DataTableRow): void {
+    const url = String(row.template_url ?? '').trim();
 
     if (!url) {
         return;
     }
 
-    window.open(
-        url,
-        '_blank',
-        'noopener,noreferrer',
-    );
+    window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 function openCurrentTemplate(): void {
-    const url =
-        form.template_url.trim();
+    const url = form.template_url.trim();
 
     if (!url) {
         return;
     }
 
-    window.open(
-        url,
-        '_blank',
-        'noopener,noreferrer',
-    );
+    window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 function resetForm(): void {
-    Object.assign(
-        form,
-        {
-            id: '',
-            code_requirement: '',
-            desc_requirement: '',
-            cci_reqd: true,
-            rank_id: null,
-            vessel_type: null,
-            cat_requirement: '',
-            prio: 1,
-            template: '',
-            template_url: '',
-        },
-    );
+    Object.assign(form, {
+        id: '',
+        code_requirement: '',
+        desc_requirement: '',
+        cci_reqd: true,
+        rank_id: null,
+        vessel_type: null,
+        cat_requirement: '',
+        prio: 1,
+        template: '',
+        template_url: '',
+    });
 
-    selectedTemplateFile.value =
-        null;
+    selectedTemplateFile.value = null;
 
     formErrors.value = {};
 
@@ -810,116 +554,66 @@ function resetForm(): void {
 }
 
 async function reloadCurrentPage(): Promise<void> {
-    await loadRequirementTypes(
-        currentPage.value,
-    );
+    await loadRequirementTypes(currentPage.value);
 
-    if (
-        !requirementTypes.value
-            .length
-        &&
-        currentPage.value > 1
-    ) {
-        await loadRequirementTypes(
-            currentPage.value - 1,
-        );
+    if (!requirementTypes.value.length && currentPage.value > 1) {
+        await loadRequirementTypes(currentPage.value - 1);
     }
 }
 
 function requestConfig() {
     return {
         headers: {
-            Accept:
-                'application/json',
-            'X-Requested-With':
-                'XMLHttpRequest',
+            Accept: 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
         },
 
         withCredentials: true,
     };
 }
 
-function isCanceled(
-    error: unknown,
-): boolean {
+function isCanceled(error: unknown): boolean {
     return (
-        axios.isCancel(error)
-        ||
-        (
-            axios.isAxiosError(
-                error,
-            )
-            &&
-            error.code ===
-                'ERR_CANCELED'
-        )
+        axios.isCancel(error) ||
+        (axios.isAxiosError(error) && error.code === 'ERR_CANCELED')
     );
 }
 
-function getErrorMessage(
-    error: unknown,
-    fallback: string,
-): string {
-    if (
-        !axios.isAxiosError(
-            error,
-        )
-    ) {
+function getErrorMessage(error: unknown, fallback: string): string {
+    if (!axios.isAxiosError(error)) {
         return fallback;
     }
 
     return (
         (
-            error.response
-                ?.data as
+            error.response?.data as
                 | {
                       message?: string;
                   }
                 | undefined
-        )?.message
-        ||
-        fallback
+        )?.message || fallback
     );
 }
 
-function getValidationErrors(
-    error: unknown,
-): Errors {
-    if (
-        !axios.isAxiosError(
-            error,
-        )
-    ) {
+function getValidationErrors(error: unknown): Errors {
+    if (!axios.isAxiosError(error)) {
         return {};
     }
 
     const source =
         (
-            error.response
-                ?.data as
+            error.response?.data as
                 | {
-                      errors?: Record<
-                          string,
-                          string[]
-                      >;
+                      errors?: Record<string, string[]>;
                   }
                 | undefined
-        )?.errors
-        ?? {};
+        )?.errors ?? {};
 
     return Object.fromEntries(
-        Object.entries(
-            source,
-        ).map(
-            ([
-                key,
-                messages,
-            ]) => [
-                key,
-                messages[0]
-                ?? 'Invalid value.',
-            ],
-        ),
+        Object.entries(source).map(([key, messages]) => [
+            key,
+            messages[0] ?? 'Invalid value.',
+        ]),
     );
 }
 
@@ -987,9 +681,7 @@ onBeforeUnmount(() => {
                 />
             </template>
             <template #cell-code_requirement="{ value }">
-                <span
-                    class="font-semibold text-slate-700"
-                >
+                <span class="font-semibold text-slate-700">
                     {{ value || '—' }}
                 </span>
             </template>
@@ -1000,27 +692,16 @@ onBeforeUnmount(() => {
                         class="pi pi-list-check mt-0.5 shrink-0 text-green-500"
                     ></i>
 
-                    <span
-                        class="font-medium text-slate-700"
-                    >
+                    <span class="font-medium text-slate-700">
                         {{ value || '—' }}
                     </span>
                 </div>
             </template>
 
             <template #cell-cci_reqd="{ value }">
-                
                 <PrimeTag
-                    :value="
-                        value === 'Y'
-                            ? 'Required'
-                            : 'Not Required'
-                    "
-                    :severity="
-                        value === 'Y'
-                            ? 'success'
-                            : 'secondary'
-                    "
+                    :value="value === 'Y' ? 'Required' : 'Not Required'"
+                    :severity="value === 'Y' ? 'success' : 'secondary'"
                     :icon="
                         value === 'Y'
                             ? 'pi pi-check-circle'
@@ -1031,25 +712,19 @@ onBeforeUnmount(() => {
             </template>
 
             <template #cell-rank_name="{ value }">
-                <span
-                    class="text-sm text-slate-600"
-                >
+                <span class="text-sm text-slate-600">
                     {{ value || 'All Ranks' }}
                 </span>
             </template>
 
             <template #cell-vessel_type_name="{ value }">
-                <span
-                    class="text-sm text-slate-600"
-                >
+                <span class="text-sm text-slate-600">
                     {{ value || 'All Vessel Types' }}
                 </span>
             </template>
 
             <template #cell-cat_requirement="{ value }">
-                <span
-                    class="text-sm text-slate-600"
-                >
+                <span class="text-sm text-slate-600">
                     {{ value || '—' }}
                 </span>
             </template>
@@ -1058,12 +733,7 @@ onBeforeUnmount(() => {
                 <Button
                     v-if="data.template_url"
                     type="button"
-                    :label="
-                        String(
-                            data.template
-                            || 'Open Template',
-                        )
-                    "
+                    :label="String(data.template || 'Open Template')"
                     icon="pi pi-download"
                     severity="info"
                     text
@@ -1071,12 +741,7 @@ onBeforeUnmount(() => {
                     @click="openTemplate(data)"
                 />
 
-                <span
-                    v-else
-                    class="text-sm text-slate-400"
-                >
-                    —
-                </span>
+                <span v-else class="text-sm text-slate-400"> — </span>
             </template>
         </Datatable>
 
@@ -1088,40 +753,28 @@ onBeforeUnmount(() => {
             class="w-[min(96vw,940px)]"
             :draggable="false"
         >
-            <div
-                class="grid gap-4 md:grid-cols-2"
-            >
+            <div class="grid gap-4 md:grid-cols-2">
                 <div>
                     <label
                         class="mb-2 block text-sm font-semibold text-slate-700"
                     >
                         Code
-                        <span class="text-red-500">
-                            *
-                        </span>
+                        <span class="text-red-500"> * </span>
                     </label>
 
                     <InputText
                         v-model="form.code_requirement"
                         class="w-full"
                         maxlength="100"
-                        :invalid="
-                            Boolean(
-                                formErrors.code_requirement,
-                            )
-                        "
+                        :invalid="Boolean(formErrors.code_requirement)"
                         :disabled="saving"
                     />
 
                     <small
-                        v-if="
-                            formErrors.code_requirement
-                        "
+                        v-if="formErrors.code_requirement"
                         class="text-red-500"
                     >
-                        {{
-                            formErrors.code_requirement
-                        }}
+                        {{ formErrors.code_requirement }}
                     </small>
                 </div>
 
@@ -1130,32 +783,22 @@ onBeforeUnmount(() => {
                         class="mb-2 block text-sm font-semibold text-slate-700"
                     >
                         Requirement Name
-                        <span class="text-red-500">
-                            *
-                        </span>
+                        <span class="text-red-500"> * </span>
                     </label>
 
                     <InputText
                         v-model="form.desc_requirement"
                         class="w-full"
                         maxlength="200"
-                        :invalid="
-                            Boolean(
-                                formErrors.desc_requirement,
-                            )
-                        "
+                        :invalid="Boolean(formErrors.desc_requirement)"
                         :disabled="saving"
                     />
 
                     <small
-                        v-if="
-                            formErrors.desc_requirement
-                        "
+                        v-if="formErrors.desc_requirement"
                         class="text-red-500"
                     >
-                        {{
-                            formErrors.desc_requirement
-                        }}
+                        {{ formErrors.desc_requirement }}
                     </small>
                 </div>
 
@@ -1176,16 +819,10 @@ onBeforeUnmount(() => {
                         filter
                         class="w-full"
                         :loading="optionsLoading"
-                        :disabled="
-                            saving
-                            || optionsLoading
-                        "
+                        :disabled="saving || optionsLoading"
                     />
 
-                    <small
-                        v-if="formErrors.rank_id"
-                        class="text-red-500"
-                    >
+                    <small v-if="formErrors.rank_id" class="text-red-500">
                         {{ formErrors.rank_id }}
                     </small>
                 </div>
@@ -1207,21 +844,11 @@ onBeforeUnmount(() => {
                         filter
                         class="w-full"
                         :loading="optionsLoading"
-                        :disabled="
-                            saving
-                            || optionsLoading
-                        "
+                        :disabled="saving || optionsLoading"
                     />
 
-                    <small
-                        v-if="
-                            formErrors.vessel_type
-                        "
-                        class="text-red-500"
-                    >
-                        {{
-                            formErrors.vessel_type
-                        }}
+                    <small v-if="formErrors.vessel_type" class="text-red-500">
+                        {{ formErrors.vessel_type }}
                     </small>
                 </div>
 
@@ -1236,23 +863,15 @@ onBeforeUnmount(() => {
                         v-model="form.cat_requirement"
                         class="w-full"
                         maxlength="20"
-                        :invalid="
-                            Boolean(
-                                formErrors.cat_requirement,
-                            )
-                        "
+                        :invalid="Boolean(formErrors.cat_requirement)"
                         :disabled="saving"
                     />
 
                     <small
-                        v-if="
-                            formErrors.cat_requirement
-                        "
+                        v-if="formErrors.cat_requirement"
                         class="text-red-500"
                     >
-                        {{
-                            formErrors.cat_requirement
-                        }}
+                        {{ formErrors.cat_requirement }}
                     </small>
                 </div>
 
@@ -1267,18 +886,11 @@ onBeforeUnmount(() => {
                         v-model="form.prio"
                         class="w-full"
                         :use-grouping="false"
-                        :invalid="
-                            Boolean(
-                                formErrors.prio,
-                            )
-                        "
+                        :invalid="Boolean(formErrors.prio)"
                         :disabled="saving"
                     />
 
-                    <small
-                        v-if="formErrors.prio"
-                        class="text-red-500"
-                    >
+                    <small v-if="formErrors.prio" class="text-red-500">
                         {{ formErrors.prio }}
                     </small>
                 </div>
@@ -1300,10 +912,9 @@ onBeforeUnmount(() => {
                             CCI Required
                         </label>
 
-                        <p
-                            class="mt-0.5 text-xs text-slate-500"
-                        >
-                            Enable this when the requirement is required for CCI.
+                        <p class="mt-0.5 text-xs text-slate-500">
+                            Enable this when the requirement is required for
+                            CCI.
                         </p>
                     </div>
                 </div>
@@ -1315,16 +926,13 @@ onBeforeUnmount(() => {
                         class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
                     >
                         <div>
-                            <p
-                                class="text-sm font-semibold text-slate-700"
-                            >
+                            <p class="text-sm font-semibold text-slate-700">
                                 Requirement Template
                             </p>
 
-                            <p
-                                class="mt-1 text-xs text-slate-500"
-                            >
-                                Allowed: JPG, JPEG, PNG, GIF, BMP, PDF, DOC, DOCX, XLS, XLSX, CSV.
+                            <p class="mt-1 text-xs text-slate-500">
+                                Allowed: JPG, JPEG, PNG, GIF, BMP, PDF, DOC,
+                                DOCX, XLS, XLSX, CSV.
                             </p>
                         </div>
 
@@ -1376,14 +984,10 @@ onBeforeUnmount(() => {
                     </div>
 
                     <small
-                        v-if="
-                            formErrors.template_file
-                        "
+                        v-if="formErrors.template_file"
                         class="mt-2 block text-red-500"
                     >
-                        {{
-                            formErrors.template_file
-                        }}
+                        {{ formErrors.template_file }}
                     </small>
                 </div>
             </div>
@@ -1395,10 +999,7 @@ onBeforeUnmount(() => {
                     severity="secondary"
                     outlined
                     :disabled="saving"
-                    @click="
-                        dialogVisible =
-                            false
-                    "
+                    @click="dialogVisible = false"
                 />
 
                 <Button
@@ -1423,10 +1024,8 @@ onBeforeUnmount(() => {
                 Are you sure you want to delete
                 <strong>
                     {{
-                        selectedRequirementType?.desc_requirement
-                        ||
-                        selectedRequirementType?.code_requirement
-                        ||
+                        selectedRequirementType?.desc_requirement ||
+                        selectedRequirementType?.code_requirement ||
                         'this requirement type'
                     }}
                 </strong>
@@ -1439,10 +1038,7 @@ onBeforeUnmount(() => {
                     severity="secondary"
                     outlined
                     :disabled="deleting"
-                    @click="
-                        deleteVisible =
-                            false
-                    "
+                    @click="deleteVisible = false"
                 />
 
                 <Button

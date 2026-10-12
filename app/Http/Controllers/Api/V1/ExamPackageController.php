@@ -17,8 +17,7 @@ class ExamPackageController extends Controller
 {
     public function __construct(
         private readonly DatatableService $datatableService,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -182,8 +181,7 @@ class ExamPackageController extends Controller
         if ($db->table('bs_topic')->where('bs_course_id', $packageId)->exists()) {
             return response()->json(
                 [
-                    'message' =>
-                        'Delete all subjects before deleting this exam package.',
+                    'message' => 'Delete all subjects before deleting this exam package.',
                 ],
                 Response::HTTP_CONFLICT,
             );

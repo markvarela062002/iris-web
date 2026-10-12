@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
@@ -22,8 +23,8 @@ use Illuminate\Notifications\Notifiable;
  * @property string|null $lname
  * @property string|null $fname
  * @property string|null $mname
- * @property \Illuminate\Support\Carbon|null $eula_signed
- * @property \Illuminate\Support\Carbon|null $expiration_date
+ * @property Carbon|null $eula_signed
+ * @property Carbon|null $expiration_date
  * @property-read string $full_name
  * @property-read string $profile_image
  * @property-read string $avatar
@@ -77,12 +78,7 @@ class User extends Authenticatable
      */
     public $timestamps = false;
 
-    /**
-     * Include computed attributes when the authenticated
-     * user is serialized for Inertia.
-     *
-     * @var array<int, string>
-     */
+    /** @var list<string> */
     protected $appends = [
         'full_name',
         'profile_image',
@@ -126,13 +122,11 @@ class User extends Authenticatable
             $this->lname,
         ])
             ->filter(
-                fn (mixed $name): bool =>
-                    is_string($name) &&
+                fn (mixed $name): bool => is_string($name) &&
                     trim($name) !== '',
             )
             ->map(
-                fn (string $name): string =>
-                    trim($name),
+                fn (string $name): string => trim($name),
             )
             ->implode(' ');
     }
@@ -180,6 +174,7 @@ class User extends Authenticatable
      *
      * login.login_type_id references login_type.id.
      */
+    /** @return BelongsTo<LoginType, $this> */
     public function loginType(): BelongsTo
     {
         return $this->belongsTo(

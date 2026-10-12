@@ -122,20 +122,15 @@ class RemoteFileController extends Controller
                 },
                 Response::HTTP_OK,
                 [
-                    'Content-Type' =>
-                        $mimeType,
+                    'Content-Type' => $mimeType,
 
-                    'Content-Disposition' =>
-                        $disposition,
+                    'Content-Disposition' => $disposition,
 
-                    'Cache-Control' =>
-                        'private, max-age=3600',
+                    'Cache-Control' => 'private, max-age=3600',
 
-                    'Pragma' =>
-                        'private',
+                    'Pragma' => 'private',
 
-                    'X-Content-Type-Options' =>
-                        'nosniff',
+                    'X-Content-Type-Options' => 'nosniff',
                 ],
             );
         } catch (Throwable $exception) {
@@ -151,19 +146,15 @@ class RemoteFileController extends Controller
             Log::error(
                 'Unable to read a remote FTP file.',
                 [
-                    'school_code' =>
-                        $request
-                            ->session()
-                            ->get('school_code'),
+                    'school_code' => $request
+                        ->session()
+                        ->get('school_code'),
 
-                    'disk' =>
-                        $diskName,
+                    'disk' => $diskName,
 
-                    'filename' =>
-                        $safeFilename,
+                    'filename' => $safeFilename,
 
-                    'exception' =>
-                        $exception->getMessage(),
+                    'exception' => $exception->getMessage(),
                 ],
             );
 
@@ -358,38 +349,27 @@ class RemoteFileController extends Controller
                 ),
             )
         ) {
-            'pdf' =>
-                'application/pdf',
+            'pdf' => 'application/pdf',
 
-            'jpg', 'jpeg' =>
-                'image/jpeg',
+            'jpg', 'jpeg' => 'image/jpeg',
 
-            'png' =>
-                'image/png',
+            'png' => 'image/png',
 
-            'gif' =>
-                'image/gif',
+            'gif' => 'image/gif',
 
-            'webp' =>
-                'image/webp',
+            'webp' => 'image/webp',
 
-            'doc' =>
-                'application/msword',
+            'doc' => 'application/msword',
 
-            'docx' =>
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 
-            'xls' =>
-                'application/vnd.ms-excel',
+            'xls' => 'application/vnd.ms-excel',
 
-            'xlsx' =>
-                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 
-            'txt' =>
-                'text/plain; charset=UTF-8',
+            'txt' => 'text/plain; charset=UTF-8',
 
-            default =>
-                'application/octet-stream',
+            default => 'application/octet-stream',
         };
     }
 

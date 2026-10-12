@@ -10,10 +10,7 @@ export type DataTableColumn = {
     class?: string;
     headerClass?: string;
     bodyClass?: string;
-    format?: (
-        value: unknown,
-        row: DataTableRow,
-    ) => string | number;
+    format?: (value: unknown, row: DataTableRow) => string | number;
 };
 
 export type DataTableAction = {

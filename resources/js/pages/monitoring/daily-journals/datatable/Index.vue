@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import {
-    Head,
-    router,
-} from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import axios from 'axios';
 import Avatar from 'primevue/avatar';
 import Button from 'primevue/button';
@@ -16,12 +13,7 @@ import PrimeTag from 'primevue/tag';
 import Textarea from 'primevue/textarea';
 import Toast from 'primevue/toast';
 import { useToast } from 'primevue/usetoast';
-import {
-    computed,
-    onBeforeUnmount,
-    onMounted,
-    ref,
-} from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 const props = defineProps<{
     journalId: string;
 }>();
@@ -121,13 +113,9 @@ type FileUploadSelectEvent = {
     files?: File[];
 };
 
-type DepartmentSeverity =
-    | 'success'
-    | 'info'
-    | 'secondary';
+type DepartmentSeverity = 'success' | 'info' | 'secondary';
 
-const API =
-    '/api/v1/monitoring/daily-journals';
+const API = '/api/v1/monitoring/daily-journals';
 
 const toast = useToast();
 
@@ -141,27 +129,21 @@ const signing = ref(false);
 
 const pageError = ref('');
 
-const journal =
-    ref<JournalRecord | null>(null);
+const journal = ref<JournalRecord | null>(null);
 
-const selectedEvidence =
-    ref<File | null>(null);
+const selectedEvidence = ref<File | null>(null);
 
 const evidenceUploadKey = ref(0);
 
-let requestController:
-    | AbortController
-    | null = null;
+let requestController: AbortController | null = null;
 
-const signatureCanvas =
-    ref<HTMLCanvasElement | null>(null);
+const signatureCanvas = ref<HTMLCanvasElement | null>(null);
 
 const signatureDrawing = ref(false);
 
 const signatureHasInk = ref(false);
 
-const signaturePointerId =
-    ref<number | null>(null);
+const signaturePointerId = ref<number | null>(null);
 
 function emptyForm(): JournalForm {
     return {
@@ -189,46 +171,30 @@ function emptyForm(): JournalForm {
     };
 }
 
-const form = ref<JournalForm>(
-    emptyForm(),
-);
+const form = ref<JournalForm>(emptyForm());
 
-const isValidated = computed(
-    () => journal.value?.validated === true,
-);
+const isValidated = computed(() => journal.value?.validated === true);
 
 const isDeck = computed(
     () =>
-        String(
-            journal.value?.department ?? '',
-        )
+        String(journal.value?.department ?? '')
             .trim()
             .toUpperCase() === 'DECK',
 );
 
 const studentName = computed(() => {
-    return (
-        journal.value?.student_name ||
-        'DAILY JOURNAL'
-    );
+    return journal.value?.student_name || 'DAILY JOURNAL';
 });
 
 const studentInitials = computed(() => {
-    const first = String(
-        journal.value?.fname ?? '',
-    )
+    const first = String(journal.value?.fname ?? '')
         .trim()
         .charAt(0);
-    const last = String(
-        journal.value?.lname ?? '',
-    )
+    const last = String(journal.value?.lname ?? '')
         .trim()
         .charAt(0);
 
-    return (
-        `${first}${last}`.toUpperCase() ||
-        'ST'
-    );
+    return `${first}${last}`.toUpperCase() || 'ST';
 });
 
 const defaultAvatarUrl = computed<string>(() => {
@@ -254,21 +220,15 @@ const activityLabel = computed(() => {
 });
 
 const isEvidenceImage = computed(() => {
-    const filename = String(
-        journal.value?.file_name ?? '',
-    )
+    const filename = String(journal.value?.file_name ?? '')
         .trim()
         .toLowerCase();
 
-    return /\.(jpg|jpeg|png|gif|webp)$/i.test(
-        filename,
-    );
+    return /\.(jpg|jpeg|png|gif|webp)$/i.test(filename);
 });
 
 function departmentSeverity(): DepartmentSeverity {
-    const department = String(
-        journal.value?.department ?? '',
-    )
+    const department = String(journal.value?.department ?? '')
         .trim()
         .toUpperCase();
 
@@ -284,9 +244,7 @@ function departmentSeverity(): DepartmentSeverity {
 }
 
 function departmentIcon(): string {
-    const department = String(
-        journal.value?.department ?? '',
-    )
+    const department = String(journal.value?.department ?? '')
         .trim()
         .toUpperCase();
 
@@ -301,46 +259,32 @@ function departmentIcon(): string {
     return 'pi pi-building';
 }
 
-function stringValue(
-    value: unknown,
-): string {
+function stringValue(value: unknown): string {
     return String(value ?? '').trim();
 }
 
-function parseDate(
-    value: unknown,
-): Date | null {
+function parseDate(value: unknown): Date | null {
     const text = stringValue(value);
 
     if (!text) {
         return null;
     }
 
-    const date = new Date(
-        `${text.substring(0, 10)}T00:00:00`,
-    );
+    const date = new Date(`${text.substring(0, 10)}T00:00:00`);
 
-    return Number.isNaN(date.getTime())
-        ? null
-        : date;
+    return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function parseTime(
-    value: unknown,
-): Date | null {
+function parseTime(value: unknown): Date | null {
     const text = stringValue(value);
 
     if (!text) {
         return null;
     }
 
-    const [hours, minutes] =
-        text.split(':').map(Number);
+    const [hours, minutes] = text.split(':').map(Number);
 
-    if (
-        !Number.isFinite(hours) ||
-        !Number.isFinite(minutes)
-    ) {
+    if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
         return null;
     }
 
@@ -350,146 +294,93 @@ function parseTime(
     return date;
 }
 
-function formatDateParameter(
-    value: Date | null,
-): string | null {
+function formatDateParameter(value: Date | null): string | null {
     if (!value) {
         return null;
     }
 
     const year = value.getFullYear();
-    const month = String(
-        value.getMonth() + 1,
-    ).padStart(2, '0');
-    const day = String(
-        value.getDate(),
-    ).padStart(2, '0');
+    const month = String(value.getMonth() + 1).padStart(2, '0');
+    const day = String(value.getDate()).padStart(2, '0');
 
     return `${year}-${month}-${day}`;
 }
 
-function formatTimeParameter(
-    value: Date | null,
-): string | null {
+function formatTimeParameter(value: Date | null): string | null {
     if (!value) {
         return null;
     }
 
-    const hours = String(
-        value.getHours(),
-    ).padStart(2, '0');
-    const minutes = String(
-        value.getMinutes(),
-    ).padStart(2, '0');
+    const hours = String(value.getHours()).padStart(2, '0');
+    const minutes = String(value.getMinutes()).padStart(2, '0');
 
     return `${hours}:${minutes}`;
 }
 
-function loadIntoForm(
-    record: JournalRecord,
-): void {
+function loadIntoForm(record: JournalRecord): void {
     form.value = {
-        date_journal:
-            parseDate(record.date_journal),
-        journal_time:
-            parseTime(record.journal_time),
-        journal_time_to:
-            parseTime(record.journal_time_to),
-        vessel_name:
-            stringValue(record.vessel_name),
-        ship_lat:
-            stringValue(record.ship_lat),
-        ship_long:
-            stringValue(record.ship_long),
-        ship_vicinity:
-            stringValue(record.ship_vicinity),
-        port_depart:
-            stringValue(record.port_depart),
-        port_dest:
-            stringValue(record.port_dest),
-        pos_fix:
-            stringValue(record.pos_fix),
-        course_speed:
-            stringValue(record.course_speed),
-        fo_rob:
-            stringValue(record.fo_rob),
-        fo_dob:
-            stringValue(record.fo_dob),
-        fo_lob:
-            stringValue(record.fo_lob),
-        fo_cons:
-            stringValue(record.fo_cons),
-        do_cons:
-            stringValue(record.do_cons),
-        average_rpm:
-            stringValue(record.average_rpm),
-        average_speed:
-            stringValue(record.average_speed),
-        activities:
-            stringValue(record.activities),
-        key_areas:
-            stringValue(record.key_areas),
-        sto_name:
-            stringValue(record.sto_name),
+        date_journal: parseDate(record.date_journal),
+        journal_time: parseTime(record.journal_time),
+        journal_time_to: parseTime(record.journal_time_to),
+        vessel_name: stringValue(record.vessel_name),
+        ship_lat: stringValue(record.ship_lat),
+        ship_long: stringValue(record.ship_long),
+        ship_vicinity: stringValue(record.ship_vicinity),
+        port_depart: stringValue(record.port_depart),
+        port_dest: stringValue(record.port_dest),
+        pos_fix: stringValue(record.pos_fix),
+        course_speed: stringValue(record.course_speed),
+        fo_rob: stringValue(record.fo_rob),
+        fo_dob: stringValue(record.fo_dob),
+        fo_lob: stringValue(record.fo_lob),
+        fo_cons: stringValue(record.fo_cons),
+        do_cons: stringValue(record.do_cons),
+        average_rpm: stringValue(record.average_rpm),
+        average_speed: stringValue(record.average_speed),
+        activities: stringValue(record.activities),
+        key_areas: stringValue(record.key_areas),
+        sto_name: stringValue(record.sto_name),
     };
 }
 
 async function loadJournal(): Promise<void> {
     requestController?.abort();
-    const controller =
-        new AbortController();
+    const controller = new AbortController();
     requestController = controller;
     loading.value = true;
     pageError.value = '';
 
     try {
-        const response =
-            await axios.get<JournalResponse>(
-                `${API}/${encodeURIComponent(
-                    props.journalId,
-                )}`,
-                {
-                    signal:
-                        controller.signal,
-                    headers: {
-                        Accept:
-                            'application/json',
-                        'X-Requested-With':
-                            'XMLHttpRequest',
-                    },
-                    withCredentials: true,
+        const response = await axios.get<JournalResponse>(
+            `${API}/${encodeURIComponent(props.journalId)}`,
+            {
+                signal: controller.signal,
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
-            );
-        journal.value =
-            response.data.data;
-        loadIntoForm(
-            response.data.data,
+                withCredentials: true,
+            },
         );
+        journal.value = response.data.data;
+        loadIntoForm(response.data.data);
         selectedEvidence.value = null;
         evidenceUploadKey.value += 1;
         clearSignature();
     } catch (error: unknown) {
         if (
             axios.isCancel(error) ||
-            (
-                axios.isAxiosError(error) &&
-                error.code ===
-                    'ERR_CANCELED'
-            )
+            (axios.isAxiosError(error) && error.code === 'ERR_CANCELED')
         ) {
             return;
         }
 
-        pageError.value =
-            getErrorMessage(
-                error,
-                'Unable to load the daily journal.',
-            );
+        pageError.value = getErrorMessage(
+            error,
+            'Unable to load the daily journal.',
+        );
     } finally {
-        if (
-            requestController ===
-            controller
-        ) {
+        if (requestController === controller) {
             loading.value = false;
         }
     }
@@ -497,60 +388,31 @@ async function loadJournal(): Promise<void> {
 
 function buildPayload() {
     return {
-        date_journal:
-            formatDateParameter(
-                form.value.date_journal,
-            ),
-        journal_time:
-            formatTimeParameter(
-                form.value.journal_time,
-            ),
-        journal_time_to:
-            formatTimeParameter(
-                form.value.journal_time_to,
-            ),
-        vessel_name:
-            form.value.vessel_name.trim(),
-        ship_lat:
-            form.value.ship_lat.trim(),
-        ship_long:
-            form.value.ship_long.trim(),
-        ship_vicinity:
-            form.value.ship_vicinity.trim(),
-        port_depart:
-            form.value.port_depart.trim(),
-        port_dest:
-            form.value.port_dest.trim(),
-        pos_fix:
-            form.value.pos_fix.trim(),
-        course_speed:
-            form.value.course_speed.trim(),
-        fo_rob:
-            form.value.fo_rob.trim(),
-        fo_dob:
-            form.value.fo_dob.trim(),
-        fo_lob:
-            form.value.fo_lob.trim(),
-        fo_cons:
-            form.value.fo_cons.trim(),
-        do_cons:
-            form.value.do_cons.trim(),
-        average_rpm:
-            form.value.average_rpm.trim(),
-        average_speed:
-            form.value.average_speed.trim(),
-        activities:
-            form.value.activities.trim(),
-        key_areas:
-            form.value.key_areas.trim(),
-        sto_name:
-            form.value.sto_name.trim(),
+        date_journal: formatDateParameter(form.value.date_journal),
+        journal_time: formatTimeParameter(form.value.journal_time),
+        journal_time_to: formatTimeParameter(form.value.journal_time_to),
+        vessel_name: form.value.vessel_name.trim(),
+        ship_lat: form.value.ship_lat.trim(),
+        ship_long: form.value.ship_long.trim(),
+        ship_vicinity: form.value.ship_vicinity.trim(),
+        port_depart: form.value.port_depart.trim(),
+        port_dest: form.value.port_dest.trim(),
+        pos_fix: form.value.pos_fix.trim(),
+        course_speed: form.value.course_speed.trim(),
+        fo_rob: form.value.fo_rob.trim(),
+        fo_dob: form.value.fo_dob.trim(),
+        fo_lob: form.value.fo_lob.trim(),
+        fo_cons: form.value.fo_cons.trim(),
+        do_cons: form.value.do_cons.trim(),
+        average_rpm: form.value.average_rpm.trim(),
+        average_speed: form.value.average_speed.trim(),
+        activities: form.value.activities.trim(),
+        key_areas: form.value.key_areas.trim(),
+        sto_name: form.value.sto_name.trim(),
     };
 }
 
-async function saveJournal(
-    showSuccessToast = true,
-): Promise<boolean> {
+async function saveJournal(showSuccessToast = true): Promise<boolean> {
     if (!journal.value) {
         return false;
     }
@@ -559,27 +421,19 @@ async function saveJournal(
     pageError.value = '';
 
     try {
-        const response =
-            await axios.put<JournalResponse>(
-                `${API}/${encodeURIComponent(
-                    props.journalId,
-                )}`,
-                buildPayload(),
-                {
-                    headers: {
-                        Accept:
-                            'application/json',
-                        'X-Requested-With':
-                            'XMLHttpRequest',
-                    },
-                    withCredentials: true,
+        const response = await axios.put<JournalResponse>(
+            `${API}/${encodeURIComponent(props.journalId)}`,
+            buildPayload(),
+            {
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
-            );
-        journal.value =
-            response.data.data;
-        loadIntoForm(
-            response.data.data,
+                withCredentials: true,
+            },
         );
+        journal.value = response.data.data;
+        loadIntoForm(response.data.data);
 
         if (showSuccessToast) {
             toast.add({
@@ -594,11 +448,10 @@ async function saveJournal(
 
         return true;
     } catch (error: unknown) {
-        pageError.value =
-            getErrorMessage(
-                error,
-                'Unable to save the daily journal.',
-            );
+        pageError.value = getErrorMessage(
+            error,
+            'Unable to save the daily journal.',
+        );
 
         return false;
     } finally {
@@ -606,11 +459,8 @@ async function saveJournal(
     }
 }
 
-function handleEvidenceSelect(
-    event: FileUploadSelectEvent,
-): void {
-    selectedEvidence.value =
-        event.files?.[0] ?? null;
+function handleEvidenceSelect(event: FileUploadSelectEvent): void {
+    selectedEvidence.value = event.files?.[0] ?? null;
 }
 
 async function uploadEvidence(): Promise<void> {
@@ -621,33 +471,22 @@ async function uploadEvidence(): Promise<void> {
     evidenceUploading.value = true;
     pageError.value = '';
     const formData = new FormData();
-    formData.append(
-        'evidence',
-        selectedEvidence.value,
-    );
+    formData.append('evidence', selectedEvidence.value);
 
     try {
-        const response =
-            await axios.post<JournalResponse>(
-                `${API}/${encodeURIComponent(
-                    props.journalId,
-                )}/evidence`,
-                formData,
-                {
-                    headers: {
-                        Accept:
-                            'application/json',
-                        'X-Requested-With':
-                            'XMLHttpRequest',
-                    },
-                    withCredentials: true,
+        const response = await axios.post<JournalResponse>(
+            `${API}/${encodeURIComponent(props.journalId)}/evidence`,
+            formData,
+            {
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
-            );
-        journal.value =
-            response.data.data;
-        loadIntoForm(
-            response.data.data,
+                withCredentials: true,
+            },
         );
+        journal.value = response.data.data;
+        loadIntoForm(response.data.data);
         selectedEvidence.value = null;
         evidenceUploadKey.value += 1;
         toast.add({
@@ -659,136 +498,94 @@ async function uploadEvidence(): Promise<void> {
             life: 3500,
         });
     } catch (error: unknown) {
-        pageError.value =
-            getErrorMessage(
-                error,
-                'Unable to upload the objective evidence.',
-            );
+        pageError.value = getErrorMessage(
+            error,
+            'Unable to upload the objective evidence.',
+        );
     } finally {
         evidenceUploading.value = false;
     }
 }
 
 function openEvidence(): void {
-    const url = String(
-        journal.value?.evidence_url ?? '',
-    ).trim();
+    const url = String(journal.value?.evidence_url ?? '').trim();
 
     if (!url) {
         return;
     }
 
-    window.open(
-        url,
-        '_blank',
-        'noopener,noreferrer',
-    );
+    window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 function openOfficerSignature(): void {
-    const url = String(
-        journal.value?.officer_signature_url ?? '',
-    ).trim();
+    const url = String(journal.value?.officer_signature_url ?? '').trim();
 
     if (!url) {
         return;
     }
 
-    window.open(
-        url,
-        '_blank',
-        'noopener,noreferrer',
-    );
+    window.open(url, '_blank', 'noopener,noreferrer');
 }
 
-function pointerPosition(
-    event: PointerEvent,
-): {
+function pointerPosition(event: PointerEvent): {
     x: number;
     y: number;
 } | null {
-    const canvas =
-        signatureCanvas.value;
+    const canvas = signatureCanvas.value;
 
     if (!canvas) {
         return null;
     }
 
-    const rectangle =
-        canvas.getBoundingClientRect();
+    const rectangle = canvas.getBoundingClientRect();
 
     return {
-        x:
-            (event.clientX -
-                rectangle.left) *
-            (canvas.width /
-                rectangle.width),
-        y:
-            (event.clientY -
-                rectangle.top) *
-            (canvas.height /
-                rectangle.height),
+        x: (event.clientX - rectangle.left) * (canvas.width / rectangle.width),
+        y: (event.clientY - rectangle.top) * (canvas.height / rectangle.height),
     };
 }
 
-function beginSignature(
-    event: PointerEvent,
-): void {
+function beginSignature(event: PointerEvent): void {
     if (isValidated.value) {
         return;
     }
 
-    const canvas =
-        signatureCanvas.value;
-    const position =
-        pointerPosition(event);
+    const canvas = signatureCanvas.value;
+    const position = pointerPosition(event);
 
     if (!canvas || !position) {
         return;
     }
 
     signatureDrawing.value = true;
-    signaturePointerId.value =
-        event.pointerId;
-    canvas.setPointerCapture(
-        event.pointerId,
-    );
-    const context =
-        canvas.getContext('2d');
+    signaturePointerId.value = event.pointerId;
+    canvas.setPointerCapture(event.pointerId);
+    const context = canvas.getContext('2d');
 
     if (!context) {
         return;
     }
 
     context.beginPath();
-    context.moveTo(
-        position.x,
-        position.y,
-    );
+    context.moveTo(position.x, position.y);
 }
 
-function drawSignature(
-    event: PointerEvent,
-): void {
+function drawSignature(event: PointerEvent): void {
     if (
         !signatureDrawing.value ||
-        signaturePointerId.value !==
-            event.pointerId
+        signaturePointerId.value !== event.pointerId
     ) {
         return;
     }
 
-    const canvas =
-        signatureCanvas.value;
-    const position =
-        pointerPosition(event);
+    const canvas = signatureCanvas.value;
+    const position = pointerPosition(event);
 
     if (!canvas || !position) {
         return;
     }
 
-    const context =
-        canvas.getContext('2d');
+    const context = canvas.getContext('2d');
 
     if (!context) {
         return;
@@ -798,53 +595,31 @@ function drawSignature(
     context.lineCap = 'round';
     context.lineJoin = 'round';
     context.strokeStyle = '#0f172a';
-    context.lineTo(
-        position.x,
-        position.y,
-    );
+    context.lineTo(position.x, position.y);
     context.stroke();
     signatureHasInk.value = true;
 }
 
-function endSignature(
-    event: PointerEvent,
-): void {
-    if (
-        signaturePointerId.value !==
-        event.pointerId
-    ) {
+function endSignature(event: PointerEvent): void {
+    if (signaturePointerId.value !== event.pointerId) {
         return;
     }
 
-    const canvas =
-        signatureCanvas.value;
+    const canvas = signatureCanvas.value;
     signatureDrawing.value = false;
     signaturePointerId.value = null;
 
-    if (
-        canvas?.hasPointerCapture(
-            event.pointerId,
-        )
-    ) {
-        canvas.releasePointerCapture(
-            event.pointerId,
-        );
+    if (canvas?.hasPointerCapture(event.pointerId)) {
+        canvas.releasePointerCapture(event.pointerId);
     }
 }
 
 function clearSignature(): void {
-    const canvas =
-        signatureCanvas.value;
+    const canvas = signatureCanvas.value;
 
     if (canvas) {
-        const context =
-            canvas.getContext('2d');
-        context?.clearRect(
-            0,
-            0,
-            canvas.width,
-            canvas.height,
-        );
+        const context = canvas.getContext('2d');
+        context?.clearRect(0, 0, canvas.width, canvas.height);
     }
 
     signatureHasInk.value = false;
@@ -853,63 +628,46 @@ function clearSignature(): void {
 }
 
 function signatureBlob(): Promise<Blob> {
-    return new Promise(
-        (
-            resolve,
-            reject,
-        ) => {
-            const canvas =
-                signatureCanvas.value;
+    return new Promise((resolve, reject) => {
+        const canvas = signatureCanvas.value;
 
-            if (!canvas) {
-                reject(
-                    new Error(
-                        'Signature canvas is unavailable.',
-                    ),
-                );
+        if (!canvas) {
+            reject(new Error('Signature canvas is unavailable.'));
 
-                return;
-            }
+            return;
+        }
 
-            canvas.toBlob(
-                (blob) => {
-                    if (!blob) {
-                        reject(
-                            new Error(
-                                'Unable to create the STO signature image.',
-                            ),
-                        );
+        canvas.toBlob(
+            (blob) => {
+                if (!blob) {
+                    reject(
+                        new Error('Unable to create the STO signature image.'),
+                    );
 
-                        return;
-                    }
+                    return;
+                }
 
-                    resolve(blob);
-                },
-                'image/png',
-                1,
-            );
-        },
-    );
+                resolve(blob);
+            },
+            'image/png',
+            1,
+        );
+    });
 }
 
 async function signJournal(): Promise<void> {
-    if (
-        isValidated.value ||
-        signing.value
-    ) {
+    if (isValidated.value || signing.value) {
         return;
     }
 
     if (!form.value.sto_name.trim()) {
-        pageError.value =
-            'Enter the Supervising Officer name before signing.';
+        pageError.value = 'Enter the Supervising Officer name before signing.';
 
         return;
     }
 
     if (!signatureHasInk.value) {
-        pageError.value =
-            'The Supervising Officer signature is required.';
+        pageError.value = 'The Supervising Officer signature is required.';
 
         return;
     }
@@ -918,112 +676,75 @@ async function signJournal(): Promise<void> {
     signing.value = true;
 
     try {
-        const saved =
-            await saveJournal(false);
+        const saved = await saveJournal(false);
 
         if (!saved) {
             return;
         }
 
-        const blob =
-            await signatureBlob();
-        const signatureFile =
-            new File(
-                [blob],
-                `sto-signature-${props.journalId}.png`,
-                {
-                    type: 'image/png',
-                    lastModified:
-                        Date.now(),
+        const blob = await signatureBlob();
+        const signatureFile = new File(
+            [blob],
+            `sto-signature-${props.journalId}.png`,
+            {
+                type: 'image/png',
+                lastModified: Date.now(),
+            },
+        );
+        const formData = new FormData();
+        formData.append('sto_name', form.value.sto_name.trim());
+        formData.append('signature', signatureFile);
+        const response = await axios.post<JournalResponse>(
+            `${API}/${encodeURIComponent(props.journalId)}/signature`,
+            formData,
+            {
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
-            );
-        const formData =
-            new FormData();
-        formData.append(
-            'sto_name',
-            form.value.sto_name.trim(),
+                withCredentials: true,
+            },
         );
-        formData.append(
-            'signature',
-            signatureFile,
-        );
-        const response =
-            await axios.post<JournalResponse>(
-                `${API}/${encodeURIComponent(
-                    props.journalId,
-                )}/signature`,
-                formData,
-                {
-                    headers: {
-                        Accept:
-                            'application/json',
-                        'X-Requested-With':
-                            'XMLHttpRequest',
-                    },
-                    withCredentials: true,
-                },
-            );
-        journal.value =
-            response.data.data;
-        loadIntoForm(
-            response.data.data,
-        );
+        journal.value = response.data.data;
+        loadIntoForm(response.data.data);
         clearSignature();
         toast.add({
             severity: 'success',
             summary: 'Journal Signed',
             detail:
-                response.data.message ||
-                'STO signature saved successfully.',
+                response.data.message || 'STO signature saved successfully.',
             life: 4500,
         });
     } catch (error: unknown) {
-        pageError.value =
-            getErrorMessage(
-                error,
-                'Unable to save the STO signature.',
-            );
+        pageError.value = getErrorMessage(
+            error,
+            'Unable to save the STO signature.',
+        );
     } finally {
         signing.value = false;
     }
 }
 
 function goBack(): void {
-    router.visit(
-        '/monitoring/daily-journals',
-    );
+    router.visit('/monitoring/daily-journals');
 }
 
-function getErrorMessage(
-    error: unknown,
-    fallback: string,
-): string {
+function getErrorMessage(error: unknown, fallback: string): string {
     if (!axios.isAxiosError(error)) {
         return fallback;
     }
 
-    const responseData =
-        error.response?.data as
-            | {
-                  message?: string;
-                  errors?: Record<
-                      string,
-                      string[]
-                  >;
-              }
-            | undefined;
-    const firstValidationError =
-        responseData?.errors
-            ? Object.values(
-                  responseData.errors,
-              )[0]?.[0]
-            : undefined;
+    const responseData = error.response?.data as
+        | {
+              message?: string;
+              errors?: Record<string, string[]>;
+          }
+        | undefined;
+    const firstValidationError = responseData?.errors
+        ? Object.values(responseData.errors)[0]?.[0]
+        : undefined;
 
-    return (
-        firstValidationError ||
-        responseData?.message ||
-        fallback
-    );
+    return firstValidationError || responseData?.message || fallback;
 }
 
 onMounted(() => {
@@ -1033,7 +754,6 @@ onMounted(() => {
 onBeforeUnmount(() => {
     requestController?.abort();
 });
-
 </script>
 
 <template>
@@ -1057,9 +777,7 @@ onBeforeUnmount(() => {
                 <div
                     class="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between"
                 >
-                    <div
-                        class="flex items-center gap-4"
-                    >
+                    <div class="flex items-center gap-4">
                         <Avatar
                             v-if="defaultAvatarUrl"
                             :image="defaultAvatarUrl"
@@ -1086,25 +804,33 @@ onBeforeUnmount(() => {
                             >
                                 {{ studentName }}
                             </h1>
-                            <div
-                                class="mt-2 flex flex-wrap items-center gap-2"
-                            >
+                            <div class="mt-2 flex flex-wrap items-center gap-2">
                                 <PrimeTag
-                                    :value="journal?.school_id_no || 'No School ID'"
+                                    :value="
+                                        journal?.school_id_no || 'No School ID'
+                                    "
                                     icon="pi pi-id-card"
                                     severity="info"
                                     rounded
                                 />
                                 <PrimeTag
-                                    :value="journal?.department || 'No Department'"
+                                    :value="
+                                        journal?.department || 'No Department'
+                                    "
                                     :severity="departmentSeverity()"
                                     :icon="departmentIcon()"
                                     rounded
                                 />
                                 <PrimeTag
                                     :value="isValidated ? 'Signed' : 'Pending'"
-                                    :severity="isValidated ? 'success' : 'secondary'"
-                                    :icon="isValidated ? 'pi pi-check-circle' : 'pi pi-clock'"
+                                    :severity="
+                                        isValidated ? 'success' : 'secondary'
+                                    "
+                                    :icon="
+                                        isValidated
+                                            ? 'pi pi-check-circle'
+                                            : 'pi pi-clock'
+                                    "
                                     rounded
                                 />
                                 <PrimeTag
@@ -1116,9 +842,7 @@ onBeforeUnmount(() => {
                             </div>
                         </div>
                     </div>
-                    <div
-                        class="flex flex-wrap items-center gap-2"
-                    >
+                    <div class="flex flex-wrap items-center gap-2">
                         <Button
                             type="button"
                             label="Back to Journals"
@@ -1153,17 +877,13 @@ onBeforeUnmount(() => {
                 class="!rounded-2xl !border !border-slate-200 !shadow-sm [&_.p-card-body]:!p-5 [&_.p-card-content]:!p-0"
             >
                 <template #title>
-                    <div
-                        class="flex items-center gap-2 text-slate-800"
-                    >
+                    <div class="flex items-center gap-2 text-slate-800">
                         <i class="pi pi-calendar text-[#377EC0]"></i>
                         Journal Details
                     </div>
                 </template>
                 <template #content>
-                    <div
-                        class="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
-                    >
+                    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                         <div class="flex flex-col gap-2">
                             <label class="text-sm font-semibold text-slate-700">
                                 Journal Date
@@ -1232,62 +952,136 @@ onBeforeUnmount(() => {
                 class="!rounded-2xl !border !border-slate-200 !shadow-sm [&_.p-card-body]:!p-5 [&_.p-card-content]:!p-0"
             >
                 <template #title>
-                    <div
-                        class="flex items-center gap-2 text-slate-800"
-                    >
+                    <div class="flex items-center gap-2 text-slate-800">
                         <i class="pi pi-map-marker text-[#377EC0]"></i>
-                        {{ isDeck ? 'Navigation & Vessel Information' : 'Engine & Vessel Information' }}
+                        {{
+                            isDeck
+                                ? 'Navigation & Vessel Information'
+                                : 'Engine & Vessel Information'
+                        }}
                     </div>
                 </template>
                 <template #content>
                     <template v-if="isDeck">
                         <div class="space-y-4">
-                            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                            <div
+                                class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+                            >
                                 <div class="flex flex-col gap-2">
-                                    <label class="text-sm font-semibold text-slate-700">Latitude</label>
-                                    <InputText v-model="form.ship_lat" :disabled="saving || signing" class="w-full" />
+                                    <label
+                                        class="text-sm font-semibold text-slate-700"
+                                        >Latitude</label
+                                    >
+                                    <InputText
+                                        v-model="form.ship_lat"
+                                        :disabled="saving || signing"
+                                        class="w-full"
+                                    />
                                 </div>
                                 <div class="flex flex-col gap-2">
-                                    <label class="text-sm font-semibold text-slate-700">Longitude</label>
-                                    <InputText v-model="form.ship_long" :disabled="saving || signing" class="w-full" />
+                                    <label
+                                        class="text-sm font-semibold text-slate-700"
+                                        >Longitude</label
+                                    >
+                                    <InputText
+                                        v-model="form.ship_long"
+                                        :disabled="saving || signing"
+                                        class="w-full"
+                                    />
                                 </div>
                                 <div class="flex flex-col gap-2">
-                                    <label class="text-sm font-semibold text-slate-700">Vicinity</label>
-                                    <InputText v-model="form.ship_vicinity" :disabled="saving || signing" class="w-full" />
+                                    <label
+                                        class="text-sm font-semibold text-slate-700"
+                                        >Vicinity</label
+                                    >
+                                    <InputText
+                                        v-model="form.ship_vicinity"
+                                        :disabled="saving || signing"
+                                        class="w-full"
+                                    />
                                 </div>
                             </div>
                             <div class="grid gap-4 md:grid-cols-2">
                                 <div class="flex flex-col gap-2">
-                                    <label class="text-sm font-semibold text-slate-700">Port Departure</label>
-                                    <InputText v-model="form.port_depart" :disabled="saving || signing" class="w-full" />
+                                    <label
+                                        class="text-sm font-semibold text-slate-700"
+                                        >Port Departure</label
+                                    >
+                                    <InputText
+                                        v-model="form.port_depart"
+                                        :disabled="saving || signing"
+                                        class="w-full"
+                                    />
                                 </div>
                                 <div class="flex flex-col gap-2">
-                                    <label class="text-sm font-semibold text-slate-700">Port Destination</label>
-                                    <InputText v-model="form.port_dest" :disabled="saving || signing" class="w-full" />
+                                    <label
+                                        class="text-sm font-semibold text-slate-700"
+                                        >Port Destination</label
+                                    >
+                                    <InputText
+                                        v-model="form.port_dest"
+                                        :disabled="saving || signing"
+                                        class="w-full"
+                                    />
                                 </div>
                             </div>
                             <div class="grid gap-4 md:grid-cols-2">
                                 <div class="flex flex-col gap-2">
-                                    <label class="text-sm font-semibold text-slate-700">Position-Fixing Method</label>
-                                    <InputText v-model="form.pos_fix" :disabled="saving || signing" class="w-full" />
+                                    <label
+                                        class="text-sm font-semibold text-slate-700"
+                                        >Position-Fixing Method</label
+                                    >
+                                    <InputText
+                                        v-model="form.pos_fix"
+                                        :disabled="saving || signing"
+                                        class="w-full"
+                                    />
                                 </div>
                                 <div class="flex flex-col gap-2">
-                                    <label class="text-sm font-semibold text-slate-700">Course and Speed</label>
-                                    <InputText v-model="form.course_speed" :disabled="saving || signing" class="w-full" />
+                                    <label
+                                        class="text-sm font-semibold text-slate-700"
+                                        >Course and Speed</label
+                                    >
+                                    <InputText
+                                        v-model="form.course_speed"
+                                        :disabled="saving || signing"
+                                        class="w-full"
+                                    />
                                 </div>
                             </div>
                             <div class="grid gap-4 md:grid-cols-3">
                                 <div class="flex flex-col gap-2">
-                                    <label class="text-sm font-semibold text-slate-700">F.O ROB</label>
-                                    <InputText v-model="form.fo_rob" :disabled="saving || signing" class="w-full" />
+                                    <label
+                                        class="text-sm font-semibold text-slate-700"
+                                        >F.O ROB</label
+                                    >
+                                    <InputText
+                                        v-model="form.fo_rob"
+                                        :disabled="saving || signing"
+                                        class="w-full"
+                                    />
                                 </div>
                                 <div class="flex flex-col gap-2">
-                                    <label class="text-sm font-semibold text-slate-700">F.O DOB</label>
-                                    <InputText v-model="form.fo_dob" :disabled="saving || signing" class="w-full" />
+                                    <label
+                                        class="text-sm font-semibold text-slate-700"
+                                        >F.O DOB</label
+                                    >
+                                    <InputText
+                                        v-model="form.fo_dob"
+                                        :disabled="saving || signing"
+                                        class="w-full"
+                                    />
                                 </div>
                                 <div class="flex flex-col gap-2">
-                                    <label class="text-sm font-semibold text-slate-700">F.O LOB</label>
-                                    <InputText v-model="form.fo_lob" :disabled="saving || signing" class="w-full" />
+                                    <label
+                                        class="text-sm font-semibold text-slate-700"
+                                        >F.O LOB</label
+                                    >
+                                    <InputText
+                                        v-model="form.fo_lob"
+                                        :disabled="saving || signing"
+                                        class="w-full"
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -1296,32 +1090,74 @@ onBeforeUnmount(() => {
                         <div class="space-y-4">
                             <div class="grid gap-4 md:grid-cols-2">
                                 <div class="flex flex-col gap-2">
-                                    <label class="text-sm font-semibold text-slate-700">Port Departure</label>
-                                    <InputText v-model="form.port_depart" :disabled="saving || signing" class="w-full" />
+                                    <label
+                                        class="text-sm font-semibold text-slate-700"
+                                        >Port Departure</label
+                                    >
+                                    <InputText
+                                        v-model="form.port_depart"
+                                        :disabled="saving || signing"
+                                        class="w-full"
+                                    />
                                 </div>
                                 <div class="flex flex-col gap-2">
-                                    <label class="text-sm font-semibold text-slate-700">Port Destination</label>
-                                    <InputText v-model="form.port_dest" :disabled="saving || signing" class="w-full" />
+                                    <label
+                                        class="text-sm font-semibold text-slate-700"
+                                        >Port Destination</label
+                                    >
+                                    <InputText
+                                        v-model="form.port_dest"
+                                        :disabled="saving || signing"
+                                        class="w-full"
+                                    />
                                 </div>
                             </div>
                             <div class="grid gap-4 md:grid-cols-2">
                                 <div class="flex flex-col gap-2">
-                                    <label class="text-sm font-semibold text-slate-700">F.O. Consumption</label>
-                                    <InputText v-model="form.fo_cons" :disabled="saving || signing" class="w-full" />
+                                    <label
+                                        class="text-sm font-semibold text-slate-700"
+                                        >F.O. Consumption</label
+                                    >
+                                    <InputText
+                                        v-model="form.fo_cons"
+                                        :disabled="saving || signing"
+                                        class="w-full"
+                                    />
                                 </div>
                                 <div class="flex flex-col gap-2">
-                                    <label class="text-sm font-semibold text-slate-700">D.O. Consumption</label>
-                                    <InputText v-model="form.do_cons" :disabled="saving || signing" class="w-full" />
+                                    <label
+                                        class="text-sm font-semibold text-slate-700"
+                                        >D.O. Consumption</label
+                                    >
+                                    <InputText
+                                        v-model="form.do_cons"
+                                        :disabled="saving || signing"
+                                        class="w-full"
+                                    />
                                 </div>
                             </div>
                             <div class="grid gap-4 md:grid-cols-2">
                                 <div class="flex flex-col gap-2">
-                                    <label class="text-sm font-semibold text-slate-700">Average RPM</label>
-                                    <InputText v-model="form.average_rpm" :disabled="saving || signing" class="w-full" />
+                                    <label
+                                        class="text-sm font-semibold text-slate-700"
+                                        >Average RPM</label
+                                    >
+                                    <InputText
+                                        v-model="form.average_rpm"
+                                        :disabled="saving || signing"
+                                        class="w-full"
+                                    />
                                 </div>
                                 <div class="flex flex-col gap-2">
-                                    <label class="text-sm font-semibold text-slate-700">Average Engine Speed</label>
-                                    <InputText v-model="form.average_speed" :disabled="saving || signing" class="w-full" />
+                                    <label
+                                        class="text-sm font-semibold text-slate-700"
+                                        >Average Engine Speed</label
+                                    >
+                                    <InputText
+                                        v-model="form.average_speed"
+                                        :disabled="saving || signing"
+                                        class="w-full"
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -1332,9 +1168,7 @@ onBeforeUnmount(() => {
                 class="!rounded-2xl !border !border-slate-200 !shadow-sm [&_.p-card-body]:!p-5 [&_.p-card-content]:!p-0"
             >
                 <template #title>
-                    <div
-                        class="flex items-center gap-2 text-slate-800"
-                    >
+                    <div class="flex items-center gap-2 text-slate-800">
                         <i class="pi pi-book text-[#377EC0]"></i>
                         Watchkeeping Record
                     </div>
@@ -1373,17 +1207,13 @@ onBeforeUnmount(() => {
                 class="!rounded-2xl !border !border-slate-200 !shadow-sm [&_.p-card-body]:!p-5 [&_.p-card-content]:!p-0"
             >
                 <template #title>
-                    <div
-                        class="flex items-center gap-2 text-slate-800"
-                    >
+                    <div class="flex items-center gap-2 text-slate-800">
                         <i class="pi pi-image text-[#377EC0]"></i>
                         Objective Evidence
                     </div>
                 </template>
                 <template #content>
-                    <div
-                        class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]"
-                    >
+                    <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
                         <div
                             class="rounded-2xl border border-slate-200 bg-slate-50 p-4"
                         >
@@ -1391,7 +1221,9 @@ onBeforeUnmount(() => {
                                 <PrimeImage
                                     v-if="isEvidenceImage"
                                     :src="journal.evidence_url"
-                                    :alt="journal.file_name || 'Journal evidence'"
+                                    :alt="
+                                        journal.file_name || 'Journal evidence'
+                                    "
                                     preview
                                     image-class="max-h-[360px] w-full rounded-xl object-contain"
                                     class="block w-full"
@@ -1400,9 +1232,14 @@ onBeforeUnmount(() => {
                                     v-else
                                     class="flex min-h-[220px] flex-col items-center justify-center gap-3 text-center"
                                 >
-                                    <i class="pi pi-file text-5xl text-slate-300"></i>
+                                    <i
+                                        class="pi pi-file text-5xl text-slate-300"
+                                    ></i>
                                     <p class="font-semibold text-slate-700">
-                                        {{ journal.file_name || 'Objective Evidence' }}
+                                        {{
+                                            journal.file_name ||
+                                            'Objective Evidence'
+                                        }}
                                     </p>
                                 </div>
                                 <div
@@ -1422,18 +1259,27 @@ onBeforeUnmount(() => {
                                 v-else
                                 class="flex min-h-[220px] flex-col items-center justify-center gap-2 text-center text-slate-500"
                             >
-                                <i class="pi pi-image text-5xl text-slate-300"></i>
-                                <p class="font-semibold">No objective evidence uploaded</p>
+                                <i
+                                    class="pi pi-image text-5xl text-slate-300"
+                                ></i>
+                                <p class="font-semibold">
+                                    No objective evidence uploaded
+                                </p>
                             </div>
                         </div>
                         <div
                             class="rounded-2xl border border-slate-200 bg-white p-4"
                         >
                             <p class="font-semibold text-slate-800">
-                                {{ journal.evidence_url ? 'Replace Evidence' : 'Upload Evidence' }}
+                                {{
+                                    journal.evidence_url
+                                        ? 'Replace Evidence'
+                                        : 'Upload Evidence'
+                                }}
                             </p>
                             <p class="mt-1 text-xs text-slate-500">
-                                Administrators may correct objective evidence even after STO validation.
+                                Administrators may correct objective evidence
+                                even after STO validation.
                             </p>
                             <div class="mt-4 space-y-3">
                                 <FileUpload
@@ -1446,13 +1292,15 @@ onBeforeUnmount(() => {
                                     :auto="false"
                                     accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv"
                                     :max-file-size="20971520"
-                                    :disabled="saving || signing || evidenceUploading"
+                                    :disabled="
+                                        saving || signing || evidenceUploading
+                                    "
                                     class="w-full"
                                     @select="handleEvidenceSelect"
                                 />
                                 <p
                                     v-if="selectedEvidence"
-                                    class="break-all text-sm font-medium text-slate-600"
+                                    class="text-sm font-medium break-all text-slate-600"
                                 >
                                     Selected: {{ selectedEvidence.name }}
                                 </p>
@@ -1463,7 +1311,12 @@ onBeforeUnmount(() => {
                                     severity="info"
                                     class="w-full"
                                     :loading="evidenceUploading"
-                                    :disabled="!selectedEvidence || evidenceUploading || saving || signing"
+                                    :disabled="
+                                        !selectedEvidence ||
+                                        evidenceUploading ||
+                                        saving ||
+                                        signing
+                                    "
                                     @click="uploadEvidence"
                                 />
                             </div>
@@ -1481,20 +1334,34 @@ onBeforeUnmount(() => {
                     </div>
                 </template>
                 <template #content>
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                        <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div
+                        class="rounded-2xl border border-slate-200 bg-slate-50 p-5"
+                    >
+                        <div
+                            class="flex flex-wrap items-center justify-between gap-3"
+                        >
                             <div>
                                 <p class="font-semibold text-slate-800">
-                                    Supervising Officer (Master or Qualified Officer)
+                                    Supervising Officer (Master or Qualified
+                                    Officer)
                                 </p>
                                 <p class="mt-1 text-xs text-slate-500">
-                                    The stored STO signature validates this journal.
+                                    The stored STO signature validates this
+                                    journal.
                                 </p>
                             </div>
                             <PrimeTag
-                                :value="isValidated ? 'Signed' : 'Signature Required'"
+                                :value="
+                                    isValidated
+                                        ? 'Signed'
+                                        : 'Signature Required'
+                                "
                                 :severity="isValidated ? 'success' : 'warn'"
-                                :icon="isValidated ? 'pi pi-check-circle' : 'pi pi-clock'"
+                                :icon="
+                                    isValidated
+                                        ? 'pi pi-check-circle'
+                                        : 'pi pi-clock'
+                                "
                                 rounded
                             />
                         </div>
@@ -1504,7 +1371,9 @@ onBeforeUnmount(() => {
                                 class="text-sm font-semibold text-slate-700"
                             >
                                 Supervising Officer Name
-                                <span v-if="!isValidated" class="text-red-500">*</span>
+                                <span v-if="!isValidated" class="text-red-500"
+                                    >*</span
+                                >
                             </label>
                             <InputText
                                 id="journal-sto-name"
@@ -1531,11 +1400,13 @@ onBeforeUnmount(() => {
                                 >
                                     <i class="pi pi-image text-3xl"></i>
                                     <p class="mt-2">
-                                        The database marks this journal as validated, but its STO signature file could not be located.
+                                        The database marks this journal as
+                                        validated, but its STO signature file
+                                        could not be located.
                                     </p>
                                     <p
                                         v-if="journal.officer_signature_file"
-                                        class="mt-1 break-all text-xs"
+                                        class="mt-1 text-xs break-all"
                                     >
                                         {{ journal.officer_signature_file }}
                                     </p>
@@ -1557,8 +1428,13 @@ onBeforeUnmount(() => {
                             </div>
                         </template>
                         <template v-else>
-                            <Message severity="warn" :closable="false" class="mt-4">
-                                Review the journal information before saving the STO signature.
+                            <Message
+                                severity="warn"
+                                :closable="false"
+                                class="mt-4"
+                            >
+                                Review the journal information before saving the
+                                STO signature.
                             </Message>
                             <div
                                 class="mt-4 overflow-hidden rounded-xl border border-slate-300 bg-white"
@@ -1567,7 +1443,7 @@ onBeforeUnmount(() => {
                                     ref="signatureCanvas"
                                     width="900"
                                     height="260"
-                                    class="h-44 w-full touch-none cursor-crosshair bg-white"
+                                    class="h-44 w-full cursor-crosshair touch-none bg-white"
                                     @pointerdown="beginSignature"
                                     @pointermove="drawSignature"
                                     @pointerup="endSignature"
@@ -1575,7 +1451,9 @@ onBeforeUnmount(() => {
                                     @pointerleave="endSignature"
                                 ></canvas>
                             </div>
-                            <div class="mt-3 flex flex-wrap justify-between gap-2">
+                            <div
+                                class="mt-3 flex flex-wrap justify-between gap-2"
+                            >
                                 <Button
                                     type="button"
                                     label="Clear Signature"
@@ -1591,7 +1469,11 @@ onBeforeUnmount(() => {
                                     icon="pi pi-check-circle"
                                     severity="success"
                                     :loading="signing"
-                                    :disabled="!signatureHasInk || !form.sto_name.trim() || saving"
+                                    :disabled="
+                                        !signatureHasInk ||
+                                        !form.sto_name.trim() ||
+                                        saving
+                                    "
                                     @click="signJournal"
                                 />
                             </div>
@@ -1599,9 +1481,7 @@ onBeforeUnmount(() => {
                     </div>
                 </template>
             </Card>
-            <div
-                class="flex justify-end gap-2 pb-2"
-            >
+            <div class="flex justify-end gap-2 pb-2">
                 <Button
                     type="button"
                     label="Back"

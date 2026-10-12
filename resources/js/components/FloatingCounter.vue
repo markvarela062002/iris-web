@@ -38,9 +38,7 @@ const announcementApiUrl = computed(() =>
 );
 
 const messagePageUrl = computed(() =>
-    isStudent.value
-        ? '/alerts/messages/student'
-        : '/alerts/messages',
+    isStudent.value ? '/alerts/messages/student' : '/alerts/messages',
 );
 
 const messageApiUrl = computed(() =>
@@ -105,7 +103,7 @@ onUnmounted(() => {
             :href="announcementPageUrl"
             :aria-label="`${announcementTotal} announcements. View announcements.`"
             title="Open announcements"
-            class="group relative flex size-12 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-sky-500 text-white shadow-lg shadow-sky-700/30 ring-2 ring-sky-300 transition-all duration-200 hover:scale-110 hover:bg-sky-600 active:scale-95 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-sky-500"
+            class="group relative flex size-12 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-sky-500 text-white shadow-lg ring-2 shadow-sky-700/30 ring-sky-300 transition-all duration-200 hover:scale-110 hover:bg-sky-600 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-sky-500 active:scale-95"
         >
             <i
                 class="pi pi-megaphone !text-[1.5rem] !leading-none"
@@ -127,7 +125,7 @@ onUnmounted(() => {
                     : `${messageTotal} messages. View messages.`
             "
             title="Open messages"
-            class="group relative flex size-12 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-sky-500 text-white shadow-lg shadow-sky-700/30 ring-2 ring-sky-300 transition-all duration-200 hover:scale-110 hover:bg-sky-600 active:scale-95 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-sky-500"
+            class="group relative flex size-12 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-sky-500 text-white shadow-lg ring-2 shadow-sky-700/30 ring-sky-300 transition-all duration-200 hover:scale-110 hover:bg-sky-600 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-sky-500 active:scale-95"
         >
             <i
                 class="pi pi-comment !text-[1.5rem] !leading-none"

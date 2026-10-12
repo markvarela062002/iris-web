@@ -3,44 +3,27 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-
 use App\Services\ExternalAssessmentAccessService;
-use App\Services\IrisEmailService;
-
 use Illuminate\Database\ConnectionInterface;
-
 use Illuminate\Database\Query\Builder;
-
 use Illuminate\Http\JsonResponse;
-
 use Illuminate\Http\Request;
-
 use Illuminate\Support\Facades\DB;
-
 use Illuminate\Support\Str;
-
 use Illuminate\Validation\ValidationException;
-
 use PhpOffice\PhpSpreadsheet\IOFactory;
-
 use Symfony\Component\HttpFoundation\Response;
-
 use Throwable;
 
 class PracticalExternalBatchController extends Controller
-
 {
-
     public function __construct(
 
         private readonly ExternalAssessmentAccessService $externalAssessmentAccessService,
 
-    ) {
-
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
-
     {
 
         $database = $this->database($request);
@@ -238,7 +221,6 @@ class PracticalExternalBatchController extends Controller
     }
 
     public function options(Request $request): JsonResponse
-
     {
 
         $assessments = $this->database($request)
@@ -268,7 +250,6 @@ class PracticalExternalBatchController extends Controller
     }
 
     public function import(Request $request): JsonResponse
-
     {
 
         $validated = $request->validate([
@@ -360,7 +341,6 @@ class PracticalExternalBatchController extends Controller
     }
 
     public function show(Request $request, string $batchId): JsonResponse
-
     {
 
         $database = $this->database($request);
@@ -438,7 +418,6 @@ class PracticalExternalBatchController extends Controller
     }
 
     public function store(Request $request): JsonResponse
-
     {
 
         $database = $this->database($request);
@@ -478,7 +457,6 @@ class PracticalExternalBatchController extends Controller
         ) {
 
             throw ValidationException::withMessages([
-
                 'due_date' => ['The Due Date must be on or after the From Date.'],
 
             ]);
@@ -670,7 +648,6 @@ class PracticalExternalBatchController extends Controller
         } catch (ValidationException $exception) {
 
             throw $exception;
-
         } catch (Throwable $exception) {
 
             report($exception);
@@ -718,7 +695,6 @@ class PracticalExternalBatchController extends Controller
         if (! $database->table('p_assess_h')->where('id', $assessmentId)->exists()) {
 
             throw ValidationException::withMessages([
-
                 'p_assess_h_id' => ['The selected Practical Assessment is invalid.'],
 
             ]);
@@ -748,7 +724,6 @@ class PracticalExternalBatchController extends Controller
         if ($pending) {
 
             throw ValidationException::withMessages([
-
                 'examinees' => ["{$pending} already has the same pending Practical Assessment."],
 
             ]);
@@ -791,7 +766,6 @@ class PracticalExternalBatchController extends Controller
     }
 
     private function sendEmails(ConnectionInterface $database, array $recipients): array
-
     {
 
         $sent = 0;
@@ -840,7 +814,6 @@ class PracticalExternalBatchController extends Controller
     }
 
     private function database(Request $request): ConnectionInterface
-
     {
 
         $schoolCode = strtoupper(trim((string) $request->session()->get('school_code', '')));
@@ -868,7 +841,6 @@ class PracticalExternalBatchController extends Controller
     }
 
     private function validityText(string $fromDate, string $dueDate): string
-
     {
 
         $hasFrom = $fromDate !== '1970-01-01';
@@ -900,7 +872,6 @@ class PracticalExternalBatchController extends Controller
     }
 
     private function nullableLegacyDate(mixed $date): ?string
-
     {
 
         $value = trim((string) ($date ?? ''));
@@ -910,7 +881,6 @@ class PracticalExternalBatchController extends Controller
     }
 
     private function examineeName(object $examinee): string
-
     {
 
         $last = trim((string) ($examinee->lname ?? ''));
@@ -928,11 +898,9 @@ class PracticalExternalBatchController extends Controller
     }
 
     private function cleanName(mixed $value): string
-
     {
 
         return trim(str_replace("'", '', (string) $value));
 
     }
-
 }

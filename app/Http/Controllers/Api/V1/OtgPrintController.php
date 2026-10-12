@@ -16,7 +16,6 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class OtgPrintController extends Controller
 {
-
     /**
      * Generate the authenticated student's own OTG PDF.
      *
@@ -242,10 +241,8 @@ class OtgPrintController extends Controller
             HttpResponse::HTTP_OK,
             [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' =>
-                    'inline; filename="'.$filename.'"',
-                'Cache-Control' =>
-                    'private, no-store, no-cache, must-revalidate',
+                'Content-Disposition' => 'inline; filename="'.$filename.'"',
+                'Cache-Control' => 'private, no-store, no-cache, must-revalidate',
                 'Pragma' => 'no-cache',
             ],
         );
@@ -527,11 +524,10 @@ class OtgPrintController extends Controller
 
                 $bookCompetences = $bookFunctionIds
                     ->flatMap(
-                        fn ($functionId) =>
-                            $competencesByFunction->get(
-                                $functionId,
-                                collect(),
-                            ),
+                        fn ($functionId) => $competencesByFunction->get(
+                            $functionId,
+                            collect(),
+                        ),
                     )
                     ->sortBy('prio')
                     ->values();
@@ -583,8 +579,7 @@ class OtgPrintController extends Controller
                                                         (string) $task->desc_task,
                                                     ),
                                                     'person_task' => $personTask,
-                                                    'evidence_files' =>
-                                                        $personTask === null
+                                                    'evidence_files' => $personTask === null
                                                             ? collect()
                                                             : $evidenceFiles->get(
                                                                 $personTask->id,

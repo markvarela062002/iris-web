@@ -4,34 +4,23 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Services\IrisEmailService;
-
 use Illuminate\Database\ConnectionInterface;
-
 use Illuminate\Database\Query\Builder;
-
 use Illuminate\Http\JsonResponse;
-
 use Illuminate\Http\Request;
-
 use Illuminate\Support\Facades\DB;
-
 use Illuminate\Support\Str;
-
 use Illuminate\Validation\ValidationException;
-
 use Symfony\Component\HttpFoundation\Response;
-
 use Throwable;
 
 class PracticalInternalBatchController extends Controller
 {
     public function __construct(
         private readonly IrisEmailService $irisEmailService,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
-
     {
 
         $database = $this->database($request);
@@ -231,7 +220,6 @@ class PracticalInternalBatchController extends Controller
     }
 
     public function options(Request $request): JsonResponse
-
     {
 
         $database = $this->database($request);
@@ -263,7 +251,6 @@ class PracticalInternalBatchController extends Controller
     }
 
     public function students(Request $request): JsonResponse
-
     {
 
         $database = $this->database($request);
@@ -345,7 +332,6 @@ class PracticalInternalBatchController extends Controller
     }
 
     public function show(Request $request, string $batchId): JsonResponse
-
     {
 
         $database = $this->database($request);
@@ -443,7 +429,6 @@ class PracticalInternalBatchController extends Controller
     }
 
     public function store(Request $request): JsonResponse
-
     {
 
         $database = $this->database($request);
@@ -652,7 +637,6 @@ class PracticalInternalBatchController extends Controller
         } catch (ValidationException $exception) {
 
             throw $exception;
-
         } catch (Throwable $exception) {
 
             report($exception);
@@ -700,7 +684,6 @@ class PracticalInternalBatchController extends Controller
         if (! $database->table('p_assess_h')->where('id', $assessmentId)->exists()) {
 
             throw ValidationException::withMessages([
-
                 'p_assess_h_id' => ['The selected Practical Assessment is invalid.'],
 
             ]);
@@ -718,7 +701,6 @@ class PracticalInternalBatchController extends Controller
         if ($existingCount !== count($personIds)) {
 
             throw ValidationException::withMessages([
-
                 'students' => ['One or more selected students are invalid.'],
 
             ]);
@@ -752,7 +734,6 @@ class PracticalInternalBatchController extends Controller
         if ($pendingStudent) {
 
             throw ValidationException::withMessages([
-
                 'students' => [
 
                     $this->studentName($pendingStudent).
@@ -867,7 +848,6 @@ class PracticalInternalBatchController extends Controller
     }
 
     private function database(Request $request): ConnectionInterface
-
     {
 
         $schoolCode = strtoupper(trim((string) $request->session()->get('school_code', '')));
@@ -911,7 +891,6 @@ class PracticalInternalBatchController extends Controller
     }
 
     private function studentName(object $student): string
-
     {
 
         $lastName = trim((string) ($student->lname ?? ''));
@@ -935,5 +914,4 @@ class PracticalInternalBatchController extends Controller
         );
 
     }
-
 }

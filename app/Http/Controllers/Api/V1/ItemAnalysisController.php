@@ -37,6 +37,7 @@ class ItemAnalysisController extends Controller
         if (Gate::has('item-analysis.generate')) {
             return Gate::forUser($request->user())->allows('item-analysis.generate', [$code]);
         }
+
         // Conservative write access; never trust a role posted by the browser.
         return $db->table('login as l')->join('login_type as t', 't.id', '=', 'l.login_type_id')
             ->where('l.id', $request->user()->getAuthIdentifier())->where('t.code_type', 'Administrator')->exists();
@@ -63,7 +64,9 @@ class ItemAnalysisController extends Controller
         $db = $this->connection($request);
         abort_unless($db->table('bs_course')->where('id', $courseId)->exists(), 404, 'Exam package not found.');
         $rows = $db->table('bs_topic')->where('bs_course_id', $courseId)->orderBy('order_no')->orderBy('id')->get(['id', 'desc_topic']);
-        $rows->each(function ($row): void { $row->desc_topic = $this->decode($row->desc_topic); });
+        $rows->each(function ($row): void {
+            $row->desc_topic = $this->decode($row->desc_topic);
+        });
 
         return response()->json(['data' => $rows]);
     }
@@ -183,7 +186,9 @@ class ItemAnalysisController extends Controller
         $upperIds = $groupSize > 0 ? $attempts->slice(-$groupSize)->pluck('id')->all() : [];
         $questionQuery = $db->table('bs_quest')->where('bs_topic_id', $history->bs_topic_id)->where('active', 'Y')
             ->orderBy('quest_text')->orderBy('id')->limit(10001);
-        if ($lockQuestions) { $questionQuery->lockForUpdate(); }
+        if ($lockQuestions) {
+            $questionQuery->lockForUpdate();
+        }
         $questions = $questionQuery->get(['id', 'quest_text']);
         abort_if($questions->count() > 10000, 422, 'This subject exceeds 10,000 active questions.');
         $aggregate = function (array $ids) use ($db, $history) {
@@ -256,5 +261,4 @@ class ItemAnalysisController extends Controller
             'metric_mode' => $mode, 'show_options' => $history->randomize === 'N', 'recalculated_at' => now('Asia/Manila')->toIso8601String()],
             'warnings' => $warnings, 'items' => $items];
     }
-
 }

@@ -87,14 +87,28 @@ type FileUploadControl = { clear: () => void };
 
 const API = '/api/v1/alerts/messages';
 const MAX_ATTACHMENT_SIZE = 20 * 1024 * 1024;
-const ACCEPTED_ATTACHMENT_STRING = '.jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv';
+const ACCEPTED_ATTACHMENT_STRING =
+    '.jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv';
 const ACCEPTED_EXTENSIONS = new Set([
-    'jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx',
-    'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv',
+    'jpg',
+    'jpeg',
+    'png',
+    'gif',
+    'pdf',
+    'doc',
+    'docx',
+    'xls',
+    'xlsx',
+    'ppt',
+    'pptx',
+    'txt',
+    'csv',
 ]);
 
 const page = usePage<SharedData>();
-const currentUserId = computed(() => String(page.props.auth.user?.id ?? '').trim());
+const currentUserId = computed(() =>
+    String(page.props.auth.user?.id ?? '').trim(),
+);
 
 const selectedConversation = ref<MessageListItem | null>(null);
 const historyRefreshToken = ref(0);
@@ -113,17 +127,11 @@ const composing = ref(false);
 const composeError = ref('');
 const failedAvatarSources = ref<Set<string>>(new Set());
 
-const messagesRoot =
-    ref<HTMLElement | null>(
-        null,
-    );
+const messagesRoot = ref<HTMLElement | null>(null);
 
-const messagesHeight =
-    ref('0px');
+const messagesHeight = ref('0px');
 
-let resizeFrame:
-    number | null =
-    null;
+let resizeFrame: number | null = null;
 
 /*
  * The application layout does not provide a fixed-height ancestor to this
@@ -134,102 +142,57 @@ let resizeFrame:
  * explicit height. This keeps the page itself fixed while ChatHistory and
  * ChatMessages scroll internally.
  */
-function updateMessagesHeight():
-    void {
-    const root =
-        messagesRoot.value;
+function updateMessagesHeight(): void {
+    const root = messagesRoot.value;
 
     if (!root) {
         return;
     }
 
-    const rootTop =
-        Math.max(
-            0,
-            root
-                .getBoundingClientRect()
-                .top,
-        );
+    const rootTop = Math.max(0, root.getBoundingClientRect().top);
 
-    const parent =
-        root.parentElement;
+    const parent = root.parentElement;
 
-    const parentPaddingBottom =
-        parent
-            ? Number.parseFloat(
-                  window
-                      .getComputedStyle(
-                          parent,
-                      )
-                      .paddingBottom,
-              ) || 0
-            : 0;
+    const parentPaddingBottom = parent
+        ? Number.parseFloat(window.getComputedStyle(parent).paddingBottom) || 0
+        : 0;
 
     /*
      * Leave room for the existing application footer, but never count the
      * chat composer's own <footer>.
      */
-    const externalFooterHeight =
-        Array.from(
-            document
-                .querySelectorAll(
-                    'footer',
-                ),
-        )
-            .filter(
-                (footer) =>
-                    !root.contains(
-                        footer,
-                    ),
-            )
-            .reduce(
-                (
-                    largest,
-                    footer,
-                ) =>
-                    Math.max(
-                        largest,
-                        footer
-                            .getBoundingClientRect()
-                            .height,
-                    ),
-                0,
-            );
-
-    const availableHeight =
-        Math.max(
-            320,
-            Math.floor(
-                window.innerHeight
-                - rootTop
-                - externalFooterHeight
-                - parentPaddingBottom
-                - 4,
-            ),
+    const externalFooterHeight = Array.from(document.querySelectorAll('footer'))
+        .filter((footer) => !root.contains(footer))
+        .reduce(
+            (largest, footer) =>
+                Math.max(largest, footer.getBoundingClientRect().height),
+            0,
         );
 
-    messagesHeight.value =
-        `${availableHeight}px`;
+    const availableHeight = Math.max(
+        320,
+        Math.floor(
+            window.innerHeight -
+                rootTop -
+                externalFooterHeight -
+                parentPaddingBottom -
+                4,
+        ),
+    );
+
+    messagesHeight.value = `${availableHeight}px`;
 }
 
-function scheduleMessagesHeightUpdate():
-    void {
-    if (
-        resizeFrame !== null
-    ) {
-        window.cancelAnimationFrame(
-            resizeFrame,
-        );
+function scheduleMessagesHeightUpdate(): void {
+    if (resizeFrame !== null) {
+        window.cancelAnimationFrame(resizeFrame);
     }
 
-    resizeFrame =
-        window.requestAnimationFrame(
-            () => {
-                resizeFrame = null;
+    resizeFrame = window.requestAnimationFrame(() => {
+        resizeFrame = null;
 
-                updateMessagesHeight();
-            },
-        );
+        updateMessagesHeight();
+    });
 }
 
 const recipientTypeOptions = [
@@ -273,29 +236,34 @@ function openCompose(): void {
 }
 
 function initials(value: string | null | undefined): string {
-    const parts = String(value ?? '').trim().split(/\s+/).filter(Boolean);
+    const parts = String(value ?? '')
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
 
     if (parts.length === 0) {
-return 'US';
-}
+        return 'US';
+    }
 
     if (parts.length === 1) {
-return parts[0].slice(0, 2).toUpperCase();
-}
+        return parts[0].slice(0, 2).toUpperCase();
+    }
 
     return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase();
 }
 
 function genderAvatar(gender: string | null | undefined): string | null {
-    const value = String(gender ?? '').trim().toUpperCase();
+    const value = String(gender ?? '')
+        .trim()
+        .toUpperCase();
 
     if (value === 'M' || value === 'MALE') {
-return '/images/male-cadet.png';
-}
+        return '/images/male-cadet.png';
+    }
 
     if (value === 'F' || value === 'FEMALE') {
-return '/images/female-cadet.png';
-}
+        return '/images/female-cadet.png';
+    }
 
     return null;
 }
@@ -304,22 +272,22 @@ function avatarSource(recipient: Recipient): string | null {
     const photo = String(recipient.photo_url ?? '').trim();
 
     if (photo && !failedAvatarSources.value.has(photo)) {
-return photo;
-}
+        return photo;
+    }
 
     const fallback = genderAvatar(recipient.gender);
 
     if (fallback && !failedAvatarSources.value.has(fallback)) {
-return fallback;
-}
+        return fallback;
+    }
 
     return null;
 }
 
 function markAvatarFailed(source: string | null): void {
     if (!source) {
-return;
-}
+        return;
+    }
 
     const next = new Set(failedAvatarSources.value);
     next.add(source);
@@ -331,8 +299,8 @@ function errorText(error: unknown, fallback: string): string {
         const message = error.response?.data?.message;
 
         if (typeof message === 'string' && message.trim() !== '') {
-return message;
-}
+            return message;
+        }
     }
 
     return error instanceof Error ? error.message : fallback;
@@ -348,7 +316,9 @@ async function loadRecipients(type: 'admin' | 'student'): Promise<void> {
         const response = await axios.get<RecipientResponse>(
             `${API}/${type === 'admin' ? 'administrators' : 'students'}`,
         );
-        composeRecipients.value = Array.isArray(response.data.data) ? response.data.data : [];
+        composeRecipients.value = Array.isArray(response.data.data)
+            ? response.data.data
+            : [];
     } catch (error) {
         composeError.value = errorText(error, 'Unable to load recipients.');
     } finally {
@@ -361,7 +331,9 @@ function attachmentKey(file: File): string {
 }
 
 function createAttachment(file: File): SelectedAttachment {
-    const isImage = file.type.toLowerCase().startsWith('image/') || /\.(jpg|jpeg|png|gif)$/i.test(file.name);
+    const isImage =
+        file.type.toLowerCase().startsWith('image/') ||
+        /\.(jpg|jpeg|png|gif)$/i.test(file.name);
 
     return {
         key: attachmentKey(file),
@@ -374,8 +346,8 @@ function createAttachment(file: File): SelectedAttachment {
 function clearComposeFiles(): void {
     for (const attachment of composeFiles.value) {
         if (attachment.previewUrl) {
-URL.revokeObjectURL(attachment.previewUrl);
-}
+            URL.revokeObjectURL(attachment.previewUrl);
+        }
     }
 
     composeFiles.value = [];
@@ -384,10 +356,12 @@ URL.revokeObjectURL(attachment.previewUrl);
 
 function removeComposeFile(attachment: SelectedAttachment): void {
     if (attachment.previewUrl) {
-URL.revokeObjectURL(attachment.previewUrl);
-}
+        URL.revokeObjectURL(attachment.previewUrl);
+    }
 
-    composeFiles.value = composeFiles.value.filter((item) => item.key !== attachment.key);
+    composeFiles.value = composeFiles.value.filter(
+        (item) => item.key !== attachment.key,
+    );
 }
 
 function onComposeFilesSelected(event: FileUploadSelectEvent): void {
@@ -411,8 +385,8 @@ function onComposeFilesSelected(event: FileUploadSelectEvent): void {
 
         if (existing.has(attachment.key)) {
             if (attachment.previewUrl) {
-URL.revokeObjectURL(attachment.previewUrl);
-}
+                URL.revokeObjectURL(attachment.previewUrl);
+            }
 
             continue;
         }
@@ -424,14 +398,14 @@ URL.revokeObjectURL(attachment.previewUrl);
     composeFileUpload.value?.clear();
 
     if (rejected.length > 0) {
-composeError.value = rejected.join('. ');
-}
+        composeError.value = rejected.join('. ');
+    }
 }
 
 async function sendNewMessage(): Promise<void> {
     if (composing.value) {
-return;
-}
+        return;
+    }
 
     if (!composeRecipient.value) {
         composeError.value = 'Select a recipient.';
@@ -458,7 +432,10 @@ return;
         const formData = new FormData();
         formData.append('user_id', currentUserId.value);
         formData.append('recipient_id', composeRecipient.value.id);
-        formData.append('recipient_type', composeRecipient.value.recipient_type);
+        formData.append(
+            'recipient_type',
+            composeRecipient.value.recipient_type,
+        );
         formData.append('subject', composeSubject.value.trim());
         formData.append('content', composeMessage.value.trim());
 
@@ -491,8 +468,8 @@ watch(composeRecipientType, (value) => {
 
 watch(composeVisible, (visible) => {
     if (!visible && !composing.value) {
-clearComposeFiles();
-}
+        clearComposeFiles();
+    }
 });
 
 onMounted(async () => {
@@ -500,26 +477,16 @@ onMounted(async () => {
 
     scheduleMessagesHeightUpdate();
 
-    window.addEventListener(
-        'resize',
-        scheduleMessagesHeightUpdate,
-    );
+    window.addEventListener('resize', scheduleMessagesHeightUpdate);
 });
 
 onBeforeUnmount(() => {
     clearComposeFiles();
 
-    window.removeEventListener(
-        'resize',
-        scheduleMessagesHeightUpdate,
-    );
+    window.removeEventListener('resize', scheduleMessagesHeightUpdate);
 
-    if (
-        resizeFrame !== null
-    ) {
-        window.cancelAnimationFrame(
-            resizeFrame,
-        );
+    if (resizeFrame !== null) {
+        window.cancelAnimationFrame(resizeFrame);
     }
 });
 </script>
@@ -570,9 +537,11 @@ onBeforeUnmount(() => {
 
             <main
                 v-else
-                class="hidden h-full min-h-0 min-w-0 overflow-hidden flex-col items-center justify-center bg-[#F4F8FD] px-6 text-center lg:flex"
+                class="hidden h-full min-h-0 min-w-0 flex-col items-center justify-center overflow-hidden bg-[#F4F8FD] px-6 text-center lg:flex"
             >
-                <div class="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-[#377EC0]/10">
+                <div
+                    class="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-[#377EC0]/10"
+                >
                     <i class="pi pi-comments text-4xl text-[#377EC0]"></i>
                 </div>
                 <h2 class="text-lg font-bold text-slate-900">Your messages</h2>
@@ -604,7 +573,9 @@ onBeforeUnmount(() => {
             </Message>
 
             <div>
-                <label class="mb-1.5 block text-sm font-semibold text-slate-700">
+                <label
+                    class="mb-1.5 block text-sm font-semibold text-slate-700"
+                >
                     Recipient Type <span class="text-red-500">*</span>
                 </label>
                 <Select
@@ -619,7 +590,9 @@ onBeforeUnmount(() => {
             </div>
 
             <div>
-                <label class="mb-1.5 block text-sm font-semibold text-slate-700">
+                <label
+                    class="mb-1.5 block text-sm font-semibold text-slate-700"
+                >
                     Recipient <span class="text-red-500">*</span>
                 </label>
                 <Select
@@ -630,35 +603,55 @@ onBeforeUnmount(() => {
                     filter
                     class="w-full"
                     :loading="composeRecipientsLoading"
-                    :disabled="!composeRecipientType || composeRecipientsLoading || composing"
+                    :disabled="
+                        !composeRecipientType ||
+                        composeRecipientsLoading ||
+                        composing
+                    "
                 >
                     <template #option="slotProps">
                         <div class="flex items-center gap-3">
-                            <div class="h-9 w-9 shrink-0 overflow-hidden rounded-full">
+                            <div
+                                class="h-9 w-9 shrink-0 overflow-hidden rounded-full"
+                            >
                                 <PrimeImage
                                     v-if="avatarSource(slotProps.option)"
                                     :src="avatarSource(slotProps.option) || ''"
                                     :alt="slotProps.option.full_name"
                                     class="block h-full w-full"
                                     image-class="h-full w-full object-cover"
-                                    @error="markAvatarFailed(avatarSource(slotProps.option))"
+                                    @error="
+                                        markAvatarFailed(
+                                            avatarSource(slotProps.option),
+                                        )
+                                    "
                                 />
                                 <Avatar
                                     v-else
-                                    :label="initials(slotProps.option.full_name)"
+                                    :label="
+                                        initials(slotProps.option.full_name)
+                                    "
                                     shape="circle"
                                     class="!h-full !w-full !bg-[#377EC0]/10 !text-xs !font-bold !text-[#377EC0]"
                                 />
                             </div>
                             <div class="min-w-0">
-                                <p class="truncate text-sm font-semibold text-slate-800">
+                                <p
+                                    class="truncate text-sm font-semibold text-slate-800"
+                                >
                                     {{ slotProps.option.full_name }}
                                 </p>
                                 <p
-                                    v-if="slotProps.option.login_name || slotProps.option.code_person"
+                                    v-if="
+                                        slotProps.option.login_name ||
+                                        slotProps.option.code_person
+                                    "
                                     class="truncate text-xs text-slate-500"
                                 >
-                                    {{ slotProps.option.login_name || slotProps.option.code_person }}
+                                    {{
+                                        slotProps.option.login_name ||
+                                        slotProps.option.code_person
+                                    }}
                                 </p>
                             </div>
                         </div>
@@ -667,7 +660,9 @@ onBeforeUnmount(() => {
             </div>
 
             <div>
-                <label class="mb-1.5 block text-sm font-semibold text-slate-700">
+                <label
+                    class="mb-1.5 block text-sm font-semibold text-slate-700"
+                >
                     Subject <span class="text-red-500">*</span>
                 </label>
                 <InputText
@@ -680,11 +675,16 @@ onBeforeUnmount(() => {
             </div>
 
             <div>
-                <label class="mb-1.5 block text-sm font-semibold text-slate-700">
+                <label
+                    class="mb-1.5 block text-sm font-semibold text-slate-700"
+                >
                     Message <span class="text-red-500">*</span>
                 </label>
 
-                <div v-if="composeFiles.length > 0" class="mb-2 rounded-2xl bg-slate-50 p-2">
+                <div
+                    v-if="composeFiles.length > 0"
+                    class="mb-2 rounded-2xl bg-slate-50 p-2"
+                >
                     <div class="flex flex-wrap gap-2">
                         <div
                             v-for="attachment in composeFiles"
@@ -692,7 +692,9 @@ onBeforeUnmount(() => {
                             class="relative"
                         >
                             <div
-                                v-if="attachment.isImage && attachment.previewUrl"
+                                v-if="
+                                    attachment.isImage && attachment.previewUrl
+                                "
                                 class="h-20 w-20 overflow-hidden rounded-xl border border-slate-200 bg-white"
                             >
                                 <PrimeImage
@@ -704,12 +706,16 @@ onBeforeUnmount(() => {
                             </div>
                             <div
                                 v-else
-                                class="flex h-20 min-w-[180px] max-w-[240px] items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 pr-9"
+                                class="flex h-20 max-w-[240px] min-w-[180px] items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 pr-9"
                             >
-                                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#377EC0]/10">
+                                <div
+                                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#377EC0]/10"
+                                >
                                     <i class="pi pi-file text-[#377EC0]"></i>
                                 </div>
-                                <span class="min-w-0 flex-1 truncate text-xs font-semibold text-slate-700">
+                                <span
+                                    class="min-w-0 flex-1 truncate text-xs font-semibold text-slate-700"
+                                >
                                     {{ attachment.file.name }}
                                 </span>
                             </div>
@@ -719,7 +725,7 @@ onBeforeUnmount(() => {
                                 severity="secondary"
                                 rounded
                                 size="small"
-                                class="!absolute -right-2 -top-2 !h-7 !w-7"
+                                class="!absolute -top-2 -right-2 !h-7 !w-7"
                                 aria-label="Remove attachment"
                                 @click="removeComposeFile(attachment)"
                             />

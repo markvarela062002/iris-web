@@ -94,21 +94,71 @@ const answerForm = reactive({
 });
 
 const columns: DataTableColumn[] = [
-    { field: 'index', header: '#', sortable: false, searchable: false, class: 'w-[70px]' },
-    { field: 'quest_text', header: 'Question', sortable: true, searchable: true, class: 'min-w-[300px] whitespace-normal' },
-    { field: 'name_course', header: 'Exam Package / Subject', sortable: true, searchable: true, class: 'min-w-[240px]' },
-    { field: 'answers', header: 'Options', sortable: false, searchable: false, class: 'min-w-[360px]' },
-    { field: 'active', header: 'Active', sortable: true, searchable: false, class: 'min-w-[100px]' },
-    { field: 'validated', header: 'Validated', sortable: true, searchable: false, class: 'min-w-[110px]' },
+    {
+        field: 'index',
+        header: '#',
+        sortable: false,
+        searchable: false,
+        class: 'w-[70px]',
+    },
+    {
+        field: 'quest_text',
+        header: 'Question',
+        sortable: true,
+        searchable: true,
+        class: 'min-w-[300px] whitespace-normal',
+    },
+    {
+        field: 'name_course',
+        header: 'Exam Package / Subject',
+        sortable: true,
+        searchable: true,
+        class: 'min-w-[240px]',
+    },
+    {
+        field: 'answers',
+        header: 'Options',
+        sortable: false,
+        searchable: false,
+        class: 'min-w-[360px]',
+    },
+    {
+        field: 'active',
+        header: 'Active',
+        sortable: true,
+        searchable: false,
+        class: 'min-w-[100px]',
+    },
+    {
+        field: 'validated',
+        header: 'Validated',
+        sortable: true,
+        searchable: false,
+        class: 'min-w-[110px]',
+    },
 ];
 const actions: DataTableAction[] = [
-    { key: 'edit', label: 'Edit question', icon: 'pi pi-pencil', severity: 'warn' },
-    { key: 'delete', label: 'Delete question', icon: 'pi pi-trash', severity: 'danger' },
+    {
+        key: 'edit',
+        label: 'Edit question',
+        icon: 'pi pi-pencil',
+        severity: 'warn',
+    },
+    {
+        key: 'delete',
+        label: 'Delete question',
+        icon: 'pi pi-trash',
+        severity: 'danger',
+    },
 ];
 
 const currentPage = computed(() => Math.floor(first.value / perPage.value) + 1);
-const questionDialogTitle = computed(() => questionForm.id ? 'Edit Question' : 'Create Question');
-const answerDialogTitle = computed(() => answerForm.id ? 'Edit Option' : 'Add Option');
+const questionDialogTitle = computed(() =>
+    questionForm.id ? 'Edit Question' : 'Create Question',
+);
+const answerDialogTitle = computed(() =>
+    answerForm.id ? 'Edit Option' : 'Add Option',
+);
 
 async function loadQuestions(page = 1): Promise<void> {
     requestController?.abort();
@@ -134,38 +184,51 @@ async function loadQuestions(page = 1): Promise<void> {
         rows.value = response.data.data;
         totalRecords.value = response.data.meta.total;
         perPage.value = response.data.meta.perPage;
-        first.value = (response.data.meta.currentPage - 1) * response.data.meta.perPage;
+        first.value =
+            (response.data.meta.currentPage - 1) * response.data.meta.perPage;
     } catch (error: unknown) {
         if (isCanceled(error)) {
-return;
-}
+            return;
+        }
 
         rows.value = [];
         totalRecords.value = 0;
-        errorMessage.value = getErrorMessage(error, 'Unable to load questions.');
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to load questions.',
+        );
     } finally {
         if (requestController === controller) {
-loading.value = false;
-}
+            loading.value = false;
+        }
     }
 }
 
 async function loadOptions(): Promise<void> {
     try {
-        const response = await axios.get<{ courses: Course[] }>(`${API_BASE}/options`, requestConfig());
+        const response = await axios.get<{ courses: Course[] }>(
+            `${API_BASE}/options`,
+            requestConfig(),
+        );
         courses.value = response.data.courses;
     } catch (error: unknown) {
-        errorMessage.value = getErrorMessage(error, 'Unable to load exam packages.');
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to load exam packages.',
+        );
     }
 }
 
-async function loadSubjects(courseId: string | null, target: 'filter' | 'form'): Promise<void> {
+async function loadSubjects(
+    courseId: string | null,
+    target: 'filter' | 'form',
+): Promise<void> {
     const destination = target === 'filter' ? filterSubjects : formSubjects;
     destination.value = [];
 
     if (!courseId) {
-return;
-}
+        return;
+    }
 
     try {
         const response = await axios.get<{ data: Subject[] }>(
@@ -211,8 +274,8 @@ function handleSearch(value: string): void {
 }
 function handleAction(action: string, row: DataTableRow): void {
     if (action === 'edit') {
-void openEditQuestion(row);
-}
+        void openEditQuestion(row);
+    }
 
     if (action === 'delete') {
         selectedQuestion.value = row;
@@ -231,7 +294,8 @@ async function openEditQuestion(row: DataTableRow): Promise<void> {
     questionForm.bs_course_id = String(row.bs_course_id ?? '') || null;
     questionForm.bs_topic_id = String(row.bs_topic_id ?? '') || null;
     questionForm.quest_img = String(row.quest_img ?? '');
-    questionForm.question_image_url = String(row.question_image_url ?? '') || null;
+    questionForm.question_image_url =
+        String(row.question_image_url ?? '') || null;
     questionForm.active = row.active === 'Y';
     questionErrors.value = {};
     questionDialogVisible.value = true;
@@ -243,20 +307,20 @@ async function saveQuestion(): Promise<void> {
     questionErrors.value = {};
 
     if (!questionForm.quest_text.trim()) {
-questionErrors.value.quest_text = 'Question is required.';
-}
+        questionErrors.value.quest_text = 'Question is required.';
+    }
 
     if (!questionForm.bs_course_id) {
-questionErrors.value.bs_course_id = 'Exam package is required.';
-}
+        questionErrors.value.bs_course_id = 'Exam package is required.';
+    }
 
     if (!questionForm.bs_topic_id) {
-questionErrors.value.bs_topic_id = 'Subject is required.';
-}
+        questionErrors.value.bs_topic_id = 'Subject is required.';
+    }
 
     if (Object.keys(questionErrors.value).length) {
-return;
-}
+        return;
+    }
 
     const wasNew = !questionForm.id;
     saving.value = true;
@@ -270,15 +334,29 @@ return;
             active: questionForm.active ? 'Y' : 'N',
         };
         const response = wasNew
-            ? await axios.post<{ id: string; message: string }>(API_BASE, payload, requestConfig())
-            : await axios.put<{ id: string; message: string }>(`${API_BASE}/${encodeURIComponent(questionForm.id)}`, payload, requestConfig());
+            ? await axios.post<{ id: string; message: string }>(
+                  API_BASE,
+                  payload,
+                  requestConfig(),
+              )
+            : await axios.put<{ id: string; message: string }>(
+                  `${API_BASE}/${encodeURIComponent(questionForm.id)}`,
+                  payload,
+                  requestConfig(),
+              );
         questionForm.id = response.data.id;
-        notify(wasNew ? 'Question Created' : 'Question Updated', response.data.message);
+        notify(
+            wasNew ? 'Question Created' : 'Question Updated',
+            response.data.message,
+        );
         await loadQuestions(wasNew ? 1 : currentPage.value);
         await loadAnswers();
     } catch (error: unknown) {
         questionErrors.value = getValidationErrors(error);
-        errorMessage.value = getErrorMessage(error, 'Unable to save the question.');
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to save the question.',
+        );
     } finally {
         saving.value = false;
     }
@@ -288,39 +366,54 @@ async function deleteQuestion(): Promise<void> {
     const id = String(selectedQuestion.value?.id ?? '');
 
     if (!id) {
-return;
-}
+        return;
+    }
 
     saving.value = true;
 
     try {
-        const response = await axios.delete<{ message: string }>(`${API_BASE}/${encodeURIComponent(id)}`, requestConfig());
+        const response = await axios.delete<{ message: string }>(
+            `${API_BASE}/${encodeURIComponent(id)}`,
+            requestConfig(),
+        );
         questionDeleteVisible.value = false;
         selectedQuestion.value = null;
         notify('Question Deleted', response.data.message);
         await reloadCurrentPage();
     } catch (error: unknown) {
-        errorMessage.value = getErrorMessage(error, 'Unable to delete the question.');
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to delete the question.',
+        );
     } finally {
         saving.value = false;
     }
 }
 
-async function uploadImage(event: Event, target: 'question' | 'answer'): Promise<void> {
+async function uploadImage(
+    event: Event,
+    target: 'question' | 'answer',
+): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
 
     if (!file) {
-return;
-}
+        return;
+    }
 
     uploading.value = true;
 
     try {
         const body = new FormData();
         body.append('image', file);
-        const response = await axios.post<{ filename: string; url: string | null }>(`${API_BASE}/images`, body, {
-            headers: { Accept: 'application/json', 'Content-Type': 'multipart/form-data' },
+        const response = await axios.post<{
+            filename: string;
+            url: string | null;
+        }>(`${API_BASE}/images`, body, {
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'multipart/form-data',
+            },
         });
 
         if (target === 'question') {
@@ -333,7 +426,10 @@ return;
 
         notify('Image Uploaded', 'The image is ready to be saved.');
     } catch (error: unknown) {
-        errorMessage.value = getErrorMessage(error, 'Unable to upload the image.');
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to upload the image.',
+        );
     } finally {
         uploading.value = false;
         input.value = '';
@@ -391,7 +487,8 @@ async function saveAnswer(): Promise<void> {
     answerErrors.value = {};
 
     if (!answerForm.answer_text.trim() && !answerForm.filename) {
-        answerErrors.value.answer_text = 'Enter option text or upload an option image.';
+        answerErrors.value.answer_text =
+            'Enter option text or upload an option image.';
 
         return;
     }
@@ -406,15 +503,29 @@ async function saveAnswer(): Promise<void> {
         };
         const base = `${API_BASE}/${encodeURIComponent(questionForm.id)}/answers`;
         const response = answerForm.id
-            ? await axios.put<{ message: string }>(`${base}/${encodeURIComponent(answerForm.id)}`, payload, requestConfig())
-            : await axios.post<{ message: string }>(base, payload, requestConfig());
+            ? await axios.put<{ message: string }>(
+                  `${base}/${encodeURIComponent(answerForm.id)}`,
+                  payload,
+                  requestConfig(),
+              )
+            : await axios.post<{ message: string }>(
+                  base,
+                  payload,
+                  requestConfig(),
+              );
         answerDialogVisible.value = false;
-        notify(answerForm.id ? 'Option Updated' : 'Option Added', response.data.message);
+        notify(
+            answerForm.id ? 'Option Updated' : 'Option Added',
+            response.data.message,
+        );
         await loadAnswers();
         await loadQuestions(currentPage.value);
     } catch (error: unknown) {
         answerErrors.value = getValidationErrors(error);
-        errorMessage.value = getErrorMessage(error, 'Unable to save the option.');
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to save the option.',
+        );
     } finally {
         saving.value = false;
     }
@@ -426,8 +537,8 @@ function confirmDeleteAnswer(answer: Choice): void {
 }
 async function deleteAnswer(): Promise<void> {
     if (!selectedAnswer.value) {
-return;
-}
+        return;
+    }
 
     saving.value = true;
 
@@ -442,7 +553,10 @@ return;
         await loadAnswers();
         await loadQuestions(currentPage.value);
     } catch (error: unknown) {
-        errorMessage.value = getErrorMessage(error, 'Unable to delete the option.');
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to delete the option.',
+        );
     } finally {
         saving.value = false;
     }
@@ -450,18 +564,32 @@ return;
 
 function resetQuestion(): void {
     Object.assign(questionForm, {
-        id: '', quest_text: '', bs_course_id: null, bs_topic_id: null,
-        quest_img: '', question_image_url: null, active: true,
+        id: '',
+        quest_text: '',
+        bs_course_id: null,
+        bs_topic_id: null,
+        quest_img: '',
+        question_image_url: null,
+        active: true,
     });
     formSubjects.value = [];
     questionErrors.value = {};
 }
 function resetAnswer(): void {
-    Object.assign(answerForm, { id: '', answer_text: '', filename: '', image_url: null, correct: false });
+    Object.assign(answerForm, {
+        id: '',
+        answer_text: '',
+        filename: '',
+        image_url: null,
+        correct: false,
+    });
     answerErrors.value = {};
 }
 async function reloadCurrentPage(): Promise<void> {
-    const finalPage = Math.max(1, Math.ceil(Math.max(totalRecords.value - 1, 0) / perPage.value));
+    const finalPage = Math.max(
+        1,
+        Math.ceil(Math.max(totalRecords.value - 1, 0) / perPage.value),
+    );
     await loadQuestions(Math.min(currentPage.value, finalPage));
 }
 function requestConfig(): { headers: Record<string, string> } {
@@ -471,21 +599,29 @@ function notify(summary: string, detail: string): void {
     toast.add({ severity: 'success', summary, detail, life: 3500 });
 }
 function isCanceled(error: unknown): boolean {
-    return axios.isCancel(error) || (error instanceof DOMException && error.name === 'AbortError');
+    return (
+        axios.isCancel(error) ||
+        (error instanceof DOMException && error.name === 'AbortError')
+    );
 }
 function getValidationErrors(error: unknown): Errors {
     if (!axios.isAxiosError(error) || error.response?.status !== 422) {
-return {};
-}
+        return {};
+    }
 
     const errors = error.response.data?.errors ?? {};
 
-    return Object.fromEntries(Object.entries(errors).map(([key, value]) => [key, Array.isArray(value) ? String(value[0]) : String(value)]));
+    return Object.fromEntries(
+        Object.entries(errors).map(([key, value]) => [
+            key,
+            Array.isArray(value) ? String(value[0]) : String(value),
+        ]),
+    );
 }
 function getErrorMessage(error: unknown, fallback: string): string {
     if (axios.isAxiosError(error)) {
-return String(error.response?.data?.message ?? fallback);
-}
+        return String(error.response?.data?.message ?? fallback);
+    }
 
     return fallback;
 }
@@ -501,7 +637,12 @@ onBeforeUnmount(() => requestController?.abort());
     <Toast />
 
     <div class="space-y-4 p-4 md:p-6">
-        <Message v-if="errorMessage" severity="error" :closable="true" @close="errorMessage = ''">
+        <Message
+            v-if="errorMessage"
+            severity="error"
+            :closable="true"
+            @close="errorMessage = ''"
+        >
             {{ errorMessage }}
         </Message>
 
@@ -533,161 +674,404 @@ onBeforeUnmount(() => requestController?.abort());
         >
             <template #header-actions>
                 <div class="flex flex-wrap items-center gap-2">
-                    <Select v-model="courseFilter" :options="courses" option-label="name_course" option-value="id"
-                        placeholder="All exam packages" show-clear class="w-56" @change="changeCourseFilter" />
-                    <Select v-model="subjectFilter" :options="filterSubjects" option-label="desc_topic" option-value="id"
-                        placeholder="All subjects" show-clear :disabled="!courseFilter" class="w-52" @change="changeSubjectFilter" />
-                    <Button label="Create Question" icon="pi pi-plus" @click="openCreateQuestion" />
+                    <Select
+                        v-model="courseFilter"
+                        :options="courses"
+                        option-label="name_course"
+                        option-value="id"
+                        placeholder="All exam packages"
+                        show-clear
+                        class="w-56"
+                        @change="changeCourseFilter"
+                    />
+                    <Select
+                        v-model="subjectFilter"
+                        :options="filterSubjects"
+                        option-label="desc_topic"
+                        option-value="id"
+                        placeholder="All subjects"
+                        show-clear
+                        :disabled="!courseFilter"
+                        class="w-52"
+                        @change="changeSubjectFilter"
+                    />
+                    <Button
+                        label="Create Question"
+                        icon="pi pi-plus"
+                        @click="openCreateQuestion"
+                    />
                 </div>
             </template>
 
             <template #cell-quest_text="{ data }">
                 <div class="space-y-2">
                     <p class="whitespace-pre-wrap">{{ data.quest_text }}</p>
-                    <img v-if="data.question_image_url" :src="String(data.question_image_url)" alt="Question"
-                        class="max-h-28 rounded border object-contain" />
+                    <img
+                        v-if="data.question_image_url"
+                        :src="String(data.question_image_url)"
+                        alt="Question"
+                        class="max-h-28 rounded border object-contain"
+                    />
                 </div>
             </template>
             <template #cell-name_course="{ data }">
                 <div class="space-y-1">
                     <div class="font-medium">{{ data.name_course || '—' }}</div>
-                    <div class="text-sm text-surface-500">{{ data.desc_topic || '—' }}</div>
+                    <div class="text-surface-500 text-sm">
+                        {{ data.desc_topic || '—' }}
+                    </div>
                 </div>
             </template>
             <template #cell-answers="{ data }">
                 <div class="flex flex-col gap-1.5">
-                    <div v-for="(answer, index) in (data.answers as Choice[])" :key="answer.id" class="flex items-center gap-2">
-                        <PrimeTag :value="String.fromCharCode(65 + index)" :severity="answer.answer === 'Y' ? 'success' : 'secondary'" />
-                        <span :class="answer.answer === 'Y' ? 'font-medium text-green-700' : ''">
-                            {{ answer.answer_text || answer.filename || 'Image option' }}
+                    <div
+                        v-for="(answer, index) in data.answers as Choice[]"
+                        :key="answer.id"
+                        class="flex items-center gap-2"
+                    >
+                        <PrimeTag
+                            :value="String.fromCharCode(65 + index)"
+                            :severity="
+                                answer.answer === 'Y' ? 'success' : 'secondary'
+                            "
+                        />
+                        <span
+                            :class="
+                                answer.answer === 'Y'
+                                    ? 'font-medium text-green-700'
+                                    : ''
+                            "
+                        >
+                            {{
+                                answer.answer_text ||
+                                answer.filename ||
+                                'Image option'
+                            }}
                         </span>
                     </div>
-                    <span v-if="!(data.answers as Choice[])?.length" class="text-sm italic text-surface-500">No options</span>
+                    <span
+                        v-if="!(data.answers as Choice[])?.length"
+                        class="text-surface-500 text-sm italic"
+                        >No options</span
+                    >
                 </div>
             </template>
             <template #cell-active="{ data }">
-                <PrimeTag :value="data.active === 'Y' ? 'Yes' : 'No'" :severity="data.active === 'Y' ? 'success' : 'secondary'" />
+                <PrimeTag
+                    :value="data.active === 'Y' ? 'Yes' : 'No'"
+                    :severity="data.active === 'Y' ? 'success' : 'secondary'"
+                />
             </template>
             <template #cell-validated="{ data }">
-                <PrimeTag :value="data.validated === 'Y' ? 'Yes' : 'No'" :severity="data.validated === 'Y' ? 'success' : 'secondary'" />
+                <PrimeTag
+                    :value="data.validated === 'Y' ? 'Yes' : 'No'"
+                    :severity="data.validated === 'Y' ? 'success' : 'secondary'"
+                />
             </template>
         </Datatable>
     </div>
 
-    <Dialog v-model:visible="questionDialogVisible" modal :header="questionDialogTitle" :draggable="false" class="w-[min(960px,96vw)]">
+    <Dialog
+        v-model:visible="questionDialogVisible"
+        modal
+        :header="questionDialogTitle"
+        :draggable="false"
+        class="w-[min(960px,96vw)]"
+    >
         <div class="space-y-5">
             <div>
                 <label class="mb-1 block font-medium">Question *</label>
-                <Textarea v-model="questionForm.quest_text" rows="4" class="w-full" />
-                <small v-if="questionErrors.quest_text" class="text-red-600">{{ questionErrors.quest_text }}</small>
+                <Textarea
+                    v-model="questionForm.quest_text"
+                    rows="4"
+                    class="w-full"
+                />
+                <small v-if="questionErrors.quest_text" class="text-red-600">{{
+                    questionErrors.quest_text
+                }}</small>
             </div>
             <div class="grid gap-4 md:grid-cols-2">
                 <div>
                     <label class="mb-1 block font-medium">Exam Package *</label>
-                    <Select v-model="questionForm.bs_course_id" :options="courses" option-label="name_course" option-value="id"
-                        placeholder="Select an exam package" class="w-full" @change="changeFormCourse" />
-                    <small v-if="questionErrors.bs_course_id" class="text-red-600">{{ questionErrors.bs_course_id }}</small>
+                    <Select
+                        v-model="questionForm.bs_course_id"
+                        :options="courses"
+                        option-label="name_course"
+                        option-value="id"
+                        placeholder="Select an exam package"
+                        class="w-full"
+                        @change="changeFormCourse"
+                    />
+                    <small
+                        v-if="questionErrors.bs_course_id"
+                        class="text-red-600"
+                        >{{ questionErrors.bs_course_id }}</small
+                    >
                 </div>
                 <div>
                     <label class="mb-1 block font-medium">Subject *</label>
-                    <Select v-model="questionForm.bs_topic_id" :options="formSubjects" option-label="desc_topic" option-value="id"
-                        placeholder="Select a subject" :disabled="!questionForm.bs_course_id" class="w-full" />
-                    <small v-if="questionErrors.bs_topic_id" class="text-red-600">{{ questionErrors.bs_topic_id }}</small>
+                    <Select
+                        v-model="questionForm.bs_topic_id"
+                        :options="formSubjects"
+                        option-label="desc_topic"
+                        option-value="id"
+                        placeholder="Select a subject"
+                        :disabled="!questionForm.bs_course_id"
+                        class="w-full"
+                    />
+                    <small
+                        v-if="questionErrors.bs_topic_id"
+                        class="text-red-600"
+                        >{{ questionErrors.bs_topic_id }}</small
+                    >
                 </div>
             </div>
             <div class="grid gap-4 md:grid-cols-2">
                 <div>
                     <label class="mb-1 block font-medium">Question Image</label>
-                    <input type="file" accept="image/png,image/jpeg" :disabled="uploading" class="block w-full text-sm"
-                        @change="uploadImage($event, 'question')" />
-                    <small class="text-surface-500">JPG or PNG, maximum 5 MB.</small>
+                    <input
+                        type="file"
+                        accept="image/png,image/jpeg"
+                        :disabled="uploading"
+                        class="block w-full text-sm"
+                        @change="uploadImage($event, 'question')"
+                    />
+                    <small class="text-surface-500"
+                        >JPG or PNG, maximum 5 MB.</small
+                    >
                 </div>
                 <div class="flex items-center gap-3 pt-6">
-                    <ToggleSwitch v-model="questionForm.active" input-id="question-active" />
+                    <ToggleSwitch
+                        v-model="questionForm.active"
+                        input-id="question-active"
+                    />
                     <label for="question-active">Active</label>
                 </div>
             </div>
-            <img v-if="questionForm.question_image_url" :src="questionForm.question_image_url" alt="Question preview"
-                class="max-h-48 rounded border object-contain" />
+            <img
+                v-if="questionForm.question_image_url"
+                :src="questionForm.question_image_url"
+                alt="Question preview"
+                class="max-h-48 rounded border object-contain"
+            />
 
             <div class="border-t pt-4">
                 <div class="mb-3 flex items-center justify-between gap-3">
                     <div>
                         <h3 class="text-lg font-semibold">Options</h3>
-                        <p class="text-sm text-surface-500">Up to five options; only one may be correct.</p>
+                        <p class="text-surface-500 text-sm">
+                            Up to five options; only one may be correct.
+                        </p>
                     </div>
-                    <Button label="Add Option" icon="pi pi-plus" severity="success" size="small"
-                        :disabled="!questionForm.id || answers.length >= 5" @click="openCreateAnswer" />
+                    <Button
+                        label="Add Option"
+                        icon="pi pi-plus"
+                        severity="success"
+                        size="small"
+                        :disabled="!questionForm.id || answers.length >= 5"
+                        @click="openCreateAnswer"
+                    />
                 </div>
-                <div v-if="childLoading" class="py-5 text-center text-surface-500">Loading options…</div>
+                <div
+                    v-if="childLoading"
+                    class="text-surface-500 py-5 text-center"
+                >
+                    Loading options…
+                </div>
                 <div v-else-if="answers.length" class="divide-y rounded border">
-                    <div v-for="(answer, index) in answers" :key="answer.id" class="flex items-start justify-between gap-4 p-3">
+                    <div
+                        v-for="(answer, index) in answers"
+                        :key="answer.id"
+                        class="flex items-start justify-between gap-4 p-3"
+                    >
                         <div class="flex min-w-0 gap-3">
-                            <PrimeTag :value="String.fromCharCode(65 + index)" :severity="answer.answer === 'Y' ? 'success' : 'secondary'" />
+                            <PrimeTag
+                                :value="String.fromCharCode(65 + index)"
+                                :severity="
+                                    answer.answer === 'Y'
+                                        ? 'success'
+                                        : 'secondary'
+                                "
+                            />
                             <div>
-                                <p :class="answer.answer === 'Y' ? 'font-medium text-green-700' : ''">
+                                <p
+                                    :class="
+                                        answer.answer === 'Y'
+                                            ? 'font-medium text-green-700'
+                                            : ''
+                                    "
+                                >
                                     {{ answer.answer_text || 'Image option' }}
                                 </p>
-                                <img v-if="answer.image_url" :src="answer.image_url" alt="Option" class="mt-2 max-h-24 rounded border object-contain" />
-                                <small v-if="answer.answer === 'Y'" class="text-green-700">Correct answer</small>
+                                <img
+                                    v-if="answer.image_url"
+                                    :src="answer.image_url"
+                                    alt="Option"
+                                    class="mt-2 max-h-24 rounded border object-contain"
+                                />
+                                <small
+                                    v-if="answer.answer === 'Y'"
+                                    class="text-green-700"
+                                    >Correct answer</small
+                                >
                             </div>
                         </div>
                         <div class="flex gap-1">
-                            <Button icon="pi pi-pencil" text rounded severity="warn" aria-label="Edit option" @click="openEditAnswer(answer)" />
-                            <Button icon="pi pi-trash" text rounded severity="danger" aria-label="Delete option" @click="confirmDeleteAnswer(answer)" />
+                            <Button
+                                icon="pi pi-pencil"
+                                text
+                                rounded
+                                severity="warn"
+                                aria-label="Edit option"
+                                @click="openEditAnswer(answer)"
+                            />
+                            <Button
+                                icon="pi pi-trash"
+                                text
+                                rounded
+                                severity="danger"
+                                aria-label="Delete option"
+                                @click="confirmDeleteAnswer(answer)"
+                            />
                         </div>
                     </div>
                 </div>
-                <p v-else class="rounded border border-dashed p-5 text-center text-surface-500">
-                    {{ questionForm.id ? 'No options have been added.' : 'Save the question before adding options.' }}
+                <p
+                    v-else
+                    class="text-surface-500 rounded border border-dashed p-5 text-center"
+                >
+                    {{
+                        questionForm.id
+                            ? 'No options have been added.'
+                            : 'Save the question before adding options.'
+                    }}
                 </p>
             </div>
         </div>
         <template #footer>
-            <Button label="Close" severity="secondary" text @click="questionDialogVisible = false" />
-            <Button label="Save Question" icon="pi pi-save" :loading="saving" @click="saveQuestion" />
+            <Button
+                label="Close"
+                severity="secondary"
+                text
+                @click="questionDialogVisible = false"
+            />
+            <Button
+                label="Save Question"
+                icon="pi pi-save"
+                :loading="saving"
+                @click="saveQuestion"
+            />
         </template>
     </Dialog>
 
-    <Dialog v-model:visible="answerDialogVisible" modal :header="answerDialogTitle" :draggable="false" class="w-[min(620px,94vw)]">
+    <Dialog
+        v-model:visible="answerDialogVisible"
+        modal
+        :header="answerDialogTitle"
+        :draggable="false"
+        class="w-[min(620px,94vw)]"
+    >
         <div class="space-y-4">
             <div>
                 <label class="mb-1 block font-medium">Option Description</label>
                 <InputText v-model="answerForm.answer_text" class="w-full" />
-                <small v-if="answerErrors.answer_text" class="text-red-600">{{ answerErrors.answer_text }}</small>
+                <small v-if="answerErrors.answer_text" class="text-red-600">{{
+                    answerErrors.answer_text
+                }}</small>
             </div>
             <div>
                 <label class="mb-1 block font-medium">Option Image</label>
-                <input type="file" accept="image/png,image/jpeg" :disabled="uploading" class="block w-full text-sm"
-                    @change="uploadImage($event, 'answer')" />
-                <small class="text-surface-500">Text or an image is required.</small>
-                <img v-if="answerForm.image_url" :src="answerForm.image_url" alt="Option preview"
-                    class="mt-3 max-h-40 rounded border object-contain" />
+                <input
+                    type="file"
+                    accept="image/png,image/jpeg"
+                    :disabled="uploading"
+                    class="block w-full text-sm"
+                    @change="uploadImage($event, 'answer')"
+                />
+                <small class="text-surface-500"
+                    >Text or an image is required.</small
+                >
+                <img
+                    v-if="answerForm.image_url"
+                    :src="answerForm.image_url"
+                    alt="Option preview"
+                    class="mt-3 max-h-40 rounded border object-contain"
+                />
             </div>
             <div class="flex items-center gap-3">
-                <ToggleSwitch v-model="answerForm.correct" input-id="answer-correct" />
+                <ToggleSwitch
+                    v-model="answerForm.correct"
+                    input-id="answer-correct"
+                />
                 <label for="answer-correct">Correct answer</label>
             </div>
         </div>
         <template #footer>
-            <Button label="Cancel" severity="secondary" text @click="answerDialogVisible = false" />
-            <Button label="Save Option" icon="pi pi-save" :loading="saving" @click="saveAnswer" />
+            <Button
+                label="Cancel"
+                severity="secondary"
+                text
+                @click="answerDialogVisible = false"
+            />
+            <Button
+                label="Save Option"
+                icon="pi pi-save"
+                :loading="saving"
+                @click="saveAnswer"
+            />
         </template>
     </Dialog>
 
-    <Dialog v-model:visible="questionDeleteVisible" modal header="Delete Question" :draggable="false" class="w-[min(480px,92vw)]">
-        <p>Delete this question and all of its options? This action cannot be undone.</p>
+    <Dialog
+        v-model:visible="questionDeleteVisible"
+        modal
+        header="Delete Question"
+        :draggable="false"
+        class="w-[min(480px,92vw)]"
+    >
+        <p>
+            Delete this question and all of its options? This action cannot be
+            undone.
+        </p>
         <template #footer>
-            <Button label="Cancel" severity="secondary" text @click="questionDeleteVisible = false" />
-            <Button label="Delete" icon="pi pi-trash" severity="danger" :loading="saving" @click="deleteQuestion" />
+            <Button
+                label="Cancel"
+                severity="secondary"
+                text
+                @click="questionDeleteVisible = false"
+            />
+            <Button
+                label="Delete"
+                icon="pi pi-trash"
+                severity="danger"
+                :loading="saving"
+                @click="deleteQuestion"
+            />
         </template>
     </Dialog>
 
-    <Dialog v-model:visible="answerDeleteVisible" modal header="Delete Option" :draggable="false" class="w-[min(460px,92vw)]">
+    <Dialog
+        v-model:visible="answerDeleteVisible"
+        modal
+        header="Delete Option"
+        :draggable="false"
+        class="w-[min(460px,92vw)]"
+    >
         <p>Delete this option?</p>
         <template #footer>
-            <Button label="Cancel" severity="secondary" text @click="answerDeleteVisible = false" />
-            <Button label="Delete" icon="pi pi-trash" severity="danger" :loading="saving" @click="deleteAnswer" />
+            <Button
+                label="Cancel"
+                severity="secondary"
+                text
+                @click="answerDeleteVisible = false"
+            />
+            <Button
+                label="Delete"
+                icon="pi pi-trash"
+                severity="danger"
+                :loading="saving"
+                @click="deleteAnswer"
+            />
         </template>
     </Dialog>
 </template>

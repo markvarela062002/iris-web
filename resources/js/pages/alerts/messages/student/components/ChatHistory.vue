@@ -60,8 +60,8 @@ const filteredConversations = computed(() => {
     const keyword = search.value.trim().toLowerCase();
 
     if (!keyword) {
-return conversations.value;
-}
+        return conversations.value;
+    }
 
     return conversations.value.filter((conversation) =>
         [
@@ -89,7 +89,9 @@ function cleanLegacyText(value: string | null | undefined): string {
 
 function participantFallbackName(conversation: MessageListItem): string {
     const type = String(
-        conversation.recipient_account_type || conversation.recipient_type || 'User',
+        conversation.recipient_account_type ||
+            conversation.recipient_type ||
+            'User',
     ).trim();
     const id = String(conversation.recipient_id ?? '').trim();
 
@@ -97,33 +99,41 @@ function participantFallbackName(conversation: MessageListItem): string {
 }
 
 function displayName(conversation: MessageListItem): string {
-    return conversation.recipient_full_name?.trim() || participantFallbackName(conversation);
+    return (
+        conversation.recipient_full_name?.trim() ||
+        participantFallbackName(conversation)
+    );
 }
 
 function initials(value: string | null | undefined): string {
-    const parts = String(value ?? '').trim().split(/\s+/).filter(Boolean);
+    const parts = String(value ?? '')
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
 
     if (parts.length === 0) {
-return 'US';
-}
+        return 'US';
+    }
 
     if (parts.length === 1) {
-return parts[0].slice(0, 2).toUpperCase();
-}
+        return parts[0].slice(0, 2).toUpperCase();
+    }
 
     return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase();
 }
 
 function genderAvatar(gender: string | null | undefined): string | null {
-    const value = String(gender ?? '').trim().toUpperCase();
+    const value = String(gender ?? '')
+        .trim()
+        .toUpperCase();
 
     if (value === 'M' || value === 'MALE') {
-return '/images/male-cadet.png';
-}
+        return '/images/male-cadet.png';
+    }
 
     if (value === 'F' || value === 'FEMALE') {
-return '/images/female-cadet.png';
-}
+        return '/images/female-cadet.png';
+    }
 
     return null;
 }
@@ -132,22 +142,22 @@ function avatarSource(conversation: MessageListItem): string | null {
     const photo = String(conversation.recipient_photo_url ?? '').trim();
 
     if (photo && !failedAvatarSources.value.has(photo)) {
-return photo;
-}
+        return photo;
+    }
 
     const fallback = genderAvatar(conversation.recipient_gender);
 
     if (fallback && !failedAvatarSources.value.has(fallback)) {
-return fallback;
-}
+        return fallback;
+    }
 
     return null;
 }
 
 function markAvatarFailed(source: string | null): void {
     if (!source) {
-return;
-}
+        return;
+    }
 
     const next = new Set(failedAvatarSources.value);
     next.add(source);
@@ -156,10 +166,11 @@ return;
 
 function parseDate(value: string | null | undefined): Date | null {
     if (!value) {
-return null;
-}
+        return null;
+    }
 
-    const normalized = value.length === 10 ? `${value}T00:00:00` : value.replace(' ', 'T');
+    const normalized =
+        value.length === 10 ? `${value}T00:00:00` : value.replace(' ', 'T');
     const date = new Date(normalized);
 
     return Number.isNaN(date.getTime()) ? null : date;
@@ -169,8 +180,8 @@ function formatListDate(value: string | null | undefined): string {
     const date = parseDate(value);
 
     if (!date) {
-return value ?? '';
-}
+        return value ?? '';
+    }
 
     const today = new Date();
 
@@ -179,7 +190,10 @@ return value ?? '';
         date.getMonth() === today.getMonth() &&
         date.getDate() === today.getDate()
     ) {
-        return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        return date.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+        });
     }
 
     const yesterday = new Date(today);
@@ -234,8 +248,8 @@ function errorText(error: unknown): string {
         const message = error.response?.data?.message;
 
         if (typeof message === 'string' && message.trim() !== '') {
-return message;
-}
+            return message;
+        }
     }
 
     return error instanceof Error ? error.message : 'Unable to load messages.';
@@ -245,40 +259,45 @@ function resolveRequestedSelection(): void {
     const requestedInboxId = props.selectInboxId?.trim();
 
     if (!requestedInboxId) {
-return;
-}
+        return;
+    }
 
     const conversation = conversations.value.find(
         (item) => item.inbox_id === requestedInboxId,
     );
 
     if (conversation) {
-emit('select', conversation);
-}
+        emit('select', conversation);
+    }
 
     emit('selectionResolved');
 }
 
 async function loadConversations(initial = false): Promise<void> {
     if (!props.currentUserId || requestRunning) {
-return;
-}
+        return;
+    }
 
     requestRunning = true;
 
     if (initial) {
-initialLoading.value = true;
-} else {
-backgroundRefreshing.value = true;
-}
+        initialLoading.value = true;
+    } else {
+        backgroundRefreshing.value = true;
+    }
 
     try {
         const response = await axios.get<ConversationResponse>(API, {
             params: { user_id: props.currentUserId },
         });
-        const next = Array.isArray(response.data.data) ? response.data.data : [];
+        const next = Array.isArray(response.data.data)
+            ? response.data.data
+            : [];
 
-        if (conversationSignature(conversations.value) !== conversationSignature(next)) {
+        if (
+            conversationSignature(conversations.value) !==
+            conversationSignature(next)
+        ) {
             conversations.value = next;
         }
 
@@ -307,28 +326,34 @@ backgroundRefreshing.value = true;
 
 function handleVisibilityChange(): void {
     if (document.visibilityState === 'visible') {
-void loadConversations(false);
-}
+        void loadConversations(false);
+    }
 }
 
 function startPolling(): void {
     if (pollTimer !== null) {
-window.clearInterval(pollTimer);
-}
+        window.clearInterval(pollTimer);
+    }
 
     pollTimer = window.setInterval(() => {
         if (document.visibilityState === 'visible') {
-void loadConversations(false);
-}
+            void loadConversations(false);
+        }
     }, POLL_INTERVAL_MS);
 }
 
-watch(() => props.refreshToken, () => void loadConversations(false));
-watch(() => props.selectInboxId, (value) => {
-    if (value) {
-void loadConversations(false);
-}
-});
+watch(
+    () => props.refreshToken,
+    () => void loadConversations(false),
+);
+watch(
+    () => props.selectInboxId,
+    (value) => {
+        if (value) {
+            void loadConversations(false);
+        }
+    },
+);
 
 onMounted(() => {
     void loadConversations(true);
@@ -338,27 +363,35 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
     if (pollTimer !== null) {
-window.clearInterval(pollTimer);
-}
+        window.clearInterval(pollTimer);
+    }
 
     document.removeEventListener('visibilitychange', handleVisibilityChange);
 });
 </script>
 
 <template>
-    <aside class="h-full min-h-0 overflow-hidden flex-col border-r border-slate-200 bg-white">
-        <div class="shrink-0 border-b border-slate-200 bg-gradient-to-r from-slate-50 via-white to-blue-50/50 p-4">
+    <aside
+        class="h-full min-h-0 flex-col overflow-hidden border-r border-slate-200 bg-white"
+    >
+        <div
+            class="shrink-0 border-b border-slate-200 bg-gradient-to-r from-slate-50 via-white to-blue-50/50 p-4"
+        >
             <div class="mb-4 flex items-center justify-between gap-3">
                 <div>
                     <div class="flex items-center gap-2">
-                        <h1 class="text-xl font-bold text-[#21365A]">Messages</h1>
+                        <h1 class="text-xl font-bold text-[#21365A]">
+                            Messages
+                        </h1>
                         <i
                             v-if="backgroundRefreshing"
                             class="pi pi-spin pi-spinner text-xs text-slate-400"
                         ></i>
                     </div>
                     <p class="mt-1 text-xs text-slate-500">
-                        {{ conversations.length }} conversation{{ conversations.length === 1 ? '' : 's' }}
+                        {{ conversations.length }} conversation{{
+                            conversations.length === 1 ? '' : 's'
+                        }}
                     </p>
                 </div>
                 <slot name="new-message" />
@@ -366,11 +399,20 @@ window.clearInterval(pollTimer);
 
             <span class="p-input-icon-left block">
                 <i class="pi pi-search"></i>
-                <InputText v-model="search" class="w-full" placeholder="Search messages" />
+                <InputText
+                    v-model="search"
+                    class="w-full"
+                    placeholder="Search messages"
+                />
             </span>
         </div>
 
-        <Message v-if="errorMessage" severity="error" :closable="false" class="m-3 shrink-0">
+        <Message
+            v-if="errorMessage"
+            severity="error"
+            :closable="false"
+            class="m-3 shrink-0"
+        >
             {{ errorMessage }}
         </Message>
 
@@ -396,7 +438,9 @@ window.clearInterval(pollTimer);
                 ]"
                 @click="emit('select', conversation)"
             >
-                <div class="relative h-12 w-12 shrink-0 overflow-hidden rounded-full">
+                <div
+                    class="relative h-12 w-12 shrink-0 overflow-hidden rounded-full"
+                >
                     <PrimeImage
                         v-if="avatarSource(conversation)"
                         :src="avatarSource(conversation) || ''"
@@ -413,7 +457,7 @@ window.clearInterval(pollTimer);
                     />
                     <span
                         v-if="isUnread(conversation)"
-                        class="absolute right-0 top-0 h-3 w-3 rounded-full border-2 border-white bg-[#377EC0]"
+                        class="absolute top-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-[#377EC0]"
                     ></span>
                 </div>
 
@@ -430,7 +474,12 @@ window.clearInterval(pollTimer);
                             {{ displayName(conversation) }}
                         </span>
                         <span class="shrink-0 text-[11px] text-slate-400">
-                            {{ formatListDate(conversation.last_update || conversation.date_inbox) }}
+                            {{
+                                formatListDate(
+                                    conversation.last_update ||
+                                        conversation.date_inbox,
+                                )
+                            }}
                         </span>
                     </div>
 
@@ -461,7 +510,9 @@ window.clearInterval(pollTimer);
                 v-if="filteredConversations.length === 0"
                 class="flex flex-col items-center justify-center px-6 py-14 text-center"
             >
-                <div class="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#377EC0]/10">
+                <div
+                    class="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#377EC0]/10"
+                >
                     <i class="pi pi-comments text-2xl text-[#377EC0]"></i>
                 </div>
                 <p class="font-semibold text-slate-800">No messages found</p>

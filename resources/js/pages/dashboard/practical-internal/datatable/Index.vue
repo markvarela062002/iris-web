@@ -18,7 +18,6 @@ import Message from 'primevue/message';
 import Select from 'primevue/select';
 import PrimeTag from 'primevue/tag';
 
-
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 
 import Datatable from '@/components/Datatable.vue';
@@ -229,8 +228,8 @@ async function loadAddOptions(studentSearch = ''): Promise<void> {
 }
 function searchStudents(event: { value: string }): void {
     if (studentSearchTimer) {
-clearTimeout(studentSearchTimer);
-}
+        clearTimeout(studentSearchTimer);
+    }
 
     studentSearchTimer = setTimeout(
         () => void loadAddOptions(event.value),
@@ -884,10 +883,10 @@ async function reloadCurrentPage(): Promise<void> {
     }
 }
 
-function getAvatarImage(
-    row: DataTableRow,
-): string {
-    const gender = String(row.gender ?? '').trim().toUpperCase();
+function getAvatarImage(row: DataTableRow): string {
+    const gender = String(row.gender ?? '')
+        .trim()
+        .toUpperCase();
 
     if (gender === 'M' || gender === 'MALE') {
         return '/images/male-cadet.png';
@@ -1253,8 +1252,7 @@ onBeforeUnmount(() => {
             header="Add Practical Assessment"
             class="w-[95vw] max-w-2xl"
         >
-
-                    <div
+            <div
                 class="mb-4 flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900"
                 role="note"
             >

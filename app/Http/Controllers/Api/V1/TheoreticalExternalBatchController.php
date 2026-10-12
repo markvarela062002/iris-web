@@ -1,38 +1,26 @@
 <?php
+
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-
 use App\Services\ExternalAssessmentAccessService;
-
 use App\Services\IrisEmailService;
-
 use Illuminate\Database\ConnectionInterface;
-
 use Illuminate\Database\Query\Builder;
-
 use Illuminate\Http\JsonResponse;
-
 use Illuminate\Http\Request;
-
 use Illuminate\Support\Facades\DB;
-
 use Illuminate\Support\Str;
-
 use Illuminate\Validation\ValidationException;
-
 use Symfony\Component\HttpFoundation\Response;
-
 use Throwable;
 
 class TheoreticalExternalBatchController extends Controller
 {
-
     public function __construct(
         private readonly ExternalAssessmentAccessService $externalAssessmentAccessService,
         private readonly IrisEmailService $irisEmailService,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -61,16 +49,11 @@ class TheoreticalExternalBatchController extends Controller
             $sortDirection = 'desc';
         }
         $sortableColumns = [
-            'last_update' =>
-                'bs_person_exam_ext_batch.last_update',
-            'name_course' =>
-                'bs_course.name_course',
-            'session_code' =>
-                'bs_exam_session.session_code',
-            'proctor_name' =>
-                'bs_person_exam_ext_batch.proctor_name',
-            'duration' =>
-                'bs_person_exam_ext_batch.duration',
+            'last_update' => 'bs_person_exam_ext_batch.last_update',
+            'name_course' => 'bs_course.name_course',
+            'session_code' => 'bs_exam_session.session_code',
+            'proctor_name' => 'bs_person_exam_ext_batch.proctor_name',
+            'duration' => 'bs_person_exam_ext_batch.duration',
         ];
         $sortColumn = $sortableColumns[$sortField]
             ?? 'bs_person_exam_ext_batch.last_update';
@@ -159,14 +142,11 @@ class TheoreticalExternalBatchController extends Controller
         )->map(
             fn (object $row): array => [
                 'id' => (string) $row->id,
-                'name_course' =>
-                    $row->name_course
+                'name_course' => $row->name_course
                     ?: 'No Exam Package',
-                'session_code' =>
-                    $row->session_code
+                'session_code' => $row->session_code
                     ?: 'No Exam Session',
-                'exam_type' =>
-                    $row->exam_type ?: 'New',
+                'exam_type' => $row->exam_type ?: 'New',
                 'duration' => (int) (
                     $row->duration ?? 0
                 ),
@@ -178,46 +158,34 @@ class TheoreticalExternalBatchController extends Controller
                         ),
                     ),
                 ),
-                'access_exp_date_from' =>
-                    $row->access_exp_date_from,
-                'access_exp_time_from' =>
-                    $row->access_exp_time_from,
-                'access_exp_date_to' =>
-                    $row->access_exp_date_to,
-                'access_exp_time_to' =>
-                    $row->access_exp_time_to,
-                'last_update' =>
-                    $row->last_update,
+                'access_exp_date_from' => $row->access_exp_date_from,
+                'access_exp_time_from' => $row->access_exp_time_from,
+                'access_exp_date_to' => $row->access_exp_date_to,
+                'access_exp_time_to' => $row->access_exp_time_to,
+                'last_update' => $row->last_update,
                 'examinee_count' => (int) (
                     $row->examinee_count ?? 0
                 ),
             ],
         )->values();
+
         return response()->json([
             'data' => $records,
             'meta' => [
-                'currentPage' =>
-                    $paginator->currentPage(),
-                'lastPage' =>
-                    $paginator->lastPage(),
-                'perPage' =>
-                    $paginator->perPage(),
-                'total' =>
-                    $paginator->total(),
-                'from' =>
-                    $paginator->firstItem(),
-                'to' =>
-                    $paginator->lastItem(),
+                'currentPage' => $paginator->currentPage(),
+                'lastPage' => $paginator->lastPage(),
+                'perPage' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'from' => $paginator->firstItem(),
+                'to' => $paginator->lastItem(),
             ],
             'links' => [
                 'first' => $paginator->url(1),
                 'last' => $paginator->url(
                     $paginator->lastPage(),
                 ),
-                'previous' =>
-                    $paginator->previousPageUrl(),
-                'next' =>
-                    $paginator->nextPageUrl(),
+                'previous' => $paginator->previousPageUrl(),
+                'next' => $paginator->nextPageUrl(),
             ],
         ]);
     }
@@ -265,6 +233,7 @@ class TheoreticalExternalBatchController extends Controller
                 ],
             )
             ->values();
+
         return response()->json([
             'data' => [
                 'courses' => $courses,
@@ -328,74 +297,60 @@ class TheoreticalExternalBatchController extends Controller
             ->map(
                 fn (object $examinee): array => [
                     'id' => (string) $examinee->id,
-                    'exam_id' =>
-                        (string) $examinee
-                            ->bs_person_exam_ext_id,
+                    'exam_id' => (string) $examinee
+                        ->bs_person_exam_ext_id,
                     'email' => strtolower(
                         trim(
                             (string) $examinee->email,
                         ),
                     ),
-                    'fname' =>
-                        trim(
-                            (string) $examinee->fname,
-                        ),
-                    'mname' =>
-                        trim(
-                            (string) $examinee->mname,
-                        ),
-                    'lname' =>
-                        trim(
-                            (string) $examinee->lname,
-                        ),
+                    'fname' => trim(
+                        (string) $examinee->fname,
+                    ),
+                    'mname' => trim(
+                        (string) $examinee->mname,
+                    ),
+                    'lname' => trim(
+                        (string) $examinee->lname,
+                    ),
                     'name' => $this->examineeName(
                         $examinee,
                     ),
-                    'email_sent' =>
-                        strtoupper(
-                            (string) $examinee
-                                ->email_sent,
-                        ) === 'Y',
+                    'email_sent' => strtoupper(
+                        (string) $examinee
+                            ->email_sent,
+                    ) === 'Y',
                 ],
             )
             ->values();
+
         return response()->json([
             'data' => [
                 'id' => (string) $batch->id,
-                'bs_course_id' =>
-                    (string) $batch->bs_course_id,
-                'bs_exam_session_id' =>
-                    (string) $batch
-                        ->bs_exam_session_id,
-                'name_course' =>
-                    $batch->name_course,
-                'session_code' =>
-                    $batch->session_code,
-                'exam_type' =>
-                    $batch->exam_type ?: 'New',
+                'bs_course_id' => (string) $batch->bs_course_id,
+                'bs_exam_session_id' => (string) $batch
+                    ->bs_exam_session_id,
+                'name_course' => $batch->name_course,
+                'session_code' => $batch->session_code,
+                'exam_type' => $batch->exam_type ?: 'New',
                 'duration' => (int) (
                     $batch->duration ?? 0
                 ),
-                'proctor_name' =>
-                    $batch->proctor_name ?? '',
-                'access_exp_date_from' =>
-                    $batch->access_exp_date_from,
-                'access_exp_time_from' =>
-                    substr(
-                        (string) $batch
-                            ->access_exp_time_from,
-                        0,
-                        5,
-                    ),
-                'access_exp_date_to' =>
-                    $batch->access_exp_date_to,
-                'access_exp_time_to' =>
-                    substr(
-                        (string) $batch
-                            ->access_exp_time_to,
-                        0,
-                        5,
-                    ),
+                'proctor_name' => $batch->proctor_name ?? '',
+                'access_exp_date_from' => $batch->access_exp_date_from,
+                'access_exp_time_from' => substr(
+                    (string) $batch
+                        ->access_exp_time_from,
+                    0,
+                    5,
+                ),
+                'access_exp_date_to' => $batch->access_exp_date_to,
+                'access_exp_time_to' => substr(
+                    (string) $batch
+                        ->access_exp_time_to,
+                    0,
+                    5,
+                ),
                 'examinees' => $examinees,
                 'examinees_locked' => true,
             ],
@@ -543,10 +498,9 @@ class TheoreticalExternalBatchController extends Controller
                         ]);
                     $automaticDuration = (int) $topics
                         ->sum(
-                            fn (object $topic): int =>
-                                (int) (
-                                    $topic->no_quest ?? 0
-                                ),
+                            fn (object $topic): int => (int) (
+                                $topic->no_quest ?? 0
+                            ),
                         );
                     $duration = (int) $validated[
                         'duration'
@@ -560,39 +514,31 @@ class TheoreticalExternalBatchController extends Controller
                         )
                         ->insert([
                             'id' => $batchId,
-                            'bs_course_id' =>
-                                $validated['bs_course_id'],
-                            'bs_exam_session_id' =>
-                                $validated[
+                            'bs_course_id' => $validated['bs_course_id'],
+                            'bs_exam_session_id' => $validated[
                                     'bs_exam_session_id'
                                 ],
                             'exam_type' => 'New',
                             'duration' => $duration,
-                            'access_exp_date_from' =>
-                                $validated[
+                            'access_exp_date_from' => $validated[
                                     'access_exp_date_from'
                                 ],
-                            'access_exp_date_to' =>
-                                $validated[
+                            'access_exp_date_to' => $validated[
                                     'access_exp_date_to'
                                 ],
-                            'access_exp_time_from' =>
-                                $validated[
+                            'access_exp_time_from' => $validated[
                                     'access_exp_time_from'
                                 ],
-                            'access_exp_time_to' =>
-                                $validated[
+                            'access_exp_time_to' => $validated[
                                     'access_exp_time_to'
                                 ],
-                            'proctor_name' =>
-                                $validated[
+                            'proctor_name' => $validated[
                                     'proctor_name'
                                 ] ?? '',
                             'login_id' => $loginId,
-                            'last_update' =>
-                                $now->format(
-                                    'Y-m-d H:i:s',
-                                ),
+                            'last_update' => $now->format(
+                                'Y-m-d H:i:s',
+                            ),
                         ]);
                     $courseName = (string) $database
                         ->table('bs_course')
@@ -610,77 +556,57 @@ class TheoreticalExternalBatchController extends Controller
                             )
                             ->insert([
                                 'id' => $detailId,
-                                'bs_person_exam_ext_batch_id' =>
-                                    $batchId,
-                                'bs_person_exam_ext_id' =>
-                                    $examId,
-                                'email' =>
-                                    $examinee['email'],
-                                'fname' =>
-                                    $examinee['fname'],
-                                'mname' =>
-                                    $examinee['mname'],
-                                'lname' =>
-                                    $examinee['lname'],
+                                'bs_person_exam_ext_batch_id' => $batchId,
+                                'bs_person_exam_ext_id' => $examId,
+                                'email' => $examinee['email'],
+                                'fname' => $examinee['fname'],
+                                'mname' => $examinee['mname'],
+                                'lname' => $examinee['lname'],
                                 'email_sent' => 'N',
                             ]);
                         $database
                             ->table('bs_person_exam_ext')
                             ->insert([
                                 'id' => $examId,
-                                'bs_course_id' =>
-                                    $validated[
+                                'bs_course_id' => $validated[
                                         'bs_course_id'
                                     ],
-                                'email' =>
-                                    $examinee['email'],
-                                'fname' =>
-                                    $examinee['fname'],
-                                'mname' =>
-                                    $examinee['mname'],
-                                'lname' =>
-                                    $examinee['lname'],
+                                'email' => $examinee['email'],
+                                'fname' => $examinee['fname'],
+                                'mname' => $examinee['mname'],
+                                'lname' => $examinee['lname'],
                                 'started' => '',
                                 'ended' => '',
                                 'score' => 0,
                                 'passed' => '',
-                                'access_exp_date' =>
-                                    $validated[
+                                'access_exp_date' => $validated[
                                         'access_exp_date_from'
                                     ],
-                                'access_exp_time' =>
-                                    $validated[
+                                'access_exp_time' => $validated[
                                         'access_exp_time_from'
                                     ],
-                                'access_exp_date_to' =>
-                                    $validated[
+                                'access_exp_date_to' => $validated[
                                         'access_exp_date_to'
                                     ],
-                                'access_exp_time_to' =>
-                                    $validated[
+                                'access_exp_time_to' => $validated[
                                         'access_exp_time_to'
                                     ],
                                 'or_no' => '',
                                 'amount_paid' => 0,
-                                'payment_date' =>
-                                    '1970-01-01',
-                                'proctor_name' =>
-                                    $validated[
+                                'payment_date' => '1970-01-01',
+                                'proctor_name' => $validated[
                                         'proctor_name'
                                     ] ?? '',
                                 'login_id' => $loginId,
-                                'last_update' =>
-                                    $now->format(
-                                        'Y-m-d H:i:s',
-                                    ),
+                                'last_update' => $now->format(
+                                    'Y-m-d H:i:s',
+                                ),
                                 'duration' => $duration,
                                 'exam_type' => 'New',
                                 'exam_permit_no' => '',
-                                'date_issued' =>
-                                    $now->toDateString(),
+                                'date_issued' => $now->toDateString(),
                                 'issued_by' => '',
-                                'bs_exam_session_id' =>
-                                    $validated[
+                                'bs_exam_session_id' => $validated[
                                         'bs_exam_session_id'
                                     ],
                             ]);
@@ -690,20 +616,16 @@ class TheoreticalExternalBatchController extends Controller
                                     'bs_person_exam_topic_ext',
                                 )
                                 ->insert([
-                                    'id' =>
-                                        (string) Str::uuid(),
-                                    'bs_person_exam_id' =>
-                                        $examId,
-                                    'bs_topic_id' =>
-                                        $this
-                                            ->externalSourceTopicId(
-                                                (string) $topic->id,
-                                            ),
+                                    'id' => (string) Str::uuid(),
+                                    'bs_person_exam_id' => $examId,
+                                    'bs_topic_id' => $this
+                                        ->externalSourceTopicId(
+                                            (string) $topic->id,
+                                        ),
                                     'quest_cnt' => (int) (
                                         $topic->no_quest ?? 0
                                     ),
-                                    'order_no' =>
-                                        $topic->order_no,
+                                    'order_no' => $topic->order_no,
                                 ]);
                         }
                         $emailData = $this->emailData(
@@ -730,26 +652,23 @@ class TheoreticalExternalBatchController extends Controller
             throw $exception;
         } catch (Throwable $exception) {
             report($exception);
+
             return response()->json([
-                'message' =>
-                    'The External examination batch could not be created.',
+                'message' => 'The External examination batch could not be created.',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
         $emailResult = $this->sendEmails(
             $database,
             $emailRecipients,
         );
+
         return response()->json([
-            'message' =>
-                "Batch created successfully. {$emailResult['sent']} email(s) sent.",
+            'message' => "Batch created successfully. {$emailResult['sent']} email(s) sent.",
             'data' => [
                 'id' => $batchId,
-                'examinee_count' =>
-                    $examinees->count(),
-                'emails_sent' =>
-                    $emailResult['sent'],
-                'emails_failed' =>
-                    $emailResult['failed'],
+                'examinee_count' => $examinees->count(),
+                'emails_sent' => $emailResult['sent'],
+                'emails_failed' => $emailResult['failed'],
             ],
         ], Response::HTTP_CREATED);
     }
@@ -847,10 +766,8 @@ class TheoreticalExternalBatchController extends Controller
         string $topicId,
     ): string {
         return match ($topicId) {
-            'd30a104a-6503-11eb-9cb9-42010a920007' =>
-                '8e00dbbc-1f32-11ea-8c93-5d67f07b9a91',
-            '6cf0d3f0-6504-11eb-9cb9-42010a920007' =>
-                '6637a32c-1f32-11ea-8c93-5d67f07b9a91',
+            'd30a104a-6503-11eb-9cb9-42010a920007' => '8e00dbbc-1f32-11ea-8c93-5d67f07b9a91',
+            '6cf0d3f0-6504-11eb-9cb9-42010a920007' => '6637a32c-1f32-11ea-8c93-5d67f07b9a91',
             default => $topicId,
         };
     }
@@ -1005,6 +922,7 @@ class TheoreticalExternalBatchController extends Controller
             Response::HTTP_INTERNAL_SERVER_ERROR,
             'The school database connection is missing.',
         );
+
         return DB::connection($connection);
     }
 
@@ -1019,8 +937,7 @@ class TheoreticalExternalBatchController extends Controller
             $examinee->mname ?? '',
         ])
             ->map(
-                fn ($name): string =>
-                    trim((string) $name),
+                fn ($name): string => trim((string) $name),
             )
             ->filter()
             ->implode(' ');
@@ -1032,6 +949,7 @@ class TheoreticalExternalBatchController extends Controller
                 "{$lastName}, {$otherNames}",
             );
         }
+
         return strtoupper(
             $lastName ?: $otherNames,
         );
@@ -1051,6 +969,7 @@ class TheoreticalExternalBatchController extends Controller
                 $minutes % 60,
             );
         }
+
         return $times;
     }
 }

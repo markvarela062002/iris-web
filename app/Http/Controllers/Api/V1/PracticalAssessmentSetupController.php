@@ -18,8 +18,7 @@ class PracticalAssessmentSetupController extends Controller
 {
     public function __construct(
         private readonly DatatableService $datatableService,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -83,6 +82,7 @@ class PracticalAssessmentSetupController extends Controller
                 $record['instruction_assess'] = $this->decodeText(
                     (string) ($record['instruction_assess'] ?? ''),
                 );
+
                 return $record;
             })
             ->values()
@@ -227,6 +227,7 @@ class PracticalAssessmentSetupController extends Controller
             ->map(function ($item) use ($baseUrl): object {
                 $item->item_d = $this->decodeText((string) $item->item_d);
                 $item->file_url = $this->fileUrl($baseUrl, (string) $item->filename_d);
+
                 return $item;
             });
 
@@ -350,6 +351,7 @@ class PracticalAssessmentSetupController extends Controller
                     $baseUrl,
                     (string) $attachment->assess_h_file,
                 );
+
                 return $attachment;
             });
 
@@ -472,7 +474,7 @@ class PracticalAssessmentSetupController extends Controller
 
     private function encodeText(string $value): string
     {
-        return urlencode(str_replace(["&", "'"], ['andxx', 'apostrophexx'], trim($value)));
+        return urlencode(str_replace(['&', "'"], ['andxx', 'apostrophexx'], trim($value)));
     }
 
     private function decodeText(string $value): string
@@ -483,6 +485,7 @@ class PracticalAssessmentSetupController extends Controller
     private function fileUrl(string $baseUrl, string $filename): ?string
     {
         $filename = basename(trim($filename));
+
         return $baseUrl !== '' && $filename !== ''
             ? $baseUrl.'/'.rawurlencode($filename)
             : null;
@@ -521,6 +524,7 @@ class PracticalAssessmentSetupController extends Controller
     {
         $id = trim((string) $request->session()->get('login_id', ''));
         $authId = $request->user()?->getAuthIdentifier();
+
         return $id !== '' ? $id : ($authId === null ? null : (string) $authId);
     }
 
@@ -571,6 +575,7 @@ class PracticalAssessmentSetupController extends Controller
 
         config(['database.default' => $connection]);
         DB::setDefaultConnection($connection);
+
         return DB::connection($connection);
     }
 }

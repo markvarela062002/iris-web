@@ -234,8 +234,8 @@ async function loadBatches(page = 1): Promise<void> {
             axios.isCancel(error) ||
             (axios.isAxiosError(error) && error.code === 'ERR_CANCELED')
         ) {
-return;
-}
+            return;
+        }
 
         batches.value = [];
 
@@ -247,15 +247,15 @@ return;
         );
     } finally {
         if (requestController === controller) {
-loading.value = false;
-}
+            loading.value = false;
+        }
     }
 }
 
 async function loadOptions(): Promise<void> {
     if (assessments.value.length) {
-return;
-}
+        return;
+    }
 
     optionsLoading.value = true;
 
@@ -365,8 +365,8 @@ function addExaminee(): void {
 
 function removeExaminee(email: string): void {
     if (viewMode.value) {
-return;
-}
+        return;
+    }
 
     examinees.value = examinees.value.filter((item) => item.email !== email);
 }
@@ -430,8 +430,8 @@ async function importExcel(): Promise<void> {
         ];
 
         if (added > 0) {
-uploadDialogVisible.value = false;
-}
+            uploadDialogVisible.value = false;
+        }
     } catch (error: unknown) {
         importMessages.value = [
             getError(error, 'Unable to import the Excel file.'),
@@ -557,8 +557,8 @@ function handleSearch(value: string): void {
 
 function handleAction(action: string, row: DataTableRow): void {
     if (action === 'view') {
-void openView(row);
-}
+        void openView(row);
+    }
 }
 
 function cleanName(value: string): string {
@@ -596,8 +596,8 @@ function formatDate(value: unknown): string {
     const text = String(value ?? '');
 
     if (!text) {
-return '';
-}
+        return '';
+    }
 
     const date = new Date(`${text.slice(0, 10)}T00:00:00`);
 
@@ -614,8 +614,8 @@ function formatDateTime(value: unknown): string {
     const text = String(value ?? '');
 
     if (!text) {
-return '—';
-}
+        return '—';
+    }
 
     const date = new Date(text.replace(' ', 'T'));
 
@@ -635,16 +635,16 @@ function validity(data: DataTableRow): string {
     const due = formatDate(data.due_date);
 
     if (from && due) {
-return `${from} until ${due}`;
-}
+        return `${from} until ${due}`;
+    }
 
     if (from) {
-return `Starts on ${from}`;
-}
+        return `Starts on ${from}`;
+    }
 
     if (due) {
-return `Due on ${due}`;
-}
+        return `Due on ${due}`;
+    }
 
     return 'Anytime';
 }

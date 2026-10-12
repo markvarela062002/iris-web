@@ -5,24 +5,23 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Student;
 use App\Services\DatatableService;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Symfony\Component\HttpFoundation\Response;
-use Carbon\CarbonImmutable;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
+use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
 class DocumentsController extends Controller
 {
     public function __construct(
         private readonly DatatableService $datatableService,
-    ) {
-    }
+    ) {}
 
     /**
      * Return uploaded documents for administrator monitoring.
@@ -194,29 +193,21 @@ class DocumentsController extends Controller
                 'file_upload.time_uploaded',
             ],
             sortableColumns: [
-                'fname' =>
-                    'person.fname',
+                'fname' => 'person.fname',
 
-                'lname' =>
-                    'person.lname',
+                'lname' => 'person.lname',
 
-                'school_id_no' =>
-                    'person.school_id_no',
+                'school_id_no' => 'person.school_id_no',
 
-                'file_desc' =>
-                    'file_upload.file_desc',
+                'file_desc' => 'file_upload.file_desc',
 
-                'desc_requirement' =>
-                    'requirement.desc_requirement',
+                'desc_requirement' => 'requirement.desc_requirement',
 
-                'date_uploaded' =>
-                    'file_upload.date_uploaded',
+                'date_uploaded' => 'file_upload.date_uploaded',
 
-                'last_update' =>
-                    'file_upload.last_update',
+                'last_update' => 'file_upload.last_update',
 
-                'sto_validated' =>
-                    'file_upload.sto_validated',
+                'sto_validated' => 'file_upload.sto_validated',
             ],
             defaultSortColumn: 'date_uploaded',
             defaultSortDirection: 'desc',
@@ -241,12 +232,10 @@ class DocumentsController extends Controller
 
                     $record['files'] =
                         $this->buildFileList(
-                            filenames:
-                                $record['filenames']
+                            filenames: $record['filenames']
                                 ?? null,
 
-                            documentsBaseUrl:
-                                $documentsBaseUrl,
+                            documentsBaseUrl: $documentsBaseUrl,
                         );
 
                     return $record;
@@ -271,8 +260,7 @@ class DocumentsController extends Controller
         if (! $account instanceof Student) {
             return response()->json(
                 [
-                    'message' =>
-                        'Only student accounts may access this resource.',
+                    'message' => 'Only student accounts may access this resource.',
                 ],
                 Response::HTTP_FORBIDDEN,
             );
@@ -420,54 +408,40 @@ class DocumentsController extends Controller
                     }
 
                     return [
-                        'id' =>
-                            $document->id,
+                        'id' => $document->id,
 
-                        'requirement_id' =>
-                            $document->requirement_id,
+                        'requirement_id' => $document->requirement_id,
 
-                        'description' =>
-                            $document->file_desc
+                        'description' => $document->file_desc
                             ?: (
                                 $document
                                     ->desc_requirement
                                 ?? 'Uploaded Document'
                             ),
 
-                        'requirement' =>
-                            $document->desc_requirement
+                        'requirement' => $document->desc_requirement
                             ?? null,
 
-                        'date_uploaded' =>
-                            $document->date_uploaded,
+                        'date_uploaded' => $document->date_uploaded,
 
-                        'time_uploaded' =>
-                            $document->time_uploaded,
+                        'time_uploaded' => $document->time_uploaded,
 
-                        'last_update' =>
-                            $document->last_update,
+                        'last_update' => $document->last_update,
 
-                        'sto_validated' =>
-                            $document->sto_validated,
+                        'sto_validated' => $document->sto_validated,
 
-                        'for_app' =>
-                            $document->for_app,
+                        'for_app' => $document->for_app,
 
-                        'revise_remarks' =>
-                            $remarks,
+                        'revise_remarks' => $remarks,
 
-                        'status' =>
-                            $status,
+                        'status' => $status,
 
-                        'files' =>
-                            $this->buildFileList(
-                                filenames:
-                                    $document->filenames
-                                    ?? null,
+                        'files' => $this->buildFileList(
+                            filenames: $document->filenames
+                                ?? null,
 
-                                documentsBaseUrl:
-                                    $documentsBaseUrl,
-                            ),
+                            documentsBaseUrl: $documentsBaseUrl,
+                        ),
                     ];
                 },
             )
@@ -505,8 +479,7 @@ class DocumentsController extends Controller
         if (! $documentExists) {
             return response()->json(
                 [
-                    'message' =>
-                        'The uploaded document could not be found.',
+                    'message' => 'The uploaded document could not be found.',
                 ],
                 Response::HTTP_NOT_FOUND,
             );
@@ -523,15 +496,13 @@ class DocumentsController extends Controller
                 'for_app' => 'N',
                 'revise_remarks' => '',
 
-                'last_update' =>
-                    now()->format(
-                        'Y-m-d H:i:s',
-                    ),
+                'last_update' => now()->format(
+                    'Y-m-d H:i:s',
+                ),
             ]);
 
         return response()->json([
-            'message' =>
-                'The file has been validated.',
+            'message' => 'The file has been validated.',
         ]);
     }
 
@@ -550,8 +521,7 @@ class DocumentsController extends Controller
                 ],
             ],
             [
-                'revise_remarks.required' =>
-                    'Reason for revision is required.',
+                'revise_remarks.required' => 'Reason for revision is required.',
             ],
         );
 
@@ -574,8 +544,7 @@ class DocumentsController extends Controller
         if (! $documentExists) {
             return response()->json(
                 [
-                    'message' =>
-                        'The uploaded document could not be found.',
+                    'message' => 'The uploaded document could not be found.',
                 ],
                 Response::HTTP_NOT_FOUND,
             );
@@ -594,18 +563,15 @@ class DocumentsController extends Controller
                     $validated['revise_remarks'],
                 ),
 
-                'last_update' =>
-                    now()->format(
-                        'Y-m-d H:i:s',
-                    ),
+                'last_update' => now()->format(
+                    'Y-m-d H:i:s',
+                ),
             ]);
 
         return response()->json([
-            'message' =>
-                'The submitted record has been saved.',
+            'message' => 'The submitted record has been saved.',
         ]);
     }
-
 
     /**
      * Return only the authenticated student's uploaded documents.
@@ -622,8 +588,7 @@ class DocumentsController extends Controller
         if (! $account instanceof Student) {
             return response()->json(
                 [
-                    'message' =>
-                        'Only student accounts may access this resource.',
+                    'message' => 'Only student accounts may access this resource.',
                 ],
                 Response::HTTP_FORBIDDEN,
             );
@@ -702,16 +667,11 @@ class DocumentsController extends Controller
                 'file_upload.date_uploaded',
             ],
             sortableColumns: [
-                'file_desc' =>
-                    'file_upload.file_desc',
-                'desc_requirement' =>
-                    'requirement.desc_requirement',
-                'date_uploaded' =>
-                    'file_upload.date_uploaded',
-                'last_update' =>
-                    'file_upload.last_update',
-                'sto_validated' =>
-                    'file_upload.sto_validated',
+                'file_desc' => 'file_upload.file_desc',
+                'desc_requirement' => 'requirement.desc_requirement',
+                'date_uploaded' => 'file_upload.date_uploaded',
+                'last_update' => 'file_upload.last_update',
+                'sto_validated' => 'file_upload.sto_validated',
             ],
             defaultSortColumn: 'last_update',
             defaultSortDirection: 'desc',
@@ -809,24 +769,19 @@ class DocumentsController extends Controller
                                 );
 
                                 return [
-                                    'id' =>
-                                        (string) $file->id,
-                                    'name' =>
-                                        $filename,
-                                    'label' =>
-                                        $filename,
-                                    'url' =>
-                                        $documentsBaseUrl !== ''
+                                    'id' => (string) $file->id,
+                                    'name' => $filename,
+                                    'label' => $filename,
+                                    'url' => $documentsBaseUrl !== ''
                                             ? (
                                                 $documentsBaseUrl
-                                                . '/'
-                                                . rawurlencode(
+                                                .'/'
+                                                .rawurlencode(
                                                     $filename,
                                                 )
                                             )
                                             : null,
-                                    'order_no' =>
-                                        $file->order_no,
+                                    'order_no' => $file->order_no,
                                 ];
                             },
                         )
@@ -877,8 +832,7 @@ class DocumentsController extends Controller
         if (! $account instanceof Student) {
             return response()->json(
                 [
-                    'message' =>
-                        'Only student accounts may access this resource.',
+                    'message' => 'Only student accounts may access this resource.',
                 ],
                 Response::HTTP_FORBIDDEN,
             );
@@ -942,27 +896,21 @@ class DocumentsController extends Controller
                     );
 
                     return [
-                        'id' =>
-                            (string) $requirement->id,
-                        'code_requirement' =>
-                            $requirement
-                                ->code_requirement,
-                        'desc_requirement' =>
-                            $requirement
-                                ->desc_requirement,
-                        'prio' =>
-                            $requirement->prio,
-                        'template' =>
-                            $template !== ''
+                        'id' => (string) $requirement->id,
+                        'code_requirement' => $requirement
+                            ->code_requirement,
+                        'desc_requirement' => $requirement
+                            ->desc_requirement,
+                        'prio' => $requirement->prio,
+                        'template' => $template !== ''
                                 ? $template
                                 : null,
-                        'template_url' =>
-                            $template !== ''
+                        'template_url' => $template !== ''
                             && $documentsBaseUrl !== ''
                                 ? (
                                     $documentsBaseUrl
-                                    . '/'
-                                    . rawurlencode(
+                                    .'/'
+                                    .rawurlencode(
                                         $template,
                                     )
                                 )
@@ -973,8 +921,7 @@ class DocumentsController extends Controller
             ->values();
 
         return response()->json([
-            'data' =>
-                $requirements,
+            'data' => $requirements,
         ]);
     }
 
@@ -989,8 +936,7 @@ class DocumentsController extends Controller
         if (! $account instanceof Student) {
             return response()->json(
                 [
-                    'message' =>
-                        'Only student accounts may access this resource.',
+                    'message' => 'Only student accounts may access this resource.',
                 ],
                 Response::HTTP_FORBIDDEN,
             );
@@ -1022,14 +968,10 @@ class DocumentsController extends Controller
                 'accepted',
             ],
         ], [
-            'files.required' =>
-                'Attach at least one document.',
-            'files.min' =>
-                'Attach at least one document.',
-            'files.*.max' =>
-                'Each attachment must not exceed 25 MB.',
-            'confirm_authenticity.accepted' =>
-                'You must confirm the authenticity and responsibility notice before submitting.',
+            'files.required' => 'Attach at least one document.',
+            'files.min' => 'Attach at least one document.',
+            'files.*.max' => 'Each attachment must not exceed 25 MB.',
+            'confirm_authenticity.accepted' => 'You must confirm the authenticity and responsibility notice before submitting.',
         ]);
 
         $db = $this->resolveSchoolConnection(
@@ -1054,8 +996,7 @@ class DocumentsController extends Controller
         if (! $requirementExists) {
             return response()->json(
                 [
-                    'message' =>
-                        'The selected requirement could not be found.',
+                    'message' => 'The selected requirement could not be found.',
                 ],
                 Response::HTTP_UNPROCESSABLE_ENTITY,
             );
@@ -1116,67 +1057,51 @@ class DocumentsController extends Controller
                     $db
                         ->table('file_upload')
                         ->insert([
-                            'id' =>
-                                $fileUploadId,
-                            'file_name' =>
-                                trim(
-                                    $validated[
-                                        'file_desc'
-                                    ],
-                                ),
-                            'file_desc' =>
-                                trim(
-                                    $validated[
-                                        'file_desc'
-                                    ],
-                                ),
-                            'date_uploaded' =>
-                                $timestamp->format(
-                                    'Y-m-d',
-                                ),
-                            'time_uploaded' =>
-                                $timestamp->format(
-                                    'H:i:s',
-                                ),
-                            'requirement_id' =>
+                            'id' => $fileUploadId,
+                            'file_name' => trim(
                                 $validated[
+                                    'file_desc'
+                                ],
+                            ),
+                            'file_desc' => trim(
+                                $validated[
+                                    'file_desc'
+                                ],
+                            ),
+                            'date_uploaded' => $timestamp->format(
+                                'Y-m-d',
+                            ),
+                            'time_uploaded' => $timestamp->format(
+                                'H:i:s',
+                            ),
+                            'requirement_id' => $validated[
                                     'requirement_id'
                                 ],
-                            'owner_id' =>
-                                $studentId,
-                            'sto_validated' =>
-                                'N',
-                            'for_app' =>
-                                'Y',
-                            'revise_remarks' =>
-                                '',
-                            'last_update' =>
-                                $timestamp->format(
-                                    'Y-m-d H:i:s',
-                                ),
+                            'owner_id' => $studentId,
+                            'sto_validated' => 'N',
+                            'for_app' => 'Y',
+                            'revise_remarks' => '',
+                            'last_update' => $timestamp->format(
+                                'Y-m-d H:i:s',
+                            ),
                         ]);
 
                     foreach (
-                        $uploadedFiles as
-                        $index => $filename
+                        $uploadedFiles as $index => $filename
                     ) {
                         $db
                             ->table(
                                 'file_upload_d',
                             )
                             ->insert([
-                                'id' =>
-                                    $this
-                                        ->uniqueTableId(
-                                            $db,
-                                            'file_upload_d',
-                                        ),
-                                'file_upload_id' =>
-                                    $fileUploadId,
-                                'filename_d' =>
-                                    $filename,
-                                'order_no' =>
-                                    $index + 1,
+                                'id' => $this
+                                    ->uniqueTableId(
+                                        $db,
+                                        'file_upload_d',
+                                    ),
+                                'file_upload_id' => $fileUploadId,
+                                'filename_d' => $filename,
+                                'order_no' => $index + 1,
                             ]);
                     }
                 },
@@ -1191,10 +1116,8 @@ class DocumentsController extends Controller
 
             return response()->json(
                 [
-                    'message' =>
-                        'Unable to upload the document.',
-                    'error' =>
-                        config('app.debug')
+                    'message' => 'Unable to upload the document.',
+                    'error' => config('app.debug')
                             ? $exception
                                 ->getMessage()
                             : null,
@@ -1205,11 +1128,9 @@ class DocumentsController extends Controller
 
         return response()->json(
             [
-                'message' =>
-                    'Document submitted for verification.',
+                'message' => 'Document submitted for verification.',
                 'data' => [
-                    'id' =>
-                        $fileUploadId,
+                    'id' => $fileUploadId,
                 ],
             ],
             Response::HTTP_CREATED,
@@ -1228,8 +1149,7 @@ class DocumentsController extends Controller
         if (! $account instanceof Student) {
             return response()->json(
                 [
-                    'message' =>
-                        'Only student accounts may access this resource.',
+                    'message' => 'Only student accounts may access this resource.',
                 ],
                 Response::HTTP_FORBIDDEN,
             );
@@ -1267,10 +1187,8 @@ class DocumentsController extends Controller
                 'accepted',
             ],
         ], [
-            'files.*.max' =>
-                'Each attachment must not exceed 25 MB.',
-            'confirm_authenticity.accepted' =>
-                'You must confirm the authenticity and responsibility notice before submitting.',
+            'files.*.max' => 'Each attachment must not exceed 25 MB.',
+            'confirm_authenticity.accepted' => 'You must confirm the authenticity and responsibility notice before submitting.',
         ]);
 
         $db = $this->resolveSchoolConnection(
@@ -1299,8 +1217,7 @@ class DocumentsController extends Controller
         if (! $document) {
             return response()->json(
                 [
-                    'message' =>
-                        'The uploaded document could not be found.',
+                    'message' => 'The uploaded document could not be found.',
                 ],
                 Response::HTTP_NOT_FOUND,
             );
@@ -1319,8 +1236,7 @@ class DocumentsController extends Controller
         ) {
             return response()->json(
                 [
-                    'message' =>
-                        'Verified documents can no longer be edited or deleted.',
+                    'message' => 'Verified documents can no longer be edited or deleted.',
                 ],
                 Response::HTTP_CONFLICT,
             );
@@ -1337,8 +1253,7 @@ class DocumentsController extends Controller
         if (! $requirementExists) {
             return response()->json(
                 [
-                    'message' =>
-                        'The selected requirement could not be found.',
+                    'message' => 'The selected requirement could not be found.',
                 ],
                 Response::HTTP_UNPROCESSABLE_ENTITY,
             );
@@ -1359,10 +1274,9 @@ class DocumentsController extends Controller
             ?? [],
         )
             ->map(
-                static fn ($id): string =>
-                    trim(
-                        (string) $id,
-                    ),
+                static fn ($id): string => trim(
+                    (string) $id,
+                ),
             )
             ->filter()
             ->unique()
@@ -1385,8 +1299,7 @@ class DocumentsController extends Controller
         ) {
             return response()->json(
                 [
-                    'message' =>
-                        'One or more selected attachments do not belong to this document.',
+                    'message' => 'One or more selected attachments do not belong to this document.',
                 ],
                 Response::HTTP_UNPROCESSABLE_ENTITY,
             );
@@ -1407,8 +1320,7 @@ class DocumentsController extends Controller
         if ($remainingFileCount < 1) {
             return response()->json(
                 [
-                    'message' =>
-                        'At least one document attachment is required.',
+                    'message' => 'At least one document attachment is required.',
                 ],
                 Response::HTTP_UNPROCESSABLE_ENTITY,
             );
@@ -1466,32 +1378,25 @@ class DocumentsController extends Controller
                             $studentId,
                         )
                         ->update([
-                            'file_name' =>
-                                trim(
-                                    $validated[
-                                        'file_desc'
-                                    ],
-                                ),
-                            'file_desc' =>
-                                trim(
-                                    $validated[
-                                        'file_desc'
-                                    ],
-                                ),
-                            'requirement_id' =>
+                            'file_name' => trim(
                                 $validated[
+                                    'file_desc'
+                                ],
+                            ),
+                            'file_desc' => trim(
+                                $validated[
+                                    'file_desc'
+                                ],
+                            ),
+                            'requirement_id' => $validated[
                                     'requirement_id'
                                 ],
-                            'sto_validated' =>
-                                'N',
-                            'for_app' =>
-                                'Y',
-                            'revise_remarks' =>
-                                '',
-                            'last_update' =>
-                                $timestamp->format(
-                                    'Y-m-d H:i:s',
-                                ),
+                            'sto_validated' => 'N',
+                            'for_app' => 'Y',
+                            'revise_remarks' => '',
+                            'last_update' => $timestamp->format(
+                                'Y-m-d H:i:s',
+                            ),
                         ]);
 
                     if (
@@ -1528,8 +1433,7 @@ class DocumentsController extends Controller
                     );
 
                     foreach (
-                        $uploadedFiles as
-                        $filename
+                        $uploadedFiles as $filename
                     ) {
                         $nextOrder++;
 
@@ -1538,18 +1442,14 @@ class DocumentsController extends Controller
                                 'file_upload_d',
                             )
                             ->insert([
-                                'id' =>
-                                    $this
-                                        ->uniqueTableId(
-                                            $db,
-                                            'file_upload_d',
-                                        ),
-                                'file_upload_id' =>
-                                    $fileUploadId,
-                                'filename_d' =>
-                                    $filename,
-                                'order_no' =>
-                                    $nextOrder,
+                                'id' => $this
+                                    ->uniqueTableId(
+                                        $db,
+                                        'file_upload_d',
+                                    ),
+                                'file_upload_id' => $fileUploadId,
+                                'filename_d' => $filename,
+                                'order_no' => $nextOrder,
                             ]);
                     }
                 },
@@ -1564,10 +1464,8 @@ class DocumentsController extends Controller
 
             return response()->json(
                 [
-                    'message' =>
-                        'Unable to update the document.',
-                    'error' =>
-                        config('app.debug')
+                    'message' => 'Unable to update the document.',
+                    'error' => config('app.debug')
                             ? $exception
                                 ->getMessage()
                             : null,
@@ -1581,10 +1479,9 @@ class DocumentsController extends Controller
             $removableFiles
                 ->pluck('filename_d')
                 ->map(
-                    static fn ($filename): string =>
-                        trim(
-                            (string) $filename,
-                        ),
+                    static fn ($filename): string => trim(
+                        (string) $filename,
+                    ),
                 )
                 ->filter()
                 ->values()
@@ -1592,8 +1489,7 @@ class DocumentsController extends Controller
         );
 
         return response()->json([
-            'message' =>
-                'Document submitted for verification.',
+            'message' => 'Document submitted for verification.',
         ]);
     }
 
@@ -1609,8 +1505,7 @@ class DocumentsController extends Controller
         if (! $account instanceof Student) {
             return response()->json(
                 [
-                    'message' =>
-                        'Only student accounts may access this resource.',
+                    'message' => 'Only student accounts may access this resource.',
                 ],
                 Response::HTTP_FORBIDDEN,
             );
@@ -1642,8 +1537,7 @@ class DocumentsController extends Controller
         if (! $document) {
             return response()->json(
                 [
-                    'message' =>
-                        'The uploaded document could not be found.',
+                    'message' => 'The uploaded document could not be found.',
                 ],
                 Response::HTTP_NOT_FOUND,
             );
@@ -1662,8 +1556,7 @@ class DocumentsController extends Controller
         ) {
             return response()->json(
                 [
-                    'message' =>
-                        'Verified documents can no longer be edited or deleted.',
+                    'message' => 'Verified documents can no longer be edited or deleted.',
                 ],
                 Response::HTTP_CONFLICT,
             );
@@ -1700,26 +1593,18 @@ class DocumentsController extends Controller
                             'backup_activity',
                         )
                         ->insert([
-                            'id' =>
-                                $this
-                                    ->uniqueTableId(
-                                        $db,
-                                        'backup_activity',
-                                    ),
-                            'trans_table' =>
-                                'file_upload',
-                            'trans_id' =>
-                                $fileUploadId,
-                            'person_id' =>
-                                $studentId,
-                            'login_id' =>
-                                $studentId,
-                            'last_update' =>
-                                $timestamp,
-                            'synced' =>
-                                'N',
-                            'activity_desc' =>
-                                'delete',
+                            'id' => $this
+                                ->uniqueTableId(
+                                    $db,
+                                    'backup_activity',
+                                ),
+                            'trans_table' => 'file_upload',
+                            'trans_id' => $fileUploadId,
+                            'person_id' => $studentId,
+                            'login_id' => $studentId,
+                            'last_update' => $timestamp,
+                            'synced' => 'N',
+                            'activity_desc' => 'delete',
                         ]);
 
                     foreach (
@@ -1730,27 +1615,19 @@ class DocumentsController extends Controller
                                 'backup_activity',
                             )
                             ->insert([
-                                'id' =>
-                                    $this
-                                        ->uniqueTableId(
-                                            $db,
-                                            'backup_activity',
-                                        ),
-                                'trans_table' =>
-                                    'file_upload_d',
-                                'trans_id' =>
-                                    (string)
+                                'id' => $this
+                                    ->uniqueTableId(
+                                        $db,
+                                        'backup_activity',
+                                    ),
+                                'trans_table' => 'file_upload_d',
+                                'trans_id' => (string)
                                         $detail->id,
-                                'person_id' =>
-                                    $studentId,
-                                'login_id' =>
-                                    $studentId,
-                                'last_update' =>
-                                    $timestamp,
-                                'synced' =>
-                                    'N',
-                                'activity_desc' =>
-                                    'delete',
+                                'person_id' => $studentId,
+                                'login_id' => $studentId,
+                                'last_update' => $timestamp,
+                                'synced' => 'N',
+                                'activity_desc' => 'delete',
                             ]);
                     }
 
@@ -1780,10 +1657,8 @@ class DocumentsController extends Controller
 
             return response()->json(
                 [
-                    'message' =>
-                        'Unable to delete the document.',
-                    'error' =>
-                        config('app.debug')
+                    'message' => 'Unable to delete the document.',
+                    'error' => config('app.debug')
                             ? $exception
                                 ->getMessage()
                             : null,
@@ -1797,10 +1672,9 @@ class DocumentsController extends Controller
             $details
                 ->pluck('filename_d')
                 ->map(
-                    static fn ($filename): string =>
-                        trim(
-                            (string) $filename,
-                        ),
+                    static fn ($filename): string => trim(
+                        (string) $filename,
+                    ),
                 )
                 ->filter()
                 ->values()
@@ -1808,8 +1682,7 @@ class DocumentsController extends Controller
         );
 
         return response()->json([
-            'message' =>
-                'Document deleted successfully.',
+            'message' => 'Document deleted successfully.',
         ]);
     }
 
@@ -1872,15 +1745,12 @@ class DocumentsController extends Controller
                     $documentsBaseUrl,
                 ): array {
                     return [
-                        'name' =>
-                            $filename,
+                        'name' => $filename,
 
-                        'label' =>
-                            'View or download document '.
+                        'label' => 'View or download document '.
                             ($index + 1),
 
-                        'url' =>
-                            $documentsBaseUrl.
+                        'url' => $documentsBaseUrl.
                             '/'.
                             rawurlencode(
                                 $filename,
@@ -1890,7 +1760,6 @@ class DocumentsController extends Controller
             )
             ->all();
     }
-
 
     /**
      * Return the public selected-school document URL.
@@ -2082,26 +1951,16 @@ class DocumentsController extends Controller
         }
 
         return Storage::build([
-            'driver' =>
-                'ftp',
-            'host' =>
-                $host,
-            'username' =>
-                $username,
-            'password' =>
-                $password,
-            'port' =>
-                $port,
-            'root' =>
-                $root,
-            'passive' =>
-                true,
-            'ssl' =>
-                false,
-            'timeout' =>
-                30,
-            'throw' =>
-                true,
+            'driver' => 'ftp',
+            'host' => $host,
+            'username' => $username,
+            'password' => $password,
+            'port' => $port,
+            'root' => $root,
+            'passive' => true,
+            'ssl' => false,
+            'timeout' => 30,
+            'throw' => true,
         ]);
     }
 
@@ -2149,15 +2008,15 @@ class DocumentsController extends Controller
         do {
             $filename =
                 'docs_'
-                . $timestamp->format(
+                .$timestamp->format(
                     'Ymd_His',
                 )
-                . '_'
-                . bin2hex(
+                .'_'
+                .bin2hex(
                     random_bytes(4),
                 )
-                . '.'
-                . $extension;
+                .'.'
+                .$extension;
         } while (
             $disk->exists(
                 $filename,
@@ -2213,7 +2072,7 @@ class DocumentsController extends Controller
      * Remove uploaded document files from the selected school's FTP storage.
      * Cleanup failures are reported but do not reverse a successful DB commit.
      *
-     * @param array<int, string> $filenames
+     * @param  array<int, string>  $filenames
      */
     private function deleteStudentDocumentFiles(
         Request $request,
@@ -2223,16 +2082,15 @@ class DocumentsController extends Controller
             $filenames,
         )
             ->map(
-                static fn ($filename): string =>
-                    basename(
-                        str_replace(
-                            '\\',
-                            '/',
-                            trim(
-                                (string) $filename,
-                            ),
+                static fn ($filename): string => basename(
+                    str_replace(
+                        '\\',
+                        '/',
+                        trim(
+                            (string) $filename,
                         ),
                     ),
+                ),
             )
             ->filter()
             ->unique()
@@ -2360,8 +2218,7 @@ class DocumentsController extends Controller
         if ($schoolCode === '') {
             return response()->json(
                 [
-                    'message' =>
-                        'No school database has been selected.',
+                    'message' => 'No school database has been selected.',
                 ],
                 Response::HTTP_FORBIDDEN,
             );
@@ -2375,8 +2232,7 @@ class DocumentsController extends Controller
         if (! is_array($schools)) {
             return response()->json(
                 [
-                    'message' =>
-                        'School configuration is unavailable.',
+                    'message' => 'School configuration is unavailable.',
                 ],
                 Response::HTTP_INTERNAL_SERVER_ERROR,
             );
@@ -2388,11 +2244,9 @@ class DocumentsController extends Controller
         if (! is_array($school)) {
             return response()->json(
                 [
-                    'message' =>
-                        'The selected school is not configured.',
+                    'message' => 'The selected school is not configured.',
 
-                    'schoolCode' =>
-                        $schoolCode,
+                    'schoolCode' => $schoolCode,
                 ],
                 Response::HTTP_FORBIDDEN,
             );
@@ -2416,8 +2270,7 @@ class DocumentsController extends Controller
         ) {
             return response()->json(
                 [
-                    'message' =>
-                        'The selected school code is invalid.',
+                    'message' => 'The selected school code is invalid.',
                 ],
                 Response::HTTP_FORBIDDEN,
             );
@@ -2432,11 +2285,9 @@ class DocumentsController extends Controller
         ) {
             return response()->json(
                 [
-                    'message' =>
-                        'The school database connection is missing.',
+                    'message' => 'The school database connection is missing.',
 
-                    'schoolCode' =>
-                        $schoolCode,
+                    'schoolCode' => $schoolCode,
                 ],
                 Response::HTTP_INTERNAL_SERVER_ERROR,
             );
@@ -2453,22 +2304,18 @@ class DocumentsController extends Controller
         if (! is_array($connectionConfig)) {
             return response()->json(
                 [
-                    'message' =>
-                        'The school database connection is not configured.',
+                    'message' => 'The school database connection is not configured.',
 
-                    'schoolCode' =>
-                        $schoolCode,
+                    'schoolCode' => $schoolCode,
 
-                    'connection' =>
-                        $connection,
+                    'connection' => $connection,
                 ],
                 Response::HTTP_INTERNAL_SERVER_ERROR,
             );
         }
 
         config([
-            'database.default' =>
-                $connection,
+            'database.default' => $connection,
         ]);
 
         DB::setDefaultConnection(

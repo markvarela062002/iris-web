@@ -20,7 +20,6 @@ import type {
     SharedData,
 } from '@/types';
 
-
 defineOptions({
     inheritAttrs: false,
     layout: {
@@ -160,8 +159,8 @@ async function loadYearlyReport(): Promise<void> {
         yearlyChartData.value = response.data.chart;
     } catch (error: unknown) {
         if (axios.isCancel(error)) {
-return;
-}
+            return;
+        }
 
         reportError.value = axios.isAxiosError(error)
             ? String(
@@ -621,7 +620,11 @@ function getStudentAvatar(gender: unknown): string | undefined {
         return '/images/female-cadet.png';
     }
 
-    if (normalizedGender === '' || normalizedGender === null || normalizedGender === undefined) {
+    if (
+        normalizedGender === '' ||
+        normalizedGender === null ||
+        normalizedGender === undefined
+    ) {
         return '/images/default-cadet.png';
     }
 

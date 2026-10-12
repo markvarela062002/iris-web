@@ -1,5 +1,7 @@
 <?php
+
 namespace App\Http\Controllers\Api\V1;
+
 use App\Http\Controllers\Controller;
 use App\Services\DatatableService;
 use App\Services\IrisEmailService;
@@ -11,13 +13,14 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
+
 class StudentsController extends Controller
 {
     public function __construct(
         private readonly DatatableService $datatableService,
         private readonly IrisEmailService $irisEmailService,
-    ) {
-    }
+    ) {}
+
     /**
      * Return students from the selected school database.
      */
@@ -143,23 +146,15 @@ class StudentsController extends Controller
                     'person.etrb_type',
                 ],
                 sortableColumns: [
-                    'code_person' =>
-                        'person.code_person',
-                    'school_id_no' =>
-                        'person.school_id_no',
-                    'lname' =>
-                        'person.lname',
-                    'fname' =>
-                        'person.fname',
-                    'dept' =>
-                        'person.dept',
-                    'batch_no' =>
-                        'person.batch_no',
+                    'code_person' => 'person.code_person',
+                    'school_id_no' => 'person.school_id_no',
+                    'lname' => 'person.lname',
+                    'fname' => 'person.fname',
+                    'dept' => 'person.dept',
+                    'batch_no' => 'person.batch_no',
                 ],
-                defaultSortColumn:
-                    'lname',
-                defaultSortDirection:
-                    'asc',
+                defaultSortColumn: 'lname',
+                defaultSortDirection: 'asc',
             );
         $result = $this
             ->datatableService
@@ -195,14 +190,14 @@ class StudentsController extends Controller
             ->filter(
                 static fn (
                     mixed $id,
-                ): bool =>
-                    is_string($id) &&
+                ): bool => is_string($id) &&
                     trim($id) !== '',
             )
             ->values()
             ->all();
         if ($personIds === []) {
             $result['data'] = [];
+
             return response()->json(
                 $result,
             );
@@ -325,18 +320,12 @@ class StudentsController extends Controller
                                 object $activity,
                             ): array {
                                 return [
-                                    'id' =>
-                                        $activity->id,
-                                    'activity_id' =>
-                                        $activity->activity_id,
-                                    'description' =>
-                                        $activity->desc_activity,
-                                    'start_date' =>
-                                        $activity->start_date,
-                                    'end_date' =>
-                                        $activity->end_date,
-                                    'verified' =>
-                                        $activity->sto_validated,
+                                    'id' => $activity->id,
+                                    'activity_id' => $activity->activity_id,
+                                    'description' => $activity->desc_activity,
+                                    'start_date' => $activity->start_date,
+                                    'end_date' => $activity->end_date,
+                                    'verified' => $activity->sto_validated,
                                 ];
                             },
                         )
@@ -355,34 +344,30 @@ class StudentsController extends Controller
                                 object $file,
                             ): array {
                                 return [
-                                    'id' =>
-                                        $file->id,
-                                    'requirement_id' =>
-                                        $file->requirement_id,
-                                    'requirement' =>
-                                        $file->desc_requirement,
-                                    'description' =>
-                                        $file->file_desc,
-                                    'date_uploaded' =>
-                                        $file->date_uploaded,
-                                    'time_uploaded' =>
-                                        $file->time_uploaded,
-                                    'verified' =>
-                                        $file->sto_validated,
+                                    'id' => $file->id,
+                                    'requirement_id' => $file->requirement_id,
+                                    'requirement' => $file->desc_requirement,
+                                    'description' => $file->file_desc,
+                                    'date_uploaded' => $file->date_uploaded,
+                                    'time_uploaded' => $file->time_uploaded,
+                                    'verified' => $file->sto_validated,
                                 ];
                             },
                         )
                         ->values()
                         ->all();
+
                     return $student;
                 },
             )
             ->values()
             ->all();
+
         return response()->json(
             $result,
         );
     }
+
     /**
      * Create a student in the selected school database.
      */
@@ -556,8 +541,7 @@ class StudentsController extends Controller
                 ->exists()
         ) {
             return response()->json([
-                'message' =>
-                    'The School ID No. is already being used by another student.',
+                'message' => 'The School ID No. is already being used by another student.',
                 'errors' => [
                     'school_id_no' => [
                         'The School ID No. is already being used by another student.',
@@ -601,7 +585,7 @@ class StudentsController extends Controller
                             ->where(
                                 'code_person',
                                 'like',
-                                $prefix . '%',
+                                $prefix.'%',
                             )
                             ->orderByDesc(
                                 'code_person',
@@ -628,7 +612,7 @@ class StudentsController extends Controller
                 }
                 do {
                     $codePerson =
-                        $prefix .
+                        $prefix.
                         str_pad(
                             (string) $nextSequence,
                             4,
@@ -672,104 +656,60 @@ class StudentsController extends Controller
                 $db
                     ->table('person')
                     ->insert([
-                        'id' =>
-                            $studentId,
-                        'code_person' =>
-                            $codePerson,
-                        'school_id_no' =>
-                            $schoolId,
-                        'fname' =>
-                            $validated['fname'],
-                        'mname' =>
-                            $validated['mname'] ?? '',
-                        'lname' =>
-                            $validated['lname'],
-                        'gender' =>
-                            $this->genderDatabaseValue(
-                                $validated['gender'],
-                            ),
-                        'civ_status' =>
-                            $validated['civ_status'] ?? '',
-                        'birth_date' =>
-                            $validated['birth_date'] ??
+                        'id' => $studentId,
+                        'code_person' => $codePerson,
+                        'school_id_no' => $schoolId,
+                        'fname' => $validated['fname'],
+                        'mname' => $validated['mname'] ?? '',
+                        'lname' => $validated['lname'],
+                        'gender' => $this->genderDatabaseValue(
+                            $validated['gender'],
+                        ),
+                        'civ_status' => $validated['civ_status'] ?? '',
+                        'birth_date' => $validated['birth_date'] ??
                             '1970-01-01',
-                        'birth_place' =>
-                            $validated['birth_place'] ?? '',
-                        'batch_no' =>
-                            $validated['batch_no'],
-                        'st_address' =>
-                            $validated['st_address'] ?? '',
-                        'city_id' =>
-                            $validated['city_id'] ?? '',
-                        'province_id' =>
-                            $validated['province_id'] ?? '',
-                        'mobile' =>
-                            $validated['mobile'] ?? '',
-                        'phone' =>
-                            $validated['phone'] ?? '',
-                        'email' =>
-                            $validated['email'],
-                        'facebook' =>
-                            $validated['facebook'] ?? '',
-                        'st_address_province' =>
-                            $validated['st_address_province'] ?? '',
-                        'phone_province' =>
-                            $validated['phone_province'] ?? '',
-                        'mother_name' =>
-                            $validated['mother_name'] ?? '',
-                        'mother_nos' =>
-                            $validated['mother_nos'] ?? '',
-                        'father_name' =>
-                            $validated['father_name'] ?? '',
-                        'father_nos' =>
-                            $validated['father_nos'] ?? '',
-                        'spouse_name' =>
-                            $validated['spouse_name'] ?? '',
-                        'spouse_nos' =>
-                            $validated['spouse_nos'] ?? '',
-                        'date_reg' =>
-                            $validated['date_reg'] ??
+                        'birth_place' => $validated['birth_place'] ?? '',
+                        'batch_no' => $validated['batch_no'],
+                        'st_address' => $validated['st_address'] ?? '',
+                        'city_id' => $validated['city_id'] ?? '',
+                        'province_id' => $validated['province_id'] ?? '',
+                        'mobile' => $validated['mobile'] ?? '',
+                        'phone' => $validated['phone'] ?? '',
+                        'email' => $validated['email'],
+                        'facebook' => $validated['facebook'] ?? '',
+                        'st_address_province' => $validated['st_address_province'] ?? '',
+                        'phone_province' => $validated['phone_province'] ?? '',
+                        'mother_name' => $validated['mother_name'] ?? '',
+                        'mother_nos' => $validated['mother_nos'] ?? '',
+                        'father_name' => $validated['father_name'] ?? '',
+                        'father_nos' => $validated['father_nos'] ?? '',
+                        'spouse_name' => $validated['spouse_name'] ?? '',
+                        'spouse_nos' => $validated['spouse_nos'] ?? '',
+                        'date_reg' => $validated['date_reg'] ??
                             now()->format('Y-m-d'),
-                        'dept' =>
-                            $validated['dept'],
-                        'etrb_type' =>
-                            $validated['etrb_type'],
-                        'notes' =>
-                            $validated['notes'] ?? '',
-                        'ins_company' =>
-                            $validated['ins_company'] ?? '',
-                        'ins_amt' =>
-                            $validated['ins_amt'] ?? 0,
-                        'ins_hospital' =>
-                            $validated['ins_hospital'] ?? 0,
-                        'ins_disability' =>
-                            $validated['ins_disability'] ?? 0,
-                        'ins_death' =>
-                            $validated['ins_death'] ?? 0,
-                        'stipend' =>
-                            $validated['stipend'] ?? 0,
-                        'login_name' =>
-                            $loginName,
-                        'login_pass' =>
-                            $password,
-                        'active' =>
-                            $validated['active'],
-                        'login_id' =>
-                            $loginId,
-                        'last_update' =>
-                            now()->format(
-                                'Y-m-d H:i:s',
-                            ),
+                        'dept' => $validated['dept'],
+                        'etrb_type' => $validated['etrb_type'],
+                        'notes' => $validated['notes'] ?? '',
+                        'ins_company' => $validated['ins_company'] ?? '',
+                        'ins_amt' => $validated['ins_amt'] ?? 0,
+                        'ins_hospital' => $validated['ins_hospital'] ?? 0,
+                        'ins_disability' => $validated['ins_disability'] ?? 0,
+                        'ins_death' => $validated['ins_death'] ?? 0,
+                        'stipend' => $validated['stipend'] ?? 0,
+                        'login_name' => $loginName,
+                        'login_pass' => $password,
+                        'active' => $validated['active'],
+                        'login_id' => $loginId,
+                        'last_update' => now()->format(
+                            'Y-m-d H:i:s',
+                        ),
                     ]);
+
                 return [
-                    'id' =>
-                        $studentId,
-                    'code_person' =>
-                        $codePerson,
-                    'login_name' =>
-                        $loginName,
-                    'password' =>
-                        $password,
+                    'id' => $studentId,
+                    'code_person' => $codePerson,
+                    'login_name' => $loginName,
+                    'password' => $password,
                 ];
             },
         );
@@ -803,15 +743,15 @@ class StudentsController extends Controller
             $emailSent;
         $created['email'] =
             (string) $validated['email'];
+
         return response()->json([
-            'message' =>
-                $emailSent
+            'message' => $emailSent
                     ? 'Student added successfully. Login credentials were sent to the student email.'
                     : 'Student added successfully, but the credential email could not be sent. Use Send Email on the student profile to retry.',
-            'data' =>
-                $created,
+            'data' => $created,
         ], Response::HTTP_CREATED);
     }
+
     /**
      * Return one student profile from the selected school database.
      */
@@ -875,8 +815,7 @@ class StudentsController extends Controller
             ->first();
         if (! $student) {
             return response()->json([
-                'message' =>
-                    'Student not found.',
+                'message' => 'Student not found.',
             ], Response::HTTP_NOT_FOUND);
         }
         $record = get_object_vars(
@@ -889,10 +828,12 @@ class StudentsController extends Controller
                     ? (string) $record['photo_file']
                     : null,
             );
+
         return response()->json([
             'data' => $record,
         ]);
     }
+
     /**
      * Return lookup options used by the student profile form.
      */
@@ -925,6 +866,7 @@ class StudentsController extends Controller
                 'name_province',
             )
             ->get();
+
         return response()->json([
             'data' => [
                 'cities' => $cities,
@@ -932,6 +874,7 @@ class StudentsController extends Controller
             ],
         ]);
     }
+
     /**
      * Update the editable student profile fields.
      */
@@ -954,8 +897,7 @@ class StudentsController extends Controller
             ->first();
         if (! $student) {
             return response()->json([
-                'message' =>
-                    'Student not found.',
+                'message' => 'Student not found.',
             ], Response::HTTP_NOT_FOUND);
         }
         $validated = $request->validate([
@@ -1135,8 +1077,7 @@ class StudentsController extends Controller
             ->exists();
         if ($duplicateLogin) {
             return response()->json([
-                'message' =>
-                    'The login name is already being used by another student.',
+                'message' => 'The login name is already being used by another student.',
                 'errors' => [
                     'login_name' => [
                         'The login name is already being used by another student.',
@@ -1145,88 +1086,51 @@ class StudentsController extends Controller
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
         $updateData = [
-            'school_id_no' =>
-                $validated['school_id_no'],
-            'fname' =>
-                $validated['fname'],
-            'mname' =>
-                $validated['mname'] ?? '',
-            'lname' =>
-                $validated['lname'],
-            'gender' =>
-                $this->genderDatabaseValue(
-                    $validated['gender'],
-                ),
-            'civ_status' =>
-                $validated['civ_status'] ?? '',
-            'birth_date' =>
-                $validated['birth_date'] ??
+            'school_id_no' => $validated['school_id_no'],
+            'fname' => $validated['fname'],
+            'mname' => $validated['mname'] ?? '',
+            'lname' => $validated['lname'],
+            'gender' => $this->genderDatabaseValue(
+                $validated['gender'],
+            ),
+            'civ_status' => $validated['civ_status'] ?? '',
+            'birth_date' => $validated['birth_date'] ??
                 '1970-01-01',
-            'birth_place' =>
-                $validated['birth_place'] ?? '',
-            'batch_no' =>
-                $validated['batch_no'],
-            'st_address' =>
-                $validated['st_address'] ?? '',
-            'city_id' =>
-                $validated['city_id'] ?? '',
-            'province_id' =>
-                $validated['province_id'] ?? '',
-            'mobile' =>
-                $validated['mobile'] ?? '',
-            'phone' =>
-                $validated['phone'] ?? '',
-            'email' =>
-                $validated['email'] ?? '',
-            'facebook' =>
-                $validated['facebook'] ?? '',
-            'st_address_province' =>
-                $validated[
+            'birth_place' => $validated['birth_place'] ?? '',
+            'batch_no' => $validated['batch_no'],
+            'st_address' => $validated['st_address'] ?? '',
+            'city_id' => $validated['city_id'] ?? '',
+            'province_id' => $validated['province_id'] ?? '',
+            'mobile' => $validated['mobile'] ?? '',
+            'phone' => $validated['phone'] ?? '',
+            'email' => $validated['email'] ?? '',
+            'facebook' => $validated['facebook'] ?? '',
+            'st_address_province' => $validated[
                     'st_address_province'
                 ] ?? '',
-            'phone_province' =>
-                $validated['phone_province'] ?? '',
-            'mother_name' =>
-                $validated['mother_name'] ?? '',
-            'mother_nos' =>
-                $validated['mother_nos'] ?? '',
-            'father_name' =>
-                $validated['father_name'] ?? '',
-            'father_nos' =>
-                $validated['father_nos'] ?? '',
-            'spouse_name' =>
-                $validated['spouse_name'] ?? '',
-            'spouse_nos' =>
-                $validated['spouse_nos'] ?? '',
-            'date_reg' =>
-                $validated['date_reg'] ??
+            'phone_province' => $validated['phone_province'] ?? '',
+            'mother_name' => $validated['mother_name'] ?? '',
+            'mother_nos' => $validated['mother_nos'] ?? '',
+            'father_name' => $validated['father_name'] ?? '',
+            'father_nos' => $validated['father_nos'] ?? '',
+            'spouse_name' => $validated['spouse_name'] ?? '',
+            'spouse_nos' => $validated['spouse_nos'] ?? '',
+            'date_reg' => $validated['date_reg'] ??
                 now()->format('Y-m-d'),
-            'dept' =>
-                $validated['dept'],
-            'etrb_type' =>
-                $validated['etrb_type'],
-            'notes' =>
-                $validated['notes'] ?? '',
-            'ins_company' =>
-                $validated['ins_company'] ?? '',
-            'ins_amt' =>
-                $validated['ins_amt'] ?? 0,
-            'ins_hospital' =>
-                $validated['ins_hospital'] ?? 0,
-            'ins_disability' =>
-                $validated['ins_disability'] ?? 0,
-            'ins_death' =>
-                $validated['ins_death'] ?? 0,
-            'stipend' =>
-                $validated['stipend'] ?? 0,
-            'login_name' =>
-                $loginName,
-            'active' =>
-                $validated['active'],
-            'last_update' =>
-                now()->format(
-                    'Y-m-d H:i:s',
-                ),
+            'dept' => $validated['dept'],
+            'etrb_type' => $validated['etrb_type'],
+            'notes' => $validated['notes'] ?? '',
+            'ins_company' => $validated['ins_company'] ?? '',
+            'ins_amt' => $validated['ins_amt'] ?? 0,
+            'ins_hospital' => $validated['ins_hospital'] ?? 0,
+            'ins_disability' => $validated['ins_disability'] ?? 0,
+            'ins_death' => $validated['ins_death'] ?? 0,
+            'stipend' => $validated['stipend'] ?? 0,
+            'login_name' => $loginName,
+            'active' => $validated['active'],
+            'last_update' => now()->format(
+                'Y-m-d H:i:s',
+            ),
         ];
         $newPassword = trim(
             (string) (
@@ -1256,13 +1160,14 @@ class StudentsController extends Controller
             ->update(
                 $updateData,
             );
+
         return response()->json([
-            'message' =>
-                $newPassword !== ''
+            'message' => $newPassword !== ''
                     ? 'Student profile and login credentials updated successfully.'
                     : 'Student profile saved successfully.',
         ]);
     }
+
     /**
      * Send the student's CURRENT saved login credentials to the email
      * address stored on the selected school database.
@@ -1296,8 +1201,7 @@ class StudentsController extends Controller
             ]);
         if (! $student) {
             return response()->json([
-                'message' =>
-                    'Student not found.',
+                'message' => 'Student not found.',
             ], Response::HTTP_NOT_FOUND);
         }
         $email = trim(
@@ -1315,8 +1219,7 @@ class StudentsController extends Controller
             ) === false
         ) {
             return response()->json([
-                'message' =>
-                    'The student does not have a valid email address. Save a valid email address first.',
+                'message' => 'The student does not have a valid email address. Save a valid email address first.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
         $loginName = trim(
@@ -1335,8 +1238,7 @@ class StudentsController extends Controller
             $password === ''
         ) {
             return response()->json([
-                'message' =>
-                    'The student account does not have complete login credentials to send.',
+                'message' => 'The student account does not have complete login credentials to send.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
         $studentName = trim(
@@ -1367,16 +1269,17 @@ class StudentsController extends Controller
             );
         } catch (Throwable $error) {
             report($error);
+
             return response()->json([
-                'message' =>
-                    'The credential email could not be sent. The student account changes were saved successfully. Please try sending the email again.',
+                'message' => 'The credential email could not be sent. The student account changes were saved successfully. Please try sending the email again.',
             ], Response::HTTP_BAD_GATEWAY);
         }
+
         return response()->json([
-            'message' =>
-                "Login credentials were sent to {$email}.",
+            'message' => "Login credentials were sent to {$email}.",
         ]);
     }
+
     public function uploadPhoto(
         Request $request,
         string $studentId,
@@ -1407,8 +1310,7 @@ class StudentsController extends Controller
             ]);
         if (! $student) {
             return response()->json([
-                'message' =>
-                    'Student not found.',
+                'message' => 'Student not found.',
             ], Response::HTTP_NOT_FOUND);
         }
         $photo = $request->file(
@@ -1419,8 +1321,7 @@ class StudentsController extends Controller
             ! $photo->isValid()
         ) {
             return response()->json([
-                'message' =>
-                    'The selected profile photo is invalid.',
+                'message' => 'The selected profile photo is invalid.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
         $schoolCode = $this
@@ -1429,16 +1330,15 @@ class StudentsController extends Controller
             );
         if ($schoolCode === '') {
             return response()->json([
-                'message' =>
-                    'No school database has been selected.',
+                'message' => 'No school database has been selected.',
             ], Response::HTTP_FORBIDDEN);
         }
         $diskName =
             'admapro_'
-            . Str::lower(
+            .Str::lower(
                 $schoolCode,
             )
-            . '_photos';
+            .'_photos';
         $diskConfig = config(
             "filesystems.disks.{$diskName}",
         );
@@ -1470,8 +1370,7 @@ class StudentsController extends Controller
             ) === ''
         ) {
             return response()->json([
-                'message' =>
-                    'Student photo storage is not configured for the selected school.',
+                'message' => 'Student photo storage is not configured for the selected school.',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
         $extension = strtolower(
@@ -1492,19 +1391,18 @@ class StudentsController extends Controller
             now()->format(
                 'Ymd_His',
             )
-            . '_'
-            . Str::lower(
+            .'_'
+            .Str::lower(
                 Str::random(8),
             )
-            . '.'
-            . $extension;
+            .'.'
+            .$extension;
         $contents = file_get_contents(
             $photo->getRealPath(),
         );
         if ($contents === false) {
             return response()->json([
-                'message' =>
-                    'Unable to read the selected profile photo.',
+                'message' => 'Unable to read the selected profile photo.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
         try {
@@ -1516,15 +1414,14 @@ class StudentsController extends Controller
             );
         } catch (Throwable $error) {
             report($error);
+
             return response()->json([
-                'message' =>
-                    'Unable to upload the student profile photo to the selected school storage.',
+                'message' => 'Unable to upload the student profile photo to the selected school storage.',
             ], Response::HTTP_BAD_GATEWAY);
         }
         if (! $stored) {
             return response()->json([
-                'message' =>
-                    'Unable to upload the student profile photo to the selected school storage.',
+                'message' => 'Unable to upload the student profile photo to the selected school storage.',
             ], Response::HTTP_BAD_GATEWAY);
         }
         $db
@@ -1534,27 +1431,24 @@ class StudentsController extends Controller
                 $studentId,
             )
             ->update([
-                'photo_file' =>
-                    $filename,
-                'last_update' =>
-                    now()->format(
-                        'Y-m-d H:i:s',
-                    ),
+                'photo_file' => $filename,
+                'last_update' => now()->format(
+                    'Y-m-d H:i:s',
+                ),
             ]);
+
         return response()->json([
-            'message' =>
-                'Student profile photo updated successfully.',
+            'message' => 'Student profile photo updated successfully.',
             'data' => [
-                'photo_file' =>
+                'photo_file' => $filename,
+                'photo_url' => $this->buildStudentPhotoUrl(
+                    $request,
                     $filename,
-                'photo_url' =>
-                    $this->buildStudentPhotoUrl(
-                        $request,
-                        $filename,
-                    ),
+                ),
             ],
         ]);
     }
+
     private function genderDatabaseValue(
         string $gender,
     ): string {
@@ -1570,6 +1464,7 @@ class StudentsController extends Controller
             default => '',
         };
     }
+
     /**
      * Shared account-email view used by Student Profile and Batch Upload.
      */
@@ -1593,6 +1488,7 @@ class StudentsController extends Controller
             ],
         );
     }
+
     private function selectedSchoolCode(
         Request $request,
     ): string {
@@ -1607,6 +1503,7 @@ class StudentsController extends Controller
             ),
         );
     }
+
     private function buildStudentPhotoUrl(
         Request $request,
         ?string $photoFile,
@@ -1653,12 +1550,14 @@ class StudentsController extends Controller
         ) {
             return null;
         }
-        return $photosUrl .
-            '/' .
+
+        return $photosUrl.
+            '/'.
             rawurlencode(
                 $filename,
             );
     }
+
     /**
      * Resolve the database selected during login.
      */
@@ -1677,8 +1576,7 @@ class StudentsController extends Controller
         );
         if ($schoolCode === '') {
             return response()->json([
-                'message' =>
-                    'No school database has been selected.',
+                'message' => 'No school database has been selected.',
             ], Response::HTTP_FORBIDDEN);
         }
         $schools = config(
@@ -1687,8 +1585,7 @@ class StudentsController extends Controller
         );
         if (! is_array($schools)) {
             return response()->json([
-                'message' =>
-                    'School configuration is unavailable.',
+                'message' => 'School configuration is unavailable.',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
         $school =
@@ -1696,10 +1593,8 @@ class StudentsController extends Controller
             null;
         if (! is_array($school)) {
             return response()->json([
-                'message' =>
-                    'The selected school is not configured.',
-                'schoolCode' =>
-                    $schoolCode,
+                'message' => 'The selected school is not configured.',
+                'schoolCode' => $schoolCode,
             ], Response::HTTP_FORBIDDEN);
         }
         $configuredCode = strtoupper(
@@ -1718,8 +1613,7 @@ class StudentsController extends Controller
             )
         ) {
             return response()->json([
-                'message' =>
-                    'The selected school code is invalid.',
+                'message' => 'The selected school code is invalid.',
             ], Response::HTTP_FORBIDDEN);
         }
         $connection =
@@ -1730,10 +1624,8 @@ class StudentsController extends Controller
             $connection === ''
         ) {
             return response()->json([
-                'message' =>
-                    'The school database connection is missing.',
-                'schoolCode' =>
-                    $schoolCode,
+                'message' => 'The school database connection is missing.',
+                'schoolCode' => $schoolCode,
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
         $connectionConfig =
@@ -1746,21 +1638,18 @@ class StudentsController extends Controller
             )
         ) {
             return response()->json([
-                'message' =>
-                    'The school database connection is not configured.',
-                'schoolCode' =>
-                    $schoolCode,
-                'connection' =>
-                    $connection,
+                'message' => 'The school database connection is not configured.',
+                'schoolCode' => $schoolCode,
+                'connection' => $connection,
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
         config([
-            'database.default' =>
-                $connection,
+            'database.default' => $connection,
         ]);
         DB::setDefaultConnection(
             $connection,
         );
+
         return DB::connection(
             $connection,
         );

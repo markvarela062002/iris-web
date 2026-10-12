@@ -4,6 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property string|null $is_admin
+ * @property string|null $allow_delete
+ * @property string|null $internal
+ */
 class LoginType extends Model
 {
     protected $table = 'login_type';

@@ -80,12 +80,7 @@ class Student extends Authenticatable
      */
     public $timestamps = false;
 
-    /**
-     * Include computed attributes when the authenticated
-     * student is serialized for Inertia.
-     *
-     * @var array<int, string>
-     */
+    /** @var list<string> */
     protected $appends = [
         'full_name',
         'profile_image',
@@ -129,13 +124,11 @@ class Student extends Authenticatable
             $this->lname,
         ])
             ->filter(
-                fn (mixed $name): bool =>
-                    is_string($name) &&
+                fn (mixed $name): bool => is_string($name) &&
                     trim($name) !== '',
             )
             ->map(
-                fn (string $name): string =>
-                    trim($name),
+                fn (string $name): string => trim($name),
             )
             ->implode(' ');
     }
@@ -181,6 +174,8 @@ class Student extends Authenticatable
      * Get the student's role.
      *
      * person.login_id references login_type.id.
+     *
+     * @return BelongsTo<LoginType, $this>
      */
     public function loginType(): BelongsTo
     {

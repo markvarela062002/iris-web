@@ -58,23 +58,7 @@ defineProps<{
                     :tabindex="1"
                     autocomplete="username"
                     placeholder="Enter username"
-                    class="
-                        h-12
-                        border-white/40
-                        bg-white/5
-                        px-4
-                        text-base
-                        text-white
-                        shadow-none
-                        placeholder:text-[#D1E2F0]
-                        transition-all
-                        hover:border-white/60
-                        hover:bg-white/[0.07]
-                        focus-visible:border-white
-                        focus-visible:bg-white/10
-                        focus-visible:ring-2
-                        focus-visible:ring-white/15
-                    "
+                    class="h-12 border-white/40 bg-white/5 px-4 text-base text-white shadow-none transition-all placeholder:text-[#D1E2F0] hover:border-white/60 hover:bg-white/[0.07] focus-visible:border-white focus-visible:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/15"
                 />
 
                 <InputError :message="errors.login_name" />
@@ -82,10 +66,7 @@ defineProps<{
 
             <!-- PASSWORD -->
             <div class="grid gap-2.5">
-                <Label
-                    for="password"
-                    class="text-sm font-semibold text-white"
-                >
+                <Label for="password" class="text-sm font-semibold text-white">
                     Password
                 </Label>
 
@@ -96,22 +77,7 @@ defineProps<{
                     :tabindex="2"
                     autocomplete="current-password"
                     placeholder="Enter password"
-                    class="
-                        h-12
-                        border-white/40
-                        bg-white/5
-                        text-base
-                        text-white
-                        shadow-none
-                        placeholder:text-[#D1E2F0]
-                        transition-all
-                        hover:border-white/60
-                        hover:bg-white/[0.07]
-                        focus-visible:border-white
-                        focus-visible:bg-white/10
-                        focus-visible:ring-2
-                        focus-visible:ring-white/15
-                    "
+                    class="h-12 border-white/40 bg-white/5 text-base text-white shadow-none transition-all placeholder:text-[#D1E2F0] hover:border-white/60 hover:bg-white/[0.07] focus-visible:border-white focus-visible:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/15"
                 />
 
                 <InputError :message="errors.password" />
@@ -119,10 +85,7 @@ defineProps<{
 
             <!-- DATABASE CODE -->
             <div class="grid gap-2.5">
-                <Label
-                    for="code"
-                    class="text-sm font-semibold text-white"
-                >
+                <Label for="code" class="text-sm font-semibold text-white">
                     Code
                 </Label>
 
@@ -136,25 +99,7 @@ defineProps<{
                     autocapitalize="characters"
                     :spellcheck="false"
                     placeholder="Enter code"
-                    class="
-                        h-12
-                        border-white/40
-                        bg-white/5
-                        px-4
-                        text-base
-                        uppercase
-                        text-white
-                        shadow-none
-                        placeholder:normal-case
-                        placeholder:text-[#D1E2F0]
-                        transition-all
-                        hover:border-white/60
-                        hover:bg-white/[0.07]
-                        focus-visible:border-white
-                        focus-visible:bg-white/10
-                        focus-visible:ring-2
-                        focus-visible:ring-white/15
-                    "
+                    class="h-12 border-white/40 bg-white/5 px-4 text-base text-white uppercase shadow-none transition-all placeholder:text-[#D1E2F0] placeholder:normal-case hover:border-white/60 hover:bg-white/[0.07] focus-visible:border-white focus-visible:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/15"
                 />
 
                 <InputError :message="errors.code" />
@@ -163,20 +108,7 @@ defineProps<{
             <!-- LOGIN BUTTON -->
             <Button
                 type="submit"
-                class="
-                    mt-2
-                    h-12
-                    w-full
-                    bg-white
-                    text-base
-                    font-semibold
-                    text-[#0B1F3A]
-                    transition-all
-                    hover:bg-[#EAF1F8]
-                    focus-visible:ring-2
-                    focus-visible:ring-white/30
-                    disabled:opacity-60
-                "
+                class="mt-2 h-12 w-full bg-white text-base font-semibold text-[#0B1F3A] transition-all hover:bg-[#EAF1F8] focus-visible:ring-2 focus-visible:ring-white/30 disabled:opacity-60"
                 :tabindex="4"
                 :disabled="processing"
                 data-test="login-button"

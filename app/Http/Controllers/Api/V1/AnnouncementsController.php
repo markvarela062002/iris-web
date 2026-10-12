@@ -16,8 +16,7 @@ class AnnouncementsController extends Controller
 {
     public function __construct(
         private readonly DatatableService $datatableService,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -112,7 +111,6 @@ class AnnouncementsController extends Controller
 
         return response()->json($result);
     }
-
 
     /**
      * Return active announcements for the authenticated student.

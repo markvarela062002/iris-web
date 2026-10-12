@@ -69,28 +69,20 @@ class AlertCalendarController extends Controller
                     $count = (int) $row->qty;
 
                     return [
-                        'id' =>
-                            'person_activity-'
-                            . $row->event_date,
-                        'type' =>
-                            'person_activity',
-                        'date' =>
-                            (string) $row->event_date,
-                        'count' =>
-                            $count,
-                        'label' =>
-                            $count
-                            . (
+                        'id' => 'person_activity-'
+                            .$row->event_date,
+                        'type' => 'person_activity',
+                        'date' => (string) $row->event_date,
+                        'count' => $count,
+                        'label' => $count
+                            .(
                                 $count === 1
                                     ? ' activity'
                                     : ' activities'
                             ),
-                        'severity' =>
-                            'warn',
-                        'color' =>
-                            '#FF6B00',
-                        'icon' =>
-                            'pi pi-bolt',
+                        'severity' => 'warn',
+                        'color' => '#FF6B00',
+                        'icon' => 'pi pi-bolt',
                     ];
                 },
             );
@@ -120,30 +112,22 @@ class AlertCalendarController extends Controller
                     $count = (int) $row->qty;
 
                     return [
-                        'id' =>
-                            'file_upload-'
-                            . $row->event_date,
-                        'type' =>
-                            'file_upload',
-                        'date' =>
-                            (string) $row->event_date,
-                        'count' =>
-                            $count,
-                        'label' =>
-                            $count
-                            . (
+                        'id' => 'file_upload-'
+                            .$row->event_date,
+                        'type' => 'file_upload',
+                        'date' => (string) $row->event_date,
+                        'count' => $count,
+                        'label' => $count
+                            .(
                                 $count === 1
                                     ? ' uploaded document'
                                     : ' uploaded documents'
                             ),
-                        'severity' =>
-                            'success',
-                        'color' =>
-                            '#00BF8F',
-                        'icon' =>
-                            'pi pi-file-arrow-up',
+                        'severity' => 'success',
+                        'color' => '#00BF8F',
+                        'icon' => 'pi pi-file-arrow-up',
                     ];
-                },  
+                },
             );
 
         $taskEvents = $db
@@ -176,28 +160,20 @@ class AlertCalendarController extends Controller
                     $count = (int) $row->qty;
 
                     return [
-                        'id' =>
-                            'person_task-'
-                            . $row->event_date,
-                        'type' =>
-                            'person_task',
-                        'date' =>
-                            (string) $row->event_date,
-                        'count' =>
-                            $count,
-                        'label' =>
-                            $count
-                            . (
+                        'id' => 'person_task-'
+                            .$row->event_date,
+                        'type' => 'person_task',
+                        'date' => (string) $row->event_date,
+                        'count' => $count,
+                        'label' => $count
+                            .(
                                 $count === 1
                                     ? ' task uploaded'
                                     : ' tasks uploaded'
                             ),
-                        'severity' =>
-                            'danger',
-                        'color' =>
-                            '#FF293D',
-                        'icon' =>
-                            'pi pi-bookmark',
+                        'severity' => 'danger',
+                        'color' => '#FF293D',
+                        'icon' => 'pi pi-bookmark',
                     ];
                 },
             );
@@ -227,28 +203,20 @@ class AlertCalendarController extends Controller
                     $count = (int) $row->qty;
 
                     return [
-                        'id' =>
-                            'person_journal-'
-                            . $row->event_date,
-                        'type' =>
-                            'person_journal',
-                        'date' =>
-                            (string) $row->event_date,
-                        'count' =>
-                            $count,
-                        'label' =>
-                            $count
-                            . (
+                        'id' => 'person_journal-'
+                            .$row->event_date,
+                        'type' => 'person_journal',
+                        'date' => (string) $row->event_date,
+                        'count' => $count,
+                        'label' => $count
+                            .(
                                 $count === 1
                                     ? ' daily journal'
                                     : ' daily journals'
                             ),
-                        'severity' =>
-                            'info',
-                        'color' =>
-                            '#347EFF',
-                        'icon' =>
-                            'pi pi-book',
+                        'severity' => 'info',
+                        'color' => '#347EFF',
+                        'icon' => 'pi pi-book',
                     ];
                 },
             );
@@ -267,352 +235,514 @@ class AlertCalendarController extends Controller
     }
 
     public function details(
-    Request $request,
-    string $type,
-    string $date,
-): JsonResponse {
-    validator(
-        [
-            'type' => $type,
-            'date' => $date,
-        ],
-        [
-            'type' => [
-                'required',
-                Rule::in(self::TYPES),
+        Request $request,
+        string $type,
+        string $date,
+    ): JsonResponse {
+        validator(
+            [
+                'type' => $type,
+                'date' => $date,
             ],
-            'date' => [
-                'required',
-                'date_format:Y-m-d',
+            [
+                'type' => [
+                    'required',
+                    Rule::in(self::TYPES),
+                ],
+                'date' => [
+                    'required',
+                    'date_format:Y-m-d',
+                ],
             ],
-        ],
-    )->validate();
+        )->validate();
 
-    $db = $this->schoolConnection($request);
-    $studentId = $this->authenticatedStudentId($request);
+        $db = $this->schoolConnection($request);
+        $studentId = $this->authenticatedStudentId($request);
 
-    if ($type === 'person_activity') {
-        $rows = $db
-            ->table('person_activity')
-            ->join(
-                'person',
-                'person_activity.person_id',
-                '=',
-                'person.id',
-            )
-            ->join(
-                'activity',
-                'person_activity.activity_id',
-                '=',
-                'activity.id',
-            )
-            ->where(
-                'person_activity.start_date',
-                $date,
-            )
-            ->when(
-                $studentId !== null,
-                static fn ($query) => $query->where(
+        if ($type === 'person_activity') {
+            $rows = $db
+                ->table('person_activity')
+                ->join(
+                    'person',
                     'person_activity.person_id',
-                    $studentId,
-                ),
-            )
-            ->orderBy('person.lname')
-            ->orderBy('person.fname')
-            ->get([
-                'person_activity.id',
-                'person_activity.person_id',
-                'person_activity.start_date',
-                'person_activity.end_date',
-                'person_activity.sto_validated',
-                'person_activity.revise_remarks',
+                    '=',
+                    'person.id',
+                )
+                ->join(
+                    'activity',
+                    'person_activity.activity_id',
+                    '=',
+                    'activity.id',
+                )
+                ->where(
+                    'person_activity.start_date',
+                    $date,
+                )
+                ->when(
+                    $studentId !== null,
+                    static fn ($query) => $query->where(
+                        'person_activity.person_id',
+                        $studentId,
+                    ),
+                )
+                ->orderBy('person.lname')
+                ->orderBy('person.fname')
+                ->get([
+                    'person_activity.id',
+                    'person_activity.person_id',
+                    'person_activity.start_date',
+                    'person_activity.end_date',
+                    'person_activity.sto_validated',
+                    'person_activity.revise_remarks',
 
-                'person.fname',
-                'person.mname',
-                'person.lname',
-                'person.gender',
-                'person.school_id_no',
+                    'person.fname',
+                    'person.mname',
+                    'person.lname',
+                    'person.gender',
+                    'person.school_id_no',
 
-                'activity.desc_activity',
-            ])
-            ->map(
-                static function (object $row): array {
-                    $remarks = trim(
-                        (string) (
-                            $row->revise_remarks
-                            ?? ''
-                        ),
-                    );
-
-                    return [
-                        'id' => (string) $row->id,
-                        'person_id' => (string) $row->person_id,
-
-                        'fname' => trim(
+                    'activity.desc_activity',
+                ])
+                ->map(
+                    static function (object $row): array {
+                        $remarks = trim(
                             (string) (
-                                $row->fname
+                                $row->revise_remarks
                                 ?? ''
                             ),
-                        ),
-                        'mname' => trim(
-                            (string) (
-                                $row->mname
-                                ?? ''
-                            ),
-                        ),
-                        'lname' => trim(
-                            (string) (
-                                $row->lname
-                                ?? ''
-                            ),
-                        ),
-                        'gender' => trim(
-                            (string) (
-                                $row->gender
-                                ?? ''
-                            ),
-                        ),
-                        'school_id_no' => trim(
-                            (string) (
-                                $row->school_id_no
-                                ?? ''
-                            ),
-                        ),
+                        );
 
-                        'student' => self::studentName($row),
+                        return [
+                            'id' => (string) $row->id,
+                            'person_id' => (string) $row->person_id,
 
-                        'desc_activity' => trim(
-                            (string) (
-                                $row->desc_activity
-                                ?? ''
-                            ),
-                        ),
-
-                        'start_date' => trim(
-                            (string) (
-                                $row->start_date
-                                ?? ''
-                            ),
-                        ),
-
-                        'end_date' => trim(
-                            (string) (
-                                $row->end_date
-                                ?? ''
-                            ),
-                        ),
-
-                        'sto_validated' => trim(
-                            (string) (
-                                $row->sto_validated
-                                ?? ''
-                            ),
-                        ),
-
-                        'revise_remarks' => $remarks,
-
-                        'status' =>
-                            $row->sto_validated === 'Y'
-                                ? 'Verified'
-                                : (
-                                    $remarks !== ''
-                                        ? 'Revise'
-                                        : 'Pending'
+                            'fname' => trim(
+                                (string) (
+                                    $row->fname
+                                    ?? ''
                                 ),
-                    ];
-                },
-            )
-            ->values();
+                            ),
+                            'mname' => trim(
+                                (string) (
+                                    $row->mname
+                                    ?? ''
+                                ),
+                            ),
+                            'lname' => trim(
+                                (string) (
+                                    $row->lname
+                                    ?? ''
+                                ),
+                            ),
+                            'gender' => trim(
+                                (string) (
+                                    $row->gender
+                                    ?? ''
+                                ),
+                            ),
+                            'school_id_no' => trim(
+                                (string) (
+                                    $row->school_id_no
+                                    ?? ''
+                                ),
+                            ),
 
-        return response()->json([
-            'data' => $rows,
-        ]);
-    }
+                            'student' => self::studentName($row),
 
-    if ($type === 'file_upload') {
-        $rows = $db
-            ->table('file_upload')
-            ->leftJoin(
-                'person',
-                'person.id',
-                '=',
-                'file_upload.owner_id',
-            )
-            ->leftJoin(
-                'requirement',
-                'requirement.id',
-                '=',
-                'file_upload.requirement_id',
-            )
-            ->where(
-                'file_upload.date_uploaded',
-                $date,
-            )
-            ->when(
-                $studentId !== null,
-                static fn ($query) => $query->where(
+                            'desc_activity' => trim(
+                                (string) (
+                                    $row->desc_activity
+                                    ?? ''
+                                ),
+                            ),
+
+                            'start_date' => trim(
+                                (string) (
+                                    $row->start_date
+                                    ?? ''
+                                ),
+                            ),
+
+                            'end_date' => trim(
+                                (string) (
+                                    $row->end_date
+                                    ?? ''
+                                ),
+                            ),
+
+                            'sto_validated' => trim(
+                                (string) (
+                                    $row->sto_validated
+                                    ?? ''
+                                ),
+                            ),
+
+                            'revise_remarks' => $remarks,
+
+                            'status' => $row->sto_validated === 'Y'
+                                    ? 'Verified'
+                                    : (
+                                        $remarks !== ''
+                                            ? 'Revise'
+                                            : 'Pending'
+                                    ),
+                        ];
+                    },
+                )
+                ->values();
+
+            return response()->json([
+                'data' => $rows,
+            ]);
+        }
+
+        if ($type === 'file_upload') {
+            $rows = $db
+                ->table('file_upload')
+                ->leftJoin(
+                    'person',
+                    'person.id',
+                    '=',
                     'file_upload.owner_id',
-                    $studentId,
-                ),
-            )
-            ->orderBy('person.lname')
-            ->orderBy('person.fname')
-            ->orderBy('file_upload.time_uploaded')
-            ->get([
-                'file_upload.id',
-                'file_upload.owner_id',
-                'file_upload.file_desc',
-                'file_upload.date_uploaded',
-                'file_upload.time_uploaded',
-                'file_upload.sto_validated',
-                'file_upload.revise_remarks',
+                )
+                ->leftJoin(
+                    'requirement',
+                    'requirement.id',
+                    '=',
+                    'file_upload.requirement_id',
+                )
+                ->where(
+                    'file_upload.date_uploaded',
+                    $date,
+                )
+                ->when(
+                    $studentId !== null,
+                    static fn ($query) => $query->where(
+                        'file_upload.owner_id',
+                        $studentId,
+                    ),
+                )
+                ->orderBy('person.lname')
+                ->orderBy('person.fname')
+                ->orderBy('file_upload.time_uploaded')
+                ->get([
+                    'file_upload.id',
+                    'file_upload.owner_id',
+                    'file_upload.file_desc',
+                    'file_upload.date_uploaded',
+                    'file_upload.time_uploaded',
+                    'file_upload.sto_validated',
+                    'file_upload.revise_remarks',
 
-                'person.fname',
-                'person.mname',
-                'person.lname',
-                'person.gender',
-                'person.school_id_no',
+                    'person.fname',
+                    'person.mname',
+                    'person.lname',
+                    'person.gender',
+                    'person.school_id_no',
 
-                'requirement.desc_requirement',
-            ])
-            ->map(
-                static function (object $row): array {
-                    $remarks = trim(
-                        (string) (
-                            $row->revise_remarks
-                            ?? ''
-                        ),
-                    );
-
-                    return [
-                        'id' => (string) $row->id,
-                        'person_id' => (string) (
-                            $row->owner_id
-                            ?? ''
-                        ),
-
-                        'fname' => trim(
+                    'requirement.desc_requirement',
+                ])
+                ->map(
+                    static function (object $row): array {
+                        $remarks = trim(
                             (string) (
-                                $row->fname
+                                $row->revise_remarks
                                 ?? ''
                             ),
-                        ),
-                        'mname' => trim(
-                            (string) (
-                                $row->mname
-                                ?? ''
-                            ),
-                        ),
-                        'lname' => trim(
-                            (string) (
-                                $row->lname
-                                ?? ''
-                            ),
-                        ),
-                        'gender' => trim(
-                            (string) (
-                                $row->gender
-                                ?? ''
-                            ),
-                        ),
-                        'school_id_no' => trim(
-                            (string) (
-                                $row->school_id_no
-                                ?? ''
-                            ),
-                        ),
+                        );
 
-                        'student' => self::studentName($row),
-
-                        'desc_requirement' => trim(
-                            (string) (
-                                $row->desc_requirement
+                        return [
+                            'id' => (string) $row->id,
+                            'person_id' => (string) (
+                                $row->owner_id
                                 ?? ''
                             ),
-                        ),
 
-                        'file_desc' => trim(
-                            (string) (
-                                $row->file_desc
-                                ?? ''
-                            ),
-                        ),
-
-                        'date_uploaded' => trim(
-                            (string) (
-                                $row->date_uploaded
-                                ?? ''
-                            ),
-                        ),
-
-                        'time_uploaded' => trim(
-                            (string) (
-                                $row->time_uploaded
-                                ?? ''
-                            ),
-                        ),
-
-                        'sto_validated' => trim(
-                            (string) (
-                                $row->sto_validated
-                                ?? ''
-                            ),
-                        ),
-
-                        'revise_remarks' => $remarks,
-
-                        'status' =>
-                            $row->sto_validated === 'Y'
-                                ? 'Verified'
-                                : (
-                                    $remarks !== ''
-                                        ? 'Revise'
-                                        : 'Pending'
+                            'fname' => trim(
+                                (string) (
+                                    $row->fname
+                                    ?? ''
                                 ),
-                    ];
-                },
-            )
-            ->values();
+                            ),
+                            'mname' => trim(
+                                (string) (
+                                    $row->mname
+                                    ?? ''
+                                ),
+                            ),
+                            'lname' => trim(
+                                (string) (
+                                    $row->lname
+                                    ?? ''
+                                ),
+                            ),
+                            'gender' => trim(
+                                (string) (
+                                    $row->gender
+                                    ?? ''
+                                ),
+                            ),
+                            'school_id_no' => trim(
+                                (string) (
+                                    $row->school_id_no
+                                    ?? ''
+                                ),
+                            ),
 
-        return response()->json([
-            'data' => $rows,
-        ]);
-    }
+                            'student' => self::studentName($row),
 
-    if ($type === 'person_journal') {
+                            'desc_requirement' => trim(
+                                (string) (
+                                    $row->desc_requirement
+                                    ?? ''
+                                ),
+                            ),
+
+                            'file_desc' => trim(
+                                (string) (
+                                    $row->file_desc
+                                    ?? ''
+                                ),
+                            ),
+
+                            'date_uploaded' => trim(
+                                (string) (
+                                    $row->date_uploaded
+                                    ?? ''
+                                ),
+                            ),
+
+                            'time_uploaded' => trim(
+                                (string) (
+                                    $row->time_uploaded
+                                    ?? ''
+                                ),
+                            ),
+
+                            'sto_validated' => trim(
+                                (string) (
+                                    $row->sto_validated
+                                    ?? ''
+                                ),
+                            ),
+
+                            'revise_remarks' => $remarks,
+
+                            'status' => $row->sto_validated === 'Y'
+                                    ? 'Verified'
+                                    : (
+                                        $remarks !== ''
+                                            ? 'Revise'
+                                            : 'Pending'
+                                    ),
+                        ];
+                    },
+                )
+                ->values();
+
+            return response()->json([
+                'data' => $rows,
+            ]);
+        }
+
+        if ($type === 'person_journal') {
+            $rows = $db
+                ->table('person_journal')
+                ->leftJoin(
+                    'person',
+                    'person_journal.person_id',
+                    '=',
+                    'person.id',
+                )
+                ->where(
+                    'person_journal.date_journal',
+                    $date,
+                )
+                ->when(
+                    $studentId !== null,
+                    static fn ($query) => $query->where(
+                        'person_journal.person_id',
+                        $studentId,
+                    ),
+                )
+                ->orderBy('person.lname')
+                ->orderBy('person.fname')
+                ->orderBy('person_journal.journal_time')
+                ->get([
+                    'person_journal.id',
+                    'person_journal.person_id',
+                    'person_journal.date_journal',
+                    'person_journal.journal_time',
+                    'person_journal.journal_time_to',
+                    'person_journal.vessel_name',
+                    'person_journal.port_depart',
+                    'person_journal.port_dest',
+                    'person_journal.activities',
+                    'person_journal.esig_file',
+
+                    'person.fname',
+                    'person.mname',
+                    'person.lname',
+                    'person.gender',
+                    'person.school_id_no',
+                    'person.dept',
+                ])
+                ->map(
+                    static function (object $row): array {
+                        $signature = strtolower(
+                            trim(
+                                (string) (
+                                    $row->esig_file
+                                    ?? ''
+                                ),
+                            ),
+                        );
+
+                        $validated =
+                            $signature !== ''
+                            && $signature !== 'null';
+
+                        return [
+                            'id' => (string) $row->id,
+                            'person_id' => (string) $row->person_id,
+
+                            'fname' => trim(
+                                (string) (
+                                    $row->fname
+                                    ?? ''
+                                ),
+                            ),
+                            'mname' => trim(
+                                (string) (
+                                    $row->mname
+                                    ?? ''
+                                ),
+                            ),
+                            'lname' => trim(
+                                (string) (
+                                    $row->lname
+                                    ?? ''
+                                ),
+                            ),
+                            'gender' => trim(
+                                (string) (
+                                    $row->gender
+                                    ?? ''
+                                ),
+                            ),
+                            'school_id_no' => trim(
+                                (string) (
+                                    $row->school_id_no
+                                    ?? ''
+                                ),
+                            ),
+                            'department' => trim(
+                                (string) (
+                                    $row->dept
+                                    ?? ''
+                                ),
+                            ),
+
+                            'student' => self::studentName($row),
+
+                            'date_journal' => trim(
+                                (string) (
+                                    $row->date_journal
+                                    ?? ''
+                                ),
+                            ),
+
+                            'journal_time' => trim(
+                                (string) (
+                                    $row->journal_time
+                                    ?? ''
+                                ),
+                            ),
+
+                            'journal_time_to' => trim(
+                                (string) (
+                                    $row->journal_time_to
+                                    ?? ''
+                                ),
+                            ),
+
+                            'vessel_name' => trim(
+                                (string) (
+                                    $row->vessel_name
+                                    ?? ''
+                                ),
+                            ),
+
+                            'port_depart' => trim(
+                                (string) (
+                                    $row->port_depart
+                                    ?? ''
+                                ),
+                            ),
+
+                            'port_dest' => trim(
+                                (string) (
+                                    $row->port_dest
+                                    ?? ''
+                                ),
+                            ),
+
+                            'activities' => trim(
+                                (string) (
+                                    $row->activities
+                                    ?? ''
+                                ),
+                            ),
+
+                            'validated' => $validated,
+
+                            'status' => $validated
+                                    ? 'Signed'
+                                    : 'Pending',
+                        ];
+                    },
+                )
+                ->values();
+
+            return response()->json([
+                'data' => $rows,
+            ]);
+        }
+
         $rows = $db
-            ->table('person_journal')
-            ->leftJoin(
+            ->table('person_task')
+            ->join(
                 'person',
-                'person_journal.person_id',
+                'person_task.person_id',
                 '=',
                 'person.id',
             )
+            ->join(
+                'task',
+                'person_task.task_id',
+                '=',
+                'task.id',
+            )
             ->where(
-                'person_journal.date_journal',
+                'person_task.completed',
                 $date,
             )
             ->when(
                 $studentId !== null,
                 static fn ($query) => $query->where(
-                    'person_journal.person_id',
+                    'person_task.person_id',
                     $studentId,
                 ),
             )
             ->orderBy('person.lname')
             ->orderBy('person.fname')
-            ->orderBy('person_journal.journal_time')
+            ->orderBy('task.prio')
             ->get([
-                'person_journal.id',
-                'person_journal.person_id',
-                'person_journal.date_journal',
-                'person_journal.journal_time',
-                'person_journal.journal_time_to',
-                'person_journal.vessel_name',
-                'person_journal.port_depart',
-                'person_journal.port_dest',
-                'person_journal.activities',
-                'person_journal.esig_file',
+                'person_task.id',
+                'person_task.person_id',
+                'person_task.month_no',
+                'person_task.completed',
+                'person_task.passed',
 
                 'person.fname',
                 'person.mname',
@@ -620,22 +750,12 @@ class AlertCalendarController extends Controller
                 'person.gender',
                 'person.school_id_no',
                 'person.dept',
+
+                'task.ref_no',
+                'task.desc_task',
             ])
             ->map(
                 static function (object $row): array {
-                    $signature = strtolower(
-                        trim(
-                            (string) (
-                                $row->esig_file
-                                ?? ''
-                            ),
-                        ),
-                    );
-
-                    $validated =
-                        $signature !== ''
-                        && $signature !== 'null';
-
                     return [
                         'id' => (string) $row->id,
                         'person_id' => (string) $row->person_id,
@@ -670,7 +790,7 @@ class AlertCalendarController extends Controller
                                 ?? ''
                             ),
                         ),
-                        'department' => trim(
+                        'dept' => trim(
                             (string) (
                                 $row->dept
                                 ?? ''
@@ -679,61 +799,42 @@ class AlertCalendarController extends Controller
 
                         'student' => self::studentName($row),
 
-                        'date_journal' => trim(
+                        'ref_no' => trim(
                             (string) (
-                                $row->date_journal
+                                $row->ref_no
                                 ?? ''
                             ),
                         ),
 
-                        'journal_time' => trim(
+                        'desc_task' => trim(
                             (string) (
-                                $row->journal_time
+                                $row->desc_task
                                 ?? ''
                             ),
                         ),
 
-                        'journal_time_to' => trim(
+                        'month_no' => trim(
                             (string) (
-                                $row->journal_time_to
+                                $row->month_no
                                 ?? ''
                             ),
                         ),
 
-                        'vessel_name' => trim(
+                        'completed' => trim(
                             (string) (
-                                $row->vessel_name
+                                $row->completed
                                 ?? ''
                             ),
                         ),
 
-                        'port_depart' => trim(
+                        'passed' => trim(
                             (string) (
-                                $row->port_depart
+                                $row->passed
                                 ?? ''
                             ),
                         ),
 
-                        'port_dest' => trim(
-                            (string) (
-                                $row->port_dest
-                                ?? ''
-                            ),
-                        ),
-
-                        'activities' => trim(
-                            (string) (
-                                $row->activities
-                                ?? ''
-                            ),
-                        ),
-
-                        'validated' => $validated,
-
-                        'status' =>
-                            $validated
-                                ? 'Signed'
-                                : 'Pending',
+                        'status' => 'Completed',
                     ];
                 },
             )
@@ -743,143 +844,6 @@ class AlertCalendarController extends Controller
             'data' => $rows,
         ]);
     }
-
-    $rows = $db
-        ->table('person_task')
-        ->join(
-            'person',
-            'person_task.person_id',
-            '=',
-            'person.id',
-        )
-        ->join(
-            'task',
-            'person_task.task_id',
-            '=',
-            'task.id',
-        )
-        ->where(
-            'person_task.completed',
-            $date,
-        )
-        ->when(
-            $studentId !== null,
-            static fn ($query) => $query->where(
-                'person_task.person_id',
-                $studentId,
-            ),
-        )
-        ->orderBy('person.lname')
-        ->orderBy('person.fname')
-        ->orderBy('task.prio')
-        ->get([
-            'person_task.id',
-            'person_task.person_id',
-            'person_task.month_no',
-            'person_task.completed',
-            'person_task.passed',
-
-            'person.fname',
-            'person.mname',
-            'person.lname',
-            'person.gender',
-            'person.school_id_no',
-            'person.dept',
-
-            'task.ref_no',
-            'task.desc_task',
-        ])
-        ->map(
-            static function (object $row): array {
-                return [
-                    'id' => (string) $row->id,
-                    'person_id' => (string) $row->person_id,
-
-                    'fname' => trim(
-                        (string) (
-                            $row->fname
-                            ?? ''
-                        ),
-                    ),
-                    'mname' => trim(
-                        (string) (
-                            $row->mname
-                            ?? ''
-                        ),
-                    ),
-                    'lname' => trim(
-                        (string) (
-                            $row->lname
-                            ?? ''
-                        ),
-                    ),
-                    'gender' => trim(
-                        (string) (
-                            $row->gender
-                            ?? ''
-                        ),
-                    ),
-                    'school_id_no' => trim(
-                        (string) (
-                            $row->school_id_no
-                            ?? ''
-                        ),
-                    ),
-                    'dept' => trim(
-                        (string) (
-                            $row->dept
-                            ?? ''
-                        ),
-                    ),
-
-                    'student' => self::studentName($row),
-
-                    'ref_no' => trim(
-                        (string) (
-                            $row->ref_no
-                            ?? ''
-                        ),
-                    ),
-
-                    'desc_task' => trim(
-                        (string) (
-                            $row->desc_task
-                            ?? ''
-                        ),
-                    ),
-
-                    'month_no' => trim(
-                        (string) (
-                            $row->month_no
-                            ?? ''
-                        ),
-                    ),
-
-                    'completed' => trim(
-                        (string) (
-                            $row->completed
-                            ?? ''
-                        ),
-                    ),
-
-                    'passed' => trim(
-                        (string) (
-                            $row->passed
-                            ?? ''
-                        ),
-                    ),
-
-                    'status' => 'Completed',
-                ];
-            },
-        )
-        ->values();
-
-    return response()->json([
-        'data' => $rows,
-    ]);
-}
-
 
     /**
      * Return the authenticated student's person ID when the
@@ -963,7 +927,7 @@ class AlertCalendarController extends Controller
             &&
             $given !== ''
         ) {
-            return $lastName . ', ' . $given;
+            return $lastName.', '.$given;
         }
 
         return $lastName !== ''

@@ -8,7 +8,6 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -21,8 +20,7 @@ class TheoreticalExternalExamController extends Controller
 {
     public function __construct(
         private readonly ExternalAssessmentAccessService $accessService,
-    ) {
-    }
+    ) {}
 
     public function page(
         string $accessToken,
@@ -91,8 +89,7 @@ class TheoreticalExternalExamController extends Controller
         ) {
             return response()->json(
                 [
-                    'message' =>
-                        'This examination has already been completed.',
+                    'message' => 'This examination has already been completed.',
                 ],
                 Response::HTTP_UNPROCESSABLE_ENTITY,
             );
@@ -109,8 +106,7 @@ class TheoreticalExternalExamController extends Controller
         ) {
             return response()->json(
                 [
-                    'message' =>
-                        'This examination is not available yet.',
+                    'message' => 'This examination is not available yet.',
                 ],
                 Response::HTTP_FORBIDDEN,
             );
@@ -123,8 +119,7 @@ class TheoreticalExternalExamController extends Controller
         ) {
             return response()->json(
                 [
-                    'message' =>
-                        'The examination access window has expired.',
+                    'message' => 'The examination access window has expired.',
                 ],
                 Response::HTTP_FORBIDDEN,
             );
@@ -137,8 +132,7 @@ class TheoreticalExternalExamController extends Controller
         ) {
             return response()->json(
                 [
-                    'message' =>
-                        'The examination time has expired.',
+                    'message' => 'The examination time has expired.',
                     'time_expired' => true,
                 ],
                 Response::HTTP_CONFLICT,
@@ -164,8 +158,7 @@ class TheoreticalExternalExamController extends Controller
 
                 return response()->json(
                     [
-                        'message' =>
-                            'The assessment could not be found.',
+                        'message' => 'The assessment could not be found.',
                     ],
                     Response::HTTP_NOT_FOUND,
                 );
@@ -180,8 +173,7 @@ class TheoreticalExternalExamController extends Controller
 
                 return response()->json(
                     [
-                        'message' =>
-                            'This examination has already been completed.',
+                        'message' => 'This examination has already been completed.',
                     ],
                     Response::HTTP_UNPROCESSABLE_ENTITY,
                 );
@@ -228,8 +220,7 @@ class TheoreticalExternalExamController extends Controller
 
                     return response()->json(
                         [
-                            'message' =>
-                                'This examination is not available yet.',
+                            'message' => 'This examination is not available yet.',
                         ],
                         Response::HTTP_FORBIDDEN,
                     );
@@ -245,8 +236,7 @@ class TheoreticalExternalExamController extends Controller
 
                     return response()->json(
                         [
-                            'message' =>
-                                'The examination access window has expired.',
+                            'message' => 'The examination access window has expired.',
                         ],
                         Response::HTTP_FORBIDDEN,
                     );
@@ -262,11 +252,10 @@ class TheoreticalExternalExamController extends Controller
                         $assessment->id,
                     )
                     ->update([
-                        'started' =>
-                            $startedAt
-                                ->format(
-                                    'Y-m-d H:i:s',
-                                ),
+                        'started' => $startedAt
+                            ->format(
+                                'Y-m-d H:i:s',
+                            ),
                     ]);
             }
 
@@ -291,10 +280,8 @@ class TheoreticalExternalExamController extends Controller
 
                 return response()->json(
                     [
-                        'message' =>
-                            'The examination time has expired.',
-                        'time_expired' =>
-                            true,
+                        'message' => 'The examination time has expired.',
+                        'time_expired' => true,
                     ],
                     Response::HTTP_CONFLICT,
                 );
@@ -364,10 +351,8 @@ class TheoreticalExternalExamController extends Controller
                 ) {
                     return response()->json(
                         [
-                            'message' =>
-                                'This assessment has no competences assigned. Please contact the administrator.',
-                            'exam_setup_error' =>
-                                true,
+                            'message' => 'This assessment has no competences assigned. Please contact the administrator.',
+                            'exam_setup_error' => true,
                         ],
                         Response::HTTP_UNPROCESSABLE_ENTITY,
                     );
@@ -375,10 +360,8 @@ class TheoreticalExternalExamController extends Controller
 
                 return response()->json(
                     [
-                        'message' =>
-                            'No unfinished competence is available for this assessment.',
-                        'exam_state_error' =>
-                            true,
+                        'message' => 'No unfinished competence is available for this assessment.',
+                        'exam_state_error' => true,
                     ],
                     Response::HTTP_CONFLICT,
                 );
@@ -405,8 +388,7 @@ class TheoreticalExternalExamController extends Controller
                         $topic->id,
                     )
                     ->update([
-                        'started' =>
-                            $topicStarted,
+                        'started' => $topicStarted,
                     ]);
 
                 $topic->started =
@@ -448,8 +430,7 @@ class TheoreticalExternalExamController extends Controller
 
             return response()->json(
                 [
-                    'message' =>
-                        'Unable to start or resume the examination.',
+                    'message' => 'Unable to start or resume the examination.',
                 ],
                 Response::HTTP_INTERNAL_SERVER_ERROR,
             );
@@ -554,8 +535,7 @@ class TheoreticalExternalExamController extends Controller
         if (! $question) {
             return response()->json(
                 [
-                    'message' =>
-                        'The examination question could not be found.',
+                    'message' => 'The examination question could not be found.',
                 ],
                 Response::HTTP_NOT_FOUND,
             );
@@ -600,8 +580,7 @@ class TheoreticalExternalExamController extends Controller
         ) {
             return response()->json(
                 [
-                    'message' =>
-                        'This question is not part of the current examination topic.',
+                    'message' => 'This question is not part of the current examination topic.',
                 ],
                 Response::HTTP_CONFLICT,
             );
@@ -638,8 +617,7 @@ class TheoreticalExternalExamController extends Controller
         ) {
             return response()->json(
                 [
-                    'message' =>
-                        'The selected answer choice is not available.',
+                    'message' => 'The selected answer choice is not available.',
                 ],
                 Response::HTTP_UNPROCESSABLE_ENTITY,
             );
@@ -734,8 +712,7 @@ class TheoreticalExternalExamController extends Controller
 
                 return response()->json(
                     [
-                        'message' =>
-                            'The examination topic could not be found.',
+                        'message' => 'The examination topic could not be found.',
                     ],
                     Response::HTTP_NOT_FOUND,
                 );
@@ -781,8 +758,7 @@ class TheoreticalExternalExamController extends Controller
 
                 return response()->json(
                     [
-                        'message' =>
-                            'Only the current examination topic may be submitted.',
+                        'message' => 'Only the current examination topic may be submitted.',
                     ],
                     Response::HTTP_CONFLICT,
                 );
@@ -799,8 +775,7 @@ class TheoreticalExternalExamController extends Controller
 
                 return response()->json(
                     [
-                        'message' =>
-                            'This topic has already been submitted.',
+                        'message' => 'This topic has already been submitted.',
                     ],
                     Response::HTTP_UNPROCESSABLE_ENTITY,
                 );
@@ -830,8 +805,7 @@ class TheoreticalExternalExamController extends Controller
             $score = 0;
 
             foreach (
-                $questions
-                as $index => $question
+                $questions as $index => $question
             ) {
                 $answer = trim(
                     (string) (
@@ -866,10 +840,8 @@ class TheoreticalExternalExamController extends Controller
 
                 return response()->json(
                     [
-                        'message' =>
-                            'Please answer all questions before submitting.',
-                        'unanswered_numbers' =>
-                            $unanswered,
+                        'message' => 'Please answer all questions before submitting.',
+                        'unanswered_numbers' => $unanswered,
                     ],
                     Response::HTTP_UNPROCESSABLE_ENTITY,
                 );
@@ -898,8 +870,7 @@ class TheoreticalExternalExamController extends Controller
                 )
                 ->update([
                     'is_saved' => 'Y',
-                    'date_taken' =>
-                        $now,
+                    'date_taken' => $now,
                 ]);
 
             $passingMark = (float) (
@@ -943,12 +914,10 @@ class TheoreticalExternalExamController extends Controller
                 )
                 ->update([
                     'ended' => $now,
-                    'score' =>
-                        $overall[
+                    'score' => $overall[
                             'score'
                         ],
-                    'passed' =>
-                        $overall[
+                    'passed' => $overall[
                             'passed'
                         ],
                 ]);
@@ -1010,12 +979,11 @@ class TheoreticalExternalExamController extends Controller
                 'done' => $done,
 
                 'topic_result' => [
-                    'topic' =>
-                        $this->decodeText(
-                            $topic
-                                ->desc_topic
-                            ?? '',
-                        ),
+                    'topic' => $this->decodeText(
+                        $topic
+                            ->desc_topic
+                        ?? '',
+                    ),
 
                     'order_no' => (int) (
                         $topic
@@ -1023,12 +991,10 @@ class TheoreticalExternalExamController extends Controller
                         ?? 0
                     ),
 
-                    'completed' =>
-                        true,
+                    'completed' => true,
                 ],
 
-                'next_topic' =>
-                    $nextTopic
+                'next_topic' => $nextTopic
                         ? [
                             'id' => (string) $nextTopic
                                 ->id,
@@ -1039,17 +1005,15 @@ class TheoreticalExternalExamController extends Controller
                             'order_no' => (int) $nextTopic
                                 ->order_no,
 
-                            'description' =>
-                                $this->decodeText(
-                                    $nextTopic
-                                        ->desc_topic
-                                    ?? '',
-                                ),
+                            'description' => $this->decodeText(
+                                $nextTopic
+                                    ->desc_topic
+                                ?? '',
+                            ),
                         ]
                         : null,
 
-                'final_result' =>
-                    $done === 'Y'
+                'final_result' => $done === 'Y'
                         ? $this
                             ->finalResult(
                                 $db,
@@ -1063,8 +1027,7 @@ class TheoreticalExternalExamController extends Controller
                             )
                         : null,
 
-                'message' =>
-                    $done === 'Y'
+                'message' => $done === 'Y'
                         ? 'The final competence has been completed. The examination is complete.'
                         : 'Competence completed. You may proceed to the next competence.',
             ]);
@@ -1080,8 +1043,7 @@ class TheoreticalExternalExamController extends Controller
 
             return response()->json(
                 [
-                    'message' =>
-                        'Unable to submit the examination topic.',
+                    'message' => 'Unable to submit the examination topic.',
                 ],
                 Response::HTTP_INTERNAL_SERVER_ERROR,
             );
@@ -1109,13 +1071,11 @@ class TheoreticalExternalExamController extends Controller
             return response()->json([
                 'success' => true,
                 'completed' => true,
-                'final_result' =>
-                    $this->finalResult(
-                        $db,
-                        $assessment,
-                    ),
-                'message' =>
-                    'The examination has already been completed.',
+                'final_result' => $this->finalResult(
+                    $db,
+                    $assessment,
+                ),
+                'message' => 'The examination has already been completed.',
             ]);
         }
 
@@ -1141,8 +1101,7 @@ class TheoreticalExternalExamController extends Controller
         ) {
             return response()->json(
                 [
-                    'message' =>
-                        'The examination timer has not started.',
+                    'message' => 'The examination timer has not started.',
                 ],
                 Response::HTTP_UNPROCESSABLE_ENTITY,
             );
@@ -1156,8 +1115,7 @@ class TheoreticalExternalExamController extends Controller
         ) {
             return response()->json(
                 [
-                    'message' =>
-                        'The examination still has time remaining.',
+                    'message' => 'The examination still has time remaining.',
                 ],
                 Response::HTTP_CONFLICT,
             );
@@ -1179,8 +1137,7 @@ class TheoreticalExternalExamController extends Controller
                 'success' => true,
                 'completed' => true,
 
-                'final_result' =>
-                    $finalAssessment
+                'final_result' => $finalAssessment
                         ? $this
                             ->finalResult(
                                 $db,
@@ -1188,21 +1145,20 @@ class TheoreticalExternalExamController extends Controller
                             )
                         : null,
 
-                'message' =>
-                    'Time is up. Your saved answers have been submitted.',
+                'message' => 'Time is up. Your saved answers have been submitted.',
             ]);
-} catch (Throwable $throwable) {
-    report($throwable);
+        } catch (Throwable $throwable) {
+            report($throwable);
 
-    return response()->json(
-        [
-            'message' => 'Unable to validate this external assessment link.',
-            'error' => $throwable->getMessage(),
-            'exception' => get_class($throwable),
-        ],
-        Response::HTTP_INTERNAL_SERVER_ERROR,
-    );
-}
+            return response()->json(
+                [
+                    'message' => 'Unable to validate this external assessment link.',
+                    'error' => $throwable->getMessage(),
+                    'exception' => get_class($throwable),
+                ],
+                Response::HTTP_INTERNAL_SERVER_ERROR,
+            );
+        }
     }
 
     private function context(
@@ -1231,8 +1187,7 @@ class TheoreticalExternalExamController extends Controller
             if (! $assessment) {
                 return response()->json(
                     [
-                        'message' =>
-                            'The external theoretical assessment could not be found.',
+                        'message' => 'The external theoretical assessment could not be found.',
                     ],
                     Response::HTTP_NOT_FOUND,
                 );
@@ -1246,9 +1201,8 @@ class TheoreticalExternalExamController extends Controller
         } catch (RuntimeException $exception) {
             return response()->json(
                 [
-                    'message' =>
-                        $exception
-                            ->getMessage(),
+                    'message' => $exception
+                        ->getMessage(),
                 ],
                 Response::HTTP_FORBIDDEN,
             );
@@ -1257,8 +1211,7 @@ class TheoreticalExternalExamController extends Controller
 
             return response()->json(
                 [
-                    'message' =>
-                        'Unable to validate this external assessment link.',
+                    'message' => 'Unable to validate this external assessment link.',
                 ],
                 Response::HTTP_INTERNAL_SERVER_ERROR,
             );
@@ -1338,14 +1291,10 @@ class TheoreticalExternalExamController extends Controller
             ) === 'Y'
         ) {
             return [
-                'exam_action_state' =>
-                    'completed',
-                'exam_action_label' =>
-                    'Exam Completed',
-                'can_open_exam' =>
-                    false,
-                'expires_at' =>
-                    null,
+                'exam_action_state' => 'completed',
+                'exam_action_label' => 'Exam Completed',
+                'can_open_exam' => false,
+                'expires_at' => null,
             ];
         }
 
@@ -1377,28 +1326,20 @@ class TheoreticalExternalExamController extends Controller
                 )
             ) {
                 return [
-                    'exam_action_state' =>
-                        'time_expired',
-                    'exam_action_label' =>
-                        'Finalize Timed Out Exam',
-                    'can_open_exam' =>
-                        true,
-                    'expires_at' =>
-                        $expiresAt
-                            ->toIso8601String(),
+                    'exam_action_state' => 'time_expired',
+                    'exam_action_label' => 'Finalize Timed Out Exam',
+                    'can_open_exam' => true,
+                    'expires_at' => $expiresAt
+                        ->toIso8601String(),
                 ];
             }
 
             return [
-                'exam_action_state' =>
-                    'resume',
-                'exam_action_label' =>
-                    'Resume Exam',
-                'can_open_exam' =>
-                    true,
-                'expires_at' =>
-                    $expiresAt
-                        ?->toIso8601String(),
+                'exam_action_state' => 'resume',
+                'exam_action_label' => 'Resume Exam',
+                'can_open_exam' => true,
+                'expires_at' => $expiresAt
+                    ?->toIso8601String(),
             ];
         }
 
@@ -1429,14 +1370,10 @@ class TheoreticalExternalExamController extends Controller
             )
         ) {
             return [
-                'exam_action_state' =>
-                    'not_available',
-                'exam_action_label' =>
-                    'Not Available Yet',
-                'can_open_exam' =>
-                    false,
-                'expires_at' =>
-                    null,
+                'exam_action_state' => 'not_available',
+                'exam_action_label' => 'Not Available Yet',
+                'can_open_exam' => false,
+                'expires_at' => null,
             ];
         }
 
@@ -1447,26 +1384,18 @@ class TheoreticalExternalExamController extends Controller
             )
         ) {
             return [
-                'exam_action_state' =>
-                    'expired',
-                'exam_action_label' =>
-                    'Access Expired',
-                'can_open_exam' =>
-                    false,
-                'expires_at' =>
-                    null,
+                'exam_action_state' => 'expired',
+                'exam_action_label' => 'Access Expired',
+                'can_open_exam' => false,
+                'expires_at' => null,
             ];
         }
 
         return [
-            'exam_action_state' =>
-                'start',
-            'exam_action_label' =>
-                'Start Exam',
-            'can_open_exam' =>
-                true,
-            'expires_at' =>
-                null,
+            'exam_action_state' => 'start',
+            'exam_action_label' => 'Start Exam',
+            'can_open_exam' => true,
+            'expires_at' => null,
         ];
     }
 
@@ -1510,11 +1439,10 @@ class TheoreticalExternalExamController extends Controller
             [
                 'id' => (string) $assessment->id,
 
-                'examinee_name' =>
-                    $this
-                        ->formatExternalName(
-                            $assessment,
-                        ),
+                'examinee_name' => $this
+                    ->formatExternalName(
+                        $assessment,
+                    ),
 
                 'email' => (string) (
                     $assessment->email
@@ -1551,33 +1479,27 @@ class TheoreticalExternalExamController extends Controller
                     ?? 0
                 ),
 
-                'started_at' =>
-                    $startedAt
-                        ?->toIso8601String(),
+                'started_at' => $startedAt
+                    ?->toIso8601String(),
 
-                'access_start' =>
-                    $accessStart
-                        ?->toIso8601String(),
+                'access_start' => $accessStart
+                    ?->toIso8601String(),
 
-                'access_end' =>
-                    $accessEnd
-                        ?->toIso8601String(),
+                'access_end' => $accessEnd
+                    ?->toIso8601String(),
 
-                'server_time' =>
-                    CarbonImmutable::now()
-                        ->toIso8601String(),
+                'server_time' => CarbonImmutable::now()
+                    ->toIso8601String(),
 
-                'done' =>
-                    $this
-                        ->isCompletedAssessment(
-                            $assessment,
-                        ),
+                'done' => $this
+                    ->isCompletedAssessment(
+                        $assessment,
+                    ),
 
-                'remarks' =>
-                    $this
-                        ->isCompletedAssessment(
-                            $assessment,
-                        )
+                'remarks' => $this
+                    ->isCompletedAssessment(
+                        $assessment,
+                    )
                         ? (
                             strtoupper(
                                 trim(
@@ -1593,11 +1515,10 @@ class TheoreticalExternalExamController extends Controller
                         )
                         : null,
 
-                'final_result' =>
-                    $this
-                        ->isCompletedAssessment(
-                            $assessment,
-                        )
+                'final_result' => $this
+                    ->isCompletedAssessment(
+                        $assessment,
+                    )
                         ? $this
                             ->finalResult(
                                 $db,
@@ -1644,11 +1565,10 @@ class TheoreticalExternalExamController extends Controller
 
         if (! $topic) {
             return [
-                'exam' =>
-                    $this->metadata(
-                        $db,
-                        $assessment,
-                    ),
+                'exam' => $this->metadata(
+                    $db,
+                    $assessment,
+                ),
                 'topic' => null,
                 'questions' => [],
             ];
@@ -1714,8 +1634,7 @@ class TheoreticalExternalExamController extends Controller
                         range(
                             1,
                             5,
-                        )
-                        as $choiceNumber
+                        ) as $choiceNumber
                     ) {
                         $letter =
                             chr(
@@ -1758,105 +1677,92 @@ class TheoreticalExternalExamController extends Controller
                         }
 
                         $choices[] = [
-                            'key' =>
-                                $letter,
+                            'key' => $letter,
 
-                            'text' =>
-                                $choiceText,
+                            'text' => $choiceText,
 
-                            'image_url' =>
-                                $imageUrl,
+                            'image_url' => $imageUrl,
                         ];
                     }
 
                     return [
                         'id' => (string) $question->id,
 
-                        'index' =>
-                            $index + 1,
+                        'index' => $index + 1,
 
-                        'question' =>
-                            $this
-                                ->decodeText(
-                                    $question
-                                        ->quest_text
-                                    ?? '',
-                                ),
-
-                        'answer' =>
-                            trim(
-                                (string) (
-                                    $question
-                                        ->answer
-                                    ?? ''
-                                ),
+                        'question' => $this
+                            ->decodeText(
+                                $question
+                                    ->quest_text
+                                ?? '',
                             ),
 
-                        'choices' =>
-                            $choices,
+                        'answer' => trim(
+                            (string) (
+                                $question
+                                    ->answer
+                                ?? ''
+                            ),
+                        ),
+
+                        'choices' => $choices,
                     ];
                 },
             )
             ->all();
 
         return [
-            'exam' =>
-                $this->metadata(
-                    $db,
-                    $assessment,
-                ),
+            'exam' => $this->metadata(
+                $db,
+                $assessment,
+            ),
 
             'topic' => [
-                'id' => (string) $topic->id,
+            'id' => (string) $topic->id,
 
-                'bs_topic_id' => (string) $topic
-                    ->bs_topic_id,
+            'bs_topic_id' => (string) $topic
+                ->bs_topic_id,
 
-                'description' =>
-                    $this->decodeText(
-                        $topic
-                            ->desc_topic
-                        ?? '',
-                    ),
+            'description' => $this->decodeText(
+                $topic
+                    ->desc_topic
+                ?? '',
+            ),
 
-                'order_no' => (int) (
+            'order_no' => (int) (
+                $topic
+                    ->order_no
+                ?? 0
+            ),
+
+            'total_competences' => $totalCompetences,
+
+            'quest_cnt' => (int) (
+                $topic
+                    ->quest_cnt
+                ?? 0
+            ),
+
+            'started_at' => $this
+                ->parseStoredDateTime(
                     $topic
-                        ->order_no
-                    ?? 0
-                ),
-
-                'total_competences' =>
-                    $totalCompetences,
-
-                'quest_cnt' => (int) (
-                    $topic
-                        ->quest_cnt
-                    ?? 0
-                ),
-
-                'started_at' =>
-                    $this
-                        ->parseStoredDateTime(
-                            $topic
-                                ->started
-                            ?? null,
-                        )
-                        ?->toIso8601String(),
+                        ->started
+                    ?? null,
+                )
+                ?->toIso8601String(),
             ],
 
-            'questions' =>
-                $questions,
+            'questions' => $questions,
 
-            'answered_count' =>
-                collect(
-                    $questions,
+            'answered_count' => collect(
+                $questions,
+            )
+                ->where(
+                    'answer',
+                    '<>',
+                    '',
                 )
-                    ->where(
-                        'answer',
-                        '<>',
-                        '',
-                    )
-                    ->count(),
+                ->count(),
         ];
     }
 
@@ -1870,8 +1776,7 @@ class TheoreticalExternalExamController extends Controller
         ) {
             return response()->json(
                 [
-                    'message' =>
-                        'This examination has already been completed.',
+                    'message' => 'This examination has already been completed.',
                 ],
                 Response::HTTP_UNPROCESSABLE_ENTITY,
             );
@@ -1886,8 +1791,7 @@ class TheoreticalExternalExamController extends Controller
         if (! $startedAt) {
             return response()->json(
                 [
-                    'message' =>
-                        'The examination has not started yet.',
+                    'message' => 'The examination has not started yet.',
                 ],
                 Response::HTTP_CONFLICT,
             );
@@ -1912,10 +1816,8 @@ class TheoreticalExternalExamController extends Controller
         ) {
             return response()->json(
                 [
-                    'message' =>
-                        'The examination time has expired.',
-                    'time_expired' =>
-                        true,
+                    'message' => 'The examination time has expired.',
+                    'time_expired' => true,
                 ],
                 Response::HTTP_CONFLICT,
             );
@@ -2042,8 +1944,7 @@ class TheoreticalExternalExamController extends Controller
         }
 
         foreach (
-            $sourceQuestions
-            as $sourceQuestion
+            $sourceQuestions as $sourceQuestion
         ) {
             $answerQuery =
                 $db->table(
@@ -2091,9 +1992,7 @@ class TheoreticalExternalExamController extends Controller
             $correctAnswer = '';
 
             foreach (
-                $sourceAnswers
-                as $index =>
-                    $sourceAnswer
+                $sourceAnswers as $index => $sourceAnswer
             ) {
                 if ($index > 4) {
                     break;
@@ -2143,8 +2042,7 @@ class TheoreticalExternalExamController extends Controller
                 'bs_quest_id' => (string) $sourceQuestion
                     ->id,
 
-                'correct_ans' =>
-                    $correctAnswer,
+                'correct_ans' => $correctAnswer,
 
                 'answer' => '',
 
@@ -2156,50 +2054,38 @@ class TheoreticalExternalExamController extends Controller
                     ?? ''
                 ),
 
-                'last_update' =>
-                    CarbonImmutable::now()
-                        ->format(
-                            'Y-m-d H:i:s',
-                        ),
+                'last_update' => CarbonImmutable::now()
+                    ->format(
+                        'Y-m-d H:i:s',
+                    ),
 
-                'choice_1' =>
-                    $choices[0],
+                'choice_1' => $choices[0],
 
-                'choice_2' =>
-                    $choices[1],
+                'choice_2' => $choices[1],
 
-                'choice_3' =>
-                    $choices[2],
+                'choice_3' => $choices[2],
 
-                'choice_4' =>
-                    $choices[3],
+                'choice_4' => $choices[3],
 
-                'choice_5' =>
-                    $choices[4],
+                'choice_5' => $choices[4],
 
-                'choice_1_img' =>
-                    $choiceImages[0],
+                'choice_1_img' => $choiceImages[0],
 
-                'choice_2_img' =>
-                    $choiceImages[1],
+                'choice_2_img' => $choiceImages[1],
 
-                'choice_3_img' =>
-                    $choiceImages[2],
+                'choice_3_img' => $choiceImages[2],
 
-                'choice_4_img' =>
-                    $choiceImages[3],
+                'choice_4_img' => $choiceImages[3],
 
-                'choice_5_img' =>
-                    $choiceImages[4],
+                'choice_5_img' => $choiceImages[4],
 
                 'stud_type' => '',
 
                 'bs_topic_id' => (string) $topic
                     ->bs_topic_id,
 
-                'school_class' =>
-                    CarbonImmutable::now()
-                        ->format('Y'),
+                'school_class' => CarbonImmutable::now()
+                    ->format('Y'),
 
                 'company_id' => '',
 
@@ -2211,11 +2097,10 @@ class TheoreticalExternalExamController extends Controller
                     ?? ''
                 ),
 
-                'date_taken' =>
-                    CarbonImmutable::now()
-                        ->format(
-                            'Y-m-d',
-                        ),
+                'date_taken' => CarbonImmutable::now()
+                    ->format(
+                        'Y-m-d',
+                    ),
             ]);
         }
     }
@@ -2242,8 +2127,7 @@ class TheoreticalExternalExamController extends Controller
         $overallScore = 0.0;
 
         foreach (
-            $courseTopics
-            as $courseTopic
+            $courseTopics as $courseTopic
         ) {
             $passingScore += (float) (
                 $courseTopic
@@ -2279,14 +2163,11 @@ class TheoreticalExternalExamController extends Controller
         }
 
         return [
-            'score' =>
-                $overallScore,
+            'score' => $overallScore,
 
-            'passing_score' =>
-                $passingScore,
+            'passing_score' => $passingScore,
 
-            'passed' =>
-                $overallScore
+            'passed' => $overallScore
                     >= $passingScore
                     ? 'Y'
                     : 'N',
@@ -2349,19 +2230,15 @@ class TheoreticalExternalExamController extends Controller
         }
 
         return [
-            'remarks' =>
-                $resolvedPassed === 'Y'
+            'remarks' => $resolvedPassed === 'Y'
                     ? 'PASSED'
                     : 'FAILED',
 
-            'score' =>
-                $resolvedScore,
+            'score' => $resolvedScore,
 
-            'total_items' =>
-                $totalItems,
+            'total_items' => $totalItems,
 
-            'percentage' =>
-                $totalItems > 0
+            'percentage' => $totalItems > 0
                     ? round(
                         (
                             $resolvedScore
@@ -2425,8 +2302,7 @@ class TheoreticalExternalExamController extends Controller
                     false;
 
                 foreach (
-                    $topics
-                    as $topic
+                    $topics as $topic
                 ) {
                     if (
                         $this
@@ -2462,8 +2338,7 @@ class TheoreticalExternalExamController extends Controller
                             ]);
 
                         foreach (
-                            $questions
-                            as $question
+                            $questions as $question
                         ) {
                             $answer =
                                 trim(
@@ -2499,8 +2374,7 @@ class TheoreticalExternalExamController extends Controller
                             $topic->id,
                         )
                         ->update([
-                            'is_saved' =>
-                                'Y',
+                            'is_saved' => 'Y',
                         ]);
 
                     $passingMark = (float) (
@@ -2527,17 +2401,13 @@ class TheoreticalExternalExamController extends Controller
                             $topic->id,
                         )
                         ->update([
-                            'started' =>
-                                $started,
+                            'started' => $started,
 
-                            'ended' =>
-                                $now,
+                            'ended' => $now,
 
-                            'score' =>
-                                $score,
+                            'score' => $score,
 
-                            'passed' =>
-                                $score
+                            'passed' => $score
                                     >= $passingMark
                                     ? 'Y'
                                     : 'N',
@@ -2562,13 +2432,11 @@ class TheoreticalExternalExamController extends Controller
                     ->update([
                         'ended' => $now,
 
-                        'score' =>
-                            $overall[
+                        'score' => $overall[
                                 'score'
                             ],
 
-                        'passed' =>
-                            $overall[
+                        'passed' => $overall[
                                 'passed'
                             ],
 

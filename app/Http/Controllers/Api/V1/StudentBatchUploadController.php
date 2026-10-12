@@ -4,51 +4,31 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Services\IrisEmailService;
-
 use Illuminate\Database\ConnectionInterface;
-
 use Illuminate\Database\QueryException;
-
 use Illuminate\Database\UniqueConstraintViolationException;
-
 use Illuminate\Http\JsonResponse;
-
 use Illuminate\Http\Request;
-
 use Illuminate\Support\Facades\DB;
-
 use Illuminate\Support\Str;
-
 use Illuminate\Validation\ValidationException;
-
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
-
 use PhpOffice\PhpSpreadsheet\IOFactory;
-
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
-
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
-
 use PhpOffice\PhpSpreadsheet\Style\Border;
-
 use PhpOffice\PhpSpreadsheet\Style\Fill;
-
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
-
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-
 use Symfony\Component\HttpFoundation\StreamedResponse;
-
 use Throwable;
-
 use ZipArchive;
 
 class StudentBatchUploadController extends Controller
 {
     public function __construct(
         private readonly IrisEmailService $irisEmailService,
-    ) {
-    }
+    ) {}
 
     private const HEADERS = [
 
@@ -107,7 +87,6 @@ class StudentBatchUploadController extends Controller
     ];
 
     public function template(Request $request): StreamedResponse
-
     {
 
         $this->schoolConnection($request);
@@ -118,7 +97,7 @@ class StudentBatchUploadController extends Controller
 
                 $book =
 
-                    new Spreadsheet();
+                    new Spreadsheet;
 
                 try {
 
@@ -288,11 +267,7 @@ class StudentBatchUploadController extends Controller
 
                     foreach (
 
-                        $columnWidths
-
-                        as $column =>
-
-                            $width
+                        $columnWidths as $column => $width
 
                     ) {
 
@@ -442,13 +417,9 @@ class StudentBatchUploadController extends Controller
 
             [
 
-                'Content-Type' =>
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 
-                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-
-                'Cache-Control' =>
-
-                    'no-store, no-cache, must-revalidate',
+                'Cache-Control' => 'no-store, no-cache, must-revalidate',
 
             ],
 
@@ -457,7 +428,6 @@ class StudentBatchUploadController extends Controller
     }
 
     /**
-
      * Validate every row before writing; the import is atomic.
 
      *
@@ -467,11 +437,8 @@ class StudentBatchUploadController extends Controller
      * New students receive a generated System ID, login name and password.
 
      * A maximum of 40 NEW students may be created in one upload.
-
      */
-
     public function import(Request $request): JsonResponse
-
     {
 
         $request->validate([
@@ -507,7 +474,6 @@ class StudentBatchUploadController extends Controller
             ) {
 
                 throw new \RuntimeException(
-
                     'The uploaded file is invalid.',
 
                 );
@@ -535,7 +501,6 @@ class StudentBatchUploadController extends Controller
             ) {
 
                 throw new \RuntimeException(
-
                     'The uploaded file is unavailable.',
 
                 );
@@ -583,10 +548,7 @@ class StudentBatchUploadController extends Controller
             ) {
 
                 throw ValidationException::withMessages([
-
-                    'file' =>
-
-                        'The selected file is not a supported Excel workbook. Use a genuine XLS or XLSX file.',
+                    'file' => 'The selected file is not a supported Excel workbook. Use a genuine XLS or XLSX file.',
 
                 ]);
 
@@ -616,7 +578,7 @@ class StudentBatchUploadController extends Controller
 
                 $archive =
 
-                    new ZipArchive();
+                    new ZipArchive;
 
                 if (
 
@@ -629,10 +591,7 @@ class StudentBatchUploadController extends Controller
                 ) {
 
                     throw ValidationException::withMessages([
-
-                        'file' =>
-
-                            'The XLSX workbook could not be opened. Re-save it in Excel and try again.',
+                        'file' => 'The XLSX workbook could not be opened. Re-save it in Excel and try again.',
 
                     ]);
 
@@ -693,10 +652,7 @@ class StudentBatchUploadController extends Controller
                     ) {
 
                         throw ValidationException::withMessages([
-
-                            'file' =>
-
-                                'The Excel workbook is too large after extraction.',
+                            'file' => 'The Excel workbook is too large after extraction.',
 
                         ]);
 
@@ -745,7 +701,6 @@ class StudentBatchUploadController extends Controller
         } catch (ValidationException $error) {
 
             throw $error;
-
         } catch (Throwable $error) {
 
             report($error);
@@ -763,10 +718,7 @@ class StudentBatchUploadController extends Controller
                     : '';
 
             throw ValidationException::withMessages([
-
-                'file' =>
-
-                    'Unable to read this Excel workbook. Make sure it is a valid XLS or XLSX file and try again.'
+                'file' => 'Unable to read this Excel workbook. Make sure it is a valid XLS or XLSX file and try again.'
 
                     .$detail,
 
@@ -819,7 +771,6 @@ class StudentBatchUploadController extends Controller
         if ($rows === []) {
 
             throw ValidationException::withMessages([
-
                 'file' => 'The workbook contains no student rows.',
 
             ]);
@@ -903,7 +854,6 @@ class StudentBatchUploadController extends Controller
         if (strtoupper((string) $engine) !== 'INNODB') {
 
             throw ValidationException::withMessages([
-
                 'file' => 'Table person must use InnoDB for safe transactional imports. Ask your database administrator before changing the table engine.',
 
             ]);
@@ -1007,7 +957,6 @@ class StudentBatchUploadController extends Controller
                     if ($matches->count() > 1) {
 
                         throw ValidationException::withMessages([
-
                             'file' => "Multiple existing students use School ID {$row['school_id_no']} (worksheet {$row['sheet']}, row {$row['row']}). Resolve the duplicate records before importing.",
 
                         ]);
@@ -1063,7 +1012,6 @@ class StudentBatchUploadController extends Controller
                     if ($added >= self::MAX_NEW_STUDENTS) {
 
                         throw ValidationException::withMessages([
-
                             'file' => 'The import would create more than 40 new students. Split the new students into multiple uploads.',
 
                         ]);
@@ -1211,7 +1159,6 @@ class StudentBatchUploadController extends Controller
         } catch (ValidationException $error) {
 
             throw $error;
-
         } catch (UniqueConstraintViolationException $error) {
 
             report($error);
@@ -1244,9 +1191,7 @@ class StudentBatchUploadController extends Controller
 
             return response()->json([
 
-                'message' =>
-
-                    'Student import failed unexpectedly. No changes were committed. Please try again or contact the system administrator if the problem continues.',
+                'message' => 'Student import failed unexpectedly. No changes were committed. Please try again or contact the system administrator if the problem continues.',
 
             ], 500);
 
@@ -1276,9 +1221,7 @@ class StudentBatchUploadController extends Controller
 
         foreach (
 
-            $result['created_accounts']
-
-            as &$account
+            $result['created_accounts'] as &$account
 
         ) {
 
@@ -1286,25 +1229,15 @@ class StudentBatchUploadController extends Controller
 
                 $this->sendCredentialEmail(
 
-                    email:
+                    email: (string) $account['email'],
 
-                        (string) $account['email'],
+                    studentName: (string) $account['name'],
 
-                    studentName:
+                    loginName: (string) $account['login_name'],
 
-                        (string) $account['name'],
+                    password: (string) $account['password'],
 
-                    loginName:
-
-                        (string) $account['login_name'],
-
-                    password:
-
-                        (string) $account['password'],
-
-                    schoolCode:
-
-                        $schoolCode,
+                    schoolCode: $schoolCode,
 
                 );
 
@@ -1368,19 +1301,13 @@ class StudentBatchUploadController extends Controller
 
         return response()->json([
 
-            'message' =>
-
-                $message,
+            'message' => $message,
 
             ...$result,
 
-            'processed' =>
+            'processed' => count($rows),
 
-                count($rows),
-
-            'skipped' =>
-
-                $skipped,
+            'skipped' => $skipped,
 
         ]);
 
@@ -1415,11 +1342,8 @@ class StudentBatchUploadController extends Controller
     }
 
     /**
-
      * Use the same credential email template as Student Profile.
-
      */
-
     private function sendCredentialEmail(
         string $email,
         string $studentName,
@@ -1442,7 +1366,6 @@ class StudentBatchUploadController extends Controller
     }
 
     /**
-
      * Convert a database duplicate-key error into a safe, understandable
 
      * admin message while preserving the current legacy database rules.
@@ -1458,9 +1381,7 @@ class StudentBatchUploadController extends Controller
      *
 
      * The existing database remains authoritative for its unique indexes.
-
      */
-
     private function duplicateConstraintResponse(
 
         UniqueConstraintViolationException $error,
@@ -1601,7 +1522,7 @@ class StudentBatchUploadController extends Controller
 
                         ->orderByRaw(
 
-                            "CASE WHEN school_id_no = ? THEN 1 ELSE 0 END",
+                            'CASE WHEN school_id_no = ? THEN 1 ELSE 0 END',
 
                             [
 
@@ -1733,25 +1654,17 @@ class StudentBatchUploadController extends Controller
 
         return response()->json([
 
-            'message' =>
-
-                'Import cancelled because one row conflicts with an existing database record. No changes were committed.',
+            'message' => 'Import cancelled because one row conflicts with an existing database record. No changes were committed.',
 
             'issues' => [
 
                 [
 
-                    'sheet' =>
+                    'sheet' => $sheet,
 
-                        $sheet,
+                    'row' => $rowNumber,
 
-                    'row' =>
-
-                        $rowNumber,
-
-                    'message' =>
-
-                        $friendly,
+                    'message' => $friendly,
 
                 ],
 
@@ -1764,13 +1677,10 @@ class StudentBatchUploadController extends Controller
     }
 
     /**
-
      * Convert common database errors into safe end-user messages.
 
      * Raw SQL remains in the server log through report($error).
-
      */
-
     private function databaseQueryErrorResponse(
 
         QueryException $error,
@@ -1865,25 +1775,17 @@ class StudentBatchUploadController extends Controller
 
         return response()->json([
 
-            'message' =>
-
-                'Student import could not be completed. No changes were committed.',
+            'message' => 'Student import could not be completed. No changes were committed.',
 
             'issues' => [
 
                 [
 
-                    'sheet' =>
+                    'sheet' => $sheet,
 
-                        $sheet,
+                    'row' => $rowNumber,
 
-                    'row' =>
-
-                        $rowNumber,
-
-                    'message' =>
-
-                        $friendly,
+                    'message' => $friendly,
 
                 ],
 
@@ -1896,7 +1798,6 @@ class StudentBatchUploadController extends Controller
     }
 
     private function readRows(Spreadsheet $book): array
-
     {
 
         $rows = [];
@@ -2168,15 +2069,11 @@ class StudentBatchUploadController extends Controller
     }
 
     /**
-
      * Accept the generated template plus common punctuation/name variants
 
      * used by the legacy student spreadsheet.
-
      */
-
     private function headersMatch(array $headers): bool
-
     {
 
         if (count($headers) !== 9) {
@@ -2308,7 +2205,6 @@ class StudentBatchUploadController extends Controller
     }
 
     private function normalizeHeader(string $value): string
-
     {
 
         return strtoupper(
@@ -2320,7 +2216,6 @@ class StudentBatchUploadController extends Controller
     }
 
     private function cleanText(mixed $value): string
-
     {
 
         return trim((string) $value);
@@ -2328,13 +2223,9 @@ class StudentBatchUploadController extends Controller
     }
 
     /**
-
      * Preserve the legacy behavior that removes apostrophes from names.
-
      */
-
     private function cleanName(mixed $value): string
-
     {
 
         return str_replace("'", '', trim((string) $value));
@@ -2342,7 +2233,6 @@ class StudentBatchUploadController extends Controller
     }
 
     private function normalizeGender(mixed $value): string
-
     {
 
         $normalized = strtoupper(
@@ -2364,7 +2254,6 @@ class StudentBatchUploadController extends Controller
     }
 
     private function genderDatabaseValue(string $gender): string
-
     {
 
         return match ($gender) {
@@ -2384,7 +2273,6 @@ class StudentBatchUploadController extends Controller
     }
 
     private function normalizeEtrbType(mixed $value): string
-
     {
 
         $normalized = strtoupper(
@@ -2404,15 +2292,11 @@ class StudentBatchUploadController extends Controller
     }
 
     /**
-
      * Legacy accounts use six characters from this exact character set.
 
      * random_int keeps the same visible format without using str_shuffle.
-
      */
-
     private function generatePassword(): string
-
     {
 
         $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@$*';
@@ -2432,13 +2316,9 @@ class StudentBatchUploadController extends Controller
     }
 
     /**
-
      * Follow QuestionUploadController's existing school resolver.
-
      */
-
     private function schoolConnection(Request $request): ConnectionInterface
-
     {
 
         $code = strtoupper(trim((string) $request->session()->get('school_code', '')));
@@ -2482,5 +2362,4 @@ class StudentBatchUploadController extends Controller
         return DB::connection($connection);
 
     }
-
 }

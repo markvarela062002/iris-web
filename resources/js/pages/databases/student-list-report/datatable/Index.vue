@@ -9,19 +9,11 @@ import DatePicker from 'primevue/datepicker';
 import Message from 'primevue/message';
 import Select from 'primevue/select';
 import PrimeTag from 'primevue/tag';
-import {
-    computed,
-    onBeforeUnmount,
-    onMounted,
-    ref,
-} from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
 import Datatable from '@/components/Datatable.vue';
 
-import type {
-    DataTableColumn,
-    DataTableRow,
-} from '@/types';
+import type { DataTableColumn, DataTableRow } from '@/types';
 
 defineOptions({
     inheritAttrs: false,
@@ -112,20 +104,11 @@ type OptionsResponse = {
     };
 };
 
-type DepartmentSeverity =
-    | 'success'
-    | 'info'
-    | 'secondary';
+type DepartmentSeverity = 'success' | 'info' | 'secondary';
 
-type EtrbSeverity =
-    | 'success'
-    | 'info'
-    | 'warn'
-    | 'secondary'
-    | 'contrast';
+type EtrbSeverity = 'success' | 'info' | 'warn' | 'secondary' | 'contrast';
 
-const API =
-    '/api/v1/databases/student-list-report';
+const API = '/api/v1/databases/student-list-report';
 
 /*
 |--------------------------------------------------------------------------
@@ -144,45 +127,24 @@ function defaultDateRange(): (Date | null)[] {
     const now = new Date();
 
     return [
-        new Date(
-            now.getFullYear(),
-            now.getMonth(),
-            1,
-        ),
-        new Date(
-            now.getFullYear(),
-            now.getMonth() + 1,
-            0,
-        ),
+        new Date(now.getFullYear(), now.getMonth(), 1),
+        new Date(now.getFullYear(), now.getMonth() + 1, 0),
     ];
 }
 
-const reportDateRange =
-    ref<(Date | null)[]>(
-        defaultDateRange(),
-    );
+const reportDateRange = ref<(Date | null)[]>(defaultDateRange());
 
-const dateFrom =
-    computed<Date | null>(() => {
-        return (
-            reportDateRange.value[0] ??
-            null
-        );
-    });
+const dateFrom = computed<Date | null>(() => {
+    return reportDateRange.value[0] ?? null;
+});
 
-const dateTo =
-    computed<Date | null>(() => {
-        return (
-            reportDateRange.value[1] ??
-            null
-        );
-    });
+const dateTo = computed<Date | null>(() => {
+    return reportDateRange.value[1] ?? null;
+});
 
-const selectedCciYear =
-    ref<string | null>(null);
+const selectedCciYear = ref<string | null>(null);
 
-const selectedDepartment =
-    ref<string | null>(null);
+const selectedDepartment = ref<string | null>(null);
 
 /*
 |--------------------------------------------------------------------------
@@ -214,8 +176,7 @@ const optionalColumns: OptionalColumn[] = [
     {
         field: 'st_address',
         label: 'Address',
-        class:
-            'min-w-[320px] whitespace-normal',
+        class: 'min-w-[320px] whitespace-normal',
     },
     {
         field: 'birth_date',
@@ -264,63 +225,36 @@ const optionalColumns: OptionalColumn[] = [
     },
 ];
 
-function emptyOptionalSelection(): Record<
-    OptionalField,
-    boolean
-> {
+function emptyOptionalSelection(): Record<OptionalField, boolean> {
     return optionalColumns.reduce(
-        (
-            selection,
-            column,
-        ) => {
-            selection[column.field] =
-                false;
+        (selection, column) => {
+            selection[column.field] = false;
 
             return selection;
         },
-        {} as Record<
-            OptionalField,
-            boolean
-        >,
+        {} as Record<OptionalField, boolean>,
     );
 }
 
-const selectedOptionalColumns =
-    ref<
-        Record<
-            OptionalField,
-            boolean
-        >
-    >(
-        emptyOptionalSelection(),
-    );
+const selectedOptionalColumns = ref<Record<OptionalField, boolean>>(
+    emptyOptionalSelection(),
+);
 
-const appliedOptionalColumns =
-    ref<OptionalField[]>([]);
+const appliedOptionalColumns = ref<OptionalField[]>([]);
 
-const optionalFiltersVisible =
-    ref(false);
+const optionalFiltersVisible = ref(false);
 
 const includeAll = computed({
     get(): boolean {
         return optionalColumns.every(
-            (column) =>
-                selectedOptionalColumns
-                    .value[
-                    column.field
-                ],
+            (column) => selectedOptionalColumns.value[column.field],
         );
     },
 
     set(value: boolean): void {
-        optionalColumns.forEach(
-            (column) => {
-                selectedOptionalColumns
-                    .value[
-                    column.field
-                ] = value;
-            },
-        );
+        optionalColumns.forEach((column) => {
+            selectedOptionalColumns.value[column.field] = value;
+        });
     },
 });
 
@@ -329,86 +263,37 @@ function showOptionalFilters(): void {
 }
 
 function hideOptionalFilters(): void {
-    optionalFiltersVisible.value =
-        false;
+    optionalFiltersVisible.value = false;
 }
 
-const appliedOptionalFieldSet =
-    computed(() => {
-        return new Set(
-            appliedOptionalColumns.value,
-        );
-    });
+const appliedOptionalFieldSet = computed(() => {
+    return new Set(appliedOptionalColumns.value);
+});
 
-function hasAppliedField(
-    field: OptionalField,
-): boolean {
-    return appliedOptionalFieldSet
-        .value
-        .has(
-            field,
-        );
+function hasAppliedField(field: OptionalField): boolean {
+    return appliedOptionalFieldSet.value.has(field);
 }
 
-const showPersonalInformation =
-    computed(() => {
-        return (
-            hasAppliedField(
-                'st_address',
-            )
-            ||
-            hasAppliedField(
-                'birth_date',
-            )
-            ||
-            hasAppliedField(
-                'gender',
-            )
-            ||
-            hasAppliedField(
-                'civ_status',
-            )
-        );
-    });
+const showPersonalInformation = computed(() => {
+    return (
+        hasAppliedField('st_address') ||
+        hasAppliedField('birth_date') ||
+        hasAppliedField('gender') ||
+        hasAppliedField('civ_status')
+    );
+});
 
-const showMotherInformation =
-    computed(() => {
-        return (
-            hasAppliedField(
-                'mother_name',
-            )
-            ||
-            hasAppliedField(
-                'mother_nos',
-            )
-        );
-    });
+const showMotherInformation = computed(() => {
+    return hasAppliedField('mother_name') || hasAppliedField('mother_nos');
+});
 
-const showFatherInformation =
-    computed(() => {
-        return (
-            hasAppliedField(
-                'father_name',
-            )
-            ||
-            hasAppliedField(
-                'father_nos',
-            )
-        );
-    });
+const showFatherInformation = computed(() => {
+    return hasAppliedField('father_name') || hasAppliedField('father_nos');
+});
 
-const showSpouseInformation =
-    computed(() => {
-        return (
-            hasAppliedField(
-                'spouse_name',
-            )
-            ||
-            hasAppliedField(
-                'spouse_nos',
-            )
-        );
-    });
+const showSpouseInformation = computed(() => {
+    return hasAppliedField('spouse_name') || hasAppliedField('spouse_nos');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -416,11 +301,9 @@ const showSpouseInformation =
 |--------------------------------------------------------------------------
 */
 
-const cciYears =
-    ref<LookupOption[]>([]);
+const cciYears = ref<LookupOption[]>([]);
 
-const departments =
-    ref<LookupOption[]>([]);
+const departments = ref<LookupOption[]>([]);
 
 const optionsLoading = ref(false);
 
@@ -430,8 +313,7 @@ const optionsLoading = ref(false);
 |--------------------------------------------------------------------------
 */
 
-const students =
-    ref<DataTableRow[]>([]);
+const students = ref<DataTableRow[]>([]);
 
 const loading = ref(false);
 const downloading = ref(false);
@@ -443,28 +325,17 @@ const first = ref(0);
 const perPage = ref(10);
 const search = ref('');
 
-const sortField =
-    ref('date_reg');
+const sortField = ref('date_reg');
 
-const sortDirection =
-    ref<'asc' | 'desc'>(
-        'asc',
-    );
+const sortDirection = ref<'asc' | 'desc'>('asc');
 
-let appliedFilters:
-    | AppliedFilters
-    | null = null;
+let appliedFilters: AppliedFilters | null = null;
 
-let listRequest:
-    | AbortController
-    | null = null;
+let listRequest: AbortController | null = null;
 
-let exportRequest:
-    | AbortController
-    | null = null;
+let exportRequest: AbortController | null = null;
 
-const lifetime =
-    new AbortController();
+const lifetime = new AbortController();
 
 let disposed = false;
 
@@ -480,126 +351,90 @@ let disposed = false;
 |
 */
 
-const columns =
-    computed<DataTableColumn[]>(
-        () => {
-            const result: DataTableColumn[] = [
-                {
-                    field: 'lname',
-                    header:
-                        'Student Information',
-                    sortable: false,
-                    searchable: true,
-                    frozen: true,
-                    alignFrozen: 'left',
-                    class:
-                        'min-w-[330px]',
-                },
-                {
-                    field: 'date_reg',
-                    header:
-                        'Registration Details',
-                    sortable: false,
-                    searchable: false,
-                    class:
-                        'min-w-[280px]',
-                },
-            ];
-
-            if (
-                showPersonalInformation.value
-            ) {
-                result.push({
-                    field:
-                        'personal_information',
-                    header:
-                        'Personal Information',
-                    sortable: false,
-                    searchable: false,
-                    class:
-                        'min-w-[280px]',
-                });
-            }
-
-            if (
-                showMotherInformation.value
-            ) {
-                result.push({
-                    field:
-                        'mother_information',
-                    header:
-                        "Mother's Information",
-                    sortable: false,
-                    searchable: false,
-                    class:
-                        'min-w-[230px]',
-                });
-            }
-
-            if (
-                showFatherInformation.value
-            ) {
-                result.push({
-                    field:
-                        'father_information',
-                    header:
-                        "Father's Information",
-                    sortable: false,
-                    searchable: false,
-                    class:
-                        'min-w-[230px]',
-                });
-            }
-
-            if (
-                showSpouseInformation.value
-            ) {
-                result.push({
-                    field:
-                        'spouse_information',
-                    header:
-                        "Spouse's Information",
-                    sortable: false,
-                    searchable: false,
-                    class:
-                        'min-w-[230px]',
-                });
-            }
-
-            return result;
+const columns = computed<DataTableColumn[]>(() => {
+    const result: DataTableColumn[] = [
+        {
+            field: 'lname',
+            header: 'Student Information',
+            sortable: false,
+            searchable: true,
+            frozen: true,
+            alignFrozen: 'left',
+            class: 'min-w-[330px]',
         },
-    );
+        {
+            field: 'date_reg',
+            header: 'Registration Details',
+            sortable: false,
+            searchable: false,
+            class: 'min-w-[280px]',
+        },
+    ];
 
-const tableMinWidth =
-    computed(() => {
-        let width = 760;
+    if (showPersonalInformation.value) {
+        result.push({
+            field: 'personal_information',
+            header: 'Personal Information',
+            sortable: false,
+            searchable: false,
+            class: 'min-w-[280px]',
+        });
+    }
 
-        if (
-            showPersonalInformation.value
-        ) {
-            width += 280;
-        }
+    if (showMotherInformation.value) {
+        result.push({
+            field: 'mother_information',
+            header: "Mother's Information",
+            sortable: false,
+            searchable: false,
+            class: 'min-w-[230px]',
+        });
+    }
 
-        if (
-            showMotherInformation.value
-        ) {
-            width += 230;
-        }
+    if (showFatherInformation.value) {
+        result.push({
+            field: 'father_information',
+            header: "Father's Information",
+            sortable: false,
+            searchable: false,
+            class: 'min-w-[230px]',
+        });
+    }
 
-        if (
-            showFatherInformation.value
-        ) {
-            width += 230;
-        }
+    if (showSpouseInformation.value) {
+        result.push({
+            field: 'spouse_information',
+            header: "Spouse's Information",
+            sortable: false,
+            searchable: false,
+            class: 'min-w-[230px]',
+        });
+    }
 
-        if (
-            showSpouseInformation.value
-        ) {
-            width += 230;
-        }
+    return result;
+});
 
-        return `${width}px`;
-    });
+const tableMinWidth = computed(() => {
+    let width = 760;
+
+    if (showPersonalInformation.value) {
+        width += 280;
+    }
+
+    if (showMotherInformation.value) {
+        width += 230;
+    }
+
+    if (showFatherInformation.value) {
+        width += 230;
+    }
+
+    if (showSpouseInformation.value) {
+        width += 230;
+    }
+
+    return `${width}px`;
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -607,147 +442,62 @@ const tableMinWidth =
 |--------------------------------------------------------------------------
 */
 
-function formatDateParameter(
-    value: Date | null,
-): string {
+function formatDateParameter(value: Date | null): string {
     if (!value) {
         return '';
     }
 
-    const year =
-        value.getFullYear();
+    const year = value.getFullYear();
 
-    const month =
-        String(
-            value.getMonth() + 1,
-        ).padStart(
-            2,
-            '0',
-        );
+    const month = String(value.getMonth() + 1).padStart(2, '0');
 
-    const day =
-        String(
-            value.getDate(),
-        ).padStart(
-            2,
-            '0',
-        );
+    const day = String(value.getDate()).padStart(2, '0');
 
     return `${year}-${month}-${day}`;
 }
 
-function formatDisplayDate(
-    value: unknown,
-): string {
-    if (
-        !value
-        ||
-        value === '1970-01-01'
-        ||
-        value ===
-            '1970-01-01 00:00:00'
-    ) {
+function formatDisplayDate(value: unknown): string {
+    if (!value || value === '1970-01-01' || value === '1970-01-01 00:00:00') {
         return '—';
     }
 
-    const rawValue =
-        String(value);
+    const rawValue = String(value);
 
-    const date =
-        new Date(
-            `${rawValue.substring(
-                0,
-                10,
-            )}T00:00:00`,
-        );
+    const date = new Date(`${rawValue.substring(0, 10)}T00:00:00`);
 
-    if (
-        Number.isNaN(
-            date.getTime(),
-        )
-    ) {
+    if (Number.isNaN(date.getTime())) {
         return rawValue;
     }
 
-    return new Intl.DateTimeFormat(
-        'en-PH',
-        {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-        },
-    ).format(
-        date,
-    );
+    return new Intl.DateTimeFormat('en-PH', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+    }).format(date);
 }
 
-function getStudentFullName(
-    row: DataTableRow,
-): string {
-    const lastName =
-        String(
-            row.lname ?? '',
-        ).trim();
+function getStudentFullName(row: DataTableRow): string {
+    const lastName = String(row.lname ?? '').trim();
 
-    const otherNames = [
-        row.fname,
-        row.mname,
-    ]
-        .filter(
-            (name) =>
-                typeof name ===
-                    'string'
-                &&
-                name.trim() !== '',
-        )
-        .map(
-            (name) =>
-                String(
-                    name,
-                ).trim(),
-        )
+    const otherNames = [row.fname, row.mname]
+        .filter((name) => typeof name === 'string' && name.trim() !== '')
+        .map((name) => String(name).trim())
         .join(' ');
 
-    if (
-        lastName
-        &&
-        otherNames
-    ) {
+    if (lastName && otherNames) {
         return `${lastName}, ${otherNames}`.toUpperCase();
     }
 
-    return (
-        lastName ||
-        otherNames ||
-        '—'
-    ).toUpperCase();
+    return (lastName || otherNames || '—').toUpperCase();
 }
 
-function getStudentInitials(
-    row: DataTableRow,
-): string {
-    const firstName =
-        String(
-            row.fname ?? '',
-        ).trim();
+function getStudentInitials(row: DataTableRow): string {
+    const firstName = String(row.fname ?? '').trim();
 
-    const lastName =
-        String(
-            row.lname ?? '',
-        ).trim();
+    const lastName = String(row.lname ?? '').trim();
 
-    return (
-        `${firstName.charAt(
-            0,
-        )}${lastName.charAt(
-            0,
-        )}`
-            .toUpperCase()
-        ||
-        'ST'
-    );
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || 'ST';
 }
-
 
 function getStudentAvatar(gender: unknown): string {
     const normalizedGender = String(gender ?? '')
@@ -765,29 +515,16 @@ function getStudentAvatar(gender: unknown): string {
     return '/images/default-cadet.png';
 }
 
-function getSchoolId(
-    row: DataTableRow,
-): string {
-    const value =
-        String(
-            row.school_id_no ?? '',
-        ).trim();
+function getSchoolId(row: DataTableRow): string {
+    const value = String(row.school_id_no ?? '').trim();
 
-    return (
-        value ||
-        'No School ID'
-    );
+    return value || 'No School ID';
 }
 
-function getDepartmentSeverity(
-    department: unknown,
-): DepartmentSeverity {
-    const value =
-        String(
-            department ?? '',
-        )
-            .trim()
-            .toUpperCase();
+function getDepartmentSeverity(department: unknown): DepartmentSeverity {
+    const value = String(department ?? '')
+        .trim()
+        .toUpperCase();
 
     if (value === 'DECK') {
         return 'success';
@@ -800,15 +537,10 @@ function getDepartmentSeverity(
     return 'secondary';
 }
 
-function getDepartmentIcon(
-    department: unknown,
-): string {
-    const value =
-        String(
-            department ?? '',
-        )
-            .trim()
-            .toUpperCase();
+function getDepartmentIcon(department: unknown): string {
+    const value = String(department ?? '')
+        .trim()
+        .toUpperCase();
 
     if (value === 'DECK') {
         return 'pi pi-compass';
@@ -821,29 +553,16 @@ function getDepartmentIcon(
     return 'pi pi-building';
 }
 
-function getCciYear(
-    value: unknown,
-): string {
-    const year =
-        String(
-            value ?? '',
-        ).trim();
+function getCciYear(value: unknown): string {
+    const year = String(value ?? '').trim();
 
-    return (
-        year ||
-        'No CCI Year'
-    );
+    return year || 'No CCI Year';
 }
 
-function getEtrbSeverity(
-    value: unknown,
-): EtrbSeverity {
-    const type =
-        String(
-            value ?? '',
-        )
-            .trim()
-            .toUpperCase();
+function getEtrbSeverity(value: unknown): EtrbSeverity {
+    const type = String(value ?? '')
+        .trim()
+        .toUpperCase();
 
     if (type === 'GMET') {
         return 'info';
@@ -853,9 +572,7 @@ function getEtrbSeverity(
         return 'info';
     }
 
-    if (
-        type === 'GMET AND ISF'
-    ) {
+    if (type === 'GMET AND ISF') {
         return 'info';
     }
 
@@ -866,47 +583,26 @@ function getEtrbSeverity(
     return 'info';
 }
 
-function displayValue(
-    value: unknown,
-): string {
-    const text =
-        String(
-            value ?? '',
-        ).trim();
+function displayValue(value: unknown): string {
+    const text = String(value ?? '').trim();
 
     return text || '—';
 }
 
-function formatGender(
-    value: unknown,
-): string {
-    const gender =
-        String(
-            value ?? '',
-        )
-            .trim()
-            .toUpperCase();
+function formatGender(value: unknown): string {
+    const gender = String(value ?? '')
+        .trim()
+        .toUpperCase();
 
-    if (
-        gender === 'F'
-        ||
-        gender === 'FEMALE'
-    ) {
+    if (gender === 'F' || gender === 'FEMALE') {
         return 'Female';
     }
 
-    if (
-        gender === 'M'
-        ||
-        gender === 'MALE'
-    ) {
+    if (gender === 'M' || gender === 'MALE') {
         return 'Male';
     }
 
-    return (
-        gender ||
-        '—'
-    );
+    return gender || '—';
 }
 
 /*
@@ -916,21 +612,13 @@ function formatGender(
 */
 
 function validateDateRange(): boolean {
-    if (
-        !dateFrom.value
-        ||
-        !dateTo.value
-    ) {
-        errorMessage.value =
-            'Please select both the start and end date.';
+    if (!dateFrom.value || !dateTo.value) {
+        errorMessage.value = 'Please select both the start and end date.';
 
         return false;
     }
 
-    if (
-        dateFrom.value >
-        dateTo.value
-    ) {
+    if (dateFrom.value > dateTo.value) {
         errorMessage.value =
             'The start date must be before or equal to the end date.';
 
@@ -946,33 +634,15 @@ function captureAppliedFilters(): boolean {
     }
 
     appliedFilters = {
-        from_date:
-            formatDateParameter(
-                dateFrom.value,
-            ),
-        to_date:
-            formatDateParameter(
-                dateTo.value,
-            ),
-        batch_no:
-            selectedCciYear.value,
-        dept:
-            selectedDepartment.value,
+        from_date: formatDateParameter(dateFrom.value),
+        to_date: formatDateParameter(dateTo.value),
+        batch_no: selectedCciYear.value,
+        dept: selectedDepartment.value,
     };
 
-    appliedOptionalColumns.value =
-        optionalColumns
-            .filter(
-                (column) =>
-                    selectedOptionalColumns
-                        .value[
-                        column.field
-                    ],
-            )
-            .map(
-                (column) =>
-                    column.field,
-            );
+    appliedOptionalColumns.value = optionalColumns
+        .filter((column) => selectedOptionalColumns.value[column.field])
+        .map((column) => column.field);
 
     return true;
 }
@@ -987,54 +657,37 @@ async function loadOptions(): Promise<void> {
     optionsLoading.value = true;
 
     try {
-        const response =
-            await axios.get<OptionsResponse>(
-                `${API}/options`,
-                {
-                    signal:
-                        lifetime.signal,
+        const response = await axios.get<OptionsResponse>(`${API}/options`, {
+            signal: lifetime.signal,
 
-                    headers: {
-                        Accept:
-                            'application/json',
-                        'X-Requested-With':
-                            'XMLHttpRequest',
-                    },
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
 
-                    withCredentials: true,
-                },
-            );
+            withCredentials: true,
+        });
 
-        cciYears.value =
-            response.data.data
-                .cciYears;
+        cciYears.value = response.data.data.cciYears;
 
-        departments.value =
-            response.data.data
-                .departments;
+        departments.value = response.data.data.departments;
     } catch (error: unknown) {
-        if (
-            axios.isCancel(error)
-        ) {
+        if (axios.isCancel(error)) {
             return;
         }
 
-        errorMessage.value =
-            getErrorMessage(
-                error,
-                'Unable to load Student List Report options.',
-            );
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to load Student List Report options.',
+        );
     } finally {
         if (!disposed) {
-            optionsLoading.value =
-                false;
+            optionsLoading.value = false;
         }
     }
 }
 
-async function loadReport(
-    pageNumber = 1,
-): Promise<void> {
+async function loadReport(pageNumber = 1): Promise<void> {
     if (!appliedFilters) {
         return;
     }
@@ -1044,91 +697,53 @@ async function loadReport(
 
     downloading.value = false;
 
-    const controller =
-        new AbortController();
+    const controller = new AbortController();
 
-    listRequest =
-        controller;
+    listRequest = controller;
 
     loading.value = true;
     errorMessage.value = '';
 
     try {
-        const response =
-            await axios.get<ApiResponse>(
-                API,
-                {
-                    signal:
-                        controller.signal,
+        const response = await axios.get<ApiResponse>(API, {
+            signal: controller.signal,
 
-                    params: {
-                        ...appliedFilters,
-                        columns:
-                            appliedOptionalColumns
-                                .value,
-                        page:
-                            pageNumber,
-                        per_page:
-                            perPage.value,
-                        search:
-                            search.value,
-                        sort_field:
-                            sortField.value,
-                        sort_direction:
-                            sortDirection.value,
-                    },
+            params: {
+                ...appliedFilters,
+                columns: appliedOptionalColumns.value,
+                page: pageNumber,
+                per_page: perPage.value,
+                search: search.value,
+                sort_field: sortField.value,
+                sort_direction: sortDirection.value,
+            },
 
-                    headers: {
-                        Accept:
-                            'application/json',
-                        'X-Requested-With':
-                            'XMLHttpRequest',
-                    },
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
 
-                    withCredentials: true,
-                },
-            );
+            withCredentials: true,
+        });
 
-        if (
-            controller.signal.aborted
-        ) {
+        if (controller.signal.aborted) {
             return;
         }
 
-        students.value =
-            response.data.data;
+        students.value = response.data.data;
 
-        totalRecords.value =
-            response.data.meta
-                .total;
+        totalRecords.value = response.data.meta.total;
 
-        perPage.value =
-            response.data.meta
-                .perPage;
+        perPage.value = response.data.meta.perPage;
 
         first.value =
-            (
-                response.data.meta
-                    .currentPage -
-                1
-            )
-            *
-            response.data.meta
-                .perPage;
+            (response.data.meta.currentPage - 1) * response.data.meta.perPage;
 
         hasReport.value = true;
     } catch (error: unknown) {
         if (
-            axios.isCancel(error)
-            ||
-            (
-                axios.isAxiosError(
-                    error,
-                )
-                &&
-                error.code ===
-                    'ERR_CANCELED'
-            )
+            axios.isCancel(error) ||
+            (axios.isAxiosError(error) && error.code === 'ERR_CANCELED')
         ) {
             return;
         }
@@ -1137,17 +752,12 @@ async function loadReport(
         totalRecords.value = 0;
         hasReport.value = false;
 
-        errorMessage.value =
-            getErrorMessage(
-                error,
-                'Unable to load the Student List Report.',
-            );
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to load the Student List Report.',
+        );
     } finally {
-        if (
-            !controller.signal.aborted
-            &&
-            !disposed
-        ) {
+        if (!controller.signal.aborted && !disposed) {
             loading.value = false;
         }
     }
@@ -1162,9 +772,7 @@ async function loadReport(
 function viewReport(): void {
     errorMessage.value = '';
 
-    if (
-        !captureAppliedFilters()
-    ) {
+    if (!captureAppliedFilters()) {
         return;
     }
 
@@ -1177,20 +785,16 @@ function clearFilters(): void {
     listRequest?.abort();
     exportRequest?.abort();
 
-    reportDateRange.value =
-        defaultDateRange();
+    reportDateRange.value = defaultDateRange();
 
     selectedCciYear.value = null;
     selectedDepartment.value = null;
 
-    selectedOptionalColumns.value =
-        emptyOptionalSelection();
+    selectedOptionalColumns.value = emptyOptionalSelection();
 
-    appliedOptionalColumns.value =
-        [];
+    appliedOptionalColumns.value = [];
 
-    optionalFiltersVisible.value =
-        false;
+    optionalFiltersVisible.value = false;
 
     search.value = '';
     sortField.value = 'date_reg';
@@ -1199,9 +803,7 @@ function clearFilters(): void {
     first.value = 0;
     errorMessage.value = '';
 
-    if (
-        captureAppliedFilters()
-    ) {
+    if (captureAppliedFilters()) {
         void loadReport(1);
     }
 }
@@ -1212,41 +814,25 @@ function clearFilters(): void {
 |--------------------------------------------------------------------------
 */
 
-function pageChanged(
-    event: DataTablePageEvent,
-): void {
-    perPage.value =
-        event.rows;
+function pageChanged(event: DataTablePageEvent): void {
+    perPage.value = event.rows;
 
-    first.value =
-        event.first;
+    first.value = event.first;
 
-    void loadReport(
-        event.page + 1,
-    );
+    void loadReport(event.page + 1);
 }
 
-function sortChanged(
-    event: DataTableSortEvent,
-): void {
-    sortField.value =
-        event.sortField
-        ||
-        'date_reg';
+function sortChanged(event: DataTableSortEvent): void {
+    sortField.value = event.sortField || 'date_reg';
 
-    sortDirection.value =
-        event.sortOrder === -1
-            ? 'desc'
-            : 'asc';
+    sortDirection.value = event.sortOrder === -1 ? 'desc' : 'asc';
 
     first.value = 0;
 
     void loadReport(1);
 }
 
-function searchChanged(
-    value: string,
-): void {
+function searchChanged(value: string): void {
     search.value = value;
     first.value = 0;
 
@@ -1260,195 +846,115 @@ function searchChanged(
 */
 
 async function downloadExcel(): Promise<void> {
-    if (
-        !appliedFilters
-        ||
-        !hasReport.value
-        ||
-        downloading.value
-    ) {
+    if (!appliedFilters || !hasReport.value || downloading.value) {
         return;
     }
 
     exportRequest?.abort();
 
-    const controller =
-        new AbortController();
+    const controller = new AbortController();
 
-    exportRequest =
-        controller;
+    exportRequest = controller;
 
     downloading.value = true;
     errorMessage.value = '';
 
     try {
-        const response =
-            await axios.get(
-                `${API}/export`,
-                {
-                    responseType:
-                        'blob',
+        const response = await axios.get(`${API}/export`, {
+            responseType: 'blob',
 
-                    signal:
-                        controller.signal,
+            signal: controller.signal,
 
-                    params: {
-                        ...appliedFilters,
-                        columns:
-                            appliedOptionalColumns
-                                .value,
-                        search:
-                            search.value,
-                        sort_field:
-                            sortField.value,
-                        sort_direction:
-                            sortDirection.value,
-                    },
+            params: {
+                ...appliedFilters,
+                columns: appliedOptionalColumns.value,
+                search: search.value,
+                sort_field: sortField.value,
+                sort_direction: sortDirection.value,
+            },
 
-                    headers: {
-                        Accept:
-                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                        'X-Requested-With':
-                            'XMLHttpRequest',
-                    },
+            headers: {
+                Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
 
-                    withCredentials: true,
-                },
-            );
+            withCredentials: true,
+        });
 
-        if (
-            controller.signal.aborted
-        ) {
+        if (controller.signal.aborted) {
             return;
         }
 
-        const blob =
-            response.data as Blob;
+        const blob = response.data as Blob;
 
-        const disposition =
-            String(
-                response.headers[
-                    'content-disposition'
-                ] ?? '',
-            );
+        const disposition = String(
+            response.headers['content-disposition'] ?? '',
+        );
 
-        const filenameMatch =
-            disposition.match(
-                /filename\*?=(?:UTF-8''|")?([^";]+)/i,
-            );
+        const filenameMatch = disposition.match(
+            /filename\*?=(?:UTF-8''|")?([^";]+)/i,
+        );
 
-        let filename =
-            'student-list-report.xlsx';
+        let filename = 'student-list-report.xlsx';
 
-        if (
-            filenameMatch?.[1]
-        ) {
+        if (filenameMatch?.[1]) {
             try {
-                filename =
-                    decodeURIComponent(
-                        filenameMatch[1]
-                            .replace(
-                                /^"|"$/g,
-                                '',
-                            )
-                            .trim(),
-                    );
+                filename = decodeURIComponent(
+                    filenameMatch[1].replace(/^"|"$/g, '').trim(),
+                );
             } catch {
-                filename =
-                    'student-list-report.xlsx';
+                filename = 'student-list-report.xlsx';
             }
         }
 
-        const objectUrl =
-            URL.createObjectURL(
-                blob,
-            );
+        const objectUrl = URL.createObjectURL(blob);
 
-        const link =
-            document.createElement(
-                'a',
-            );
+        const link = document.createElement('a');
 
-        link.href =
-            objectUrl;
+        link.href = objectUrl;
 
-        link.download =
-            filename;
+        link.download = filename;
 
-        document.body
-            .appendChild(
-                link,
-            );
+        document.body.appendChild(link);
 
         link.click();
         link.remove();
 
-        URL.revokeObjectURL(
-            objectUrl,
-        );
+        URL.revokeObjectURL(objectUrl);
     } catch (error: unknown) {
-        if (
-            axios.isCancel(error)
-        ) {
+        if (axios.isCancel(error)) {
             return;
         }
 
-        if (
-            axios.isAxiosError(
-                error,
-            )
-            &&
-            error.response
-                ?.data instanceof Blob
-        ) {
+        if (axios.isAxiosError(error) && error.response?.data instanceof Blob) {
             try {
-                const payload =
-                    JSON.parse(
-                        await error
-                            .response
-                            .data
-                            .text(),
-                    ) as {
-                        message?: string;
-                        errors?: Record<
-                            string,
-                            string[]
-                        >;
-                    };
+                const payload = JSON.parse(
+                    await error.response.data.text(),
+                ) as {
+                    message?: string;
+                    errors?: Record<string, string[]>;
+                };
 
                 errorMessage.value =
-                    Object.values(
-                        payload.errors
-                            ?? {},
-                    )
+                    Object.values(payload.errors ?? {})
                         .flat()
-                        .join(' ')
-                    ||
-                    payload.message
-                    ||
+                        .join(' ') ||
+                    payload.message ||
                     'Unable to download the Excel report.';
             } catch {
-                errorMessage.value =
-                    'Unable to download the Excel report.';
+                errorMessage.value = 'Unable to download the Excel report.';
             }
 
             return;
         }
 
-        errorMessage.value =
-            getErrorMessage(
-                error,
-                'Unable to download the Excel report.',
-            );
+        errorMessage.value = getErrorMessage(
+            error,
+            'Unable to download the Excel report.',
+        );
     } finally {
-        if (
-            !controller.signal
-                .aborted
-            &&
-            !disposed
-        ) {
-            downloading.value =
-                false;
+        if (!controller.signal.aborted && !disposed) {
+            downloading.value = false;
         }
     }
 }
@@ -1459,51 +965,25 @@ async function downloadExcel(): Promise<void> {
 |--------------------------------------------------------------------------
 */
 
-function getErrorMessage(
-    error: unknown,
-    fallback: string,
-): string {
-    if (
-        !axios.isAxiosError(
-            error,
-        )
-    ) {
+function getErrorMessage(error: unknown, fallback: string): string {
+    if (!axios.isAxiosError(error)) {
         return fallback;
     }
 
-    const responseData =
-        error.response?.data as
-            | {
-                  message?: string;
-                  errors?: Record<
-                      string,
-                      string[]
-                  >;
-              }
-            | undefined;
+    const responseData = error.response?.data as
+        | {
+              message?: string;
+              errors?: Record<string, string[]>;
+          }
+        | undefined;
 
-    const validation =
-        responseData?.errors
-            ? Object.values(
-                  responseData.errors,
-              )
-                  .flat()
-                  .find(
-                      (
-                          value,
-                      ) =>
-                          typeof value ===
-                          'string',
-                  )
-            : undefined;
+    const validation = responseData?.errors
+        ? Object.values(responseData.errors)
+              .flat()
+              .find((value) => typeof value === 'string')
+        : undefined;
 
-    return (
-        validation
-        ||
-        responseData?.message
-        ||
-        fallback
-    );
+    return validation || responseData?.message || fallback;
 }
 
 /*
@@ -1517,9 +997,7 @@ onMounted(() => {
      * Load the default report immediately,
      * exactly like the senior Daily Journals page.
      */
-    if (
-        captureAppliedFilters()
-    ) {
+    if (captureAppliedFilters()) {
         void loadReport(1);
     }
 
@@ -1547,17 +1025,13 @@ onBeforeUnmount(() => {
             class="!rounded-2xl !border !border-slate-200 !shadow-sm [&_.p-card-body]:!p-4 [&_.p-card-content]:!p-0"
         >
             <template #content>
-                <div
-                    class="flex flex-col gap-4 xl:flex-row xl:items-end"
-                >
+                <div class="flex flex-col gap-4 xl:flex-row xl:items-end">
                     <div
                         class="grid flex-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
                     >
                         <!-- Date range -->
 
-                        <div
-                            class="flex flex-col gap-2"
-                        >
+                        <div class="flex flex-col gap-2">
                             <label
                                 for="student-report-date-range"
                                 class="text-sm font-semibold text-slate-700"
@@ -1583,9 +1057,7 @@ onBeforeUnmount(() => {
 
                         <!-- Department -->
 
-                        <div
-                            class="flex flex-col gap-2"
-                        >
+                        <div class="flex flex-col gap-2">
                             <label
                                 for="student-report-department"
                                 class="text-sm font-semibold text-slate-700"
@@ -1610,9 +1082,7 @@ onBeforeUnmount(() => {
 
                     <!-- Actions -->
 
-                    <div
-                        class="flex flex-wrap items-center gap-2"
-                    >
+                    <div class="flex flex-wrap items-center gap-2">
                         <Button
                             type="button"
                             label="View"
@@ -1627,10 +1097,7 @@ onBeforeUnmount(() => {
                             label="Filters"
                             icon="pi pi-filter"
                             severity="secondary"
-                            :disabled="
-                                optionalFiltersVisible ||
-                                loading
-                            "
+                            :disabled="optionalFiltersVisible || loading"
                             @click="showOptionalFilters"
                         />
 
@@ -1656,25 +1123,18 @@ onBeforeUnmount(() => {
                         class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3"
                     >
                         <div>
-                            <p
-                                class="text-sm font-semibold text-slate-700"
-                            >
+                            <p class="text-sm font-semibold text-slate-700">
                                 Optional Columns
                             </p>
 
-                            <p
-                                class="mt-0.5 text-xs text-slate-500"
-                            >
-                                Choose additional student information to include in the table and Excel report.
+                            <p class="mt-0.5 text-xs text-slate-500">
+                                Choose additional student information to include
+                                in the table and Excel report.
                             </p>
                         </div>
 
-                        <div
-                            class="flex flex-wrap items-center gap-3"
-                        >
-                            <div
-                                class="flex items-center gap-2"
-                            >
+                        <div class="flex flex-wrap items-center gap-3">
+                            <div class="flex items-center gap-2">
                                 <Checkbox
                                     input-id="student-report-include-all"
                                     v-model="includeAll"
@@ -1713,11 +1173,7 @@ onBeforeUnmount(() => {
                         >
                             <Checkbox
                                 :input-id="`student-report-${column.field}`"
-                                v-model="
-                                    selectedOptionalColumns[
-                                        column.field
-                                    ]
-                                "
+                                v-model="selectedOptionalColumns[column.field]"
                                 binary
                                 :disabled="loading"
                             />
@@ -1776,10 +1232,7 @@ onBeforeUnmount(() => {
                     label="Download Excel"
                     icon="pi pi-download"
                     severity="success"
-                    :disabled="
-                        !hasReport ||
-                        loading
-                    "
+                    :disabled="!hasReport || loading"
                     :loading="downloading"
                     @click="downloadExcel"
                 />
@@ -1788,25 +1241,11 @@ onBeforeUnmount(() => {
             <!-- Student information -->
 
             <template #cell-lname="{ data }">
-                <div
-                    class="flex items-center gap-3"
-                >
+                <div class="flex items-center gap-3">
                     <Avatar
-                        v-if="
-                            getStudentAvatar(
-                                data.avatar_gender,
-                            )
-                        "
-                        :image="
-                            getStudentAvatar(
-                                data.avatar_gender,
-                            )
-                        "
-                        :aria-label="
-                            getStudentFullName(
-                                data,
-                            )
-                        "
+                        v-if="getStudentAvatar(data.avatar_gender)"
+                        :image="getStudentAvatar(data.avatar_gender)"
+                        :aria-label="getStudentFullName(data)"
                         shape="circle"
                         size="large"
                         class="shrink-0"
@@ -1814,36 +1253,20 @@ onBeforeUnmount(() => {
 
                     <Avatar
                         v-else
-                        :label="
-                            getStudentInitials(
-                                data,
-                            )
-                        "
+                        :label="getStudentInitials(data)"
                         shape="circle"
                         size="large"
                         class="shrink-0 !bg-blue-50 !font-bold !text-blue-600"
                     />
 
                     <div class="min-w-0">
-                        <p
-                            class="truncate font-semibold text-slate-700"
-                        >
-                            {{
-                                getStudentFullName(
-                                    data,
-                                )
-                            }}
+                        <p class="truncate font-semibold text-slate-700">
+                            {{ getStudentFullName(data) }}
                         </p>
 
-                        <div
-                            class="mt-1 flex flex-wrap items-center gap-1"
-                        >
+                        <div class="mt-1 flex flex-wrap items-center gap-1">
                             <PrimeTag
-                                :value="
-                                    getSchoolId(
-                                        data,
-                                    )
-                                "
+                                :value="getSchoolId(data)"
                                 icon="pi pi-id-card"
                                 rounded
                                 severity="info"
@@ -1851,32 +1274,15 @@ onBeforeUnmount(() => {
                             />
 
                             <PrimeTag
-                                :value="
-                                    String(
-                                        data.dept ||
-                                            '—',
-                                    )
-                                "
-                                :severity="
-                                    getDepartmentSeverity(
-                                        data.dept,
-                                    )
-                                "
-                                :icon="
-                                    getDepartmentIcon(
-                                        data.dept,
-                                    )
-                                "
+                                :value="String(data.dept || '—')"
+                                :severity="getDepartmentSeverity(data.dept)"
+                                :icon="getDepartmentIcon(data.dept)"
                                 rounded
                                 class="!px-2 !py-0.5 !text-[11px] !font-semibold"
                             />
 
                             <PrimeTag
-                                :value="
-                                    getCciYear(
-                                        data.batch_no,
-                                    )
-                                "
+                                :value="getCciYear(data.batch_no)"
                                 icon="pi pi-calendar"
                                 rounded
                                 severity="secondary"
@@ -1884,21 +1290,9 @@ onBeforeUnmount(() => {
                             />
 
                             <PrimeTag
-                                v-if="
-                                    hasAppliedField(
-                                        'etrb_type',
-                                    )
-                                "
-                                :value="
-                                    displayValue(
-                                        data.etrb_type,
-                                    )
-                                "
-                                :severity="
-                                    getEtrbSeverity(
-                                        data.etrb_type,
-                                    )
-                                "
+                                v-if="hasAppliedField('etrb_type')"
+                                :value="displayValue(data.etrb_type)"
+                                :severity="getEtrbSeverity(data.etrb_type)"
                                 icon="pi pi-book"
                                 rounded
                                 class="!px-2 !py-0.5 !text-[11px] !font-semibold"
@@ -1912,30 +1306,18 @@ onBeforeUnmount(() => {
 
             <template #cell-date_reg="{ data }">
                 <div class="space-y-1.5">
-                    <div
-                        class="flex items-center gap-2"
-                    >
+                    <div class="flex items-center gap-2">
                         <i
                             class="pi pi-calendar text-xs font-bold text-blue-500"
                         ></i>
 
-                        <span
-                            class="text-sm font-semibold text-slate-700"
-                        >
-                            {{
-                                formatDisplayDate(
-                                    data.date_reg,
-                                )
-                            }}
+                        <span class="text-sm font-semibold text-slate-700">
+                            {{ formatDisplayDate(data.date_reg) }}
                         </span>
                     </div>
 
                     <div
-                        v-if="
-                            hasAppliedField(
-                                'email',
-                            )
-                        "
+                        v-if="hasAppliedField('email')"
                         class="flex min-w-0 items-center gap-2"
                     >
                         <i
@@ -1944,67 +1326,35 @@ onBeforeUnmount(() => {
 
                         <span
                             class="min-w-0 truncate text-xs text-slate-600"
-                            :title="
-                                displayValue(
-                                    data.email,
-                                )
-                            "
+                            :title="displayValue(data.email)"
                         >
-                            {{
-                                displayValue(
-                                    data.email,
-                                )
-                            }}
+                            {{ displayValue(data.email) }}
                         </span>
                     </div>
 
                     <div
                         v-if="
-                            hasAppliedField(
-                                'mobile',
-                            ) ||
-                            hasAppliedField(
-                                'phone',
-                            )
+                            hasAppliedField('mobile') ||
+                            hasAppliedField('phone')
                         "
                         class="flex flex-wrap items-center gap-x-3 gap-y-1"
                     >
                         <span
-                            v-if="
-                                hasAppliedField(
-                                    'mobile',
-                                )
-                            "
+                            v-if="hasAppliedField('mobile')"
                             class="flex items-center gap-1.5 text-xs text-slate-600"
                         >
-                            <i
-                                class="pi pi-mobile text-cyan-500"
-                            ></i>
+                            <i class="pi pi-mobile text-cyan-500"></i>
 
-                            {{
-                                displayValue(
-                                    data.mobile,
-                                )
-                            }}
+                            {{ displayValue(data.mobile) }}
                         </span>
 
                         <span
-                            v-if="
-                                hasAppliedField(
-                                    'phone',
-                                )
-                            "
+                            v-if="hasAppliedField('phone')"
                             class="flex items-center gap-1.5 text-xs text-slate-600"
                         >
-                            <i
-                                class="pi pi-phone text-emerald-500"
-                            ></i>
+                            <i class="pi pi-phone text-emerald-500"></i>
 
-                            {{
-                                displayValue(
-                                    data.phone,
-                                )
-                            }}
+                            {{ displayValue(data.phone) }}
                         </span>
                     </div>
                 </div>
@@ -2012,55 +1362,29 @@ onBeforeUnmount(() => {
 
             <!-- Personal information -->
 
-            <template
-                #cell-personal_information="{ data }"
-            >
+            <template #cell-personal_information="{ data }">
                 <div class="space-y-1.5">
                     <div
-                        v-if="
-                            hasAppliedField(
-                                'birth_date',
-                            )
-                        "
+                        v-if="hasAppliedField('birth_date')"
                         class="flex items-center gap-2 text-xs"
                     >
-                        <i
-                            class="pi pi-calendar shrink-0 text-blue-500"
-                        ></i>
+                        <i class="pi pi-calendar shrink-0 text-blue-500"></i>
 
-                        <span
-                            class="font-medium text-slate-700"
-                        >
-                            {{
-                                formatDisplayDate(
-                                    data.birth_date,
-                                )
-                            }}
+                        <span class="font-medium text-slate-700">
+                            {{ formatDisplayDate(data.birth_date) }}
                         </span>
                     </div>
 
                     <div
                         v-if="
-                            hasAppliedField(
-                                'gender',
-                            ) ||
-                            hasAppliedField(
-                                'civ_status',
-                            )
+                            hasAppliedField('gender') ||
+                            hasAppliedField('civ_status')
                         "
                         class="flex flex-wrap items-center gap-1.5"
                     >
                         <PrimeTag
-                            v-if="
-                                hasAppliedField(
-                                    'gender',
-                                )
-                            "
-                            :value="
-                                formatGender(
-                                    data.gender,
-                                )
-                            "
+                            v-if="hasAppliedField('gender')"
+                            :value="formatGender(data.gender)"
                             icon="pi pi-user"
                             severity="info"
                             rounded
@@ -2068,16 +1392,8 @@ onBeforeUnmount(() => {
                         />
 
                         <PrimeTag
-                            v-if="
-                                hasAppliedField(
-                                    'civ_status',
-                                )
-                            "
-                            :value="
-                                displayValue(
-                                    data.civ_status,
-                                )
-                            "
+                            v-if="hasAppliedField('civ_status')"
+                            :value="displayValue(data.civ_status)"
                             icon="pi pi-heart"
                             severity="secondary"
                             rounded
@@ -2086,11 +1402,7 @@ onBeforeUnmount(() => {
                     </div>
 
                     <div
-                        v-if="
-                            hasAppliedField(
-                                'st_address',
-                            )
-                        "
+                        v-if="hasAppliedField('st_address')"
                         class="flex items-start gap-2 text-xs leading-4 text-slate-600"
                     >
                         <i
@@ -2099,17 +1411,9 @@ onBeforeUnmount(() => {
 
                         <span
                             class="line-clamp-2"
-                            :title="
-                                displayValue(
-                                    data.st_address,
-                                )
-                            "
+                            :title="displayValue(data.st_address)"
                         >
-                            {{
-                                displayValue(
-                                    data.st_address,
-                                )
-                            }}
+                            {{ displayValue(data.st_address) }}
                         </span>
                     </div>
                 </div>
@@ -2117,165 +1421,87 @@ onBeforeUnmount(() => {
 
             <!-- Mother's information -->
 
-            <template
-                #cell-mother_information="{ data }"
-            >
+            <template #cell-mother_information="{ data }">
                 <div class="space-y-1.5">
                     <div
-                        v-if="
-                            hasAppliedField(
-                                'mother_name',
-                            )
-                        "
+                        v-if="hasAppliedField('mother_name')"
                         class="flex items-center gap-2 text-sm font-medium text-slate-700"
                     >
-                        <i
-                            class="pi pi-user text-pink-500"
-                        ></i>
+                        <i class="pi pi-user text-pink-500"></i>
 
                         <span
                             class="truncate"
-                            :title="
-                                displayValue(
-                                    data.mother_name,
-                                )
-                            "
+                            :title="displayValue(data.mother_name)"
                         >
-                            {{
-                                displayValue(
-                                    data.mother_name,
-                                )
-                            }}
+                            {{ displayValue(data.mother_name) }}
                         </span>
                     </div>
 
                     <div
-                        v-if="
-                            hasAppliedField(
-                                'mother_nos',
-                            )
-                        "
+                        v-if="hasAppliedField('mother_nos')"
                         class="flex items-center gap-2 text-xs text-slate-600"
                     >
-                        <i
-                            class="pi pi-phone text-emerald-500"
-                        ></i>
+                        <i class="pi pi-phone text-emerald-500"></i>
 
-                        {{
-                            displayValue(
-                                data.mother_nos,
-                            )
-                        }}
+                        {{ displayValue(data.mother_nos) }}
                     </div>
                 </div>
             </template>
 
             <!-- Father's information -->
 
-            <template
-                #cell-father_information="{ data }"
-            >
+            <template #cell-father_information="{ data }">
                 <div class="space-y-1.5">
                     <div
-                        v-if="
-                            hasAppliedField(
-                                'father_name',
-                            )
-                        "
+                        v-if="hasAppliedField('father_name')"
                         class="flex items-center gap-2 text-sm font-medium text-slate-700"
                     >
-                        <i
-                            class="pi pi-user text-blue-500"
-                        ></i>
+                        <i class="pi pi-user text-blue-500"></i>
 
                         <span
                             class="truncate"
-                            :title="
-                                displayValue(
-                                    data.father_name,
-                                )
-                            "
+                            :title="displayValue(data.father_name)"
                         >
-                            {{
-                                displayValue(
-                                    data.father_name,
-                                )
-                            }}
+                            {{ displayValue(data.father_name) }}
                         </span>
                     </div>
 
                     <div
-                        v-if="
-                            hasAppliedField(
-                                'father_nos',
-                            )
-                        "
+                        v-if="hasAppliedField('father_nos')"
                         class="flex items-center gap-2 text-xs text-slate-600"
                     >
-                        <i
-                            class="pi pi-phone text-emerald-500"
-                        ></i>
+                        <i class="pi pi-phone text-emerald-500"></i>
 
-                        {{
-                            displayValue(
-                                data.father_nos,
-                            )
-                        }}
+                        {{ displayValue(data.father_nos) }}
                     </div>
                 </div>
             </template>
 
             <!-- Spouse's information -->
 
-            <template
-                #cell-spouse_information="{ data }"
-            >
+            <template #cell-spouse_information="{ data }">
                 <div class="space-y-1.5">
                     <div
-                        v-if="
-                            hasAppliedField(
-                                'spouse_name',
-                            )
-                        "
+                        v-if="hasAppliedField('spouse_name')"
                         class="flex items-center gap-2 text-sm font-medium text-slate-700"
                     >
-                        <i
-                            class="pi pi-user text-violet-500"
-                        ></i>
+                        <i class="pi pi-user text-violet-500"></i>
 
                         <span
                             class="truncate"
-                            :title="
-                                displayValue(
-                                    data.spouse_name,
-                                )
-                            "
+                            :title="displayValue(data.spouse_name)"
                         >
-                            {{
-                                displayValue(
-                                    data.spouse_name,
-                                )
-                            }}
+                            {{ displayValue(data.spouse_name) }}
                         </span>
                     </div>
 
                     <div
-                        v-if="
-                            hasAppliedField(
-                                'spouse_nos',
-                            )
-                        "
+                        v-if="hasAppliedField('spouse_nos')"
                         class="flex items-center gap-2 text-xs text-slate-600"
                     >
-                        <i
-                            class="pi pi-phone text-emerald-500"
-                        ></i>
+                        <i class="pi pi-phone text-emerald-500"></i>
 
-                        {{
-                            displayValue(
-                                data.spouse_nos,
-                            )
-                        }}
+                        {{ displayValue(data.spouse_nos) }}
                     </div>
                 </div>
             </template>

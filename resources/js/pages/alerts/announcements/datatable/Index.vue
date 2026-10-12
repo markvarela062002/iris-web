@@ -912,7 +912,7 @@ onBeforeUnmount(() => requestController?.abort());
                             icon="pi pi-save"
                             severity="success"
                             :loading="saving"
-                            @click="saveAnnouncement" 
+                            @click="saveAnnouncement"
                         />
                     </div>
                 </div>
@@ -923,7 +923,7 @@ onBeforeUnmount(() => requestController?.abort());
             v-model:visible="deleteDialogVisible"
             modal
             header="Delete Announcement"
-            class="w-[min(92vw,520px)]"xw
+            class="w-[min(92vw,520px)]"
         >
             <Message severity="warn" :closable="false">
                 Delete

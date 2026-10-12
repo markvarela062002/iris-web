@@ -5,20 +5,12 @@ import Avatar from 'primevue/avatar';
 import Button from 'primevue/button';
 import Message from 'primevue/message';
 import PrimeTag from 'primevue/tag';
-import {
-    onBeforeUnmount,
-    onMounted,
-    ref,
-} from 'vue';
+import { onBeforeUnmount, onMounted, ref } from 'vue';
 
 import Datatable from '@/components/Datatable.vue';
 import { dashboard } from '@/routes';
 
-import type {
-    DataTableAction,
-    DataTableColumn,
-    DataTableRow,
-} from '@/types';
+import type { DataTableAction, DataTableColumn, DataTableRow } from '@/types';
 
 defineOptions({
     inheritAttrs: false,
@@ -86,10 +78,7 @@ type DataTableSortEvent = {
     sortOrder: number;
 };
 
-type DepartmentSeverity =
-    | 'success'
-    | 'info'
-    | 'secondary';
+type DepartmentSeverity = 'success' | 'info' | 'secondary';
 
 /*
 |--------------------------------------------------------------------------
@@ -108,15 +97,11 @@ const search = ref('');
 
 const sortField = ref('lname');
 
-const sortDirection = ref<'asc' | 'desc'>(
-    'asc',
-);
+const sortDirection = ref<'asc' | 'desc'>('asc');
 
 const errorMessage = ref('');
 
-let requestController:
-    | AbortController
-    | null = null;
+let requestController: AbortController | null = null;
 
 /*
 |--------------------------------------------------------------------------
@@ -139,16 +124,14 @@ const columns: DataTableColumn[] = [
         header: 'Latest Activities',
         sortable: false,
         searchable: false,
-        class:
-            'min-w-[320px] whitespace-normal',
+        class: 'min-w-[320px] whitespace-normal',
     },
     {
         field: 'uploaded_files',
         header: 'Latest Uploaded Documents',
         sortable: false,
         searchable: false,
-        class:
-            'min-w-[320px] whitespace-normal',
+        class: 'min-w-[320px] whitespace-normal',
     },
 ];
 
@@ -173,13 +156,10 @@ const actions: DataTableAction[] = [
 |--------------------------------------------------------------------------
 */
 
-async function loadStudents(
-    pageNumber = 1,
-): Promise<void> {
+async function loadStudents(pageNumber = 1): Promise<void> {
     requestController?.abort();
 
-    const controller =
-        new AbortController();
+    const controller = new AbortController();
 
     requestController = controller;
 
@@ -187,68 +167,45 @@ async function loadStudents(
     errorMessage.value = '';
 
     try {
-        const response =
-            await axios.get<StudentApiResponse>(
-                '/api/v1/databases/datatable/students',
-                {
-                    signal:
-                        controller.signal,
+        const response = await axios.get<StudentApiResponse>(
+            '/api/v1/databases/datatable/students',
+            {
+                signal: controller.signal,
 
-                    params: {
-                        page:
-                            pageNumber,
+                params: {
+                    page: pageNumber,
 
-                        per_page:
-                            perPage.value,
+                    per_page: perPage.value,
 
-                        search:
-                            search.value,
+                    search: search.value,
 
-                        sort_field:
-                            sortField.value,
+                    sort_field: sortField.value,
 
-                        sort_direction:
-                            sortDirection.value,
-                    },
-
-                    headers: {
-                        Accept:
-                            'application/json',
-
-                        'X-Requested-With':
-                            'XMLHttpRequest',
-                    },
-
-                    withCredentials:
-                        true,
+                    sort_direction: sortDirection.value,
                 },
-            );
 
-        students.value =
-            response.data.data;
+                headers: {
+                    Accept: 'application/json',
 
-        totalRecords.value =
-            response.data.meta.total;
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
 
-        perPage.value =
-            response.data.meta.perPage;
+                withCredentials: true,
+            },
+        );
+
+        students.value = response.data.data;
+
+        totalRecords.value = response.data.meta.total;
+
+        perPage.value = response.data.meta.perPage;
 
         first.value =
-            (
-                response.data.meta
-                    .currentPage - 1
-            ) *
-            response.data.meta.perPage;
+            (response.data.meta.currentPage - 1) * response.data.meta.perPage;
     } catch (error: unknown) {
         if (
             axios.isCancel(error) ||
-            (
-                axios.isAxiosError(
-                    error,
-                ) &&
-                error.code ===
-                    'ERR_CANCELED'
-            )
+            (axios.isAxiosError(error) && error.code === 'ERR_CANCELED')
         ) {
             return;
         }
@@ -256,21 +213,11 @@ async function loadStudents(
         students.value = [];
         totalRecords.value = 0;
 
-        errorMessage.value =
-            getErrorMessage(
-                error,
-                'Unable to load students.',
-            );
+        errorMessage.value = getErrorMessage(error, 'Unable to load students.');
 
-        console.error(
-            'Unable to load students:',
-            error,
-        );
+        console.error('Unable to load students:', error);
     } finally {
-        if (
-            requestController ===
-            controller
-        ) {
+        if (requestController === controller) {
             loading.value = false;
         }
     }
@@ -282,37 +229,24 @@ async function loadStudents(
 |--------------------------------------------------------------------------
 */
 
-function handlePage(
-    event: DataTablePageEvent,
-): void {
+function handlePage(event: DataTablePageEvent): void {
     perPage.value = event.rows;
     first.value = event.first;
 
-    void loadStudents(
-        event.page + 1,
-    );
+    void loadStudents(event.page + 1);
 }
 
-function handleSort(
-    event: DataTableSortEvent,
-): void {
-    sortField.value =
-        event.sortField ||
-        'lname';
+function handleSort(event: DataTableSortEvent): void {
+    sortField.value = event.sortField || 'lname';
 
-    sortDirection.value =
-        event.sortOrder === -1
-            ? 'desc'
-            : 'asc';
+    sortDirection.value = event.sortOrder === -1 ? 'desc' : 'asc';
 
     first.value = 0;
 
     void loadStudents(1);
 }
 
-function handleSearch(
-    value: string,
-): void {
+function handleSearch(value: string): void {
     search.value = value;
     first.value = 0;
 
@@ -320,34 +254,24 @@ function handleSearch(
 }
 
 function addStudent(): void {
-    router.visit(
-        '/databases/students/profile/new',
-    );
+    router.visit('/databases/students/profile/new');
 }
 
-function handleAction(
-    action: string,
-    student: DataTableRow,
-): void {
+function handleAction(action: string, student: DataTableRow): void {
     if (action !== 'edit') {
         return;
     }
 
-    const studentId = String(
-        student.id ?? '',
-    ).trim();
+    const studentId = String(student.id ?? '').trim();
 
     if (!studentId) {
-        errorMessage.value =
-            'The selected student ID is missing.';
+        errorMessage.value = 'The selected student ID is missing.';
 
         return;
     }
 
     router.visit(
-        `/databases/students/profile/${encodeURIComponent(
-            studentId,
-        )}`,
+        `/databases/students/profile/${encodeURIComponent(studentId)}`,
     );
 }
 
@@ -357,66 +281,33 @@ function handleAction(
 |--------------------------------------------------------------------------
 */
 
-function getStudentFullName(
-    student: DataTableRow,
-): string {
-    const lastName = String(
-        student.lname ?? '',
-    ).trim();
+function getStudentFullName(student: DataTableRow): string {
+    const lastName = String(student.lname ?? '').trim();
 
-    const otherNames = [
-        student.fname,
-        student.mname,
-    ]
+    const otherNames = [student.fname, student.mname]
         .filter((name) => {
-            return (
-                typeof name ===
-                    'string' &&
-                name.trim() !== ''
-            );
+            return typeof name === 'string' && name.trim() !== '';
         })
         .map((name) => {
-            return String(
-                name,
-            ).trim();
+            return String(name).trim();
         })
         .join(' ');
 
-    if (
-        lastName &&
-        otherNames
-    ) {
+    if (lastName && otherNames) {
         return `${lastName}, ${otherNames}`.toUpperCase();
     }
 
-    return (
-        lastName ||
-        otherNames
-    ).toUpperCase();
+    return (lastName || otherNames).toUpperCase();
 }
 
-function getStudentInitials(
-    student: DataTableRow,
-): string {
-    const firstName = String(
-        student.fname ?? '',
-    ).trim();
+function getStudentInitials(student: DataTableRow): string {
+    const firstName = String(student.fname ?? '').trim();
 
-    const lastName = String(
-        student.lname ?? '',
-    ).trim();
+    const lastName = String(student.lname ?? '').trim();
 
-    const initials =
-        `${firstName.charAt(
-            0,
-        )}${lastName.charAt(
-            0,
-        )}`;
+    const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`;
 
-    return (
-        initials.toUpperCase() ||
-        'ST'
-    );
+    return initials.toUpperCase() || 'ST';
 }
 
 function getStudentAvatar(gender: unknown): string {
@@ -435,25 +326,14 @@ function getStudentAvatar(gender: unknown): string {
     return '/images/default-cadet.png';
 }
 
-function getSchoolId(
-    student: DataTableRow,
-): string {
-    const value = String(
-        student.school_id_no ?? '',
-    ).trim();
+function getSchoolId(student: DataTableRow): string {
+    const value = String(student.school_id_no ?? '').trim();
 
-    return (
-        value ||
-        'No School ID'
-    );
+    return value || 'No School ID';
 }
 
-function getDepartmentSeverity(
-    department: unknown,
-): DepartmentSeverity {
-    const value = String(
-        department ?? '',
-    )
+function getDepartmentSeverity(department: unknown): DepartmentSeverity {
+    const value = String(department ?? '')
         .trim()
         .toUpperCase();
 
@@ -468,12 +348,8 @@ function getDepartmentSeverity(
     return 'secondary';
 }
 
-function getDepartmentIcon(
-    department: unknown,
-): string {
-    const value = String(
-        department ?? '',
-    )
+function getDepartmentIcon(department: unknown): string {
+    const value = String(department ?? '')
         .trim()
         .toUpperCase();
 
@@ -494,86 +370,49 @@ function getDepartmentIcon(
 |--------------------------------------------------------------------------
 */
 
-function getActivities(
-    student: DataTableRow,
-): StudentActivity[] {
-    if (
-        !Array.isArray(
-            student.activities,
-        )
-    ) {
+function getActivities(student: DataTableRow): StudentActivity[] {
+    if (!Array.isArray(student.activities)) {
         return [];
     }
 
-    return student.activities.flatMap(
-        (
-            candidate,
-        ): StudentActivity[] => {
-            if (
-                candidate === null ||
-                typeof candidate !==
-                    'object'
-            ) {
-                return [];
-            }
+    return student.activities.flatMap((candidate): StudentActivity[] => {
+        if (candidate === null || typeof candidate !== 'object') {
+            return [];
+        }
 
-            const activity =
-                candidate as Record<
-                    string,
-                    unknown
-                >;
+        const activity = candidate as Record<string, unknown>;
 
-            return [
-                {
-                    id:
-                        String(
-                            activity.id ??
-                                '',
-                        ),
+        return [
+            {
+                id: String(activity.id ?? ''),
 
-                    activity_id:
-                        activity.activity_id ==
-                        null
-                            ? null
-                            : String(
-                                  activity.activity_id,
-                              ),
+                activity_id:
+                    activity.activity_id == null
+                        ? null
+                        : String(activity.activity_id),
 
-                    description:
-                        activity.description ==
-                        null
-                            ? null
-                            : String(
-                                  activity.description,
-                              ),
+                description:
+                    activity.description == null
+                        ? null
+                        : String(activity.description),
 
-                    start_date:
-                        activity.start_date ==
-                        null
-                            ? null
-                            : String(
-                                  activity.start_date,
-                              ),
+                start_date:
+                    activity.start_date == null
+                        ? null
+                        : String(activity.start_date),
 
-                    end_date:
-                        activity.end_date ==
-                        null
-                            ? null
-                            : String(
-                                  activity.end_date,
-                              ),
+                end_date:
+                    activity.end_date == null
+                        ? null
+                        : String(activity.end_date),
 
-                    verified:
-                        activity.verified ==
-                        null
-                            ? null
-                            : String(
-                                  activity.verified,
-                              ),
-                },
-            ];
-        },
-    );
+                verified:
+                    activity.verified == null
+                        ? null
+                        : String(activity.verified),
+            },
+        ];
+    });
 }
 
 /*
@@ -582,82 +421,45 @@ function getActivities(
 |--------------------------------------------------------------------------
 */
 
-function getUploadedFiles(
-    student: DataTableRow,
-): StudentUploadedFile[] {
-    if (
-        !Array.isArray(
-            student.uploaded_files,
-        )
-    ) {
+function getUploadedFiles(student: DataTableRow): StudentUploadedFile[] {
+    if (!Array.isArray(student.uploaded_files)) {
         return [];
     }
 
     return student.uploaded_files.flatMap(
-        (
-            candidate,
-        ): StudentUploadedFile[] => {
-            if (
-                candidate === null ||
-                typeof candidate !==
-                    'object'
-            ) {
+        (candidate): StudentUploadedFile[] => {
+            if (candidate === null || typeof candidate !== 'object') {
                 return [];
             }
 
-            const file =
-                candidate as Record<
-                    string,
-                    unknown
-                >;
+            const file = candidate as Record<string, unknown>;
 
             return [
                 {
-                    id:
-                        String(
-                            file.id ??
-                                '',
-                        ),
+                    id: String(file.id ?? ''),
 
                     requirement_id:
-                        file.requirement_id ==
-                        null
+                        file.requirement_id == null
                             ? null
-                            : String(
-                                  file.requirement_id,
-                              ),
+                            : String(file.requirement_id),
 
                     requirement:
-                        file.requirement ==
-                        null
+                        file.requirement == null
                             ? null
-                            : String(
-                                  file.requirement,
-                              ),
+                            : String(file.requirement),
 
                     description:
-                        file.description ==
-                        null
+                        file.description == null
                             ? null
-                            : String(
-                                  file.description,
-                              ),
+                            : String(file.description),
 
                     date_uploaded:
-                        file.date_uploaded ==
-                        null
+                        file.date_uploaded == null
                             ? null
-                            : String(
-                                  file.date_uploaded,
-                              ),
+                            : String(file.date_uploaded),
 
                     verified:
-                        file.verified ==
-                        null
-                            ? null
-                            : String(
-                                  file.verified,
-                              ),
+                        file.verified == null ? null : String(file.verified),
                 },
             ];
         },
@@ -670,59 +472,32 @@ function getUploadedFiles(
 |--------------------------------------------------------------------------
 */
 
-function formatDate(
-    value: unknown,
-): string {
-    if (
-        !value ||
-        value ===
-            '1970-01-01' ||
-        value ===
-            '1970-01-01 00:00:00'
-    ) {
+function formatDate(value: unknown): string {
+    if (!value || value === '1970-01-01' || value === '1970-01-01 00:00:00') {
         return '—';
     }
 
-    const rawValue =
-        String(value);
+    const rawValue = String(value);
 
-    const normalizedValue =
-        rawValue.includes('T')
-            ? rawValue
-            : rawValue.replace(
-                  ' ',
-                  'T',
-              );
+    const normalizedValue = rawValue.includes('T')
+        ? rawValue
+        : rawValue.replace(' ', 'T');
 
-    const date =
-        new Date(
-            normalizedValue,
-        );
+    const date = new Date(normalizedValue);
 
-    if (
-        Number.isNaN(
-            date.getTime(),
-        )
-    ) {
+    if (Number.isNaN(date.getTime())) {
         return rawValue;
     }
 
-    return new Intl.DateTimeFormat(
-        'en-PH',
-        {
-            timeZone:
-                'Asia/Manila',
+    return new Intl.DateTimeFormat('en-PH', {
+        timeZone: 'Asia/Manila',
 
-            month:
-                'short',
+        month: 'short',
 
-            day:
-                'numeric',
+        day: 'numeric',
 
-            year:
-                'numeric',
-        },
-    ).format(date);
+        year: 'numeric',
+    }).format(date);
 }
 
 /*
@@ -731,29 +506,18 @@ function formatDate(
 |--------------------------------------------------------------------------
 */
 
-function getErrorMessage(
-    error: unknown,
-    fallback: string,
-): string {
-    if (
-        !axios.isAxiosError(
-            error,
-        )
-    ) {
+function getErrorMessage(error: unknown, fallback: string): string {
+    if (!axios.isAxiosError(error)) {
         return fallback;
     }
 
-    const responseData =
-        error.response?.data as
-            | {
-                  message?: string;
-              }
-            | undefined;
+    const responseData = error.response?.data as
+        | {
+              message?: string;
+          }
+        | undefined;
 
-    return (
-        responseData?.message ||
-        fallback
-    );
+    return responseData?.message || fallback;
 }
 
 /*
@@ -783,9 +547,7 @@ onBeforeUnmount(() => {
             v-if="errorMessage"
             severity="error"
             closable
-            @close="
-                errorMessage = ''
-            "
+            @close="errorMessage = ''"
         >
             {{ errorMessage }}
         </Message>
@@ -810,26 +572,13 @@ onBeforeUnmount(() => {
             :total-records="totalRecords"
             :first="first"
             :rows="perPage"
-            :rows-per-page-options="[
-                10,
-                20,
-                50,
-                100,
-            ]"
+            :rows-per-page-options="[10, 20, 50, 100]"
             actions-header="Actions"
             actions-width="90px"
-            @page="
-                handlePage
-            "
-            @sort="
-                handleSort
-            "
-            @search="
-                handleSearch
-            "
-            @action="
-                handleAction
-            "
+            @page="handlePage"
+            @sort="handleSort"
+            @search="handleSearch"
+            @action="handleAction"
         >
             <template #header-actions>
                 <Button
@@ -842,28 +591,12 @@ onBeforeUnmount(() => {
 
             <!-- STUDENT INFORMATION -->
 
-            <template
-                #cell-fname="{ data }"
-            >
-                <div
-                    class="flex items-center gap-3"
-                >
+            <template #cell-fname="{ data }">
+                <div class="flex items-center gap-3">
                     <Avatar
-                        v-if="
-                            getStudentAvatar(
-                                data.gender,
-                            )
-                        "
-                        :image="
-                            getStudentAvatar(
-                                data.gender,
-                            )
-                        "
-                        :aria-label="
-                            getStudentFullName(
-                                data,
-                            )
-                        "
+                        v-if="getStudentAvatar(data.gender)"
+                        :image="getStudentAvatar(data.gender)"
+                        :aria-label="getStudentFullName(data)"
                         shape="circle"
                         size="large"
                         class="shrink-0"
@@ -871,28 +604,15 @@ onBeforeUnmount(() => {
 
                     <Avatar
                         v-else
-                        :label="
-                            getStudentInitials(
-                                data,
-                            )
-                        "
+                        :label="getStudentInitials(data)"
                         shape="circle"
                         size="large"
                         class="shrink-0 !bg-[#377EC0]/10 !text-xs !font-bold !text-[#377EC0]"
                     />
 
-                    <div
-                        class="min-w-0"
-                    >
-                        <p
-                            class="truncate font-semibold text-slate-700"
-                        >
-                            {{
-                                getStudentFullName(
-                                    data,
-                                ) ||
-                                '—'
-                            }}
+                    <div class="min-w-0">
+                        <p class="truncate font-semibold text-slate-700">
+                            {{ getStudentFullName(data) || '—' }}
                         </p>
 
                         <!--
@@ -902,15 +622,9 @@ onBeforeUnmount(() => {
                             School ID + Department
                         -->
 
-                        <div
-                            class="mt-1 flex flex-wrap items-center gap-1.5"
-                        >
+                        <div class="mt-1 flex flex-wrap items-center gap-1.5">
                             <PrimeTag
-                                :value="
-                                    getSchoolId(
-                                        data,
-                                    )
-                                "
+                                :value="getSchoolId(data)"
                                 icon="pi pi-id-card"
                                 rounded
                                 severity="info"
@@ -918,32 +632,14 @@ onBeforeUnmount(() => {
                             />
 
                             <PrimeTag
-                                :value="
-                                    String(
-                                        data.dept ||
-                                            '—',
-                                    )
-                                "
-                                :severity="
-                                    getDepartmentSeverity(
-                                        data.dept,
-                                    )
-                                "
-                                :icon="
-                                    getDepartmentIcon(
-                                        data.dept,
-                                    )
-                                "
+                                :value="String(data.dept || '—')"
+                                :severity="getDepartmentSeverity(data.dept)"
+                                :icon="getDepartmentIcon(data.dept)"
                                 rounded
                                 class="!px-2 !py-0.5 !text-xs !font-semibold"
                             />
                             <PrimeTag
-                                :value="
-                                    String(
-                                        data.batch_no ||
-                                            'No CCI Year',
-                                    )
-                                "
+                                :value="String(data.batch_no || 'No CCI Year')"
                                 severity="secondary"
                                 icon="pi pi-calendar"
                                 rounded
@@ -956,111 +652,54 @@ onBeforeUnmount(() => {
 
             <!-- LATEST ACTIVITIES -->
 
-            <template
-                #cell-activities="{
-                    data,
-                }"
-            >
-                <div
-                    v-if="
-                        getActivities(
-                            data,
-                        ).length >
-                        0
-                    "
-                    class="space-y-2"
-                >
+            <template #cell-activities="{ data }">
+                <div v-if="getActivities(data).length > 0" class="space-y-2">
                     <div
-                        v-for="activity in getActivities(
-                            data,
-                        )"
-                        :key="
-                            activity.id
-                        "
+                        v-for="activity in getActivities(data)"
+                        :key="activity.id"
                         class="flex min-w-0 items-start gap-2"
                     >
-                    <i
-                        class="pi pi-calendar text-blue-500"
-                    ></i>
+                        <i class="pi pi-calendar text-blue-500"></i>
 
-                            {{
-                                formatDate(
-                                    activity.start_date,
-                                )
-                            }}
+                        {{ formatDate(activity.start_date) }}
                         <i
                             class="pi pi-list-check mt-0.5 shrink-0 text-emerald-500"
                         ></i>
 
-                        <div
-                            class="min-w-0"
-                        >
+                        <div class="min-w-0">
                             <p
                                 class="font-medium break-words whitespace-normal text-slate-700"
                             >
-                                {{
-                                    activity.description ||
-                                    '—'
-                                }}
+                                {{ activity.description || '—' }}
                             </p>
 
                             <p
                                 class="mt-1 flex items-center gap-1.5 text-xs text-slate-500"
-                            >
-                            </p>
+                            ></p>
                         </div>
                     </div>
                 </div>
 
-                <span
-                    v-else
-                    class="text-slate-400"
-                >
-                    —
-                </span>
+                <span v-else class="text-slate-400"> — </span>
             </template>
 
             <!-- UPLOADED FILES -->
 
-            <template
-                #cell-uploaded_files="{
-                    data,
-                }"
-            >
-                <div
-                    v-if="
-                        getUploadedFiles(
-                            data,
-                        ).length >
-                        0
-                    "
-                    class="space-y-2"
-                >
+            <template #cell-uploaded_files="{ data }">
+                <div v-if="getUploadedFiles(data).length > 0" class="space-y-2">
                     <div
-                        v-for="file in getUploadedFiles(
-                            data,
-                        )"
-                        :key="
-                            file.id
-                        "
+                        v-for="file in getUploadedFiles(data)"
+                        :key="file.id"
                         class="flex min-w-0 items-start gap-2"
                     >
-                    <i
-                        class="pi pi-calendar text-blue-500"
-                    ></i>
+                        <i class="pi pi-calendar text-blue-500"></i>
 
-                        {{
-                            formatDate(
-                            file.date_uploaded,
-                            )
-                        }}
+                        {{ formatDate(file.date_uploaded) }}
                         <i
                             class="pi pi-file mt-0.5 shrink-0 text-[#377EC0]"
                         ></i>
 
-                        <div
-                            class="min-w-0"
-                        >
+                        <div class="min-w-0">
                             <p
                                 class="font-medium break-words whitespace-normal text-slate-700"
                             >
@@ -1073,18 +712,12 @@ onBeforeUnmount(() => {
 
                             <p
                                 class="mt-1 flex items-center gap-1.5 text-xs text-slate-500"
-                            >
-                            </p>
+                            ></p>
                         </div>
                     </div>
                 </div>
 
-                <span
-                    v-else
-                    class="text-slate-400"
-                >
-                    —
-                </span>
+                <span v-else class="text-slate-400"> — </span>
             </template>
         </Datatable>
     </div>

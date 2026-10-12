@@ -1,8 +1,6 @@
 <?php
 
-
 namespace App\Http\Controllers\Api\V1;
-
 
 use App\Http\Controllers\Controller;
 use App\Services\MessageContentFilter;
@@ -12,7 +10,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Throwable;
-
 
 class MessageController extends Controller
 {
@@ -35,7 +32,6 @@ class MessageController extends Controller
         );
     }
 
-
     /**
      * Keep the moderation rejection response consistent for new messages and
      * conversation replies.
@@ -45,14 +41,11 @@ class MessageController extends Controller
         return response()->json([
             'success' => false,
 
-            'message' =>
-                'Your message contains content that is not allowed under the IRIS-SAMS Community Guidelines. Please revise your message and try again.',
+            'message' => 'Your message contains content that is not allowed under the IRIS-SAMS Community Guidelines. Please revise your message and try again.',
 
-            'code' =>
-                'CONTENT_NOT_ALLOWED',
+            'code' => 'CONTENT_NOT_ALLOWED',
         ], 422);
     }
-
 
     /**
      * Apply a common collation when comparing ID columns.
@@ -64,10 +57,9 @@ class MessageController extends Controller
         string $column,
     ) {
         return DB::raw(
-            $column . ' COLLATE utf8_unicode_ci'
+            $column.' COLLATE utf8_unicode_ci'
         );
     }
-
 
     public function fetchMessageModule(
         Request $request,
@@ -109,13 +101,12 @@ class MessageController extends Controller
                     ->exists();
 
             if (
-                !$personExists
-                && !$loginExists
+                ! $personExists
+                && ! $loginExists
             ) {
                 return response()->json([
                     'success' => false,
-                    'message' =>
-                        'User not found.',
+                    'message' => 'User not found.',
                 ], 404);
             }
 
@@ -485,26 +476,21 @@ class MessageController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' =>
-                    'Messages fetched successfully.',
-                'data' =>
-                    $messages,
+                'message' => 'Messages fetched successfully.',
+                'data' => $messages,
             ]);
         } catch (Throwable $throwable) {
             report($throwable);
 
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'Unable to fetch messages.',
-                'error' =>
-                    config('app.debug')
+                'message' => 'Unable to fetch messages.',
+                'error' => config('app.debug')
                         ? $throwable->getMessage()
                         : null,
             ], 500);
         }
     }
-
 
     public function fetchMessageReplies(
         Request $request,
@@ -571,7 +557,6 @@ class MessageController extends Controller
                         'inbox.date_inbox',
                         'inbox.date_read',
 
-
                         DB::raw("
                             COALESCE(
                                 NULLIF(
@@ -600,17 +585,13 @@ class MessageController extends Controller
                     ])
                     ->first();
 
-
-            if (!$inbox) {
+            if (! $inbox) {
                 return response()->json([
                     'success' => false,
 
-
-                    'message' =>
-                        'Inbox message not found.',
+                    'message' => 'Inbox message not found.',
                 ], 404);
             }
-
 
             /*
             |--------------------------------------------------------------------------
@@ -630,7 +611,6 @@ class MessageController extends Controller
                 'other_user_id' => null,
             ];
 
-
             $viewerId =
                 trim(
                     (string) $request->query(
@@ -639,43 +619,35 @@ class MessageController extends Controller
                     ),
                 );
 
-
             if ($viewerId !== '') {
                 $isSender =
                     (string) $inbox->sender_id ===
                     (string) $viewerId;
 
-
                 $isRecipient =
                     (string) $inbox->recipient_id ===
                     (string) $viewerId;
 
-
                 if (
-                    !$isSender
-                    && !$isRecipient
+                    ! $isSender
+                    && ! $isRecipient
                 ) {
                     return response()->json([
                         'success' => false,
 
-
-                        'message' =>
-                            'You are not a participant in this conversation.',
+                        'message' => 'You are not a participant in this conversation.',
                     ], 403);
                 }
-
 
                 $otherUserId =
                     $isSender
                         ? (string) $inbox->recipient_id
                         : (string) $inbox->sender_id;
 
-
                 $moderation['other_user_id'] =
                     $otherUserId !== ''
                         ? $otherUserId
                         : null;
-
 
                 /*
                  * Moderation tables were added without changing the existing
@@ -698,7 +670,6 @@ class MessageController extends Controller
                             )
                             ->exists();
 
-
                     $moderation['available'] =
                         true;
                 } catch (Throwable $moderationThrowable) {
@@ -706,7 +677,6 @@ class MessageController extends Controller
                         $moderationThrowable,
                     );
                 }
-
 
                 if (
                     $isRecipient
@@ -721,7 +691,6 @@ class MessageController extends Controller
                         now()->format(
                             'Y-m-d H:i:s',
                         );
-
 
                     $this->schoolConnection($request)
                         ->table('inbox')
@@ -746,10 +715,8 @@ class MessageController extends Controller
                             },
                         )
                         ->update([
-                            'date_read' =>
-                                $readTimestamp,
+                            'date_read' => $readTimestamp,
                         ]);
-
 
                     $inbox->date_read =
                         $readTimestamp;
@@ -784,19 +751,16 @@ class MessageController extends Controller
                         },
                     )
                     ->update([
-                        'date_read' =>
-                            now()->format(
-                                'Y-m-d H:i:s',
-                            ),
+                        'date_read' => now()->format(
+                            'Y-m-d H:i:s',
+                        ),
                     ]);
             }
-
 
             $messageStorage =
                 $this->messageStorage(
                     $request,
                 );
-
 
             $attachmentBaseUrl =
                 rtrim(
@@ -805,7 +769,6 @@ class MessageController extends Controller
                     ],
                     '/',
                 );
-
 
             $attachments =
                 $this->schoolConnection($request)
@@ -839,22 +802,19 @@ class MessageController extends Controller
                                     ),
                                 );
 
-
                             $attachment->url =
                                 $attachmentBaseUrl !== ''
                                 && $fileName !== ''
                                     ? $attachmentBaseUrl
-                                        . '/'
-                                        . rawurlencode(
+                                        .'/'
+                                        .rawurlencode(
                                             $fileName,
                                         )
                                     : null;
 
-
                             return $attachment;
                         },
                     );
-
 
             $inboxIsDeleted =
                 $this->isDeletedMessage(
@@ -866,7 +826,6 @@ class MessageController extends Controller
                 $attachments =
                     collect();
             }
-
 
             $replies =
                 $this->schoolConnection($request)
@@ -940,7 +899,6 @@ class MessageController extends Controller
                         'inbox_reply.sender_id',
                         'inbox_reply.recipient_id',
 
-
                         DB::raw("
                             COALESCE(
                                 NULLIF(
@@ -966,7 +924,6 @@ class MessageController extends Controller
                                 )
                             ) AS sender_full_name
                         "),
-
 
                         DB::raw("
                             COALESCE(
@@ -999,7 +956,6 @@ class MessageController extends Controller
                     )
                     ->get();
 
-
             $replyIds =
                 $replies
                     ->pluck(
@@ -1007,7 +963,6 @@ class MessageController extends Controller
                     )
                     ->filter()
                     ->values();
-
 
             $replyAttachmentRows =
                 $replyIds->isEmpty()
@@ -1030,7 +985,6 @@ class MessageController extends Controller
                         )
                         ->get();
 
-
             $replyAttachmentsByReply =
                 $replyAttachmentRows
                     ->map(
@@ -1047,17 +1001,15 @@ class MessageController extends Controller
                                     ),
                                 );
 
-
                             $attachment->url =
                                 $attachmentBaseUrl !== ''
                                 && $fileName !== ''
                                     ? $attachmentBaseUrl
-                                        . '/'
-                                        . rawurlencode(
+                                        .'/'
+                                        .rawurlencode(
                                             $fileName,
                                         )
                                     : null;
-
 
                             return $attachment;
                         },
@@ -1065,7 +1017,6 @@ class MessageController extends Controller
                     ->groupBy(
                         'inbox_reply_id',
                     );
-
 
             $replies =
                 $replies
@@ -1096,92 +1047,58 @@ class MessageController extends Controller
                                     self::DELETED_MESSAGE_TEXT;
                             }
 
-
                             return $reply;
                         },
                     );
 
-
             return response()->json([
                 'success' => true,
 
-
-                'message' =>
-                    'Message replies fetched successfully.',
-
+                'message' => 'Message replies fetched successfully.',
 
                 'data' => [
                     'inbox' => [
-                        'inbox_id' =>
-                            $inbox->inbox_id,
+                        'inbox_id' => $inbox->inbox_id,
 
+                        'login_id' => $inbox->login_id,
 
-                        'login_id' =>
-                            $inbox->login_id,
+                        'sender_id' => $inbox->sender_id,
 
+                        'sender_login_id' => $inbox->sender_login_id,
 
-                        'sender_id' =>$inbox->sender_id,
+                        'recipient_id' => $inbox->recipient_id,
 
+                        'recipient_full_name' => $inbox->recipient_full_name,
 
-                        'sender_login_id' =>
-                            $inbox->sender_login_id,
+                        'subject' => $inbox->subj_inbox,
 
-
-                        'recipient_id' =>
-                            $inbox->recipient_id,
-
-
-                        'recipient_full_name' =>
-                            $inbox->recipient_full_name,
-
-
-                        'subject' =>
-                            $inbox->subj_inbox,
-
-
-                        'content' =>
-                            $inboxIsDeleted
+                        'content' => $inboxIsDeleted
                                 ? self::DELETED_MESSAGE_TEXT
                                 : $inbox->content_inbox,
 
+                        'is_deleted' => $inboxIsDeleted,
 
-                        'is_deleted' =>
-                            $inboxIsDeleted,
+                        'date' => $inbox->date_inbox,
 
-
-                        'date' =>
-                            $inbox->date_inbox,
-
-
-                        'date_read' =>
-                            $inbox->date_read,
+                        'date_read' => $inbox->date_read,
                     ],
 
+                    'attachments' => $attachments,
 
-                    'attachments' =>
-                        $attachments,
+                    'replies' => $replies,
 
-                    'replies' =>
-                        $replies,
-
-                    'moderation' =>
-                        $moderation,
+                    'moderation' => $moderation,
                 ],
             ]);
         } catch (Throwable $throwable) {
             report($throwable);
 
-
             return response()->json([
                 'success' => false,
 
+                'message' => 'Unable to fetch message replies.',
 
-                'message' =>
-                    'Unable to fetch message replies.',
-
-
-                'error' =>
-                    config('app.debug')
+                'error' => config('app.debug')
                         ? $throwable->getMessage()
                         : null,
             ], 500);
@@ -1217,10 +1134,8 @@ class MessageController extends Controller
                 ],
             ]);
 
-
         $connection =
             $this->schoolConnection($request);
-
 
         $uploadedFiles =
             $request->file(
@@ -1228,14 +1143,12 @@ class MessageController extends Controller
                 [],
             );
 
-
-        if (!is_array($uploadedFiles)) {
+        if (! is_array($uploadedFiles)) {
             $uploadedFiles =
                 $uploadedFiles
                     ? [$uploadedFiles]
                     : [];
         }
-
 
         $uploadedFiles =
             array_values(
@@ -1249,7 +1162,6 @@ class MessageController extends Controller
                 ),
             );
 
-
         $replyMessage =
             trim(
                 (string) (
@@ -1258,7 +1170,6 @@ class MessageController extends Controller
                 ),
             );
 
-
         if (
             $replyMessage === ''
             && count($uploadedFiles) === 0
@@ -1266,11 +1177,9 @@ class MessageController extends Controller
             return response()->json([
                 'success' => false,
 
-                'message' =>
-                    'A reply message or attachment is required.',
+                'message' => 'A reply message or attachment is required.',
             ], 422);
         }
-
 
         if ($replyMessage !== '') {
             $moderationResult =
@@ -1280,14 +1189,12 @@ class MessageController extends Controller
                         $replyMessage,
                     );
 
-
-            if (!$moderationResult['allowed']) {
+            if (! $moderationResult['allowed']) {
                 return
                     $this
                         ->contentNotAllowedResponse();
             }
         }
-
 
         try {
             /*
@@ -1295,7 +1202,6 @@ class MessageController extends Controller
             | Find Original Message
             |--------------------------------------------------------------------------
             */
-
 
             $inbox =
                 $connection
@@ -1311,16 +1217,13 @@ class MessageController extends Controller
                     ])
                     ->first();
 
-
-            if (!$inbox) {
+            if (! $inbox) {
                 return response()->json([
                     'success' => false,
 
-                    'message' =>
-                        'Inbox message not found.',
+                    'message' => 'Inbox message not found.',
                 ], 404);
             }
-
 
             /*
             |--------------------------------------------------------------------------
@@ -1328,10 +1231,8 @@ class MessageController extends Controller
             |--------------------------------------------------------------------------
             */
 
-
             $senderId =
                 $validated['user_id'];
-
 
             $senderExistsInPerson =
                 $connection
@@ -1342,7 +1243,6 @@ class MessageController extends Controller
                     )
                     ->exists();
 
-
             $senderExistsInLogin =
                 $connection
                     ->table('login')
@@ -1352,26 +1252,22 @@ class MessageController extends Controller
                     )
                     ->exists();
 
-
             if (
-                !$senderExistsInPerson
-                && !$senderExistsInLogin
+                ! $senderExistsInPerson
+                && ! $senderExistsInLogin
             ) {
                 return response()->json([
                     'success' => false,
 
-                    'message' =>
-                        'Sender not found.',
+                    'message' => 'Sender not found.',
                 ], 404);
             }
-
 
             /*
             |--------------------------------------------------------------------------
             | Determine Other Conversation Participant
             |--------------------------------------------------------------------------
             */
-
 
             if (
                 $senderId ===
@@ -1389,14 +1285,12 @@ class MessageController extends Controller
                 return response()->json([
                     'success' => false,
 
-                    'message' =>
-                        'You are not a participant in this conversation.',
+                    'message' => 'You are not a participant in this conversation.',
                 ], 403);
             }
 
-
             if (
-                !$recipientId
+                ! $recipientId
                 || trim(
                     (string) $recipientId,
                 ) === ''
@@ -1404,11 +1298,9 @@ class MessageController extends Controller
                 return response()->json([
                     'success' => false,
 
-                    'message' =>
-                        'Conversation recipient is unavailable.',
+                    'message' => 'Conversation recipient is unavailable.',
                 ], 422);
             }
-
 
             /*
              * If moderation tables exist for the selected school, enforce
@@ -1453,13 +1345,11 @@ class MessageController extends Controller
                         )
                         ->exists();
 
-
                 if ($hasMessageBlock) {
                     return response()->json([
                         'success' => false,
 
-                        'message' =>
-                            'Messaging is unavailable because one of these users has blocked the other.',
+                        'message' => 'Messaging is unavailable because one of these users has blocked the other.',
                     ], 403);
                 }
             } catch (Throwable $moderationThrowable) {
@@ -1468,53 +1358,44 @@ class MessageController extends Controller
                 );
             }
 
-
             /*
             |--------------------------------------------------------------------------
             | Current School FTP Configuration
             |--------------------------------------------------------------------------
             */
 
-
             $hasAttachments =
                 count($uploadedFiles) > 0;
-
 
             $messageStorage =
                 $this->messageStorage(
                     $request,
                 );
 
-
             $ftpHost =
                 $messageStorage[
                     'ftp_host'
                 ];
-
 
             $ftpUsername =
                 $messageStorage[
                     'ftp_username'
                 ];
 
-
             $ftpPassword =
                 $messageStorage[
                     'ftp_password'
                 ];
-
 
             $ftpPort =
                 $messageStorage[
                     'ftp_port'
                 ];
 
-
             $ftpRoot =
                 $messageStorage[
                     'ftp_root'
                 ];
-
 
             if ($hasAttachments) {
                 if (
@@ -1526,22 +1407,18 @@ class MessageController extends Controller
                     return response()->json([
                         'success' => false,
 
-                        'message' =>
-                            'School message attachment storage is not configured.',
+                        'message' => 'School message attachment storage is not configured.',
                     ], 500);
                 }
 
-
-                if (!function_exists('ftp_connect')) {
+                if (! function_exists('ftp_connect')) {
                     return response()->json([
                         'success' => false,
 
-                        'message' =>
-                            'FTP support is not available on the API server.',
+                        'message' => 'FTP support is not available on the API server.',
                     ], 500);
                 }
             }
-
 
             /*
             |--------------------------------------------------------------------------
@@ -1549,61 +1426,46 @@ class MessageController extends Controller
             |--------------------------------------------------------------------------
             */
 
-
             $replyId =
                 (string) Str::uuid();
-
 
             $timestamp =
                 now()->format(
                     'Y-m-d H:i:s',
                 );
 
-
             $uploadedRemoteFiles = [];
-
 
             $ftpConnection =
                 null;
 
-
             $connection
                 ->beginTransaction();
-
 
             try {
                 $connection
                     ->table('inbox_reply')
                     ->insert([
-                        'id' =>
-                            $replyId,
+                        'id' => $replyId,
 
-                        'inbox_id' =>
-                            $inboxId,
+                        'inbox_id' => $inboxId,
 
-                        'reply_msg' =>
-                            $replyMessage,
+                        'reply_msg' => $replyMessage,
 
-                        'reply_date' =>
-                            $timestamp,
+                        'reply_date' => $timestamp,
 
-                        'date_read' =>
-                            null,
+                        'date_read' => null,
 
-                        'sender_id' =>
-                            $senderId,
+                        'sender_id' => $senderId,
 
-                        'recipient_id' =>
-                            $recipientId,
+                        'recipient_id' => $recipientId,
                     ]);
-
 
                 /*
                 |--------------------------------------------------------------------------
                 | Reply Attachments
                 |--------------------------------------------------------------------------
                 */
-
 
                 if ($hasAttachments) {
                     $ftpConnection =
@@ -1613,13 +1475,11 @@ class MessageController extends Controller
                             30,
                         );
 
-
-                    if (!$ftpConnection) {
+                    if (! $ftpConnection) {
                         throw new \RuntimeException(
                             'Unable to connect to the school file server.',
                         );
                     }
-
 
                     $loggedIn =
                         @ftp_login(
@@ -1628,36 +1488,31 @@ class MessageController extends Controller
                             $ftpPassword,
                         );
 
-
-                    if (!$loggedIn) {
+                    if (! $loggedIn) {
                         throw new \RuntimeException(
                             'Unable to authenticate with the school file server.',
                         );
                     }
-
 
                     @ftp_pasv(
                         $ftpConnection,
                         true,
                     );
 
-
                     if (
-                        !@ftp_chdir(
+                        ! @ftp_chdir(
                             $ftpConnection,
                             $ftpRoot,
                         )
                     ) {
                         throw new \RuntimeException(
                             'Message upload directory does not exist on the school file server: '
-                            . $ftpRoot,
+                            .$ftpRoot,
                         );
                     }
 
-
                     foreach (
-                        $uploadedFiles as
-                        $uploadedFile
+                        $uploadedFiles as $uploadedFile
                     ) {
                         $extension =
                             strtolower(
@@ -1668,37 +1523,32 @@ class MessageController extends Controller
                                 ?: 'bin',
                             );
 
-
                         $fileName =
                             'message_reply_'
-                            . $replyId
-                            . '_'
-                            . Str::lower(
+                            .$replyId
+                            .'_'
+                            .Str::lower(
                                 Str::random(8),
                             )
-                            . '.'
-                            . $extension;
-
+                            .'.'
+                            .$extension;
 
                         $originalFileName =
                             $uploadedFile
                                 ->getClientOriginalName();
 
-
                         $localPath =
                             $uploadedFile
                                 ->getRealPath();
 
-
                         if (
-                            !$localPath
-                            || !is_file($localPath)
+                            ! $localPath
+                            || ! is_file($localPath)
                         ) {
                             throw new \RuntimeException(
                                 'The uploaded reply attachment could not be read.',
                             );
                         }
-
 
                         $stream =
                             @fopen(
@@ -1706,13 +1556,11 @@ class MessageController extends Controller
                                 'rb',
                             );
 
-
-                        if (!$stream) {
+                        if (! $stream) {
                             throw new \RuntimeException(
                                 'Unable to read the uploaded reply attachment.',
                             );
                         }
-
 
                         try {
                             $uploaded =
@@ -1728,39 +1576,30 @@ class MessageController extends Controller
                             );
                         }
 
-
-                        if (!$uploaded) {
+                        if (! $uploaded) {
                             throw new \RuntimeException(
                                 'Unable to upload reply attachment to the school file server.',
                             );
                         }
 
-
                         $uploadedRemoteFiles[] =
                             $fileName;
-
 
                         $connection
                             ->table('inbox_reply_files')
                             ->insert([
-                                'id' =>
-                                    (string) Str::uuid(),
+                                'id' => (string) Str::uuid(),
 
-                                'inbox_reply_id' =>
-                                    $replyId,
+                                'inbox_reply_id' => $replyId,
 
-                                'filename' =>
-                                    $fileName,
+                                'filename' => $fileName,
 
-                                'order_no' =>
-                                    $timestamp,
+                                'order_no' => $timestamp,
 
-                                'file_desc' =>
-                                    $originalFileName,
+                                'file_desc' => $originalFileName,
                             ]);
                     }
                 }
-
 
                 $connection
                     ->table('inbox')
@@ -1769,14 +1608,11 @@ class MessageController extends Controller
                         $inboxId,
                     )
                     ->update([
-                        'last_update' =>
-                            $timestamp,
+                        'last_update' => $timestamp,
                     ]);
-
 
                 $connection
                     ->commit();
-
 
                 if ($ftpConnection) {
                     @ftp_close(
@@ -1787,39 +1623,29 @@ class MessageController extends Controller
                         null;
                 }
 
-
                 return response()->json([
                     'success' => true,
 
-                    'message' =>
-                        'Reply sent successfully.',
+                    'message' => 'Reply sent successfully.',
 
                     'data' => [
-                        'reply_id' =>
-                            $replyId,
+                        'reply_id' => $replyId,
 
-                        'inbox_id' =>
-                            $inboxId,
+                        'inbox_id' => $inboxId,
 
-                        'reply_msg' =>
-                            $replyMessage,
+                        'reply_msg' => $replyMessage,
 
-                        'reply_date' =>
-                            $timestamp,
+                        'reply_date' => $timestamp,
 
-                        'date_read' =>
-                            null,
+                        'date_read' => null,
 
-                        'sender_id' =>
-                            $senderId,
+                        'sender_id' => $senderId,
 
-                        'recipient_id' =>
-                            $recipientId,
+                        'recipient_id' => $recipientId,
 
-                        'attachment_count' =>
-                            count(
-                                $uploadedRemoteFiles,
-                            ),
+                        'attachment_count' => count(
+                            $uploadedRemoteFiles,
+                        ),
                     ],
                 ], 201);
             } catch (Throwable $throwable) {
@@ -1831,18 +1657,15 @@ class MessageController extends Controller
                         ->rollBack();
                 }
 
-
                 if ($ftpConnection) {
                     foreach (
-                        $uploadedRemoteFiles as
-                        $remoteFile
+                        $uploadedRemoteFiles as $remoteFile
                     ) {
                         @ftp_delete(
                             $ftpConnection,
                             $remoteFile,
                         );
                     }
-
 
                     @ftp_close(
                         $ftpConnection,
@@ -1852,21 +1675,17 @@ class MessageController extends Controller
                         null;
                 }
 
-
                 throw $throwable;
             }
         } catch (Throwable $throwable) {
             report($throwable);
 
-
             return response()->json([
                 'success' => false,
 
-                'message' =>
-                    'Unable to send reply.',
+                'message' => 'Unable to send reply.',
 
-                'error' =>
-                    config('app.debug')
+                'error' => config('app.debug')
                         ? $throwable->getMessage()
                         : null,
             ], 500);
@@ -1913,11 +1732,10 @@ class MessageController extends Controller
                     ])
                     ->first();
 
-            if (!$inbox) {
+            if (! $inbox) {
                 return response()->json([
                     'success' => false,
-                    'message' =>
-                        'Conversation not found.',
+                    'message' => 'Conversation not found.',
                 ], 404);
             }
 
@@ -1930,11 +1748,10 @@ class MessageController extends Controller
                 || (string) $inbox->recipient_id ===
                     $userId;
 
-            if (!$isParticipant) {
+            if (! $isParticipant) {
                 return response()->json([
                     'success' => false,
-                    'message' =>
-                        'You are not a participant in this conversation.',
+                    'message' => 'You are not a participant in this conversation.',
                 ], 403);
             }
 
@@ -1946,8 +1763,7 @@ class MessageController extends Controller
             ) {
                 return response()->json([
                     'success' => false,
-                    'message' =>
-                        'This conversation cannot be deleted while it has a moderation report under review.',
+                    'message' => 'This conversation cannot be deleted while it has a moderation report under review.',
                 ], 409);
             }
 
@@ -1998,7 +1814,7 @@ class MessageController extends Controller
                 ->beginTransaction();
 
             try {
-                if (!$replyIds->isEmpty()) {
+                if (! $replyIds->isEmpty()) {
                     $connection
                         ->table('inbox_reply_files')
                         ->whereIn(
@@ -2056,11 +1872,9 @@ class MessageController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' =>
-                    'Conversation history deleted successfully.',
+                'message' => 'Conversation history deleted successfully.',
                 'data' => [
-                    'inbox_id' =>
-                        $inboxId,
+                    'inbox_id' => $inboxId,
                 ],
             ]);
         } catch (Throwable $throwable) {
@@ -2068,16 +1882,13 @@ class MessageController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'Unable to delete the conversation history.',
-                'error' =>
-                    config('app.debug')
+                'message' => 'Unable to delete the conversation history.',
+                'error' => config('app.debug')
                         ? $throwable->getMessage()
                         : null,
             ], 500);
         }
     }
-
 
     /**
      * Replace the original message with a shared deleted-message placeholder.
@@ -2118,11 +1929,10 @@ class MessageController extends Controller
                     ])
                     ->first();
 
-            if (!$inbox) {
+            if (! $inbox) {
                 return response()->json([
                     'success' => false,
-                    'message' =>
-                        'Message not found.',
+                    'message' => 'Message not found.',
                 ], 404);
             }
 
@@ -2132,8 +1942,7 @@ class MessageController extends Controller
             ) {
                 return response()->json([
                     'success' => false,
-                    'message' =>
-                        'You can only delete messages that you sent.',
+                    'message' => 'You can only delete messages that you sent.',
                 ], 403);
             }
 
@@ -2147,8 +1956,7 @@ class MessageController extends Controller
             ) {
                 return response()->json([
                     'success' => false,
-                    'message' =>
-                        'This message cannot be deleted while it has a moderation report under review.',
+                    'message' => 'This message cannot be deleted while it has a moderation report under review.',
                 ], 409);
             }
 
@@ -2160,13 +1968,10 @@ class MessageController extends Controller
             ) {
                 return response()->json([
                     'success' => true,
-                    'message' =>
-                        'Message is already deleted.',
+                    'message' => 'Message is already deleted.',
                     'data' => [
-                        'inbox_id' =>
-                            $inboxId,
-                        'is_deleted' =>
-                            true,
+                        'inbox_id' => $inboxId,
+                        'is_deleted' => true,
                     ],
                 ]);
             }
@@ -2200,8 +2005,7 @@ class MessageController extends Controller
                         $validated['user_id'],
                     )
                     ->update([
-                        'content_inbox' =>
-                            self::DELETED_MESSAGE_MARKER,
+                        'content_inbox' => self::DELETED_MESSAGE_MARKER,
                     ]);
 
                 $connection
@@ -2233,13 +2037,10 @@ class MessageController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' =>
-                    'Message deleted successfully.',
+                'message' => 'Message deleted successfully.',
                 'data' => [
-                    'inbox_id' =>
-                        $inboxId,
-                    'is_deleted' =>
-                        true,
+                    'inbox_id' => $inboxId,
+                    'is_deleted' => true,
                 ],
             ]);
         } catch (Throwable $throwable) {
@@ -2247,16 +2048,13 @@ class MessageController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'Unable to delete the message.',
-                'error' =>
-                    config('app.debug')
+                'message' => 'Unable to delete the message.',
+                'error' => config('app.debug')
                         ? $throwable->getMessage()
                         : null,
             ], 500);
         }
     }
-
 
     /**
      * Replace one reply with a shared deleted-message placeholder.
@@ -2299,11 +2097,10 @@ class MessageController extends Controller
                     ])
                     ->first();
 
-            if (!$reply) {
+            if (! $reply) {
                 return response()->json([
                     'success' => false,
-                    'message' =>
-                        'Reply not found.',
+                    'message' => 'Reply not found.',
                 ], 404);
             }
 
@@ -2313,8 +2110,7 @@ class MessageController extends Controller
             ) {
                 return response()->json([
                     'success' => false,
-                    'message' =>
-                        'You can only delete messages that you sent.',
+                    'message' => 'You can only delete messages that you sent.',
                 ], 403);
             }
 
@@ -2327,8 +2123,7 @@ class MessageController extends Controller
             ) {
                 return response()->json([
                     'success' => false,
-                    'message' =>
-                        'This message cannot be deleted while it has a moderation report under review.',
+                    'message' => 'This message cannot be deleted while it has a moderation report under review.',
                 ], 409);
             }
 
@@ -2340,15 +2135,11 @@ class MessageController extends Controller
             ) {
                 return response()->json([
                     'success' => true,
-                    'message' =>
-                        'Message is already deleted.',
+                    'message' => 'Message is already deleted.',
                     'data' => [
-                        'reply_id' =>
-                            $replyId,
-                        'inbox_id' =>
-                            $inboxId,
-                        'is_deleted' =>
-                            true,
+                        'reply_id' => $replyId,
+                        'inbox_id' => $inboxId,
+                        'is_deleted' => true,
                     ],
                 ]);
             }
@@ -2386,8 +2177,7 @@ class MessageController extends Controller
                         $validated['user_id'],
                     )
                     ->update([
-                        'reply_msg' =>
-                            self::DELETED_MESSAGE_MARKER,
+                        'reply_msg' => self::DELETED_MESSAGE_MARKER,
                     ]);
 
                 $connection
@@ -2419,15 +2209,11 @@ class MessageController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' =>
-                    'Message deleted successfully.',
+                'message' => 'Message deleted successfully.',
                 'data' => [
-                    'reply_id' =>
-                        $replyId,
-                    'inbox_id' =>
-                        $inboxId,
-                    'is_deleted' =>
-                        true,
+                    'reply_id' => $replyId,
+                    'inbox_id' => $inboxId,
+                    'is_deleted' => true,
                 ],
             ]);
         } catch (Throwable $throwable) {
@@ -2435,16 +2221,13 @@ class MessageController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'Unable to delete the message.',
-                'error' =>
-                    config('app.debug')
+                'message' => 'Unable to delete the message.',
+                'error' => config('app.debug')
                         ? $throwable->getMessage()
                         : null,
             ], 500);
         }
     }
-
 
     /**
      * Store a user-generated content report for support review.
@@ -2491,15 +2274,12 @@ class MessageController extends Controller
                 ],
             ]);
 
-
         $connection =
             $this->schoolConnection($request);
-
 
         try {
             $reporterId =
                 $validated['user_id'];
-
 
             $inbox =
                 $connection
@@ -2515,16 +2295,13 @@ class MessageController extends Controller
                     ])
                     ->first();
 
-
-            if (!$inbox) {
+            if (! $inbox) {
                 return response()->json([
                     'success' => false,
 
-                    'message' =>
-                        'Conversation not found.',
+                    'message' => 'Conversation not found.',
                 ], 404);
             }
-
 
             $isParticipant =
                 (string) $inbox->sender_id ===
@@ -2532,20 +2309,16 @@ class MessageController extends Controller
                 || (string) $inbox->recipient_id ===
                     (string) $reporterId;
 
-
-            if (!$isParticipant) {
+            if (! $isParticipant) {
                 return response()->json([
                     'success' => false,
 
-                    'message' =>
-                        'You are not a participant in this conversation.',
+                    'message' => 'You are not a participant in this conversation.',
                 ], 403);
             }
 
-
             $reportedMessageSenderId =
                 (string) $inbox->sender_id;
-
 
             $replyId =
                 trim(
@@ -2554,7 +2327,6 @@ class MessageController extends Controller
                         ?? ''
                     ),
                 );
-
 
             if ($replyId !== '') {
                 $reply =
@@ -2573,21 +2345,17 @@ class MessageController extends Controller
                         ])
                         ->first();
 
-
-                if (!$reply) {
+                if (! $reply) {
                     return response()->json([
                         'success' => false,
 
-                        'message' =>
-                            'The selected reply could not be found.',
+                        'message' => 'The selected reply could not be found.',
                     ], 404);
                 }
-
 
                 $reportedMessageSenderId =
                     (string) $reply->sender_id;
             }
-
 
             if (
                 $reportedMessageSenderId === ''
@@ -2597,11 +2365,9 @@ class MessageController extends Controller
                 return response()->json([
                     'success' => false,
 
-                    'message' =>
-                        'The reported user does not match the selected message.',
+                    'message' => 'The reported user does not match the selected message.',
                 ], 422);
             }
-
 
             if (
                 $reportedMessageSenderId ===
@@ -2610,90 +2376,70 @@ class MessageController extends Controller
                 return response()->json([
                     'success' => false,
 
-                    'message' =>
-                        'You cannot report your own message.',
+                    'message' => 'You cannot report your own message.',
                 ], 422);
             }
-
 
             $reportId =
                 (string) Str::uuid();
 
-
             $connection
                 ->table('message_reports')
                 ->insert([
-                    'id' =>
-                        $reportId,
+                    'id' => $reportId,
 
-                    'inbox_id' =>
-                        $validated['inbox_id'],
+                    'inbox_id' => $validated['inbox_id'],
 
-                    'inbox_reply_id' =>
-                        $replyId !== ''
+                    'inbox_reply_id' => $replyId !== ''
                             ? $replyId
                             : null,
 
-                    'reported_by' =>
-                        $reporterId,
+                    'reported_by' => $reporterId,
 
-                    'reported_user_id' =>
-                        $reportedMessageSenderId,
+                    'reported_user_id' => $reportedMessageSenderId,
 
-                    'reason' =>
-                        $validated['reason'],
+                    'reason' => $validated['reason'],
 
-                    'details' =>
-                        isset(
-                            $validated['details'],
-                        )
+                    'details' => isset(
+                        $validated['details'],
+                    )
                             ? trim(
                                 (string) $validated['details'],
                             )
                             : null,
 
-                    'status' =>
-                        'pending',
+                    'status' => 'pending',
 
-                    'created_at' =>
-                        now()->format(
-                            'Y-m-d H:i:s',
-                        ),
+                    'created_at' => now()->format(
+                        'Y-m-d H:i:s',
+                    ),
                 ]);
-
 
             return response()->json([
                 'success' => true,
 
-                'message' =>
-                    'Report submitted successfully.',
+                'message' => 'Report submitted successfully.',
 
                 'data' => [
-                    'report_id' =>
-                        $reportId,
+                    'report_id' => $reportId,
 
-                    'status' =>
-                        'pending',
+                    'status' => 'pending',
                 ],
             ], 201);
         } catch (Throwable $throwable) {
             report($throwable);
 
-
             return response()->json([
                 'success' => false,
 
-                'message' =>
-                    'Unable to submit the report.',
+                'message' => 'Unable to submit the report.',
 
-                'error' =>
-                    config('app.debug')
+                'error' => config('app.debug')
                         ? $throwable->getMessage()
                         : null,
             ], 500);
         }
     }
-
 
     /**
      * Block another participant for the current user only.
@@ -2725,14 +2471,11 @@ class MessageController extends Controller
                 ],
             ]);
 
-
         $blockerId =
             $validated['user_id'];
 
-
         $blockedUserId =
             $validated['blocked_user_id'];
-
 
         if (
             (string) $blockerId ===
@@ -2741,15 +2484,12 @@ class MessageController extends Controller
             return response()->json([
                 'success' => false,
 
-                'message' =>
-                    'You cannot block your own account.',
+                'message' => 'You cannot block your own account.',
             ], 422);
         }
 
-
         $connection =
             $this->schoolConnection($request);
-
 
         try {
             $inbox =
@@ -2766,45 +2506,37 @@ class MessageController extends Controller
                     ])
                     ->first();
 
-
-            if (!$inbox) {
+            if (! $inbox) {
                 return response()->json([
                     'success' => false,
 
-                    'message' =>
-                        'Conversation not found.',
+                    'message' => 'Conversation not found.',
                 ], 404);
             }
-
 
             $isSender =
                 (string) $inbox->sender_id ===
                 (string) $blockerId;
 
-
             $isRecipient =
                 (string) $inbox->recipient_id ===
                 (string) $blockerId;
 
-
             if (
-                !$isSender
-                && !$isRecipient
+                ! $isSender
+                && ! $isRecipient
             ) {
                 return response()->json([
                     'success' => false,
 
-                    'message' =>
-                        'You are not a participant in this conversation.',
+                    'message' => 'You are not a participant in this conversation.',
                 ], 403);
             }
-
 
             $otherUserId =
                 $isSender
                     ? (string) $inbox->recipient_id
                     : (string) $inbox->sender_id;
-
 
             if (
                 $otherUserId === ''
@@ -2814,15 +2546,12 @@ class MessageController extends Controller
                 return response()->json([
                     'success' => false,
 
-                    'message' =>
-                        'The selected user is not the other participant in this conversation.',
+                    'message' => 'The selected user is not the other participant in this conversation.',
                 ], 422);
             }
 
-
             $connection
                 ->beginTransaction();
-
 
             try {
                 $alreadyBlocked =
@@ -2838,26 +2567,20 @@ class MessageController extends Controller
                         )
                         ->exists();
 
-
-                if (!$alreadyBlocked) {
+                if (! $alreadyBlocked) {
                     $connection
                         ->table('message_blocks')
                         ->insert([
-                            'id' =>
-                                (string) Str::uuid(),
+                            'id' => (string) Str::uuid(),
 
-                            'blocker_id' =>
-                                $blockerId,
+                            'blocker_id' => $blockerId,
 
-                            'blocked_user_id' =>
-                                $blockedUserId,
+                            'blocked_user_id' => $blockedUserId,
 
-                            'created_at' =>
-                                now()->format(
-                                    'Y-m-d H:i:s',
-                                ),
+                            'created_at' => now()->format(
+                                'Y-m-d H:i:s',
+                            ),
                         ]);
-
 
                     /*
                      * Apple requires a block action to notify the developer of
@@ -2867,37 +2590,27 @@ class MessageController extends Controller
                     $connection
                         ->table('message_reports')
                         ->insert([
-                            'id' =>
-                                (string) Str::uuid(),
+                            'id' => (string) Str::uuid(),
 
-                            'inbox_id' =>
-                                $validated['inbox_id'],
+                            'inbox_id' => $validated['inbox_id'],
 
-                            'inbox_reply_id' =>
-                                null,
+                            'inbox_reply_id' => null,
 
-                            'reported_by' =>
-                                $blockerId,
+                            'reported_by' => $blockerId,
 
-                            'reported_user_id' =>
-                                $blockedUserId,
+                            'reported_user_id' => $blockedUserId,
 
-                            'reason' =>
-                                'blocked_user',
+                            'reason' => 'blocked_user',
 
-                            'details' =>
-                                'User blocked this account from a conversation. Review the conversation for inappropriate behavior.',
+                            'details' => 'User blocked this account from a conversation. Review the conversation for inappropriate behavior.',
 
-                            'status' =>
-                                'pending',
+                            'status' => 'pending',
 
-                            'created_at' =>
-                                now()->format(
-                                    'Y-m-d H:i:s',
-                                ),
+                            'created_at' => now()->format(
+                                'Y-m-d H:i:s',
+                            ),
                         ]);
                 }
-
 
                 $connection
                     ->commit();
@@ -2910,45 +2623,36 @@ class MessageController extends Controller
                         ->rollBack();
                 }
 
-
                 throw $throwable;
             }
-
 
             return response()->json([
                 'success' => true,
 
-                'message' =>
-                    $alreadyBlocked
+                'message' => $alreadyBlocked
                         ? 'User is already blocked.'
                         : 'User blocked successfully.',
 
                 'data' => [
-                    'blocked_user_id' =>
-                        $blockedUserId,
+                    'blocked_user_id' => $blockedUserId,
 
-                    'is_blocked' =>
-                        true,
+                    'is_blocked' => true,
                 ],
             ]);
         } catch (Throwable $throwable) {
             report($throwable);
 
-
             return response()->json([
                 'success' => false,
 
-                'message' =>
-                    'Unable to block the user.',
+                'message' => 'Unable to block the user.',
 
-                'error' =>
-                    config('app.debug')
+                'error' => config('app.debug')
                         ? $throwable->getMessage()
                         : null,
             ], 500);
         }
     }
-
 
     /**
      * Remove only the current user's block against another account.
@@ -2971,7 +2675,6 @@ class MessageController extends Controller
                 ],
             ]);
 
-
         try {
             $this->schoolConnection($request)
                 ->table('message_blocks')
@@ -2985,39 +2688,31 @@ class MessageController extends Controller
                 )
                 ->delete();
 
-
             return response()->json([
                 'success' => true,
 
-                'message' =>
-                    'User unblocked successfully.',
+                'message' => 'User unblocked successfully.',
 
                 'data' => [
-                    'blocked_user_id' =>
-                        $validated['blocked_user_id'],
+                    'blocked_user_id' => $validated['blocked_user_id'],
 
-                    'is_blocked' =>
-                        false,
+                    'is_blocked' => false,
                 ],
             ]);
         } catch (Throwable $throwable) {
             report($throwable);
 
-
             return response()->json([
                 'success' => false,
 
-                'message' =>
-                    'Unable to unblock the user.',
+                'message' => 'Unable to unblock the user.',
 
-                'error' =>
-                    config('app.debug')
+                'error' => config('app.debug')
                         ? $throwable->getMessage()
                         : null,
             ], 500);
         }
     }
-
 
     /**
      * Student Messages endpoints reuse the existing message methods while
@@ -3043,7 +2738,6 @@ class MessageController extends Controller
         );
     }
 
-
     public function studentFetchMessageReplies(
         Request $request,
         string $inboxId,
@@ -3064,15 +2758,13 @@ class MessageController extends Controller
         );
     }
 
-
     public function studentStoreMessage(
         Request $request,
     ): JsonResponse {
         $request->merge([
-            'user_id' =>
-                $this->authenticatedStudentId(
-                    $request,
-                ),
+            'user_id' => $this->authenticatedStudentId(
+                $request,
+            ),
         ]);
 
         return $this->storeMessage(
@@ -3080,16 +2772,14 @@ class MessageController extends Controller
         );
     }
 
-
     public function studentStoreMessageReply(
         Request $request,
         string $inboxId,
     ): JsonResponse {
         $request->merge([
-            'user_id' =>
-                $this->authenticatedStudentId(
-                    $request,
-                ),
+            'user_id' => $this->authenticatedStudentId(
+                $request,
+            ),
         ]);
 
         return $this->storeMessageReply(
@@ -3097,7 +2787,6 @@ class MessageController extends Controller
             $inboxId,
         );
     }
-
 
     /**
      * The student route group already guarantees account.type:student. Keep
@@ -3122,914 +2811,799 @@ class MessageController extends Controller
         return $studentId;
     }
 
-
-
-    //POST
+    // POST
 
     public function fetchAdministrators(
-    Request $request,
-): JsonResponse {
-    try {
-        $administrators =
-            $this->schoolConnection($request)
-                ->table('login')
-                ->where(
-                    'active',
-                    'Y',
-                )
-                ->select([
-                    'id',
-                    'login_name',
-                    'fname',
-                    'mname',
-                    'lname',
-                    'email',
-                ])
-                ->orderBy(
-                    'lname',
-                )
-                ->orderBy(
-                    'fname',
-                )
-                ->get()
-                ->map(function ($administrator) {
-                    $fullName =
-                        trim(
-                            implode(
-                                ' ',
-                                array_filter([
-                                    $administrator->fname ?? null,
-                                    $administrator->mname ?? null,
-                                    $administrator->lname ?? null,
-                                ]),
-                            ),
-                        );
-
-                    return [
-                        'id' =>
-                            $administrator->id,
-
-                        'recipient_type' =>
-                            'Admin',
-
-                        'full_name' =>
-                            $fullName !== ''
-                                ? $fullName
-                                : (
-                                    trim(
-                                        (string) (
-                                            $administrator->login_name
-                                            ?? ''
-                                        ),
-                                    ) !== ''
-                                        ? $administrator->login_name
-                                        : (
-                                            'Administrator '
-                                            . substr(
-                                                (string) $administrator->id,
-                                                0,
-                                                8,
-                                            )
-                                        )
-                                ),
-
-                        'login_name' =>
-                            $administrator->login_name,
-
-                        'email' =>
-                            $administrator->email,
-                    ];
-                })
-                ->values();
-
-        return response()->json([
-            'success' => true,
-
-            'message' =>
-                'Administrators fetched successfully.',
-
-            'data' =>
-                $administrators,
-        ]);
-    } catch (Throwable $throwable) {
-        report($throwable);
-
-        return response()->json([
-            'success' => false,
-
-            'message' =>
-                'Unable to fetch administrators.',
-
-            'error' =>
-                config('app.debug')
-                    ? $throwable->getMessage()
-                    : null,
-        ], 500);
-    }
-}
-
-
-public function fetchStudents(
-    Request $request,
-): JsonResponse {
-    try {
-        $students =
-            $this->schoolConnection($request)
-                ->table('person')
-                ->select([
-                    'id',
-                    'code_person',
-                    'fname',
-                    'mname',
-                    'lname',
-                    'gender',
-                    'photo_file',
-                    'email',
-                ])
-                ->orderBy(
-                    'lname',
-                )
-                ->orderBy(
-                    'fname',
-                )
-                ->get()
-                ->map(
-                    function ($student) use (
-                        $request,
-                    ) {
+        Request $request,
+    ): JsonResponse {
+        try {
+            $administrators =
+                $this->schoolConnection($request)
+                    ->table('login')
+                    ->where(
+                        'active',
+                        'Y',
+                    )
+                    ->select([
+                        'id',
+                        'login_name',
+                        'fname',
+                        'mname',
+                        'lname',
+                        'email',
+                    ])
+                    ->orderBy(
+                        'lname',
+                    )
+                    ->orderBy(
+                        'fname',
+                    )
+                    ->get()
+                    ->map(function ($administrator) {
                         $fullName =
                             trim(
                                 implode(
                                     ' ',
                                     array_filter([
-                                        $student->fname ?? null,
-                                        $student->mname ?? null,
-                                        $student->lname ?? null,
+                                        $administrator->fname ?? null,
+                                        $administrator->mname ?? null,
+                                        $administrator->lname ?? null,
                                     ]),
                                 ),
                             );
 
                         return [
-                            'id' =>
-                                $student->id,
+                            'id' => $administrator->id,
 
-                            'recipient_type' =>
-                                'Cadet',
+                            'recipient_type' => 'Admin',
 
-                            'full_name' =>
-                                $fullName !== ''
+                            'full_name' => $fullName !== ''
                                     ? $fullName
                                     : (
-                                        'Cadet '
-                                        . substr(
-                                            (string) $student->id,
-                                            0,
-                                            8,
-                                        )
+                                        trim(
+                                            (string) (
+                                                $administrator->login_name
+                                                ?? ''
+                                            ),
+                                        ) !== ''
+                                            ? $administrator->login_name
+                                            : (
+                                                'Administrator '
+                                                .substr(
+                                                    (string) $administrator->id,
+                                                    0,
+                                                    8,
+                                                )
+                                            )
                                     ),
 
-                            'code_person' =>
-                                $student->code_person,
+                            'login_name' => $administrator->login_name,
 
-                            'gender' =>
-                                $student->gender,
+                            'email' => $administrator->email,
+                        ];
+                    })
+                    ->values();
 
-                            'photo_url' =>
-                                $this
+            return response()->json([
+                'success' => true,
+
+                'message' => 'Administrators fetched successfully.',
+
+                'data' => $administrators,
+            ]);
+        } catch (Throwable $throwable) {
+            report($throwable);
+
+            return response()->json([
+                'success' => false,
+
+                'message' => 'Unable to fetch administrators.',
+
+                'error' => config('app.debug')
+                        ? $throwable->getMessage()
+                        : null,
+            ], 500);
+        }
+    }
+
+    public function fetchStudents(
+        Request $request,
+    ): JsonResponse {
+        try {
+            $students =
+                $this->schoolConnection($request)
+                    ->table('person')
+                    ->select([
+                        'id',
+                        'code_person',
+                        'fname',
+                        'mname',
+                        'lname',
+                        'gender',
+                        'photo_file',
+                        'email',
+                    ])
+                    ->orderBy(
+                        'lname',
+                    )
+                    ->orderBy(
+                        'fname',
+                    )
+                    ->get()
+                    ->map(
+                        function ($student) use (
+                            $request,
+                        ) {
+                            $fullName =
+                                trim(
+                                    implode(
+                                        ' ',
+                                        array_filter([
+                                            $student->fname ?? null,
+                                            $student->mname ?? null,
+                                            $student->lname ?? null,
+                                        ]),
+                                    ),
+                                );
+
+                            return [
+                                'id' => $student->id,
+
+                                'recipient_type' => 'Cadet',
+
+                                'full_name' => $fullName !== ''
+                                        ? $fullName
+                                        : (
+                                            'Cadet '
+                                            .substr(
+                                                (string) $student->id,
+                                                0,
+                                                8,
+                                            )
+                                        ),
+
+                                'code_person' => $student->code_person,
+
+                                'gender' => $student->gender,
+
+                                'photo_url' => $this
                                     ->buildStudentPhotoUrl(
                                         $request,
                                         $student->photo_file,
                                     ),
 
-                            'email' =>
-                                $student->email,
-                        ];
-                    },
-                )
-                ->values();
-
-        return response()->json([
-            'success' => true,
-            'message' =>
-                'Students fetched successfully.',
-            'data' =>
-                $students,
-        ]);
-    } catch (Throwable $throwable) {
-        report($throwable);
-
-        return response()->json([
-            'success' => false,
-            'message' =>
-                'Unable to fetch students.',
-            'error' =>
-                config('app.debug')
-                    ? $throwable->getMessage()
-                    : null,
-        ], 500);
-    }
-}
-
-
-public function storeMessage(
-    Request $request,
-): JsonResponse {
-    $validated =
-        $request->validate([
-            'user_id' => [
-                'required',
-                'string',
-                'max:36',
-            ],
-
-            'recipient_id' => [
-                'required',
-                'string',
-                'max:36',
-            ],
-
-            'recipient_type' => [
-                'required',
-                'string',
-                'in:login,person,admin,student,Admin,Cadet,cadet',
-            ],
-
-            'subject' => [
-                'required',
-                'string',
-                'max:100',
-            ],
-
-            'content' => [
-                'nullable',
-                'string',
-            ],
-
-            'files' => [
-                'nullable',
-                'array',
-            ],
-
-            'files.*' => [
-                'file',
-                'mimes:jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv',
-                'max:20480',
-            ],
-        ]);
-
-
-    $messageContent =
-        trim(
-            (string) (
-                $validated['content']
-                ?? ''
-            ),
-        );
-
-
-    $moderationResult =
-        $this
-            ->messageContentFilter()
-            ->inspect(
-                $validated['subject'],
-                $messageContent,
-            );
-
-
-    if (!$moderationResult['allowed']) {
-        return
-            $this
-                ->contentNotAllowedResponse();
-    }
-
-
-    $connection =
-        $this->schoolConnection($request);
-
-
-    $recipientTable =
-        in_array(
-            strtolower(
-                $validated['recipient_type'],
-            ),
-            [
-                'login',
-                'admin',
-            ],
-            true,
-        )
-            ? 'login'
-            : 'person';
-
-
-    $recipientType =
-        $recipientTable === 'login'
-            ? 'Admin'
-            : 'Cadet';
-
-
-    try {
-        /*
-        |--------------------------------------------------------------------------
-        | Validate Sender
-        |--------------------------------------------------------------------------
-        */
-
-        $senderExistsInPerson =
-            $connection
-                ->table('person')
-                ->where(
-                    'id',
-                    $validated['user_id'],
-                )
-                ->exists();
-
-
-        $senderExistsInLogin =
-            $connection
-                ->table('login')
-                ->where(
-                    'id',
-                    $validated['user_id'],
-                )
-                ->exists();
-
-
-        if (
-            !$senderExistsInPerson &&
-            !$senderExistsInLogin
-        ) {
-            return response()->json([
-                'success' => false,
-
-                'message' =>
-                    'Sender not found.',
-            ], 404);
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Validate Recipient
-        |--------------------------------------------------------------------------
-        */
-
-        $recipientExists =
-            $connection
-                ->table(
-                    $recipientTable,
-                )
-                ->where(
-                    'id',
-                    $validated['recipient_id'],
-                )
-                ->exists();
-
-
-        if (!$recipientExists) {
-            return response()->json([
-                'success' => false,
-
-                'message' =>
-                    $recipientTable === 'login'
-                        ? 'Administrator not found.'
-                        : 'Cadet not found.',
-            ], 404);
-        }
-
-
-        /*
-         * Enforce a stored block in either direction when the selected school
-         * has moderation tables. Missing moderation tables never interrupt the
-         * existing messaging flow.
-         */
-        try {
-            $hasMessageBlock =
-                $connection
-                    ->table('message_blocks')
-                    ->where(
-                        function ($query) use (
-                            $validated,
-                        ) {
-                            $query
-                                ->where(
-                                    'blocker_id',
-                                    $validated['user_id'],
-                                )
-                                ->where(
-                                    'blocked_user_id',
-                                    $validated['recipient_id'],
-                                );
+                                'email' => $student->email,
+                            ];
                         },
                     )
-                    ->orWhere(
-                        function ($query) use (
-                            $validated,
-                        ) {
-                            $query
-                                ->where(
-                                    'blocker_id',
-                                    $validated['recipient_id'],
-                                )
-                                ->where(
-                                    'blocked_user_id',
-                                    $validated['user_id'],
-                                );
-                        },
-                    )
-                    ->exists();
-
-
-            if ($hasMessageBlock) {
-                return response()->json([
-                    'success' => false,
-
-                    'message' =>
-                        'Messaging is unavailable because one of these users has blocked the other.',
-                ], 403);
-            }
-        } catch (Throwable $moderationThrowable) {
-            report(
-                $moderationThrowable,
-            );
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Prepare Uploaded Files
-        |--------------------------------------------------------------------------
-        |
-        | The API server and the selected school's web server may be different
-        | machines. Therefore message attachments must use the currently selected
-        | school's FTP configuration instead of PHP filesystem paths such as:
-        |
-        | /www/exact-cme-iris.ph/uploads
-        |
-        | No FTP connection is created when the message has no attachments.
-        |
-        */
-
-        $uploadedFiles =
-            $request->file(
-                'files',
-                [],
-            );
-
-
-        if (!is_array($uploadedFiles)) {
-            $uploadedFiles =
-                $uploadedFiles
-                    ? [$uploadedFiles]
-                    : [];
-        }
-
-
-        $uploadedFiles =
-            array_values(
-                array_filter(
-                    $uploadedFiles,
-                    static function ($uploadedFile) {
-                        return
-                            $uploadedFile
-                            && $uploadedFile->isValid();
-                    },
-                ),
-            );
-
-
-        $hasAttachments =
-            count($uploadedFiles) > 0;
-
-
-        if (
-            $messageContent === ''
-            && !$hasAttachments
-        ) {
-            return response()->json([
-                'success' => false,
-                'message' =>
-                    'A message or attachment is required.',
-            ], 422);
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Current School FTP Configuration
-        |--------------------------------------------------------------------------
-        */
-
-        $messageStorage =
-            $this->messageStorage(
-                $request,
-            );
-
-
-        $ftpHost =
-            $messageStorage[
-                'ftp_host'
-            ];
-
-
-        $ftpUsername =
-            $messageStorage[
-                'ftp_username'
-            ];
-
-
-        $ftpPassword =
-            $messageStorage[
-                'ftp_password'
-            ];
-
-
-        $ftpPort =
-            $messageStorage[
-                'ftp_port'
-            ];
-
-
-        $ftpRoot =
-            $messageStorage[
-                'ftp_root'
-            ];
-
-
-        if ($hasAttachments) {
-            if (
-                $ftpHost === ''
-                || $ftpUsername === ''
-                || $ftpPassword === ''
-                || $ftpPort <= 0
-            ) {
-                return response()->json([
-                    'success' => false,
-
-                    'message' =>
-                        'School message attachment storage is not configured.',
-                ], 500);
-            }
-
-
-            if (!function_exists('ftp_connect')) {
-                return response()->json([
-                    'success' => false,
-
-                    'message' =>
-                        'FTP support is not available on the API server.',
-                ], 500);
-            }
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Create Message
-        |--------------------------------------------------------------------------
-        */
-
-        $inboxId =
-            (string) Str::uuid();
-
-
-        $timestamp =
-            now()->format(
-                'Y-m-d H:i:s',
-            );
-
-
-        $uploadedRemoteFiles = [];
-
-
-        $ftpConnection =
-            null;
-
-
-        $connection
-            ->beginTransaction();
-
-
-        try {
-            /*
-            |--------------------------------------------------------------------------
-            | Inbox Record
-            |--------------------------------------------------------------------------
-            */
-
-            $connection
-                ->table('inbox')
-                ->insert([
-                    'id' =>
-                        $inboxId,
-
-                    'subj_inbox' =>
-                        $validated['subject'],
-
-                    'date_inbox' =>
-                        $timestamp,
-
-                    'date_read' =>
-                        null,
-
-                    'recipient_type' =>
-                        $recipientType,
-
-                    'recipient_id' =>
-                        $validated['recipient_id'],
-
-                    'sender_id' =>
-                        $validated['user_id'],
-
-                    'content_inbox' =>
-                        $messageContent,
-
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Owner / Logged-in User
-                    |--------------------------------------------------------------------------
-                    */
-
-                    'login_id' =>
-                        $validated['user_id'],
-
-                    'last_update' =>
-                        $timestamp,
-
-                    'draft' =>
-                        'N',
-                ]);
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | Attachments
-            |--------------------------------------------------------------------------
-            */
-
-            if ($hasAttachments) {
-                $ftpConnection =
-                    @ftp_connect(
-                        $ftpHost,
-                        $ftpPort,
-                        30,
-                    );
-
-
-                if (!$ftpConnection) {
-                    throw new \RuntimeException(
-                        'Unable to connect to the school file server.',
-                    );
-                }
-
-
-                $loggedIn =
-                    @ftp_login(
-                        $ftpConnection,
-                        $ftpUsername,
-                        $ftpPassword,
-                    );
-
-
-                if (!$loggedIn) {
-                    throw new \RuntimeException(
-                        'Unable to authenticate with the school file server.',
-                    );
-                }
-
-
-                @ftp_pasv(
-                    $ftpConnection,
-                    true,
-                );if (
-                    !@ftp_chdir(
-                        $ftpConnection,
-                        $ftpRoot,
-                    )
-                ) {
-                    throw new \RuntimeException(
-                        'Message upload directory does not exist on the school file server: '
-                        . $ftpRoot,
-                    );
-                }
-
-
-                foreach (
-                    $uploadedFiles as
-                    $uploadedFile
-                ) {
-                    $extension =
-                        strtolower(
-                            $uploadedFile
-                                ->getClientOriginalExtension()
-                            ?: $uploadedFile
-                                ->extension()
-                            ?: 'bin',
-                        );
-
-
-                    $fileName =
-                        'message_'
-                        . $inboxId
-                        . '_'
-                        . Str::lower(
-                            Str::random(8),
-                        )
-                        . '.'
-                        . $extension;
-
-
-                    $originalFileName =
-                        $uploadedFile
-                            ->getClientOriginalName();
-
-
-                    $localPath =
-                        $uploadedFile
-                            ->getRealPath();
-
-
-                    if (
-                        !$localPath
-                        || !is_file($localPath)
-                    ) {
-                        throw new \RuntimeException(
-                            'The uploaded attachment could not be read.',
-                        );
-                    }
-
-
-                    $stream =
-                        @fopen(
-                            $localPath,
-                            'rb',
-                        );
-
-
-                    if (!$stream) {
-                        throw new \RuntimeException(
-                            'Unable to read the uploaded attachment.',
-                        );
-                    }
-
-
-                    try {
-                        $uploaded =
-                            @ftp_fput(
-                                $ftpConnection,
-                                $fileName,
-                                $stream,
-                                FTP_BINARY,
-                            );
-                    } finally {
-                        fclose(
-                            $stream,
-                        );
-                    }
-
-
-                    if (!$uploaded) {
-                        throw new \RuntimeException(
-                            'Unable to upload attachment to the school file server.',
-                        );
-                    }
-
-
-                    $uploadedRemoteFiles[] =
-                        $fileName;
-
-
-                    $connection
-                        ->table('inbox_files')
-                        ->insert([
-                            'id' =>
-                                (string) Str::uuid(),
-
-                            'inbox_id' =>
-                                $inboxId,
-
-                            'filename' =>
-                                $fileName,
-
-                            'order_no' =>
-                                $timestamp,
-
-                            'file_desc' =>
-                                $originalFileName,
-                        ]);
-
-
-                }
-            }
-
-
-            $connection
-                ->commit();
-
-
-            if ($ftpConnection) {
-                @ftp_close(
-                    $ftpConnection,
-                );
-
-                $ftpConnection =
-                    null;
-            }
-
+                    ->values();
 
             return response()->json([
                 'success' => true,
-
-                'message' =>
-                    'Message sent successfully.',
-
-                'data' => [
-                    'id' =>
-                        $inboxId,
-
-                    'sender_id' =>
-                        $validated['user_id'],
-
-                    'recipient_id' =>
-                        $validated['recipient_id'],
-
-                    'recipient_type' =>
-                        $recipientType,
-
-                    'subject' =>
-                        $validated['subject'],
-
-                    'content' =>
-                        $messageContent,
-
-                    'date_inbox' =>
-                        $timestamp,
-
-                    'date_read' =>
-                        null,
-
-                    'attachment_count' =>
-                        count(
-                            $uploadedRemoteFiles,
-                        ),
-                ],
-            ], 201);
+                'message' => 'Students fetched successfully.',
+                'data' => $students,
+            ]);
         } catch (Throwable $throwable) {
-            if (
-                $connection
-                    ->transactionLevel() > 0
-            ) {
-                $connection
-                    ->rollBack();
-            }
+            report($throwable);
 
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to fetch students.',
+                'error' => config('app.debug')
+                        ? $throwable->getMessage()
+                        : null,
+            ], 500);
+        }
+    }
 
+    public function storeMessage(
+        Request $request,
+    ): JsonResponse {
+        $validated =
+            $request->validate([
+                'user_id' => [
+                    'required',
+                    'string',
+                    'max:36',
+                ],
+
+                'recipient_id' => [
+                    'required',
+                    'string',
+                    'max:36',
+                ],
+
+                'recipient_type' => [
+                    'required',
+                    'string',
+                    'in:login,person,admin,student,Admin,Cadet,cadet',
+                ],
+
+                'subject' => [
+                    'required',
+                    'string',
+                    'max:100',
+                ],
+
+                'content' => [
+                    'nullable',
+                    'string',
+                ],
+
+                'files' => [
+                    'nullable',
+                    'array',
+                ],
+
+                'files.*' => [
+                    'file',
+                    'mimes:jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv',
+                    'max:20480',
+                ],
+            ]);
+
+        $messageContent =
+            trim(
+                (string) (
+                    $validated['content']
+                    ?? ''
+                ),
+            );
+
+        $moderationResult =
+            $this
+                ->messageContentFilter()
+                ->inspect(
+                    $validated['subject'],
+                    $messageContent,
+                );
+
+        if (! $moderationResult['allowed']) {
+            return
+                $this
+                    ->contentNotAllowedResponse();
+        }
+
+        $connection =
+            $this->schoolConnection($request);
+
+        $recipientTable =
+            in_array(
+                strtolower(
+                    $validated['recipient_type'],
+                ),
+                [
+                    'login',
+                    'admin',
+                ],
+                true,
+            )
+                ? 'login'
+                : 'person';
+
+        $recipientType =
+            $recipientTable === 'login'
+                ? 'Admin'
+                : 'Cadet';
+
+        try {
             /*
             |--------------------------------------------------------------------------
-            | Remove FTP Files When Database Transaction Fails
+            | Validate Sender
             |--------------------------------------------------------------------------
             */
 
-            if ($ftpConnection) {
-                foreach (
-                    $uploadedRemoteFiles as
-                    $remoteFile
-                ) {
-                    @ftp_delete(
-                        $ftpConnection,
-                        $remoteFile,
-                    );
-                }
+            $senderExistsInPerson =
+                $connection
+                    ->table('person')
+                    ->where(
+                        'id',
+                        $validated['user_id'],
+                    )
+                    ->exists();
 
+            $senderExistsInLogin =
+                $connection
+                    ->table('login')
+                    ->where(
+                        'id',
+                        $validated['user_id'],
+                    )
+                    ->exists();
 
-                @ftp_close(
-                    $ftpConnection,
-                );
+            if (
+                ! $senderExistsInPerson &&
+                ! $senderExistsInLogin
+            ) {
+                return response()->json([
+                    'success' => false,
 
-                $ftpConnection =
-                    null;
+                    'message' => 'Sender not found.',
+                ], 404);
             }
 
+            /*
+            |--------------------------------------------------------------------------
+            | Validate Recipient
+            |--------------------------------------------------------------------------
+            */
 
-            throw $throwable;
+            $recipientExists =
+                $connection
+                    ->table(
+                        $recipientTable,
+                    )
+                    ->where(
+                        'id',
+                        $validated['recipient_id'],
+                    )
+                    ->exists();
+
+            if (! $recipientExists) {
+                return response()->json([
+                    'success' => false,
+
+                    'message' => $recipientTable === 'login'
+                            ? 'Administrator not found.'
+                            : 'Cadet not found.',
+                ], 404);
+            }
+
+            /*
+             * Enforce a stored block in either direction when the selected school
+             * has moderation tables. Missing moderation tables never interrupt the
+             * existing messaging flow.
+             */
+            try {
+                $hasMessageBlock =
+                    $connection
+                        ->table('message_blocks')
+                        ->where(
+                            function ($query) use (
+                                $validated,
+                            ) {
+                                $query
+                                    ->where(
+                                        'blocker_id',
+                                        $validated['user_id'],
+                                    )
+                                    ->where(
+                                        'blocked_user_id',
+                                        $validated['recipient_id'],
+                                    );
+                            },
+                        )
+                        ->orWhere(
+                            function ($query) use (
+                                $validated,
+                            ) {
+                                $query
+                                    ->where(
+                                        'blocker_id',
+                                        $validated['recipient_id'],
+                                    )
+                                    ->where(
+                                        'blocked_user_id',
+                                        $validated['user_id'],
+                                    );
+                            },
+                        )
+                        ->exists();
+
+                if ($hasMessageBlock) {
+                    return response()->json([
+                        'success' => false,
+
+                        'message' => 'Messaging is unavailable because one of these users has blocked the other.',
+                    ], 403);
+                }
+            } catch (Throwable $moderationThrowable) {
+                report(
+                    $moderationThrowable,
+                );
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Prepare Uploaded Files
+            |--------------------------------------------------------------------------
+            |
+            | The API server and the selected school's web server may be different
+            | machines. Therefore message attachments must use the currently selected
+            | school's FTP configuration instead of PHP filesystem paths such as:
+            |
+            | /www/exact-cme-iris.ph/uploads
+            |
+            | No FTP connection is created when the message has no attachments.
+            |
+            */
+
+            $uploadedFiles =
+                $request->file(
+                    'files',
+                    [],
+                );
+
+            if (! is_array($uploadedFiles)) {
+                $uploadedFiles =
+                    $uploadedFiles
+                        ? [$uploadedFiles]
+                        : [];
+            }
+
+            $uploadedFiles =
+                array_values(
+                    array_filter(
+                        $uploadedFiles,
+                        static function ($uploadedFile) {
+                            return
+                                $uploadedFile
+                                && $uploadedFile->isValid();
+                        },
+                    ),
+                );
+
+            $hasAttachments =
+                count($uploadedFiles) > 0;
+
+            if (
+                $messageContent === ''
+                && ! $hasAttachments
+            ) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'A message or attachment is required.',
+                ], 422);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Current School FTP Configuration
+            |--------------------------------------------------------------------------
+            */
+
+            $messageStorage =
+                $this->messageStorage(
+                    $request,
+                );
+
+            $ftpHost =
+                $messageStorage[
+                    'ftp_host'
+                ];
+
+            $ftpUsername =
+                $messageStorage[
+                    'ftp_username'
+                ];
+
+            $ftpPassword =
+                $messageStorage[
+                    'ftp_password'
+                ];
+
+            $ftpPort =
+                $messageStorage[
+                    'ftp_port'
+                ];
+
+            $ftpRoot =
+                $messageStorage[
+                    'ftp_root'
+                ];
+
+            if ($hasAttachments) {
+                if (
+                    $ftpHost === ''
+                    || $ftpUsername === ''
+                    || $ftpPassword === ''
+                    || $ftpPort <= 0
+                ) {
+                    return response()->json([
+                        'success' => false,
+
+                        'message' => 'School message attachment storage is not configured.',
+                    ], 500);
+                }
+
+                if (! function_exists('ftp_connect')) {
+                    return response()->json([
+                        'success' => false,
+
+                        'message' => 'FTP support is not available on the API server.',
+                    ], 500);
+                }
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Create Message
+            |--------------------------------------------------------------------------
+            */
+
+            $inboxId =
+                (string) Str::uuid();
+
+            $timestamp =
+                now()->format(
+                    'Y-m-d H:i:s',
+                );
+
+            $uploadedRemoteFiles = [];
+
+            $ftpConnection =
+                null;
+
+            $connection
+                ->beginTransaction();
+
+            try {
+                /*
+                |--------------------------------------------------------------------------
+                | Inbox Record
+                |--------------------------------------------------------------------------
+                */
+
+                $connection
+                    ->table('inbox')
+                    ->insert([
+                        'id' => $inboxId,
+
+                        'subj_inbox' => $validated['subject'],
+
+                        'date_inbox' => $timestamp,
+
+                        'date_read' => null,
+
+                        'recipient_type' => $recipientType,
+
+                        'recipient_id' => $validated['recipient_id'],
+
+                        'sender_id' => $validated['user_id'],
+
+                        'content_inbox' => $messageContent,
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Owner / Logged-in User
+                        |--------------------------------------------------------------------------
+                        */
+
+                        'login_id' => $validated['user_id'],
+
+                        'last_update' => $timestamp,
+
+                        'draft' => 'N',
+                    ]);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Attachments
+                |--------------------------------------------------------------------------
+                */
+
+                if ($hasAttachments) {
+                    $ftpConnection =
+                        @ftp_connect(
+                            $ftpHost,
+                            $ftpPort,
+                            30,
+                        );
+
+                    if (! $ftpConnection) {
+                        throw new \RuntimeException(
+                            'Unable to connect to the school file server.',
+                        );
+                    }
+
+                    $loggedIn =
+                        @ftp_login(
+                            $ftpConnection,
+                            $ftpUsername,
+                            $ftpPassword,
+                        );
+
+                    if (! $loggedIn) {
+                        throw new \RuntimeException(
+                            'Unable to authenticate with the school file server.',
+                        );
+                    }
+
+                    @ftp_pasv(
+                        $ftpConnection,
+                        true,
+                    );
+                    if (
+                        ! @ftp_chdir(
+                            $ftpConnection,
+                            $ftpRoot,
+                        )
+                    ) {
+                        throw new \RuntimeException(
+                            'Message upload directory does not exist on the school file server: '
+                            .$ftpRoot,
+                        );
+                    }
+
+                    foreach (
+                        $uploadedFiles as $uploadedFile
+                    ) {
+                        $extension =
+                            strtolower(
+                                $uploadedFile
+                                    ->getClientOriginalExtension()
+                                ?: $uploadedFile
+                                    ->extension()
+                                ?: 'bin',
+                            );
+
+                        $fileName =
+                            'message_'
+                            .$inboxId
+                            .'_'
+                            .Str::lower(
+                                Str::random(8),
+                            )
+                            .'.'
+                            .$extension;
+
+                        $originalFileName =
+                            $uploadedFile
+                                ->getClientOriginalName();
+
+                        $localPath =
+                            $uploadedFile
+                                ->getRealPath();
+
+                        if (
+                            ! $localPath
+                            || ! is_file($localPath)
+                        ) {
+                            throw new \RuntimeException(
+                                'The uploaded attachment could not be read.',
+                            );
+                        }
+
+                        $stream =
+                            @fopen(
+                                $localPath,
+                                'rb',
+                            );
+
+                        if (! $stream) {
+                            throw new \RuntimeException(
+                                'Unable to read the uploaded attachment.',
+                            );
+                        }
+
+                        try {
+                            $uploaded =
+                                @ftp_fput(
+                                    $ftpConnection,
+                                    $fileName,
+                                    $stream,
+                                    FTP_BINARY,
+                                );
+                        } finally {
+                            fclose(
+                                $stream,
+                            );
+                        }
+
+                        if (! $uploaded) {
+                            throw new \RuntimeException(
+                                'Unable to upload attachment to the school file server.',
+                            );
+                        }
+
+                        $uploadedRemoteFiles[] =
+                            $fileName;
+
+                        $connection
+                            ->table('inbox_files')
+                            ->insert([
+                                'id' => (string) Str::uuid(),
+
+                                'inbox_id' => $inboxId,
+
+                                'filename' => $fileName,
+
+                                'order_no' => $timestamp,
+
+                                'file_desc' => $originalFileName,
+                            ]);
+
+                    }
+                }
+
+                $connection
+                    ->commit();
+
+                if ($ftpConnection) {
+                    @ftp_close(
+                        $ftpConnection,
+                    );
+
+                    $ftpConnection =
+                        null;
+                }
+
+                return response()->json([
+                    'success' => true,
+
+                    'message' => 'Message sent successfully.',
+
+                    'data' => [
+                        'id' => $inboxId,
+
+                        'sender_id' => $validated['user_id'],
+
+                        'recipient_id' => $validated['recipient_id'],
+
+                        'recipient_type' => $recipientType,
+
+                        'subject' => $validated['subject'],
+
+                        'content' => $messageContent,
+
+                        'date_inbox' => $timestamp,
+
+                        'date_read' => null,
+
+                        'attachment_count' => count(
+                            $uploadedRemoteFiles,
+                        ),
+                    ],
+                ], 201);
+            } catch (Throwable $throwable) {
+                if (
+                    $connection
+                        ->transactionLevel() > 0
+                ) {
+                    $connection
+                        ->rollBack();
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | Remove FTP Files When Database Transaction Fails
+                |--------------------------------------------------------------------------
+                */
+
+                if ($ftpConnection) {
+                    foreach (
+                        $uploadedRemoteFiles as $remoteFile
+                    ) {
+                        @ftp_delete(
+                            $ftpConnection,
+                            $remoteFile,
+                        );
+                    }
+
+                    @ftp_close(
+                        $ftpConnection,
+                    );
+
+                    $ftpConnection =
+                        null;
+                }
+
+                throw $throwable;
+            }
+        } catch (Throwable $throwable) {
+            report($throwable);
+
+            return response()->json([
+                'success' => false,
+
+                'message' => 'Unable to send the message.',
+
+                'error' => config('app.debug')
+                        ? $throwable->getMessage()
+                        : null,
+            ], 500);
         }
-    } catch (Throwable $throwable) {
-        report($throwable);
-
-
-        return response()->json([
-            'success' => false,
-
-            'message' =>
-                'Unable to send the message.',
-
-            'error' =>
-                config('app.debug')
-                    ? $throwable->getMessage()
-                    : null,
-        ], 500);
     }
-}
 
     /**
      * Keep reported content available to the existing admin moderation flow.
@@ -4045,7 +3619,7 @@ public function storeMessage(
     ): bool {
         try {
             if (
-                !$connection
+                ! $connection
                     ->getSchemaBuilder()
                     ->hasTable(
                         'message_reports',
@@ -4085,7 +3659,6 @@ public function storeMessage(
         }
     }
 
-
     private function isDeletedMessage(
         ?string $value,
     ): bool {
@@ -4095,7 +3668,6 @@ public function storeMessage(
         );
     }
 
-
     /**
      * Remove attachment bytes after their database rows have been deleted.
      *
@@ -4103,7 +3675,7 @@ public function storeMessage(
      * successful message delete. Any storage failure is still reported to the
      * Laravel log for support review.
      *
-     * @param array<int, mixed> $fileNames
+     * @param  array<int, mixed>  $fileNames
      */
     private function deleteStoredMessageFiles(
         Request $request,
@@ -4142,7 +3714,7 @@ public function storeMessage(
                 );
 
             if (
-                !function_exists('ftp_connect')
+                ! function_exists('ftp_connect')
                 || $storage['ftp_host'] === ''
                 || $storage['ftp_username'] === ''
                 || $storage['ftp_password'] === ''
@@ -4158,13 +3730,13 @@ public function storeMessage(
                     30,
                 );
 
-            if (!$ftpConnection) {
+            if (! $ftpConnection) {
                 return;
             }
 
             try {
                 if (
-                    !@ftp_login(
+                    ! @ftp_login(
                         $ftpConnection,
                         $storage['ftp_username'],
                         $storage['ftp_password'],
@@ -4179,7 +3751,7 @@ public function storeMessage(
                 );
 
                 if (
-                    !@ftp_chdir(
+                    ! @ftp_chdir(
                         $ftpConnection,
                         $storage['ftp_root'],
                     )
@@ -4202,7 +3774,6 @@ public function storeMessage(
             report($throwable);
         }
     }
-
 
     /**
      * Resolve the database selected during login.
@@ -4279,8 +3850,8 @@ public function storeMessage(
         }
 
         return $photosUrl
-            . '/'
-            . rawurlencode(
+            .'/'
+            .rawurlencode(
                 $filename,
             );
     }
@@ -4435,7 +4006,7 @@ public function storeMessage(
         }
 
         $ftpRoot =
-            '/' . trim(
+            '/'.trim(
                 $ftpRoot,
                 '/',
             );
@@ -4471,29 +4042,22 @@ public function storeMessage(
         }
 
         return [
-            'ftp_host' =>
-                $ftpHost,
+            'ftp_host' => $ftpHost,
 
-            'ftp_username' =>
-                $ftpUsername,
+            'ftp_username' => $ftpUsername,
 
-            'ftp_password' =>
-                $ftpPassword,
+            'ftp_password' => $ftpPassword,
 
-            'ftp_port' =>
-                $ftpPort,
+            'ftp_port' => $ftpPort,
 
-            'ftp_root' =>
-                $ftpRoot,
+            'ftp_root' => $ftpRoot,
 
-            'upload_url' =>
-                rtrim(
-                    $uploadUrl,
-                    '/',
-                ),
+            'upload_url' => rtrim(
+                $uploadUrl,
+                '/',
+            ),
         ];
     }
-
 
     private function schoolConnection(
         Request $request,

@@ -27,6 +27,7 @@ class QuestionUploadController extends Controller
     public function options(Request $request): JsonResponse
     {
         $db = $this->schoolConnection($request);
+
         return response()->json([
             'data' => $db->table('bs_course')->orderBy('name_course')
                 ->get(['id', 'name_course']),
@@ -36,6 +37,7 @@ class QuestionUploadController extends Controller
     public function subjects(Request $request, string $courseId): JsonResponse
     {
         $db = $this->schoolConnection($request);
+
         return response()->json([
             'data' => $db->table('bs_topic')->where('bs_course_id', $courseId)
                 ->orderBy('order_no')->get(['id', 'desc_topic'])
@@ -49,8 +51,9 @@ class QuestionUploadController extends Controller
     public function template(Request $request): StreamedResponse
     {
         $this->schoolConnection($request);
+
         return response()->streamDownload(function (): void {
-            $book = new Spreadsheet();
+            $book = new Spreadsheet;
             try {
                 $sheet = $book->getActiveSheet();
                 $sheet->setTitle('Questions');
@@ -85,7 +88,7 @@ class QuestionUploadController extends Controller
 
         $book = null;
         try {
-            $archive = new ZipArchive();
+            $archive = new ZipArchive;
             if ($archive->open($request->file('file')->getRealPath()) !== true) {
                 throw new \RuntimeException('Invalid XLSX archive.');
             }
@@ -190,7 +193,9 @@ class QuestionUploadController extends Controller
                         $added++;
                     }
                     foreach ($row['choices'] as $index => $choice) {
-                        if ($choice === '') continue;
+                        if ($choice === '') {
+                            continue;
+                        }
                         $db->table('bs_quest_ans')->insert([
                             'id' => (string) Str::uuid(),
                             'bs_quest_id' => $id,
@@ -200,12 +205,14 @@ class QuestionUploadController extends Controller
                         ]);
                     }
                 }
+
                 return ['added' => $added, 'updated' => $updated];
             });
         } catch (ValidationException $error) {
             throw $error;
         } catch (Throwable $error) {
             report($error);
+
             return response()->json(['message' => 'Import failed. No changes were committed. Check the server log and database table engines.'], 500);
         }
 
@@ -233,6 +240,7 @@ class QuestionUploadController extends Controller
             if (array_slice($headers, 0, 7) !== array_slice(self::HEADERS, 0, 7)
                 || ! in_array($headers[7], ['', 'LEVEL'], true)) {
                 $issues[] = ['sheet' => $name, 'row' => 1, 'message' => 'Headers must match the template: QUESTIONS, CHOICE 1–5, ANSWER, and optional LEVEL.'];
+
                 continue;
             }
             $lastRow = $sheet->getHighestDataRow();
@@ -249,37 +257,59 @@ class QuestionUploadController extends Controller
                     $formula = $formula || $cell->getDataType() === DataType::TYPE_FORMULA;
                     $values[] = trim((string) $cell->getValue());
                 }
-                if (implode('', $values) === '') { $skipped++; continue; }
+                if (implode('', $values) === '') {
+                    $skipped++;
+
+                    continue;
+                }
                 // Skip only the exact instruction pattern in the supplied legacy sample.
                 if (implode('', array_slice($values, 1)) === '' && (
                     strtoupper($values[0]) === 'NOTE:'
                     || str_starts_with($values[0], '- Column G (Answer)')
                     || str_starts_with($values[0], '- Column H (Level)')
-                )) { $skipped++; continue; }
+                )) {
+                    $skipped++;
+
+                    continue;
+                }
 
                 $question = $values[0];
                 $choices = array_slice($values, 1, 5);
                 $answer = strtoupper($values[6]);
                 $level = $values[7] === '' ? '1' : $values[7];
                 $errors = [];
-                if ($formula) $errors[] = 'Use plain values, not formulas.';
-                if ($question === '' || mb_strlen($question) > 10000) $errors[] = 'Question is required (maximum 10,000 characters).';
+                if ($formula) {
+                    $errors[] = 'Use plain values, not formulas.';
+                }
+                if ($question === '' || mb_strlen($question) > 10000) {
+                    $errors[] = 'Question is required (maximum 10,000 characters).';
+                }
                 foreach (array_slice($choices, 0, 4) as $index => $choice) {
-                    if ($choice === '') $errors[] = 'Option '.chr(65 + $index).' is required.';
+                    if ($choice === '') {
+                        $errors[] = 'Option '.chr(65 + $index).' is required.';
+                    }
                 }
                 foreach ($choices as $choice) {
-                    if (mb_strlen($choice) > 5000) $errors[] = 'Option text exceeds 5,000 characters.';
+                    if (mb_strlen($choice) > 5000) {
+                        $errors[] = 'Option text exceeds 5,000 characters.';
+                    }
                 }
                 $nonempty = array_values(array_filter($choices, static fn ($value): bool => $value !== ''));
-                if (count(array_unique($nonempty)) !== count($nonempty)) $errors[] = 'Options must not contain duplicate text.';
+                if (count(array_unique($nonempty)) !== count($nonempty)) {
+                    $errors[] = 'Options must not contain duplicate text.';
+                }
                 if (! in_array($answer, ['A', 'B', 'C', 'D', 'E'], true)) {
                     $errors[] = 'ANSWER must be A, B, C, D, or E.';
                 } elseif ($choices[ord($answer) - 65] === '') {
                     $errors[] = 'The correct answer points to a blank option.';
                 }
-                if (! in_array($level, ['1', '2', '3'], true)) $errors[] = 'LEVEL must be 1, 2, or 3.';
+                if (! in_array($level, ['1', '2', '3'], true)) {
+                    $errors[] = 'LEVEL must be 1, 2, or 3.';
+                }
                 $key = hash('sha256', $question);
-                if (isset($seen[$key])) $errors[] = 'Question repeats an earlier row in this workbook.';
+                if (isset($seen[$key])) {
+                    $errors[] = 'Question repeats an earlier row in this workbook.';
+                }
                 $seen[$key] = true;
                 if ($errors !== []) {
                     $issues[] = ['sheet' => $name, 'row' => $number, 'message' => implode(' ', $errors)];
@@ -288,6 +318,7 @@ class QuestionUploadController extends Controller
                 }
             }
         }
+
         return [$rows, $skipped, $issues];
     }
 
@@ -305,6 +336,7 @@ class QuestionUploadController extends Controller
         abort_unless(hash_equals(strtoupper((string) ($school['code'] ?? $code)), $code), 403, 'The selected school code is invalid.');
         $connection = $school['connection'] ?? null;
         abort_unless(is_string($connection) && is_array(config("database.connections.{$connection}")), 500, 'The school database connection is unavailable.');
+
         return DB::connection($connection);
     }
 }

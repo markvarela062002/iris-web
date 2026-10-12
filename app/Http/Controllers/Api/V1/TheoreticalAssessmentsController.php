@@ -4,39 +4,35 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Student;
-use Carbon\CarbonImmutable;
 use App\Services\DatatableService;
 use App\Services\IrisEmailService;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
-use Illuminate\View\View;
 use Mpdf\Mpdf;
 use Mpdf\Output\Destination;
-use Illuminate\Database\Query\Builder;
-use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 
 class TheoreticalAssessmentsController extends Controller
 {
-
     public function __construct(
         private readonly DatatableService $datatableService,
         private readonly IrisEmailService $irisEmailService,
-    ) {
-    }
+    ) {}
 
     /**
      * Return enrolled theoretical assessments.
      */
-
     public function index(Request $request): JsonResponse
     {
         $db = $this->resolveSchoolConnection($request);
@@ -194,25 +190,25 @@ class TheoreticalAssessmentsController extends Controller
                 );
                 $record['is_completed'] =
                     ($record['done'] ?? '') === 'Y';
+
                 return $record;
             })
             ->values()
             ->all();
+
         return response()->json($result);
     }
 
     /**
      * Return only the authenticated student's enrolled theoretical assessments.
      */
-
     public function studentIndex(Request $request): JsonResponse
     {
         $account = $request->user();
         if (! $account instanceof Student) {
             return response()->json(
                 [
-                    'message' =>
-                        'Only student accounts may access this resource.',
+                    'message' => 'Only student accounts may access this resource.',
                 ],
                 Response::HTTP_FORBIDDEN,
             );
@@ -272,18 +268,12 @@ class TheoreticalAssessmentsController extends Controller
                 'bs_person_exam.proctor_name',
             ],
             sortableColumns: [
-                'access_exp_date' =>
-                    'bs_person_exam.access_exp_date',
-                'name_course' =>
-                    'bs_course.name_course',
-                'session_code' =>
-                    'bs_exam_session.session_code',
-                'exam_type' =>
-                    'bs_person_exam.exam_type',
-                'proctor_name' =>
-                    'bs_person_exam.proctor_name',
-                'done' =>
-                    'bs_person_exam.done',
+                'access_exp_date' => 'bs_person_exam.access_exp_date',
+                'name_course' => 'bs_course.name_course',
+                'session_code' => 'bs_exam_session.session_code',
+                'exam_type' => 'bs_person_exam.exam_type',
+                'proctor_name' => 'bs_person_exam.proctor_name',
+                'done' => 'bs_person_exam.done',
             ],
             defaultSortColumn: 'access_exp_date',
             defaultSortDirection: 'desc',
@@ -316,18 +306,19 @@ class TheoreticalAssessmentsController extends Controller
                             $record,
                         ),
                     );
+
                     return $record;
                 },
             )
             ->values()
             ->all();
+
         return response()->json($result);
     }
 
     /**
      * Render the student's secure theoretical examination page.
      */
-
     public function studentExamPage(
         Request $request,
         string $assessmentId,
@@ -339,6 +330,7 @@ class TheoreticalAssessmentsController extends Controller
         if ($context instanceof JsonResponse) {
             return $context;
         }
+
         return Inertia::render(
             'assessments/theoretical-internal/student/exam/Index',
             [
@@ -350,7 +342,6 @@ class TheoreticalAssessmentsController extends Controller
     /**
      * Return timing/status metadata without starting the examination.
      */
-
     public function studentExamState(
         Request $request,
         string $assessmentId,
@@ -363,6 +354,7 @@ class TheoreticalAssessmentsController extends Controller
             return $context;
         }
         [$db, $assessment] = $context;
+
         return response()->json([
             'exam' => $this->studentExamMetadata(
                 $db,
@@ -374,7 +366,6 @@ class TheoreticalAssessmentsController extends Controller
     /**
      * Start the examination once, or resume it without resetting its timer.
      */
-
     public function studentStartExam(
         Request $request,
         string $assessmentId,
@@ -421,12 +412,14 @@ class TheoreticalAssessmentsController extends Controller
                 ->first();
             if (! $lockedAssessment) {
                 $db->rollBack();
+
                 return response()->json([
                     'message' => 'The assessment could not be found.',
                 ], Response::HTTP_NOT_FOUND);
             }
             if ($this->isCompletedAssessment($lockedAssessment)) {
                 $db->rollBack();
+
                 return response()->json([
                     'message' => 'This examination has already been completed.',
                 ], Response::HTTP_UNPROCESSABLE_ENTITY);
@@ -446,12 +439,14 @@ class TheoreticalAssessmentsController extends Controller
                 $now = CarbonImmutable::now();
                 if ($accessStart && $now->lt($accessStart)) {
                     $db->rollBack();
+
                     return response()->json([
                         'message' => 'This examination is not available yet.',
                     ], Response::HTTP_FORBIDDEN);
                 }
                 if ($accessEnd && $now->gt($accessEnd)) {
                     $db->rollBack();
+
                     return response()->json([
                         'message' => 'The examination access window has expired.',
                     ], Response::HTTP_FORBIDDEN);
@@ -470,6 +465,7 @@ class TheoreticalAssessmentsController extends Controller
             );
             if ($expiresAt && CarbonImmutable::now()->gte($expiresAt)) {
                 $db->rollBack();
+
                 return response()->json([
                     'message' => 'The examination time has expired.',
                     'time_expired' => true,
@@ -516,14 +512,13 @@ class TheoreticalAssessmentsController extends Controller
                  */
                 if ($totalCompetences === 0) {
                     return response()->json([
-                        'message' =>
-                            'This assessment has no competences assigned. Please contact the administrator.',
+                        'message' => 'This assessment has no competences assigned. Please contact the administrator.',
                         'exam_setup_error' => true,
                     ], Response::HTTP_UNPROCESSABLE_ENTITY);
                 }
+
                 return response()->json([
-                    'message' =>
-                        'No unfinished competence is available for this assessment. Please refresh the assessment list.',
+                    'message' => 'No unfinished competence is available for this assessment. Please refresh the assessment list.',
                     'exam_state_error' => true,
                 ], Response::HTTP_CONFLICT);
             }
@@ -549,6 +544,7 @@ class TheoreticalAssessmentsController extends Controller
                 $studentId,
                 $assessmentId,
             );
+
             return response()->json(
                 $this->studentActiveExamPayload(
                     $request,
@@ -562,6 +558,7 @@ class TheoreticalAssessmentsController extends Controller
                 $db->rollBack();
             }
             report($throwable);
+
             return response()->json([
                 'message' => 'Unable to start or resume the examination.',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -571,7 +568,6 @@ class TheoreticalAssessmentsController extends Controller
     /**
      * Persist one A-E answer immediately without exposing the correct answer.
      */
-
     public function studentSaveExamAnswer(
         Request $request,
         string $assessmentId,
@@ -677,6 +673,7 @@ class TheoreticalAssessmentsController extends Controller
                 // is based on the generated-question timestamp.
                 'answer' => $answer,
             ]);
+
         return response()->json([
             'success' => true,
             'answer' => $answer,
@@ -686,7 +683,6 @@ class TheoreticalAssessmentsController extends Controller
     /**
      * Grade one topic and either expose the next topic or finish the exam.
      */
-
     public function studentSubmitExamTopic(
         Request $request,
         string $assessmentId,
@@ -740,6 +736,7 @@ class TheoreticalAssessmentsController extends Controller
                 ->first();
             if (! $topic) {
                 $db->rollBack();
+
                 return response()->json([
                     'message' => 'The examination topic could not be found.',
                 ], Response::HTTP_NOT_FOUND);
@@ -761,12 +758,14 @@ class TheoreticalAssessmentsController extends Controller
                 )
             ) {
                 $db->rollBack();
+
                 return response()->json([
                     'message' => 'Only the current examination topic may be submitted.',
                 ], Response::HTTP_CONFLICT);
             }
             if ($this->parseStoredDateTime($topic->ended ?? null)) {
                 $db->rollBack();
+
                 return response()->json([
                     'message' => 'This topic has already been submitted.',
                 ], Response::HTTP_UNPROCESSABLE_ENTITY);
@@ -787,6 +786,7 @@ class TheoreticalAssessmentsController extends Controller
                 $answer = trim((string) ($question->answer ?? ''));
                 if ($answer === '') {
                     $unanswered[] = $index + 1;
+
                     continue;
                 }
                 if (
@@ -799,6 +799,7 @@ class TheoreticalAssessmentsController extends Controller
             }
             if ($unanswered !== []) {
                 $db->rollBack();
+
                 return response()->json([
                     'message' => 'Please answer all questions before submitting.',
                     'unanswered_numbers' => $unanswered,
@@ -872,6 +873,7 @@ class TheoreticalAssessmentsController extends Controller
                     ]);
             }
             $db->commit();
+
             return response()->json([
                 'success' => true,
                 'done' => $done,
@@ -918,6 +920,7 @@ class TheoreticalAssessmentsController extends Controller
                 $db->rollBack();
             }
             report($throwable);
+
             return response()->json([
                 'message' => 'Unable to submit the examination topic.',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -929,7 +932,6 @@ class TheoreticalAssessmentsController extends Controller
      * grade the current unfinished competence from persisted answers, close
      * every later unfinished competence with zero score, and finish the exam.
      */
-
     public function studentTimeoutExam(
         Request $request,
         string $assessmentId,
@@ -977,6 +979,7 @@ class TheoreticalAssessmentsController extends Controller
                 $studentId,
                 $assessmentId,
             );
+
             return response()->json([
                 'success' => true,
                 'completed' => true,
@@ -990,6 +993,7 @@ class TheoreticalAssessmentsController extends Controller
             ]);
         } catch (Throwable $throwable) {
             report($throwable);
+
             return response()->json([
                 'message' => 'Unable to finalize the timed-out examination.',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -1000,7 +1004,6 @@ class TheoreticalAssessmentsController extends Controller
      * Download a certificate only when the assessment belongs
      * to the authenticated student.
      */
-
     public function studentCertificate(
         Request $request,
         string $assessmentId,
@@ -1009,8 +1012,7 @@ class TheoreticalAssessmentsController extends Controller
         if (! $account instanceof Student) {
             return response()->json(
                 [
-                    'message' =>
-                        'Only student accounts may access this resource.',
+                    'message' => 'Only student accounts may access this resource.',
                 ],
                 Response::HTTP_FORBIDDEN,
             );
@@ -1039,8 +1041,7 @@ class TheoreticalAssessmentsController extends Controller
         if (! $assessment) {
             return response()->json(
                 [
-                    'message' =>
-                        'The assessment could not be found.',
+                    'message' => 'The assessment could not be found.',
                 ],
                 Response::HTTP_NOT_FOUND,
             );
@@ -1057,12 +1058,12 @@ class TheoreticalAssessmentsController extends Controller
         ) {
             return response()->json(
                 [
-                    'message' =>
-                        'A certificate is only available for a completed assessment.',
+                    'message' => 'A certificate is only available for a completed assessment.',
                 ],
                 Response::HTTP_UNPROCESSABLE_ENTITY,
             );
         }
+
         /*
          * Reuse the senior's existing certificate generator only
          * after student ownership has been verified.
@@ -1073,16 +1074,16 @@ class TheoreticalAssessmentsController extends Controller
         );
     }
 
-/**
+    /**
      * Return course and session filter options.
      */
-
     public function options(Request $request): JsonResponse
     {
         $db = $this->resolveSchoolConnection($request);
         if ($db instanceof JsonResponse) {
             return $db;
         }
+
         return response()->json([
             'courses' => $db
                 ->table('bs_course')
@@ -1106,7 +1107,6 @@ class TheoreticalAssessmentsController extends Controller
     /**
      * Search students for the PrimeVue AutoComplete.
      */
-
     public function students(Request $request): JsonResponse
     {
         $db = $this->resolveSchoolConnection($request);
@@ -1148,8 +1148,10 @@ class TheoreticalAssessmentsController extends Controller
                 $record = (array) $student;
                 $record['student_name'] =
                     $this->formatStudentName($record);
+
                 return $record;
             });
+
         return response()->json([
             'data' => $students,
         ]);
@@ -1158,7 +1160,6 @@ class TheoreticalAssessmentsController extends Controller
     /**
      * Return the answers for one assessment.
      */
-
     public function show(
         Request $request,
         string $assessmentId,
@@ -1245,8 +1246,7 @@ class TheoreticalAssessmentsController extends Controller
                     ),
                     'answer' => $answer->answer,
                     'correct_answer' => $answer->correct_ans,
-                    'is_correct' =>
-                        (string) $answer->answer ===
+                    'is_correct' => (string) $answer->answer ===
                         (string) $answer->correct_ans,
                 ];
             });
@@ -1254,6 +1254,7 @@ class TheoreticalAssessmentsController extends Controller
         $assessment['student_name'] =
             $this->formatStudentName($assessment);
         $assessment['total_items'] = $answers->count();
+
         return response()->json([
             'assessment' => $assessment,
             'answers' => $answers,
@@ -1263,7 +1264,6 @@ class TheoreticalAssessmentsController extends Controller
     /**
      * Download the completed assessment certificate using mPDF.
      */
-
     public function certificate(
         Request $request,
         string $assessmentId,
@@ -1305,8 +1305,7 @@ class TheoreticalAssessmentsController extends Controller
         }
         if ($assessment->done !== 'Y') {
             return response()->json([
-                'message' =>
-                    'A certificate is only available for a completed assessment.',
+                'message' => 'A certificate is only available for a completed assessment.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
         $topics = $db
@@ -1346,17 +1345,16 @@ class TheoreticalAssessmentsController extends Controller
                     (int) ($topic->no_quest ?: $topic->quest_cnt),
                     0,
                 );
+
                 return [
-                    'description' =>
-                        $this->decodeText($topic->desc_topic),
+                    'description' => $this->decodeText($topic->desc_topic),
                     'rating' => $totalQuestions > 0
                         ? round(
                             ($correctAnswers / $totalQuestions) * 100,
                             1,
                         )
                         : 0,
-                    'remarks' =>
-                        (float) $topic->score >=
+                    'remarks' => (float) $topic->score >=
                         (float) $topic->passing_mark
                             ? 'PASS'
                             : 'FAIL',
@@ -1384,6 +1382,7 @@ class TheoreticalAssessmentsController extends Controller
                 $assessmentId,
             ),
         );
+
         return response()->streamDownload(
             function () use ($html): void {
                 $pdf = new Mpdf([
@@ -1411,7 +1410,6 @@ class TheoreticalAssessmentsController extends Controller
     /**
      * @return array{0: ConnectionInterface, 1: object, 2: string}|JsonResponse
      */
-
     private function studentExamContext(
         Request $request,
         string $assessmentId,
@@ -1437,6 +1435,7 @@ class TheoreticalAssessmentsController extends Controller
                 'message' => 'The assessment could not be found.',
             ], Response::HTTP_NOT_FOUND);
         }
+
         return [$db, $assessment, $studentId];
     }
 
@@ -1486,10 +1485,9 @@ class TheoreticalAssessmentsController extends Controller
     }
 
     /**
-     * @param array<string, mixed>|object $assessment
+     * @param  array<string, mixed>|object  $assessment
      * @return array{exam_action_state: string, exam_action_label: string, can_open_exam: bool, expires_at: ?string}
      */
-
     private function studentExamActionState(
         array|object $assessment,
     ): array {
@@ -1521,6 +1519,7 @@ class TheoreticalAssessmentsController extends Controller
                     'expires_at' => $expiresAt->toIso8601String(),
                 ];
             }
+
             return [
                 'exam_action_state' => 'resume',
                 'exam_action_label' => 'Resume Exam',
@@ -1552,6 +1551,7 @@ class TheoreticalAssessmentsController extends Controller
                 'expires_at' => null,
             ];
         }
+
         return [
             'exam_action_state' => 'start',
             'exam_action_label' => 'Start Exam',
@@ -1576,6 +1576,7 @@ class TheoreticalAssessmentsController extends Controller
             $assessment->access_exp_date_to ?? null,
             $assessment->access_exp_time_to ?? null,
         );
+
         return array_merge($state, [
             'id' => (string) $assessment->id,
             'name_course' => (string) ($assessment->name_course ?? ''),
@@ -1690,6 +1691,7 @@ class TheoreticalAssessmentsController extends Controller
                         'image_url' => $imageUrl,
                     ];
                 }
+
                 return [
                     'id' => (string) $question->id,
                     'index' => $index + 1,
@@ -1701,6 +1703,7 @@ class TheoreticalAssessmentsController extends Controller
                 ];
             })
             ->all();
+
         return [
             'exam' => $this->studentExamMetadata($db, $assessment),
             'topic' => [
@@ -1749,6 +1752,7 @@ class TheoreticalAssessmentsController extends Controller
                 'time_expired' => true,
             ], Response::HTTP_CONFLICT);
         }
+
         return null;
     }
 
@@ -1880,7 +1884,6 @@ class TheoreticalAssessmentsController extends Controller
      *     exam_package: string
      * }
      */
-
     private function studentFinalExamResult(
         ConnectionInterface $db,
         object $assessment,
@@ -1918,6 +1921,7 @@ class TheoreticalAssessmentsController extends Controller
                 )
                 ->count();
         }
+
         return [
             'remarks' => $resolvedPassed === 'Y'
                 ? 'PASSED'
@@ -1940,7 +1944,6 @@ class TheoreticalAssessmentsController extends Controller
     /**
      * @return array{score: float, passing_score: float, passed: string}
      */
-
     private function calculateStudentExamOverall(
         ConnectionInterface $db,
         string $assessmentId,
@@ -1967,6 +1970,7 @@ class TheoreticalAssessmentsController extends Controller
                 $overallScore += (float) $latestScore;
             }
         }
+
         return [
             'score' => $overallScore,
             'passing_score' => $passingScore,
@@ -2111,6 +2115,7 @@ class TheoreticalAssessmentsController extends Controller
         }
         $baseUrl = preg_replace('#/photos$#i', '', $photosUrl)
             ?: $photosUrl;
+
         return rtrim($baseUrl, '/')
             .'/question_images/'
             .rawurlencode($cleanFilename);
@@ -2121,6 +2126,7 @@ class TheoreticalAssessmentsController extends Controller
         $done = is_object($assessment)
             ? ($assessment->done ?? '')
             : ($assessment['done'] ?? '');
+
         return strtoupper(trim((string) $done)) === 'Y';
     }
 
@@ -2172,6 +2178,7 @@ class TheoreticalAssessmentsController extends Controller
         if (! $startedAt || $durationMinutes <= 0) {
             return null;
         }
+
         return $startedAt->addMinutes($durationMinutes);
     }
 
@@ -2180,9 +2187,10 @@ class TheoreticalAssessmentsController extends Controller
         $lastName = trim((string) ($record['lname'] ?? ''));
         $firstName = trim((string) ($record['fname'] ?? ''));
         $middleName = trim((string) ($record['mname'] ?? ''));
+
         return trim(
             $lastName.', '.$firstName.' '.$middleName,
-            " ,",
+            ' ,',
         );
     }
 
@@ -2293,6 +2301,7 @@ class TheoreticalAssessmentsController extends Controller
                 ->values()
                 ->map(function ($topic, int $index) {
                     $topic->order_no = $index + 1;
+
                     return $topic;
                 });
         }
@@ -2400,6 +2409,7 @@ class TheoreticalAssessmentsController extends Controller
             });
         } catch (Throwable $exception) {
             report($exception);
+
             return response()->json([
                 'message' => 'The theoretical assessment could not be saved.',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -2426,6 +2436,7 @@ class TheoreticalAssessmentsController extends Controller
                 report($exception);
             }
         }
+
         return response()->json([
             'message' => 'The theoretical assessment has been saved.',
             'data' => [
@@ -2554,6 +2565,7 @@ class TheoreticalAssessmentsController extends Controller
                     ->get(['bs_topic_id', 'quest_cnt', 'order_no'])
                     ->values()->map(function ($topic, int $index) {
                         $topic->order_no = $index + 1;
+
                         return $topic;
                     });
             } else {
@@ -2664,14 +2676,14 @@ class TheoreticalAssessmentsController extends Controller
             )
         ) {
             return response()->json([
-                'message' =>
-                    'The school database connection is not configured.',
+                'message' => 'The school database connection is not configured.',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
         config([
             'database.default' => $connection,
         ]);
         DB::setDefaultConnection($connection);
+
         return DB::connection($connection);
     }
 }

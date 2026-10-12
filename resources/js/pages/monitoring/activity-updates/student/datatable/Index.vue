@@ -378,8 +378,8 @@ function statusLabel(row: DataTableRow): string {
     const status = String(row.status ?? '').trim();
 
     if (status) {
-return status;
-}
+        return status;
+    }
 
     if (
         String(row.sto_validated ?? '')
@@ -402,8 +402,8 @@ return status;
     }
 
     if (forApp === 'Y') {
-return 'Pending';
-}
+        return 'Pending';
+    }
 
     return 'Draft';
 }
@@ -414,16 +414,16 @@ function statusSeverity(
     const status = statusLabel(row);
 
     if (status === 'Verified') {
-return 'success';
-}
+        return 'success';
+    }
 
     if (status === 'For Revision') {
-return 'danger';
-}
+        return 'danger';
+    }
 
     if (status === 'Pending') {
-return 'warn';
-}
+        return 'warn';
+    }
 
     return 'secondary';
 }
@@ -432,24 +432,24 @@ function statusIcon(row: DataTableRow): string {
     const status = statusLabel(row);
 
     if (status === 'Verified') {
-return 'pi pi-check-circle';
-}
+        return 'pi pi-check-circle';
+    }
 
     if (status === 'For Revision') {
-return 'pi pi-undo';
-}
+        return 'pi pi-undo';
+    }
 
     if (status === 'Pending') {
-return 'pi pi-clock';
-}
+        return 'pi pi-clock';
+    }
 
     return 'pi pi-file-edit';
 }
 
 function canEdit(row: DataTableRow): boolean {
     if (typeof row.can_edit === 'boolean') {
-return row.can_edit;
-}
+        return row.can_edit;
+    }
 
     return (
         String(row.sto_validated ?? '')
@@ -461,8 +461,8 @@ return row.can_edit;
 
 function canDelete(row: DataTableRow): boolean {
     if (typeof row.can_delete === 'boolean') {
-return row.can_delete;
-}
+        return row.can_delete;
+    }
 
     return canEdit(row);
 }
@@ -477,16 +477,16 @@ function isImageFilename(filename: string): boolean {
 
 function formatDate(value: unknown): string {
     if (!value || value === '1970-01-01') {
-return '—';
-}
+        return '—';
+    }
 
     const raw = String(value).trim();
 
     const parsed = new Date(`${raw}T00:00:00`);
 
     if (Number.isNaN(parsed.getTime())) {
-return raw;
-}
+        return raw;
+    }
 
     return new Intl.DateTimeFormat('en-PH', {
         timeZone: 'Asia/Manila',
@@ -561,8 +561,8 @@ function errorText(error: unknown, fallback: string): string {
             const firstError = Object.values(responseData.errors).flat()[0];
 
             if (firstError) {
-return firstError;
-}
+                return firstError;
+            }
         }
 
         if (
@@ -735,8 +735,8 @@ function handleAction(action: string, row: DataTableRow): void {
     errorMessage.value = '';
 
     if (action === 'no-file') {
-return;
-}
+        return;
+    }
 
     if (action === 'view-file') {
         openUploadedFile(row);
@@ -777,8 +777,8 @@ function openUploadedFile(row: DataTableRow): void {
 
 function openExistingEvidence(): void {
     if (!existingFileUrl.value) {
-return;
-}
+        return;
+    }
 
     window.open(
         existingFileUrl.value,
@@ -827,8 +827,8 @@ async function openCreateDialog(): Promise<void> {
 
 async function openEditDialog(row: DataTableRow): Promise<void> {
     if (!canEdit(row)) {
-return;
-}
+        return;
+    }
 
     selectedActivity.value = row;
 
@@ -845,8 +845,8 @@ return;
 
 function closeActivityDialog(): void {
     if (saving.value) {
-return;
-}
+        return;
+    }
 
     activityDialogVisible.value = false;
 
@@ -861,8 +861,8 @@ function onFileSelected(event: FileUploadSelectEvent): void {
     fileUpload.value?.clear();
 
     if (!file) {
-return;
-}
+        return;
+    }
 
     const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
 
@@ -923,8 +923,8 @@ async function submitActivity(): Promise<void> {
     }
 
     if (!selectedStartDate.value || !selectedEndDate.value) {
-return;
-}
+        return;
+    }
 
     if (selectedEndDate.value < selectedStartDate.value) {
         formError.value =
@@ -1030,14 +1030,14 @@ return;
 
 async function deleteActivity(): Promise<void> {
     if (deleting.value || !selectedActivity.value) {
-return;
-}
+        return;
+    }
 
     const id = String(selectedActivity.value.id ?? '').trim();
 
     if (!id) {
-return;
-}
+        return;
+    }
 
     deleting.value = true;
 
