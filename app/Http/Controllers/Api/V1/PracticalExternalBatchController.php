@@ -1,14 +1,11 @@
 <?php
 
-
-
 namespace App\Http\Controllers\Api\V1;
-
-
 
 use App\Http\Controllers\Controller;
 
 use App\Services\ExternalAssessmentAccessService;
+use App\Services\IrisEmailService;
 
 use Illuminate\Database\ConnectionInterface;
 
@@ -20,8 +17,6 @@ use Illuminate\Http\Request;
 
 use Illuminate\Support\Facades\DB;
 
-use Illuminate\Support\Facades\Mail;
-
 use Illuminate\Support\Str;
 
 use Illuminate\Validation\ValidationException;
@@ -32,17 +27,17 @@ use Symfony\Component\HttpFoundation\Response;
 
 use Throwable;
 
-
-
 class PracticalExternalBatchController extends Controller
 
 {
 
     public function __construct(
-        private readonly ExternalAssessmentAccessService $externalAssessmentAccessService,
-    ) {
-    }
 
+        private readonly ExternalAssessmentAccessService $externalAssessmentAccessService,
+
+    ) {
+
+    }
 
     public function index(Request $request): JsonResponse
 
@@ -52,29 +47,21 @@ class PracticalExternalBatchController extends Controller
 
         $perPage = (int) $request->integer('per_page', 10);
 
-
-
         if (! in_array($perPage, [10, 20, 50, 100], true)) {
 
             $perPage = 10;
 
         }
 
-
-
         $search = trim((string) $request->input('search', ''));
 
         $direction = strtolower((string) $request->input('sort_direction', 'desc'));
-
-
 
         if (! in_array($direction, ['asc', 'desc'], true)) {
 
             $direction = 'desc';
 
         }
-
-
 
         $sortable = [
 
@@ -92,8 +79,6 @@ class PracticalExternalBatchController extends Controller
 
         ];
 
-
-
         $counts = $database
 
             ->table('assess_ext_batch_d')
@@ -107,8 +92,6 @@ class PracticalExternalBatchController extends Controller
             ])
 
             ->groupBy('assess_ext_batch_id');
-
-
 
         $query = $database
 
@@ -162,8 +145,6 @@ class PracticalExternalBatchController extends Controller
 
             ]);
 
-
-
         if ($search !== '') {
 
             $query->where(function (Builder $builder) use ($search): void {
@@ -184,8 +165,6 @@ class PracticalExternalBatchController extends Controller
 
         }
 
-
-
         $sortField = (string) $request->input('sort_field', 'last_update');
 
         $paginator = $query
@@ -195,8 +174,6 @@ class PracticalExternalBatchController extends Controller
             ->paginate($perPage)
 
             ->withQueryString();
-
-
 
         $records = collect($paginator->items())->map(
 
@@ -223,8 +200,6 @@ class PracticalExternalBatchController extends Controller
             ],
 
         )->values();
-
-
 
         return response()->json([
 
@@ -262,8 +237,6 @@ class PracticalExternalBatchController extends Controller
 
     }
 
-
-
     public function options(Request $request): JsonResponse
 
     {
@@ -290,13 +263,9 @@ class PracticalExternalBatchController extends Controller
 
             ->values();
 
-
-
         return response()->json(['data' => ['assessments' => $assessments]]);
 
     }
-
-
 
     public function import(Request $request): JsonResponse
 
@@ -308,8 +277,6 @@ class PracticalExternalBatchController extends Controller
 
         ]);
 
-
-
         try {
 
             $sheet = IOFactory::load($validated['file']->getRealPath())
@@ -320,8 +287,6 @@ class PracticalExternalBatchController extends Controller
 
             $errors = [];
 
-
-
             foreach ($sheet->toArray(null, true, true, false) as $index => $values) {
 
                 if ($index === 0) {
@@ -329,8 +294,6 @@ class PracticalExternalBatchController extends Controller
                     continue;
 
                 }
-
-
 
                 $email = strtolower(trim((string) ($values[0] ?? '')));
 
@@ -340,15 +303,11 @@ class PracticalExternalBatchController extends Controller
 
                 $mname = $this->cleanName($values[3] ?? '');
 
-
-
                 if ($email === '' && $lname === '' && $fname === '' && $mname === '') {
 
                     continue;
 
                 }
-
-
 
                 if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
 
@@ -358,8 +317,6 @@ class PracticalExternalBatchController extends Controller
 
                 }
 
-
-
                 if (mb_strlen($email) > 50) {
 
                     $errors[] = 'Row '.($index + 1).' email exceeds 50 characters.';
@@ -368,13 +325,9 @@ class PracticalExternalBatchController extends Controller
 
                 }
 
-
-
                 $rows[$email] = compact('email', 'fname', 'mname', 'lname');
 
             }
-
-
 
             return response()->json([
 
@@ -396,8 +349,6 @@ class PracticalExternalBatchController extends Controller
 
             report($exception);
 
-
-
             return response()->json([
 
                 'message' => 'The Excel file could not be read.',
@@ -407,8 +358,6 @@ class PracticalExternalBatchController extends Controller
         }
 
     }
-
-
 
     public function show(Request $request, string $batchId): JsonResponse
 
@@ -428,11 +377,7 @@ class PracticalExternalBatchController extends Controller
 
             ->first();
 
-
-
         abort_unless($batch, Response::HTTP_NOT_FOUND, 'The Practical External batch was not found.');
-
-
 
         $examinees = $database
 
@@ -468,8 +413,6 @@ class PracticalExternalBatchController extends Controller
 
             ->values();
 
-
-
         return response()->json(['data' => [
 
             'id' => (string) $batch->id,
@@ -493,8 +436,6 @@ class PracticalExternalBatchController extends Controller
         ]]);
 
     }
-
-
 
     public function store(Request $request): JsonResponse
 
@@ -526,8 +467,6 @@ class PracticalExternalBatchController extends Controller
 
         ]);
 
-
-
         if (
 
             ! empty($validated['from_date']) &&
@@ -546,8 +485,6 @@ class PracticalExternalBatchController extends Controller
 
         }
 
-
-
         $examinees = collect($validated['examinees'])->map(fn (array $row): array => [
 
             'email' => strtolower(trim($row['email'])),
@@ -560,8 +497,6 @@ class PracticalExternalBatchController extends Controller
 
         ]);
 
-
-
         $this->validateReferences(
 
             $database,
@@ -571,8 +506,6 @@ class PracticalExternalBatchController extends Controller
             $examinees->pluck('email')->all(),
 
         );
-
-
 
         $batchId = (string) Str::uuid();
 
@@ -585,8 +518,6 @@ class PracticalExternalBatchController extends Controller
         $dueDate = $validated['due_date'] ?? '1970-01-01';
 
         $recipients = [];
-
-
 
         try {
 
@@ -616,8 +547,6 @@ class PracticalExternalBatchController extends Controller
 
                     ->get(['id']);
 
-
-
                 $database->table('assess_ext_batch')->insert([
 
                     'id' => $batchId,
@@ -640,15 +569,11 @@ class PracticalExternalBatchController extends Controller
 
                 ]);
 
-
-
                 foreach ($examinees as $examinee) {
 
                     $assessmentId = (string) Str::uuid();
 
                     $detailId = (string) Str::uuid();
-
-
 
                     $database->table('assess_ext_batch_d')->insert([
 
@@ -669,8 +594,6 @@ class PracticalExternalBatchController extends Controller
                         'email_sent' => 'N',
 
                     ]);
-
-
 
                     $database->table('assess_h_ext')->insert([
 
@@ -694,8 +617,6 @@ class PracticalExternalBatchController extends Controller
 
                     ]);
 
-
-
                     foreach ($items as $item) {
 
                         $database->table('assess_d_ext')->insert([
@@ -715,8 +636,6 @@ class PracticalExternalBatchController extends Controller
                         ]);
 
                     }
-
-
 
                     $recipients[] = [
 
@@ -764,11 +683,7 @@ class PracticalExternalBatchController extends Controller
 
         }
 
-
-
         $emailResult = $this->sendEmails($database, $recipients);
-
-
 
         return response()->json([
 
@@ -790,8 +705,6 @@ class PracticalExternalBatchController extends Controller
 
     }
 
-
-
     private function validateReferences(
 
         ConnectionInterface $database,
@@ -811,8 +724,6 @@ class PracticalExternalBatchController extends Controller
             ]);
 
         }
-
-
 
         $pending = $database
 
@@ -834,8 +745,6 @@ class PracticalExternalBatchController extends Controller
 
             ->value('email');
 
-
-
         if ($pending) {
 
             throw ValidationException::withMessages([
@@ -848,65 +757,38 @@ class PracticalExternalBatchController extends Controller
 
     }
 
-
-
     private function emailContent(
-
         Request $request,
-
         array $examinee,
-
         string $title,
-
         string $assessmentId,
-
         string $fromDate,
-
         string $dueDate,
-
-    ): string {
-
-        $schoolCode = strtoupper(trim((string) $request->session()->get('school_code', '')));
-
-        $tokenExpiry = $this->externalAssessmentAccessService->assessmentTokenExpiry(
-            $dueDate,
-            null,
-            0,
+    ): array {
+        $schoolCode = strtoupper(
+            trim((string) $request->session()->get('school_code', '')),
         );
-
+        $tokenExpiry = $this->externalAssessmentAccessService
+            ->assessmentTokenExpiry(
+                $dueDate,
+                null,
+                0,
+            );
         $examUrl = $this->externalAssessmentAccessService->practicalUrl(
             $schoolCode,
             $assessmentId,
             $tokenExpiry,
         );
-
         $name = $this->examineeName((object) $examinee) ?: 'Examinee';
 
-
-
-        return implode('', [
-
-            '<html><body>',
-
-            'Hi '.e($name).',<br><br>',
-
-            'You have a scheduled Practical Assessment with the following details:<br><br>',
-
-            'Assessment: <b>'.e($title).'</b><br>',
-
-            e($this->validityText($fromDate, $dueDate)).'<br><br>',
-
-            'Click this <a href="'.e($examUrl).'" target="_blank" rel="noopener noreferrer">link</a> to start your assessment.<br><br>',
-
-            'If the link does not work, copy this URL:<br>'.e($examUrl),
-
-            '</body></html>',
-
-        ]);
-
+        return [
+            'schoolCode' => $schoolCode,
+            'recipientName' => $name,
+            'assessmentTitle' => $title,
+            'validityText' => $this->validityText($fromDate, $dueDate),
+            'assessmentUrl' => $examUrl,
+        ];
     }
-
-
 
     private function sendEmails(ConnectionInterface $database, array $recipients): array
 
@@ -916,21 +798,24 @@ class PracticalExternalBatchController extends Controller
 
         $failed = 0;
 
-
-
         foreach ($recipients as $recipient) {
 
             try {
 
-                Mail::html($recipient['content'], function ($message) use ($recipient): void {
-
-                    $message
-
-                        ->to($recipient['email'], $recipient['name'])
-
-                        ->subject('You have a scheduled Practical Assessment');
-
-                });
+                $emailData = $recipient['content'];
+                $this->irisEmailService->send(
+                    view: 'emails.practical-external',
+                    email: (string) $recipient['email'],
+                    recipientName: (string) $recipient['name'],
+                    schoolCode: (string) $emailData['schoolCode'],
+                    subject: 'You have a scheduled Practical Assessment',
+                    data: [
+                        'recipientName' => (string) $emailData['recipientName'],
+                        'assessmentTitle' => (string) $emailData['assessmentTitle'],
+                        'validityText' => (string) $emailData['validityText'],
+                        'assessmentUrl' => (string) $emailData['assessmentUrl'],
+                    ],
+                );
 
                 $database->table('assess_ext_batch_d')
 
@@ -950,13 +835,9 @@ class PracticalExternalBatchController extends Controller
 
         }
 
-
-
         return ['sent' => $sent, 'failed' => $failed];
 
     }
-
-
 
     private function database(Request $request): ConnectionInterface
 
@@ -986,8 +867,6 @@ class PracticalExternalBatchController extends Controller
 
     }
 
-
-
     private function validityText(string $fromDate, string $dueDate): string
 
     {
@@ -995,8 +874,6 @@ class PracticalExternalBatchController extends Controller
         $hasFrom = $fromDate !== '1970-01-01';
 
         $hasDue = $dueDate !== '1970-01-01';
-
-
 
         if ($hasFrom && $hasDue) {
 
@@ -1022,8 +899,6 @@ class PracticalExternalBatchController extends Controller
 
     }
 
-
-
     private function nullableLegacyDate(mixed $date): ?string
 
     {
@@ -1033,8 +908,6 @@ class PracticalExternalBatchController extends Controller
         return in_array($value, ['', '0000-00-00', '1970-01-01'], true) ? null : $value;
 
     }
-
-
 
     private function examineeName(object $examinee): string
 
@@ -1053,8 +926,6 @@ class PracticalExternalBatchController extends Controller
         return strtoupper($last && $others ? "{$last}, {$others}" : ($last ?: $others));
 
     }
-
-
 
     private function cleanName(mixed $value): string
 

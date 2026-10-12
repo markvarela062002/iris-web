@@ -1,26 +1,23 @@
 <?php
-
 namespace App\Http\Controllers\Api\V1;
-
 use App\Http\Controllers\Controller;
 use App\Services\DatatableService;
+use App\Services\IrisEmailService;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
-
 class StudentsController extends Controller
 {
     public function __construct(
         private readonly DatatableService $datatableService,
+        private readonly IrisEmailService $irisEmailService,
     ) {
     }
-
     /**
      * Return students from the selected school database.
      */
@@ -30,11 +27,9 @@ class StudentsController extends Controller
         $db = $this->resolveSchoolConnection(
             $request,
         );
-
         if ($db instanceof JsonResponse) {
             return $db;
         }
-
         /*
         |--------------------------------------------------------------------------
         | Base student query
@@ -47,7 +42,6 @@ class StudentsController extends Controller
         | Only the fields needed by the DataTable are returned.
         |
         */
-
         $query = $db
             ->table('person')
             ->select([
@@ -64,7 +58,6 @@ class StudentsController extends Controller
                 'person.active',
                 'person.photo_file',
             ]);
-
         /*
         |--------------------------------------------------------------------------
         | Legacy search filters
@@ -76,14 +69,12 @@ class StudentsController extends Controller
         | First Name
         |
         */
-
         $systemId = trim(
             (string) $request->input(
                 'system_id',
                 '',
             ),
         );
-
         if ($systemId !== '') {
             $query->where(
                 'person.code_person',
@@ -91,14 +82,12 @@ class StudentsController extends Controller
                 "%{$systemId}%",
             );
         }
-
         $schoolId = trim(
             (string) $request->input(
                 'school_id',
                 '',
             ),
         );
-
         if ($schoolId !== '') {
             $query->where(
                 'person.school_id_no',
@@ -106,14 +95,12 @@ class StudentsController extends Controller
                 "%{$schoolId}%",
             );
         }
-
         $lastName = trim(
             (string) $request->input(
                 'last_name',
                 '',
             ),
         );
-
         if ($lastName !== '') {
             $query->where(
                 'person.lname',
@@ -121,14 +108,12 @@ class StudentsController extends Controller
                 "%{$lastName}%",
             );
         }
-
         $firstName = trim(
             (string) $request->input(
                 'first_name',
                 '',
             ),
         );
-
         if ($firstName !== '') {
             $query->where(
                 'person.fname',
@@ -136,19 +121,16 @@ class StudentsController extends Controller
                 "%{$firstName}%",
             );
         }
-
         /*
         |--------------------------------------------------------------------------
         | Server-side DataTable
         |--------------------------------------------------------------------------
         */
-
         $result = $this
             ->datatableService
             ->paginate(
                 query: $query,
                 request: $request,
-
                 searchableColumns: [
                     'person.code_person',
                     'person.school_id_no',
@@ -160,41 +142,31 @@ class StudentsController extends Controller
                     'person.batch_no',
                     'person.etrb_type',
                 ],
-
                 sortableColumns: [
                     'code_person' =>
                         'person.code_person',
-
                     'school_id_no' =>
                         'person.school_id_no',
-
                     'lname' =>
                         'person.lname',
-
                     'fname' =>
                         'person.fname',
-
                     'dept' =>
                         'person.dept',
-
                     'batch_no' =>
                         'person.batch_no',
                 ],
-
                 defaultSortColumn:
                     'lname',
-
                 defaultSortDirection:
                     'asc',
             );
-
         $result = $this
             ->datatableService
             ->addRowNumbers(
                 response: $result,
                 key: 'index',
             );
-
         /*
         |--------------------------------------------------------------------------
         | Current page student IDs
@@ -206,7 +178,6 @@ class StudentsController extends Controller
         | in two additional queries.
         |
         */
-
         $records = collect(
             $result['data'] ?? [],
         )
@@ -219,7 +190,6 @@ class StudentsController extends Controller
                         : (array) $row;
                 },
             );
-
         $personIds = $records
             ->pluck('id')
             ->filter(
@@ -231,15 +201,12 @@ class StudentsController extends Controller
             )
             ->values()
             ->all();
-
         if ($personIds === []) {
             $result['data'] = [];
-
             return response()->json(
                 $result,
             );
         }
-
         /*
         |--------------------------------------------------------------------------
         | Student activities
@@ -253,7 +220,6 @@ class StudentsController extends Controller
         | ORDER BY start_date DESC
         |
         */
-
         $activities = $db
             ->table('person_activity')
             ->leftJoin(
@@ -283,7 +249,6 @@ class StudentsController extends Controller
             )
             ->get()
             ->groupBy('person_id');
-
         /*
         |--------------------------------------------------------------------------
         | Student uploaded documents
@@ -297,7 +262,6 @@ class StudentsController extends Controller
         | ORDER BY date_uploaded DESC
         |
         */
-
         $uploadedFiles = $db
             ->table('file_upload')
             ->leftJoin(
@@ -331,13 +295,11 @@ class StudentsController extends Controller
             )
             ->get()
             ->groupBy('owner_id');
-
         /*
         |--------------------------------------------------------------------------
         | Attach related records to each student
         |--------------------------------------------------------------------------
         */
-
         $result['data'] = $records
             ->map(
                 static function (
@@ -350,7 +312,6 @@ class StudentsController extends Controller
                         $student['id'] ??
                         ''
                     );
-
                     $student[
                         'activities'
                     ] = collect(
@@ -366,19 +327,14 @@ class StudentsController extends Controller
                                 return [
                                     'id' =>
                                         $activity->id,
-
                                     'activity_id' =>
                                         $activity->activity_id,
-
                                     'description' =>
                                         $activity->desc_activity,
-
                                     'start_date' =>
                                         $activity->start_date,
-
                                     'end_date' =>
                                         $activity->end_date,
-
                                     'verified' =>
                                         $activity->sto_validated,
                                 ];
@@ -386,7 +342,6 @@ class StudentsController extends Controller
                         )
                         ->values()
                         ->all();
-
                     $student[
                         'uploaded_files'
                     ] = collect(
@@ -402,22 +357,16 @@ class StudentsController extends Controller
                                 return [
                                     'id' =>
                                         $file->id,
-
                                     'requirement_id' =>
                                         $file->requirement_id,
-
                                     'requirement' =>
                                         $file->desc_requirement,
-
                                     'description' =>
                                         $file->file_desc,
-
                                     'date_uploaded' =>
                                         $file->date_uploaded,
-
                                     'time_uploaded' =>
                                         $file->time_uploaded,
-
                                     'verified' =>
                                         $file->sto_validated,
                                 ];
@@ -425,19 +374,15 @@ class StudentsController extends Controller
                         )
                         ->values()
                         ->all();
-
                     return $student;
                 },
             )
             ->values()
             ->all();
-
         return response()->json(
             $result,
         );
     }
-
-
     /**
      * Create a student in the selected school database.
      */
@@ -447,11 +392,9 @@ class StudentsController extends Controller
         $db = $this->resolveSchoolConnection(
             $request,
         );
-
         if ($db instanceof JsonResponse) {
             return $db;
         }
-
         $validated = $request->validate([
             'school_id_no' => [
                 'required',
@@ -598,13 +541,11 @@ class StudentsController extends Controller
                 'in:Y,N',
             ],
         ]);
-
         $schoolId = trim(
             (string) $validated[
                 'school_id_no'
             ],
         );
-
         if (
             $db
                 ->table('person')
@@ -624,7 +565,6 @@ class StudentsController extends Controller
                 ],
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
-
         $loginId = (string) (
             $request
                 ->session()
@@ -636,7 +576,6 @@ class StudentsController extends Controller
             ??
             ''
         );
-
         $created = $db->transaction(
             function () use (
                 $db,
@@ -651,12 +590,10 @@ class StudentsController extends Controller
                     ->first([
                         'id',
                     ]);
-
                 $prefix =
                     now()->format(
                         'Ym',
                     );
-
                 $latestCode =
                     (string) (
                         $db
@@ -675,9 +612,7 @@ class StudentsController extends Controller
                         ??
                         ''
                     );
-
                 $nextSequence = 1;
-
                 if (
                     strlen(
                         $latestCode,
@@ -691,7 +626,6 @@ class StudentsController extends Controller
                             )
                         ) + 1;
                 }
-
                 do {
                     $codePerson =
                         $prefix .
@@ -701,7 +635,6 @@ class StudentsController extends Controller
                             '0',
                             STR_PAD_LEFT,
                         );
-
                     $nextSequence++;
                 } while (
                     $db
@@ -712,19 +645,15 @@ class StudentsController extends Controller
                         )
                         ->exists()
                 );
-
                 $loginName =
                     $codePerson;
-
                 $characters =
                     '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@$*';
-
                 $password = '';
                 $maximum =
                     strlen(
                         $characters,
                     ) - 1;
-
                 for (
                     $index = 0;
                     $index < 6;
@@ -738,10 +667,8 @@ class StudentsController extends Controller
                             )
                         ];
                 }
-
                 $studentId =
                     (string) Str::uuid();
-
                 $db
                     ->table('person')
                     ->insert([
@@ -834,7 +761,6 @@ class StudentsController extends Controller
                                 'Y-m-d H:i:s',
                             ),
                     ]);
-
                 return [
                     'id' =>
                         $studentId,
@@ -847,14 +773,12 @@ class StudentsController extends Controller
                 ];
             },
         );
-
         /*
          * The student account is already committed at this point.
          * Email delivery is intentionally outside the database transaction:
          * an SMTP problem must never remove a successfully created account.
          */
         $emailSent = false;
-
         try {
             $this->sendCredentialEmail(
                 email: (string) $validated['email'],
@@ -871,18 +795,14 @@ class StudentsController extends Controller
                     $request,
                 ),
             );
-
             $emailSent = true;
         } catch (Throwable $error) {
             report($error);
         }
-
         $created['email_sent'] =
             $emailSent;
-
         $created['email'] =
             (string) $validated['email'];
-
         return response()->json([
             'message' =>
                 $emailSent
@@ -892,8 +812,6 @@ class StudentsController extends Controller
                 $created,
         ], Response::HTTP_CREATED);
     }
-
-
     /**
      * Return one student profile from the selected school database.
      */
@@ -904,11 +822,9 @@ class StudentsController extends Controller
         $db = $this->resolveSchoolConnection(
             $request,
         );
-
         if ($db instanceof JsonResponse) {
             return $db;
         }
-
         $student = $db
             ->table('person')
             ->select([
@@ -957,18 +873,15 @@ class StudentsController extends Controller
                 $studentId,
             )
             ->first();
-
         if (! $student) {
             return response()->json([
                 'message' =>
                     'Student not found.',
             ], Response::HTTP_NOT_FOUND);
         }
-
         $record = get_object_vars(
             $student,
         );
-
         $record['photo_url'] =
             $this->buildStudentPhotoUrl(
                 $request,
@@ -976,12 +889,10 @@ class StudentsController extends Controller
                     ? (string) $record['photo_file']
                     : null,
             );
-
         return response()->json([
             'data' => $record,
         ]);
     }
-
     /**
      * Return lookup options used by the student profile form.
      */
@@ -991,11 +902,9 @@ class StudentsController extends Controller
         $db = $this->resolveSchoolConnection(
             $request,
         );
-
         if ($db instanceof JsonResponse) {
             return $db;
         }
-
         $cities = $db
             ->table('city')
             ->select([
@@ -1006,7 +915,6 @@ class StudentsController extends Controller
                 'name_city',
             )
             ->get();
-
         $provinces = $db
             ->table('province')
             ->select([
@@ -1017,7 +925,6 @@ class StudentsController extends Controller
                 'name_province',
             )
             ->get();
-
         return response()->json([
             'data' => [
                 'cities' => $cities,
@@ -1025,7 +932,6 @@ class StudentsController extends Controller
             ],
         ]);
     }
-
     /**
      * Update the editable student profile fields.
      */
@@ -1036,11 +942,9 @@ class StudentsController extends Controller
         $db = $this->resolveSchoolConnection(
             $request,
         );
-
         if ($db instanceof JsonResponse) {
             return $db;
         }
-
         $student = $db
             ->table('person')
             ->where(
@@ -1048,14 +952,12 @@ class StudentsController extends Controller
                 $studentId,
             )
             ->first();
-
         if (! $student) {
             return response()->json([
                 'message' =>
                     'Student not found.',
             ], Response::HTTP_NOT_FOUND);
         }
-
         $validated = $request->validate([
             'school_id_no' => [
                 'required',
@@ -1216,11 +1118,9 @@ class StudentsController extends Controller
                 'in:Y,N',
             ],
         ]);
-
         $loginName = trim(
             (string) $validated['login_name'],
         );
-
         $duplicateLogin = $db
             ->table('person')
             ->where(
@@ -1233,7 +1133,6 @@ class StudentsController extends Controller
                 $studentId,
             )
             ->exists();
-
         if ($duplicateLogin) {
             return response()->json([
                 'message' =>
@@ -1245,7 +1144,6 @@ class StudentsController extends Controller
                 ],
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
-
         $updateData = [
             'school_id_no' =>
                 $validated['school_id_no'],
@@ -1330,14 +1228,12 @@ class StudentsController extends Controller
                     'Y-m-d H:i:s',
                 ),
         ];
-
         $newPassword = trim(
             (string) (
                 $validated['new_password'] ??
                 ''
             ),
         );
-
         /*
          * Keep compatibility with the existing
          * legacy student authentication, which
@@ -1351,7 +1247,6 @@ class StudentsController extends Controller
             $updateData['login_pass'] =
                 $newPassword;
         }
-
         $db
             ->table('person')
             ->where(
@@ -1361,7 +1256,6 @@ class StudentsController extends Controller
             ->update(
                 $updateData,
             );
-
         return response()->json([
             'message' =>
                 $newPassword !== ''
@@ -1369,7 +1263,6 @@ class StudentsController extends Controller
                     : 'Student profile saved successfully.',
         ]);
     }
-
     /**
      * Send the student's CURRENT saved login credentials to the email
      * address stored on the selected school database.
@@ -1384,11 +1277,9 @@ class StudentsController extends Controller
         $db = $this->resolveSchoolConnection(
             $request,
         );
-
         if ($db instanceof JsonResponse) {
             return $db;
         }
-
         $student = $db
             ->table('person')
             ->where(
@@ -1403,21 +1294,18 @@ class StudentsController extends Controller
                 'login_name',
                 'login_pass',
             ]);
-
         if (! $student) {
             return response()->json([
                 'message' =>
                     'Student not found.',
             ], Response::HTTP_NOT_FOUND);
         }
-
         $email = trim(
             (string) (
                 $student->email
                 ?? ''
             ),
         );
-
         if (
             $email === ''
             ||
@@ -1431,19 +1319,16 @@ class StudentsController extends Controller
                     'The student does not have a valid email address. Save a valid email address first.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
-
         $loginName = trim(
             (string) (
                 $student->login_name
                 ?? ''
             ),
         );
-
         $password = (string) (
             $student->login_pass
             ?? ''
         );
-
         if (
             $loginName === ''
             ||
@@ -1454,7 +1339,6 @@ class StudentsController extends Controller
                     'The student account does not have complete login credentials to send.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
-
         $studentName = trim(
             (string) (
                 $student->lname
@@ -1471,7 +1355,6 @@ class StudentsController extends Controller
                 ?? ''
             ),
         );
-
         try {
             $this->sendCredentialEmail(
                 email: $email,
@@ -1484,19 +1367,16 @@ class StudentsController extends Controller
             );
         } catch (Throwable $error) {
             report($error);
-
             return response()->json([
                 'message' =>
-                    'The credential email could not be sent. The student account was not changed. Please try again.',
+                    'The credential email could not be sent. The student account changes were saved successfully. Please try sending the email again.',
             ], Response::HTTP_BAD_GATEWAY);
         }
-
         return response()->json([
             'message' =>
                 "Login credentials were sent to {$email}.",
         ]);
     }
-
     public function uploadPhoto(
         Request $request,
         string $studentId,
@@ -1504,11 +1384,9 @@ class StudentsController extends Controller
         $db = $this->resolveSchoolConnection(
             $request,
         );
-
         if ($db instanceof JsonResponse) {
             return $db;
         }
-
         $request->validate([
             'photo' => [
                 'required',
@@ -1517,26 +1395,25 @@ class StudentsController extends Controller
                 'max:5120',
             ],
         ]);
-
         $student = $db
             ->table('person')
             ->where(
                 'id',
                 $studentId,
             )
-            ->first();
-
+            ->first([
+                'id',
+                'photo_file',
+            ]);
         if (! $student) {
             return response()->json([
                 'message' =>
                     'Student not found.',
             ], Response::HTTP_NOT_FOUND);
         }
-
         $photo = $request->file(
             'photo',
         );
-
         if (
             ! $photo ||
             ! $photo->isValid()
@@ -1546,75 +1423,110 @@ class StudentsController extends Controller
                     'The selected profile photo is invalid.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
-
         $schoolCode = $this
             ->selectedSchoolCode(
                 $request,
             );
-
-        $uploadUrl = trim(
-            (string) config(
-                "schools.schools.{$schoolCode}.files.photo_upload_url",
-                '',
-            ),
-        );
-
-        if ($uploadUrl === '') {
+        if ($schoolCode === '') {
             return response()->json([
                 'message' =>
-                    'Student photo upload is not configured for the selected school.',
+                    'No school database has been selected.',
+            ], Response::HTTP_FORBIDDEN);
+        }
+        $diskName =
+            'admapro_'
+            . Str::lower(
+                $schoolCode,
+            )
+            . '_photos';
+        $diskConfig = config(
+            "filesystems.disks.{$diskName}",
+        );
+        if (
+            ! is_array($diskConfig)
+            || trim(
+                (string) (
+                    $diskConfig['host']
+                    ?? ''
+                ),
+            ) === ''
+            || trim(
+                (string) (
+                    $diskConfig['username']
+                    ?? ''
+                ),
+            ) === ''
+            || trim(
+                (string) (
+                    $diskConfig['password']
+                    ?? ''
+                ),
+            ) === ''
+            || trim(
+                (string) (
+                    $diskConfig['root']
+                    ?? ''
+                ),
+            ) === ''
+        ) {
+            return response()->json([
+                'message' =>
+                    'Student photo storage is not configured for the selected school.',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
         $extension = strtolower(
             $photo->getClientOriginalExtension(),
         );
-
+        if ($extension === '') {
+            $extension = match (
+                strtolower(
+                    (string) $photo->getMimeType(),
+                )
+            ) {
+                'image/png' => 'png',
+                'image/webp' => 'webp',
+                default => 'jpg',
+            };
+        }
         $filename =
-            now()->format('Ymd_His') .
-            '_' .
-            Str::lower(
+            now()->format(
+                'Ymd_His',
+            )
+            . '_'
+            . Str::lower(
                 Str::random(8),
-            ) .
-            ($extension !== ''
-                ? '.' . $extension
-                : '');
-
+            )
+            . '.'
+            . $extension;
         $contents = file_get_contents(
             $photo->getRealPath(),
         );
-
         if ($contents === false) {
             return response()->json([
                 'message' =>
                     'Unable to read the selected profile photo.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
-
-        $uploadResponse = Http::timeout(60)
-            ->attach(
-                'uploaded_file',
-                $contents,
+        try {
+            $stored = Storage::disk(
+                $diskName,
+            )->put(
                 $filename,
-            )
-            ->post(
-                $uploadUrl,
+                $contents,
             );
-
-        if (
-            ! $uploadResponse->successful() ||
-            strtolower(
-                trim(
-                    $uploadResponse->body(),
-                ),
-            ) !== 'success'
-        ) {
+        } catch (Throwable $error) {
+            report($error);
             return response()->json([
                 'message' =>
-                    'Unable to upload the student profile photo.',
+                    'Unable to upload the student profile photo to the selected school storage.',
             ], Response::HTTP_BAD_GATEWAY);
         }
-
+        if (! $stored) {
+            return response()->json([
+                'message' =>
+                    'Unable to upload the student profile photo to the selected school storage.',
+            ], Response::HTTP_BAD_GATEWAY);
+        }
         $db
             ->table('person')
             ->where(
@@ -1629,7 +1541,6 @@ class StudentsController extends Controller
                         'Y-m-d H:i:s',
                     ),
             ]);
-
         return response()->json([
             'message' =>
                 'Student profile photo updated successfully.',
@@ -1644,7 +1555,6 @@ class StudentsController extends Controller
             ],
         ]);
     }
-
     private function genderDatabaseValue(
         string $gender,
     ): string {
@@ -1660,7 +1570,6 @@ class StudentsController extends Controller
             default => '',
         };
     }
-
     /**
      * Shared account-email view used by Student Profile and Batch Upload.
      */
@@ -1671,98 +1580,19 @@ class StudentsController extends Controller
         string $password,
         string $schoolCode,
     ): void {
-        $webUrl = rtrim(
-            trim(
-                (string) config(
-                    'mail.iris.web_url',
-                    config(
-                        'app.url',
-                        '',
-                    ),
-                ),
-            ),
-            '/',
-        );
-
-        $androidUrl = trim(
-            (string) config(
-                'mail.iris.android_url',
-                '',
-            ),
-        );
-
-        $appStoreUrl = trim(
-            (string) config(
-                'mail.iris.app_store_url',
-                '',
-            ),
-        );
-
-        $bcc = config(
-            'mail.iris.bcc',
-            [],
-        );
-
-        $bcc = is_array($bcc)
-            ? array_values(
-                array_filter(
-                    $bcc,
-                    static fn (
-                        mixed $address,
-                    ): bool =>
-                        is_string($address)
-                        &&
-                        filter_var(
-                            $address,
-                            FILTER_VALIDATE_EMAIL,
-                        ) !== false,
-                ),
-            )
-            : [];
-
-        Mail::send(
-            'emails.student-account',
-            [
-                'studentName' =>
-                    $studentName,
-                'username' =>
-                    $loginName,
-                'password' =>
-                    $password,
-                'schoolCode' =>
-                    $schoolCode,
-                'webUrl' =>
-                    $webUrl,
-                'androidUrl' =>
-                    $androidUrl,
-                'appStoreUrl' =>
-                    $appStoreUrl,
+        $this->irisEmailService->send(
+            view: 'emails.student-account',
+            email: $email,
+            recipientName: $studentName,
+            schoolCode: $schoolCode,
+            subject: 'Your IRIS-SAM account',
+            data: [
+                'studentName' => $studentName,
+                'username' => $loginName,
+                'password' => $password,
             ],
-            static function (
-                $message,
-            ) use (
-                $email,
-                $studentName,
-                $bcc,
-            ): void {
-                $message
-                    ->to(
-                        $email,
-                        $studentName,
-                    )
-                    ->subject(
-                        'Your IRIS-SAM account',
-                    );
-
-                if ($bcc !== []) {
-                    $message->bcc(
-                        $bcc,
-                    );
-                }
-            },
         );
     }
-
     private function selectedSchoolCode(
         Request $request,
     ): string {
@@ -1777,7 +1607,6 @@ class StudentsController extends Controller
             ),
         );
     }
-
     private function buildStudentPhotoUrl(
         Request $request,
         ?string $photoFile,
@@ -1786,11 +1615,9 @@ class StudentsController extends Controller
             ->selectedSchoolCode(
                 $request,
             );
-
         if ($schoolCode === '') {
             return null;
         }
-
         $photosUrl = rtrim(
             trim(
                 (string) config(
@@ -1800,21 +1627,18 @@ class StudentsController extends Controller
             ),
             '/',
         );
-
         if ($photosUrl === '') {
             return null;
         }
-
         $filename = basename(
             str_replace(
-                '\\',
+                '\\\\\\\\',
                 '/',
                 trim(
                     (string) $photoFile,
                 ),
             ),
         );
-
         /*
          * The legacy application uses profile.jpg as a generic
          * silhouette. It is not an actual student profile photo.
@@ -1829,14 +1653,12 @@ class StudentsController extends Controller
         ) {
             return null;
         }
-
         return $photosUrl .
             '/' .
             rawurlencode(
                 $filename,
             );
     }
-
     /**
      * Resolve the database selected during login.
      */
@@ -1853,40 +1675,33 @@ class StudentsController extends Controller
                     ),
             ),
         );
-
         if ($schoolCode === '') {
             return response()->json([
                 'message' =>
                     'No school database has been selected.',
             ], Response::HTTP_FORBIDDEN);
         }
-
         $schools = config(
             'schools.schools',
             [],
         );
-
         if (! is_array($schools)) {
             return response()->json([
                 'message' =>
                     'School configuration is unavailable.',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
         $school =
             $schools[$schoolCode] ??
             null;
-
         if (! is_array($school)) {
             return response()->json([
                 'message' =>
                     'The selected school is not configured.',
-
                 'schoolCode' =>
                     $schoolCode,
             ], Response::HTTP_FORBIDDEN);
         }
-
         $configuredCode = strtoupper(
             trim(
                 (string) (
@@ -1895,7 +1710,6 @@ class StudentsController extends Controller
                 ),
             ),
         );
-
         if (
             $configuredCode === '' ||
             ! hash_equals(
@@ -1908,11 +1722,9 @@ class StudentsController extends Controller
                     'The selected school code is invalid.',
             ], Response::HTTP_FORBIDDEN);
         }
-
         $connection =
             $school['connection'] ??
             null;
-
         if (
             ! is_string($connection) ||
             $connection === ''
@@ -1920,17 +1732,14 @@ class StudentsController extends Controller
             return response()->json([
                 'message' =>
                     'The school database connection is missing.',
-
                 'schoolCode' =>
                     $schoolCode,
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
         $connectionConfig =
             config(
                 "database.connections.{$connection}",
             );
-
         if (
             ! is_array(
                 $connectionConfig,
@@ -1939,24 +1748,19 @@ class StudentsController extends Controller
             return response()->json([
                 'message' =>
                     'The school database connection is not configured.',
-
                 'schoolCode' =>
                     $schoolCode,
-
                 'connection' =>
                     $connection,
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
         config([
             'database.default' =>
                 $connection,
         ]);
-
         DB::setDefaultConnection(
             $connection,
         );
-
         return DB::connection(
             $connection,
         );

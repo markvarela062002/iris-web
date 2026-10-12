@@ -1409,18 +1409,111 @@ function taskAttachmentKey(
 function isImagePath(
     value: string | null | undefined,
 ): boolean {
-    return /\.(jpg|jpeg|png|gif)(?:[?#].*)?$/i.test(
+    return /\.(jpg|jpeg|png|gif|webp)(?:[?#].*)?$/i.test(
         String(value ?? ''),
     );
 }
 
-function isExistingTaskImage(
-    file: TaskFile,
-): boolean {
-    return (
-        isImagePath(file.filename) ||
-        isImagePath(file.file_url)
+function taskFileUrl(file: TaskFile): string | null {
+    const directUrl = String(file.file_url ?? '').trim();
+
+    if (directUrl) {
+        return directUrl;
+    }
+
+    const storedFilename = String(file.filename ?? '').trim();
+
+    if (!storedFilename) {
+        return null;
+    }
+
+    const filename = storedFilename.split(/[\\/]/).pop()?.trim() ?? '';
+
+    if (!filename) {
+        return null;
+    }
+
+    return `/dashboard/files/person-task/${encodeURIComponent(filename)}`;
+}
+
+function taskFileExtension(file: TaskFile): string {
+    const candidates = [
+        file.filename,
+        file.file_description,
+        file.file_url,
+    ];
+
+    for (const candidate of candidates) {
+        const value = String(candidate ?? '').trim();
+
+        if (!value) {
+            continue;
+        }
+
+        const cleanValue = value.split(/[?#]/, 1)[0];
+        const extension = cleanValue.split('.').pop()?.toLowerCase() ?? '';
+
+        if (extension) {
+            return extension;
+        }
+    }
+
+    return '';
+}
+
+function isExistingTaskImage(file: TaskFile): boolean {
+    return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(
+        taskFileExtension(file),
     );
+}
+
+function taskFileIcon(file: TaskFile): string {
+    const extension = taskFileExtension(file);
+
+    if (extension === 'pdf') {
+        return 'pi pi-file-pdf text-3xl text-red-500';
+    }
+
+    if (extension === 'doc' || extension === 'docx') {
+        return 'pi pi-file-word text-3xl text-blue-600';
+    }
+
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) {
+        return 'pi pi-image text-3xl text-[#377EC0]';
+    }
+
+    return 'pi pi-file text-3xl text-[#377EC0]';
+}
+
+function openTaskFile(file: TaskFile): void {
+    const url = taskFileUrl(file);
+
+    if (!url) {
+        return;
+    }
+
+    window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+function downloadTaskFile(file: TaskFile): void {
+    const url = taskFileUrl(file);
+
+    if (!url) {
+        return;
+    }
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = String(
+        file.file_description ??
+        file.filename ??
+        'otg-attachment',
+    );
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
 }
 
 function createTaskAttachment(
@@ -3657,103 +3750,83 @@ onBeforeUnmount(() => {
                     <div
                         class="flex flex-wrap gap-2.5"
                     >
-                        <div
+                                                <div
                             v-for="file in taskDetails.objective_evidence"
                             :key="file.id"
-                            class="relative"
+                            class="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-2.5 transition"
                             :class="{
-                                'opacity-50':
-                                    removedObjectiveFileIds.includes(
-                                        file.id,
-                                    ),
+                                'opacity-50': removedObjectiveFileIds.includes(
+                                    file.id,
+                                ),
                             }"
                         >
-                            <button
-                                type="button"
-                                class="flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border bg-white transition hover:border-[#377EC0]/40 hover:shadow-sm"
-                                :class="
-                                    removedObjectiveFileIds.includes(
-                                        file.id,
-                                    )
-                                        ? 'border-red-200 bg-red-50'
-                                        : 'border-slate-200'
-                                "
-                                :disabled="
-                                    !file.file_url
-                                "
-                                aria-label="Open objective evidence"
-                                title="Open objective evidence"
-                                @click="
-                                    openFile(
-                                        file.file_url,
-                                    )
-                                "
+                            <div
+                                class="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
                             >
                                 <PrimeImage
-                                    v-if="
-                                        isExistingTaskImage(
-                                            file,
-                                        ) &&
-                                        file.file_url
-                                    "
-                                    :src="
-                                        file.file_url
-                                    "
-                                    alt="Objective evidence preview"
+                                    v-if="isExistingTaskImage(file) && taskFileUrl(file)"
+                                    :src="taskFileUrl(file) || ''"
+                                    alt="Objective Evidence preview"
                                     class="block h-full w-full"
                                     image-class="h-full w-full object-cover"
+                                    preview
                                 />
 
-                                <div
+                                <button
                                     v-else
-                                    class="flex h-full w-full items-center justify-center bg-[#377EC0]/5 text-[#377EC0]"
+                                    type="button"
+                                    class="flex h-full w-full items-center justify-center bg-[#377EC0]/5"
+                                    :disabled="!taskFileUrl(file)"
+                                    aria-label="Open objective evidence"
+                                    title="Open objective evidence"
+                                    @click="openTaskFile(file)"
                                 >
-                                    <i
-                                        class="pi pi-file text-2xl"
-                                    ></i>
-                                </div>
-                            </button>
+                                    <i :class="taskFileIcon(file)"></i>
+                                </button>
+                            </div>
 
-                            <Button
-                                v-if="
-                                    !removedObjectiveFileIds.includes(
-                                        file.id,
-                                    )
-                                "
-                                type="button"
-                                icon="pi pi-trash"
-                                severity="danger"
-                                rounded
-                                size="small"
-                                class="!absolute -right-2 -top-2 !h-7 !w-7 !min-w-7 !p-0"
-                                aria-label="Mark objective evidence for removal"
-                                title="Mark objective evidence for removal"
-                                @click="
-                                    markObjectiveForRemoval(
-                                        file.id,
-                                    )
-                                "
-                            />
+                            <div class="min-w-0 flex-1"></div>
 
-                            <Button
-                                v-else
-                                type="button"
-                                icon="pi pi-undo"
-                                severity="secondary"
-                                rounded
-                                size="small"
-                                class="!absolute -right-2 -top-2 !h-7 !w-7 !min-w-7 !p-0"
-                                aria-label="Undo objective evidence removal"
-                                title="Undo objective evidence removal"
-                                @click="
-                                    undoObjectiveRemoval(
-                                        file.id,
-                                    )
-                                "
-                            />
+                            <div class="flex shrink-0 items-center gap-2">
+                                <Button
+                                    v-if="taskFileUrl(file) && !removedObjectiveFileIds.includes(file.id)"
+                                    type="button"
+                                    icon="pi pi-download"
+                                    severity="secondary"
+                                    variant="outlined"
+                                    size="small"
+                                    aria-label="Download attachment"
+                                    title="Download"
+                                    @click="downloadTaskFile(file)"
+                                />
+
+                                <Button
+                                    v-if="!removedObjectiveFileIds.includes(file.id)"
+                                    type="button"
+                                    icon="pi pi-trash"
+                                    severity="danger"
+                                    rounded
+                                    size="small"
+                                    aria-label="Mark objective evidence for removal"
+                                    title="Mark objective evidence for removal"
+                                    @click="markObjectiveForRemoval(file.id)"
+                                />
+
+                                <Button
+                                    v-else
+                                    type="button"
+                                    icon="pi pi-undo"
+                                    severity="secondary"
+                                    rounded
+                                    size="small"
+                                    aria-label="Undo objective evidence removal"
+                                    title="Undo objective evidence removal"
+                                    @click="undoObjectiveRemoval(file.id)"
+                                />
+                            </div>
                         </div>
 
-                        <div
+<div
                             v-for="attachment in objectiveFiles"
                             :key="attachment.key"
                             class="relative"
@@ -3772,6 +3845,8 @@ onBeforeUnmount(() => {
                                     alt="Selected objective evidence preview"
                                     class="block h-full w-full"
                                     image-class="h-full w-full object-cover"
+                                    preview
+                                    @click.stop
                                 />
 
                                 <div
@@ -3949,103 +4024,83 @@ onBeforeUnmount(() => {
                     <div
                         class="flex flex-wrap gap-2.5"
                     >
-                        <div
+                                                <div
                             v-for="file in taskDetails.proof_of_assessment"
                             :key="file.id"
-                            class="relative"
+                            class="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-2.5 transition"
                             :class="{
-                                'opacity-50':
-                                    removedProofFileIds.includes(
-                                        file.id,
-                                    ),
+                                'opacity-50': removedProofFileIds.includes(
+                                    file.id,
+                                ),
                             }"
                         >
-                            <button
-                                type="button"
-                                class="flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border bg-white transition hover:border-[#377EC0]/40 hover:shadow-sm"
-                                :class="
-                                    removedProofFileIds.includes(
-                                        file.id,
-                                    )
-                                        ? 'border-red-200 bg-red-50'
-                                        : 'border-slate-200'
-                                "
-                                :disabled="
-                                    !file.file_url
-                                "
-                                aria-label="Open proof of assessment"
-                                title="Open proof of assessment"
-                                @click="
-                                    openFile(
-                                        file.file_url,
-                                    )
-                                "
+                            <div
+                                class="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
                             >
                                 <PrimeImage
-                                    v-if="
-                                        isExistingTaskImage(
-                                            file,
-                                        ) &&
-                                        file.file_url
-                                    "
-                                    :src="
-                                        file.file_url
-                                    "
-                                    alt="Proof of assessment preview"
+                                    v-if="isExistingTaskImage(file) && taskFileUrl(file)"
+                                    :src="taskFileUrl(file) || ''"
+                                    alt="Proof Of Assessment preview"
                                     class="block h-full w-full"
                                     image-class="h-full w-full object-cover"
+                                    preview
                                 />
 
-                                <div
+                                <button
                                     v-else
-                                    class="flex h-full w-full items-center justify-center bg-[#377EC0]/5 text-[#377EC0]"
+                                    type="button"
+                                    class="flex h-full w-full items-center justify-center bg-[#377EC0]/5"
+                                    :disabled="!taskFileUrl(file)"
+                                    aria-label="Open proof of assessment"
+                                    title="Open proof of assessment"
+                                    @click="openTaskFile(file)"
                                 >
-                                    <i
-                                        class="pi pi-file text-2xl"
-                                    ></i>
-                                </div>
-                            </button>
+                                    <i :class="taskFileIcon(file)"></i>
+                                </button>
+                            </div>
 
-                            <Button
-                                v-if="
-                                    !removedProofFileIds.includes(
-                                        file.id,
-                                    )
-                                "
-                                type="button"
-                                icon="pi pi-trash"
-                                severity="danger"
-                                rounded
-                                size="small"
-                                class="!absolute -right-2 -top-2 !h-7 !w-7 !min-w-7 !p-0"
-                                aria-label="Mark proof for removal"
-                                title="Mark proof for removal"
-                                @click="
-                                    markProofForRemoval(
-                                        file.id,
-                                    )
-                                "
-                            />
+                            <div class="min-w-0 flex-1"></div>
 
-                            <Button
-                                v-else
-                                type="button"
-                                icon="pi pi-undo"
-                                severity="secondary"
-                                rounded
-                                size="small"
-                                class="!absolute -right-2 -top-2 !h-7 !w-7 !min-w-7 !p-0"
-                                aria-label="Undo proof removal"
-                                title="Undo proof removal"
-                                @click="
-                                    undoProofRemoval(
-                                        file.id,
-                                    )
-                                "
-                            />
+                            <div class="flex shrink-0 items-center gap-2">
+                                <Button
+                                    v-if="taskFileUrl(file) && !removedProofFileIds.includes(file.id)"
+                                    type="button"
+                                    icon="pi pi-download"
+                                    severity="secondary"
+                                    variant="outlined"
+                                    size="small"
+                                    aria-label="Download attachment"
+                                    title="Download"
+                                    @click="downloadTaskFile(file)"
+                                />
+
+                                <Button
+                                    v-if="!removedProofFileIds.includes(file.id)"
+                                    type="button"
+                                    icon="pi pi-trash"
+                                    severity="danger"
+                                    rounded
+                                    size="small"
+                                    aria-label="Mark proof of assessment for removal"
+                                    title="Mark proof of assessment for removal"
+                                    @click="markProofForRemoval(file.id)"
+                                />
+
+                                <Button
+                                    v-else
+                                    type="button"
+                                    icon="pi pi-undo"
+                                    severity="secondary"
+                                    rounded
+                                    size="small"
+                                    aria-label="Undo proof of assessment removal"
+                                    title="Undo proof of assessment removal"
+                                    @click="undoProofRemoval(file.id)"
+                                />
+                            </div>
                         </div>
 
-                        <div
+<div
                             v-for="attachment in proofFiles"
                             :key="attachment.key"
                             class="relative"
@@ -4064,6 +4119,8 @@ onBeforeUnmount(() => {
                                     alt="Selected proof of assessment preview"
                                     class="block h-full w-full"
                                     image-class="h-full w-full object-cover"
+                                    preview
+                                    @click.stop
                                 />
 
                                 <div

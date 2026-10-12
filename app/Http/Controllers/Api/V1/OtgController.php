@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Student;
 use App\Services\DatatableService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\ConnectionInterface;
@@ -14,7 +15,6 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
-use App\Models\Student;
 
 class OtgController extends Controller
 {
@@ -274,6 +274,171 @@ class OtgController extends Controller
     }
 
     /**
+     * Return one row per cadet for the administrator Training Records screen.
+     */
+    public function monitoringStudents(
+        Request $request,
+    ): JsonResponse {
+        $db = $this->resolveSchoolConnection($request);
+
+        if ($db instanceof JsonResponse) {
+            return $db;
+        }
+
+        $query = $db
+            ->table('person')
+            ->select([
+                'person.id',
+                'person.id as person_id',
+                'person.code_person',
+                'person.school_id_no',
+                'person.fname',
+                'person.mname',
+                'person.lname',
+                'person.gender',
+                'person.dept',
+                'person.etrb_type',
+                'person.active',
+            ]);
+
+        $result = $this->datatableService->paginate(
+            query: $query,
+            request: $request,
+            searchableColumns: [
+                'person.code_person',
+                'person.school_id_no',
+                'person.fname',
+                'person.mname',
+                'person.lname',
+                'person.dept',
+                'person.etrb_type',
+            ],
+            sortableColumns: [
+                'code_person' => 'person.code_person',
+                'school_id_no' => 'person.school_id_no',
+                'fname' => 'person.fname',
+                'lname' => 'person.lname',
+                'dept' => 'person.dept',
+            ],
+            defaultSortColumn: 'lname',
+            defaultSortDirection: 'asc',
+        );
+
+        $records = collect($result['data'] ?? [])
+            ->map(static function (mixed $row): array {
+                return is_object($row)
+                    ? get_object_vars($row)
+                    : (array) $row;
+            });
+
+        $personIds = $records
+            ->pluck('person_id')
+            ->filter(static fn (mixed $id): bool =>
+                is_string($id) && trim($id) !== ''
+            )
+            ->values();
+
+        if ($personIds->isEmpty()) {
+            $result['data'] = [];
+            return response()->json($result);
+        }
+
+        $workbookCounts = $db
+            ->table('person_trb_book')
+            ->whereIn('person_id', $personIds)
+            ->selectRaw('person_id, COUNT(*) as total')
+            ->groupBy('person_id')
+            ->pluck('total', 'person_id');
+
+        $assignedTaskCounts = $db
+            ->table('person_task')
+            ->whereIn('person_id', $personIds)
+            ->selectRaw('person_id, COUNT(*) as total')
+            ->groupBy('person_id')
+            ->pluck('total', 'person_id');
+
+        $completedTaskCounts = $db
+            ->table('person_task')
+            ->whereIn('person_id', $personIds)
+            ->whereNotNull('completed')
+            ->whereRaw("TRIM(COALESCE(completed, '')) != ''")
+            ->where('completed', '!=', '1970-01-01')
+            ->whereRaw("TRIM(COALESCE(month_no, '')) != ''")
+            ->whereRaw("UPPER(TRIM(COALESCE(not_app, ''))) != 'Y'")
+            ->whereExists(static function ($query): void {
+                $query
+                    ->selectRaw('1')
+                    ->from('person_task_file')
+                    ->whereColumn(
+                        'person_task_file.person_task_id',
+                        'person_task.id',
+                    );
+            })
+            ->whereExists(static function ($query): void {
+                $query
+                    ->selectRaw('1')
+                    ->from('person_task_proof')
+                    ->whereColumn(
+                        'person_task_proof.person_task_id',
+                        'person_task.id',
+                    );
+            })
+            ->selectRaw('person_id, COUNT(DISTINCT person_task.id) as total')
+            ->groupBy('person_id')
+            ->pluck('total', 'person_id');
+
+        $completedNaTaskCounts = $db
+            ->table('person_task')
+            ->whereIn('person_id', $personIds)
+            ->whereNotNull('completed')
+            ->whereRaw("TRIM(COALESCE(completed, '')) != ''")
+            ->where('completed', '!=', '1970-01-01')
+            ->whereRaw("UPPER(TRIM(COALESCE(not_app, ''))) = 'Y'")
+            ->whereExists(static function ($query): void {
+                $query
+                    ->selectRaw('1')
+                    ->from('person_task_proof')
+                    ->whereColumn(
+                        'person_task_proof.person_task_id',
+                        'person_task.id',
+                    );
+            })
+            ->selectRaw('person_id, COUNT(DISTINCT person_task.id) as total')
+            ->groupBy('person_id')
+            ->pluck('total', 'person_id');
+
+        $result['data'] = $records
+            ->map(static function (array $student) use (
+                $workbookCounts,
+                $assignedTaskCounts,
+                $completedTaskCounts,
+                $completedNaTaskCounts,
+            ): array {
+                $personId = (string) ($student['person_id'] ?? '');
+                $assigned = (int) ($assignedTaskCounts->get($personId, 0));
+                $completedNa = (int) ($completedNaTaskCounts->get($personId, 0));
+                $effective = max(0, $assigned - $completedNa);
+                $completed = (int) ($completedTaskCounts->get($personId, 0));
+                $percentage = $effective > 0
+                    ? ($completed / $effective) * 100
+                    : 0;
+
+                $student['workbook_count'] =
+                    (int) ($workbookCounts->get($personId, 0));
+                $student['effective_task_count'] = $effective;
+                $student['completed_task_count'] = $completed;
+                $student['completed_na_task_count'] = $completedNa;
+                $student['completion_percentage'] = round($percentage, 2);
+
+                return $student;
+            })
+            ->values()
+            ->all();
+
+        return response()->json($result);
+    }
+
+    /**
  * Return the authenticated student's OTG summary.
  */
 public function studentDashboard(
@@ -490,7 +655,6 @@ public function studentDashboard(
             $tasks,
     ]);
 }
-    
 
     /**
      * Return the authenticated student's complete OTG overview.
@@ -1127,7 +1291,6 @@ public function studentDashboard(
             ? $decodedValue
             : null;
     }
-
 
     /**
      * Return the authenticated Student ID.
@@ -2248,43 +2411,88 @@ public function studentDashboard(
     }
 
     /**
-     * Build the public URL of an OTG task attachment.
+     * Build the public URL of an OTG task attachment for the currently
+     * selected school. This mirrors the existing IRIS-SAM activity/file
+     * configuration instead of assuming one global admapro URL.
      */
     private function studentTaskFileUrl(
+        Request $request,
         ?string $filename,
     ): ?string {
         if (! filled($filename)) {
             return null;
         }
 
-        $baseUrl = trim(
+        $schoolCode = strtoupper(
+            trim(
+                (string) $request
+                    ->session()
+                    ->get('school_code', ''),
+            ),
+        );
+
+        $configured = trim(
             (string) config(
-                'admapro.activity.file_url',
+                "schools.schools.{$schoolCode}.files.activity_url",
                 '',
             ),
         );
 
-        if ($baseUrl === '') {
-            $baseUrl = trim(
+        if ($configured === '') {
+            $configured = trim(
                 (string) config(
-                    'admapro.person_task.file_url',
+                    "schools.schools.{$schoolCode}.storage.activity.file_url",
                     '',
                 ),
             );
         }
 
-        if ($baseUrl === '') {
+        if ($configured === '') {
+            $configured = trim(
+                (string) config(
+                    "database.connections.admapro.schools.{$schoolCode}.storage.activity.file_url",
+                    '',
+                ),
+            );
+        }
+
+        if ($configured === '') {
+            $configured = trim(
+                (string) config(
+                    'admapro.activity.file_url',
+                    '',
+                ),
+            );
+        }
+
+        if ($configured === '') {
             return null;
         }
 
+        $configured = trim($configured);
+
+        if (
+            ! str_starts_with($configured, 'http://') &&
+            ! str_starts_with($configured, 'https://')
+        ) {
+            $configured =
+                'https://' .
+                ltrim(
+                    $configured,
+                    '/',
+                );
+        }
+
         return rtrim(
-            $baseUrl,
+            $configured,
             '/',
-        ) . '/' . rawurlencode(
-            basename(
-                (string) $filename,
-            ),
-        );
+        ) .
+            '/' .
+            rawurlencode(
+                basename(
+                    (string) $filename,
+                ),
+            );
     }
 
     /**
@@ -2513,6 +2721,8 @@ public function studentDashboard(
             ->map(
                 function (
                     object $file,
+                ) use (
+                    $request,
                 ): array {
                     return [
                         'id' =>
@@ -2531,6 +2741,7 @@ public function studentDashboard(
 
                         'file_url' =>
                             $this->studentTaskFileUrl(
+                                $request,
                                 $file->filename,
                             ),
                     ];
@@ -2557,6 +2768,8 @@ public function studentDashboard(
             ->map(
                 function (
                     object $file,
+                ) use (
+                    $request,
                 ): array {
                     return [
                         'id' =>
@@ -2575,6 +2788,7 @@ public function studentDashboard(
 
                         'file_url' =>
                             $this->studentTaskFileUrl(
+                                $request,
                                 $file->filename,
                             ),
                     ];
@@ -2947,6 +3161,972 @@ public function studentDashboard(
     /**
      * Resolve the school database selected during login.
      */
+
+    public function adminStudentIndex(
+        Request $request,
+        string $studentId,
+    ): JsonResponse {
+        $db = $this->resolveSchoolConnection($request);
+
+        if ($db instanceof JsonResponse) {
+            return $db;
+        }
+
+        $student = $db
+            ->table('person')
+            ->select([
+                'id',
+                'school_id_no',
+                'code_person',
+                'fname',
+                'mname',
+                'lname',
+                'gender',
+                'dept',
+                'etrb_type',
+            ])
+            ->where('id', $studentId)
+            ->first();
+
+        if (! $student) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The selected student was not found.',
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $vessels = $db
+            ->table('person_trb_setup')
+            ->leftJoin(
+                'vessel_type',
+                'vessel_type.id',
+                '=',
+                'person_trb_setup.vessel_type_id',
+            )
+            ->select([
+                'person_trb_setup.id',
+                'person_trb_setup.vessel_type_id',
+                'person_trb_setup.vessel_name',
+                'person_trb_setup.ship_company',
+                'person_trb_setup.flag',
+                'person_trb_setup.from_date',
+                'person_trb_setup.to_date',
+                'vessel_type.desc_vessel_type',
+            ])
+            ->where(
+                'person_trb_setup.person_id',
+                $studentId,
+            )
+            ->orderBy(
+                'person_trb_setup.from_date',
+            )
+            ->get()
+            ->map(
+                function (
+                    object $vessel,
+                ): array {
+                    return [
+                        'id' =>
+                            (string) $vessel->id,
+
+                        'vessel_type_id' =>
+                            $vessel->vessel_type_id,
+
+                        'vessel_name' =>
+                            $this->decodeStudentTrainingText(
+                                $vessel->vessel_name,
+                            ),
+
+                        'vessel_type' =>
+                            $this->decodeStudentTrainingText(
+                                $vessel
+                                    ->desc_vessel_type,
+                            ),
+
+                        'ship_company' =>
+                            $this->decodeStudentTrainingText(
+                                $vessel->ship_company,
+                            ),
+
+                        'flag' =>
+                            $this->decodeStudentTrainingText(
+                                $vessel->flag,
+                            ),
+
+                        'sign_on_date' =>
+                            $vessel->from_date,
+
+                        'sign_off_date' =>
+                            $vessel->to_date,
+                    ];
+                },
+            )
+            ->values();
+
+        $workbookRecords = $db
+            ->table('person_trb_book')
+            ->leftJoin(
+                'trb_type',
+                'trb_type.id',
+                '=',
+                'person_trb_book.trb_type_id',
+            )
+            ->select([
+                'person_trb_book.id',
+                'person_trb_book.trb_type_id',
+                'trb_type.desc_trb_type',
+                'trb_type.prio',
+            ])
+            ->where(
+                'person_trb_book.person_id',
+                $studentId,
+            )
+            ->whereNotNull(
+                'person_trb_book.trb_type_id',
+            )
+            ->orderByRaw(
+                'CASE WHEN trb_type.prio IS NULL THEN 1 ELSE 0 END',
+            )
+            ->orderBy('trb_type.prio')
+            ->orderBy(
+                'trb_type.desc_trb_type',
+            )
+            ->get();
+
+        /*
+         * Match the mobile Training module: assigned workbook tasks need a
+         * person_task row so every blue/default task can be opened and revised.
+         * Existing task progress and files are never overwritten.
+         */
+        $this->ensureStudentWorkbookPersonTasks(
+            $db,
+            $studentId,
+            $workbookRecords
+                ->pluck('trb_type_id')
+                ->filter()
+                ->unique()
+                ->values(),
+        );
+
+        $workbooks = $workbookRecords
+            ->map(
+                function (
+                    object $workbook,
+                ) use (
+                    $db,
+                    $studentId,
+                ): array {
+                    $trbTypeId =
+                        (string) $workbook
+                            ->trb_type_id;
+
+                    /*
+                     * Start from task instead of person_task. This lets the web
+                     * page show every configured task as a blue/default task
+                     * even if a legacy person_task row has not been created yet.
+                     * It mirrors the mobile display without mutating data on GET.
+                     */
+                    $tasks = $db
+                        ->table('task')
+                        ->join(
+                            'trb_competence',
+                            'trb_competence.id',
+                            '=',
+                            'task.trb_competence_id',
+                        )
+                        ->join(
+                            'trb_function',
+                            'trb_function.id',
+                            '=',
+                            'trb_competence.trb_function_id',
+                        )
+                        ->leftJoin(
+                            'trb_sub_competence',
+                            'trb_sub_competence.id',
+                            '=',
+                            'task.trb_sub_competence_id',
+                        )
+                        ->leftJoin(
+                            'person_task',
+                            function (
+                                $join,
+                            ) use (
+                                $studentId,
+                            ): void {
+                                $join
+                                    ->on(
+                                        'person_task.task_id',
+                                        '=',
+                                        'task.id',
+                                    )
+                                    ->where(
+                                        'person_task.person_id',
+                                        '=',
+                                        $studentId,
+                                    );
+                            },
+                        )
+                        ->select([
+                            'task.id as task_id',
+                            'task.ref_no',
+                            'task.desc_task',
+                            'task.prio as task_prio',
+
+                            'trb_competence.desc_competence',
+                            'trb_competence.prio as competence_prio',
+
+                            'trb_sub_competence.desc_sub_competence',
+
+                            'trb_function.prio as function_prio',
+
+                            'person_task.id as person_task_id',
+                            'person_task.completed',
+                            'person_task.not_app',
+                            'person_task.month_no',
+                        ])
+                        ->where(
+                            'trb_function.trb_type_id',
+                            $trbTypeId,
+                        )
+                        ->orderByRaw(
+                            'CASE WHEN trb_function.prio IS NULL THEN 1 ELSE 0 END',
+                        )
+                        ->orderBy(
+                            'trb_function.prio',
+                        )
+                        ->orderByRaw(
+                            'CASE WHEN trb_competence.prio IS NULL THEN 1 ELSE 0 END',
+                        )
+                        ->orderBy(
+                            'trb_competence.prio',
+                        )
+                        ->orderByRaw(
+                            'CASE WHEN task.prio IS NULL THEN 1 ELSE 0 END',
+                        )
+                        ->orderBy(
+                            'task.prio',
+                        )
+                        ->orderBy(
+                            'task.ref_no',
+                        )
+                        ->get()
+                        ->map(
+                            function (
+                                object $task,
+                            ): array {
+                                return [
+                                    'person_task_id' =>
+                                        $task
+                                            ->person_task_id
+                                            ? (string) $task
+                                                ->person_task_id
+                                            : null,
+
+                                    'task_id' =>
+                                        (string) $task
+                                            ->task_id,
+
+                                    'ref_no' =>
+                                        $this->decodeStudentTrainingText(
+                                            $task->ref_no,
+                                        ),
+
+                                    'description' =>
+                                        $this->decodeStudentTrainingText(
+                                            $task->desc_task,
+                                        ),
+
+                                    'competence' =>
+                                        $this->decodeStudentTrainingText(
+                                            $task
+                                                ->desc_competence,
+                                        ),
+
+                                    'topic' =>
+                                        $this->decodeStudentTrainingText(
+                                            $task
+                                                ->desc_sub_competence,
+                                        ),
+
+                                    'completion_date' =>
+                                        $task->completed,
+
+                                    'not_applicable' =>
+                                        strtoupper(
+                                            trim(
+                                                (string) (
+                                                    $task
+                                                        ->not_app ??
+                                                    ''
+                                                ),
+                                            ),
+                                        ) === 'Y',
+
+                                    'month_no' =>
+                                        $task->month_no,
+                                ];
+                            },
+                        )
+                        ->values();
+
+                    $taskIds = $tasks
+                        ->pluck('task_id')
+                        ->filter()
+                        ->unique()
+                        ->values();
+
+                    $completedTaskCount =
+                        $this->studentCompletedTaskCount(
+                            $db,
+                            $studentId,
+                            $taskIds,
+                        );
+
+                    $completedNaTaskCount =
+                        $this->studentCompletedNaTaskCount(
+                            $db,
+                            $studentId,
+                            $taskIds,
+                        );
+
+                    $referenceCount =
+                        $tasks->count();
+
+                    $effectiveTaskCount =
+                        max(
+                            0,
+                            $referenceCount -
+                                $completedNaTaskCount,
+                        );
+
+                    $completionPercentage =
+                        $effectiveTaskCount > 0
+                            ? (
+                                $completedTaskCount /
+                                $effectiveTaskCount
+                            ) * 100
+                            : 0;
+
+                    return [
+                        'workbook_assignment_id' =>
+                            (string) $workbook->id,
+
+                        'trb_type_id' =>
+                            $trbTypeId,
+
+                        'workbook' =>
+                            $this->decodeStudentTrainingText(
+                                $workbook
+                                    ->desc_trb_type,
+                            ),
+
+                        'reference_count' =>
+                            $referenceCount,
+
+                        'effective_task_count' =>
+                            $effectiveTaskCount,
+
+                        'completed_task_count' =>
+                            $completedTaskCount,
+
+                        'completed_na_task_count' =>
+                            $completedNaTaskCount,
+
+                        'completion_percentage' =>
+                            round(
+                                $completionPercentage,
+                                2,
+                            ),
+
+                        'task_references' =>
+                            $tasks,
+                    ];
+                },
+            )
+            ->values();
+
+        $overallTaskCount =
+            (int) $workbooks
+                ->sum(
+                    'effective_task_count',
+                );
+
+        $overallCompletedTaskCount =
+            (int) $workbooks
+                ->sum(
+                    'completed_task_count',
+                );
+
+        $overallCompletedNaTaskCount =
+            (int) $workbooks
+                ->sum(
+                    'completed_na_task_count',
+                );
+
+        $overallCompletionPercentage =
+            $overallTaskCount > 0
+                ? (
+                    $overallCompletedTaskCount /
+                    $overallTaskCount
+                ) * 100
+                : 0;
+
+        return response()->json([
+            'success' => true,
+
+            'message' =>
+                $vessels->isEmpty() &&
+                $workbooks->isEmpty() &&
+                $overallTaskCount === 0
+                    ? 'No training records found.'
+                    : 'Training records fetched successfully.',
+
+            'data' => [
+                'student' => [
+                    'id' => (string) $student->id,
+                    'school_id_no' => $student->school_id_no,
+                    'code_person' => $student->code_person,
+                    'fname' => $student->fname,
+                    'mname' => $student->mname,
+                    'lname' => $student->lname,
+                    'gender' => $student->gender,
+                    'dept' => $student->dept,
+                    'etrb_type' => $student->etrb_type,
+                ],
+
+                'training_vessels' =>
+                    $vessels,
+
+                'training_workbooks' =>
+                    $workbooks,
+
+                'overall_task_count' =>
+                    $overallTaskCount,
+
+                'overall_completed_task_count' =>
+                    $overallCompletedTaskCount,
+
+                'overall_completed_na_task_count' =>
+                    $overallCompletedNaTaskCount,
+
+                'overall_completion_percentage' =>
+                    round(
+                        $overallCompletionPercentage,
+                        2,
+                    ),
+            ],
+        ]);
+    }
+
+    /**
+     * Count fully completed non-N/A tasks using the same OTG completion rules
+     * already used by the mobile Training module.
+     */
+
+    public function adminTaskDetails(
+        Request $request,
+        string $studentId,
+        string $personTaskId,
+    ): JsonResponse {
+        $db = $this
+            ->resolveSchoolConnection(
+                $request,
+            );
+
+        if ($db instanceof JsonResponse) {
+            return $db;
+        }
+
+        $task = $db
+            ->table('person_task')
+            ->join(
+                'task',
+                'task.id',
+                '=',
+                'person_task.task_id',
+            )
+            ->leftJoin(
+                'trb_competence',
+                'trb_competence.id',
+                '=',
+                'task.trb_competence_id',
+            )
+            ->leftJoin(
+                'trb_sub_competence',
+                'trb_sub_competence.id',
+                '=',
+                'task.trb_sub_competence_id',
+            )
+            ->leftJoin(
+                'trb_function',
+                'trb_function.id',
+                '=',
+                'trb_competence.trb_function_id',
+            )
+            ->select([
+                'person_task.id as person_task_id',
+                'person_task.task_id',
+                'person_task.completed',
+                'person_task.month_no',
+                'person_task.not_app',
+
+                'task.ref_no',
+                'task.desc_task',
+
+                'trb_competence.ref_no as competence_ref_no',
+                'trb_competence.desc_competence',
+
+                'trb_sub_competence.ref_no as topic_ref_no',
+                'trb_sub_competence.desc_sub_competence',
+
+                'trb_function.trb_type_id',
+            ])
+            ->where(
+                'person_task.id',
+                $personTaskId,
+            )
+            ->where(
+                'person_task.person_id',
+                $studentId,
+            )
+            ->first();
+
+        if (! $task) {
+            return response()->json([
+                'success' => false,
+                'message' =>
+                    'Training task not found.',
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $objectiveEvidence = $db
+            ->table('person_task_file')
+            ->select([
+                'id',
+                'filename',
+                'file_desc',
+                'uploaded',
+            ])
+            ->where(
+                'person_task_id',
+                $personTaskId,
+            )
+            ->orderByDesc(
+                'uploaded',
+            )
+            ->get()
+            ->map(
+                function (
+                    object $file,
+                ) use (
+                    $request,
+                ): array {
+                    return [
+                        'id' =>
+                            (string) $file->id,
+
+                        'filename' =>
+                            $file->filename,
+
+                        'file_description' =>
+                            $this->decodeStudentTrainingText(
+                                $file->file_desc,
+                            ),
+
+                        'uploaded_date' =>
+                            $file->uploaded,
+
+                        'file_url' =>
+                            $this->studentTaskFileUrl(
+                                $request,
+                                $file->filename,
+                            ),
+                    ];
+                },
+            )
+            ->values();
+
+        $proofOfAssessment = $db
+            ->table('person_task_proof')
+            ->select([
+                'id',
+                'filename',
+                'file_desc',
+                'uploaded',
+            ])
+            ->where(
+                'person_task_id',
+                $personTaskId,
+            )
+            ->orderByDesc(
+                'uploaded',
+            )
+            ->get()
+            ->map(
+                function (
+                    object $file,
+                ) use (
+                    $request,
+                ): array {
+                    return [
+                        'id' =>
+                            (string) $file->id,
+
+                        'filename' =>
+                            $file->filename,
+
+                        'file_description' =>
+                            $this->decodeStudentTrainingText(
+                                $file->file_desc,
+                            ),
+
+                        'uploaded_date' =>
+                            $file->uploaded,
+
+                        'file_url' =>
+                            $this->studentTaskFileUrl(
+                                $request,
+                                $file->filename,
+                            ),
+                    ];
+                },
+            )
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'task' => [
+                    'person_task_id' =>
+                        (string) $task
+                            ->person_task_id,
+
+                    'task_id' =>
+                        (string) $task
+                            ->task_id,
+
+                    'ref_no' =>
+                        $this->decodeStudentTrainingText(
+                            $task->ref_no,
+                        ),
+
+                    'description' =>
+                        $this->decodeStudentTrainingText(
+                            $task->desc_task,
+                        ),
+
+                    'completion_date' =>
+                        $task->completed,
+
+                    'month_no' =>
+                        $task->month_no,
+
+                    'not_applicable' =>
+                        strtoupper(
+                            trim(
+                                (string) (
+                                    $task->not_app ??
+                                    ''
+                                ),
+                            ),
+                        ) === 'Y',
+                ],
+
+                'competence' => [
+                    'ref_no' =>
+                        $task
+                            ->competence_ref_no,
+
+                    'description' =>
+                        $this->decodeStudentTrainingText(
+                            $task
+                                ->desc_competence,
+                        ),
+                ],
+
+                'sub_competence' => [
+                    'ref_no' =>
+                        $task
+                            ->topic_ref_no,
+
+                    'description' =>
+                        $this->decodeStudentTrainingText(
+                            $task
+                                ->desc_sub_competence,
+                        ),
+                ],
+
+                'objective_evidence' =>
+                    $objectiveEvidence,
+
+                'proof_of_assessment' =>
+                    $proofOfAssessment,
+            ],
+        ]);
+    }
+
+    /**
+     * Revise a task exactly through the fields the mobile task editor owns:
+     * completion date, month onboard, N/A status, Objective Evidence and Proof.
+     */
+
+    public function adminUpdateTask(
+        Request $request,
+        string $studentId,
+        string $personTaskId,
+    ): JsonResponse {
+        $validated = $request->validate([
+            'completion_date' => [
+                'required',
+                'date_format:Y-m-d',
+            ],
+            'month_no' => [
+                'required',
+                'string',
+                'regex:/^(0[1-9]|1[0-2])$/',
+            ],
+            'not_app' => [
+                'required',
+                'in:Y,N',
+            ],
+            'objective_evidence_files' => [
+                'nullable',
+                'array',
+            ],
+            'objective_evidence_files.*' => [
+                'file',
+                'mimes:jpg,jpeg,png,gif,pdf,doc,docx',
+                'max:20480',
+            ],
+            'proof_assessment_files' => [
+                'nullable',
+                'array',
+            ],
+            'proof_assessment_files.*' => [
+                'file',
+                'mimes:jpg,jpeg,png,gif,pdf,doc,docx',
+                'max:20480',
+            ],
+        ]);
+
+        $db = $this
+            ->resolveSchoolConnection(
+                $request,
+            );
+
+        if ($db instanceof JsonResponse) {
+            return $db;
+        }
+
+        $personTask = $db
+            ->table('person_task')
+            ->select([
+                'id',
+                'task_id',
+                'person_id',
+            ])
+            ->where(
+                'id',
+                $personTaskId,
+            )
+            ->where(
+                'person_id',
+                $studentId,
+            )
+            ->first();
+
+        if (! $personTask) {
+            return response()->json([
+                'success' => false,
+                'message' =>
+                    'Training task not found.',
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $objectiveFiles = $request->file(
+            'objective_evidence_files',
+            [],
+        );
+
+        $proofFiles = $request->file(
+            'proof_assessment_files',
+            [],
+        );
+
+        $storedFiles = [];
+
+        $db->beginTransaction();
+
+        try {
+            $db
+                ->table('person_task')
+                ->where(
+                    'id',
+                    $personTaskId,
+                )
+                ->where(
+                    'person_id',
+                    $studentId,
+                )
+                ->update([
+                    'completed' =>
+                        $validated[
+                            'completion_date'
+                        ],
+
+                    'month_no' =>
+                        $validated[
+                            'month_no'
+                        ],
+
+                    'not_app' =>
+                        $validated[
+                            'not_app'
+                        ],
+
+                    'last_update' =>
+                        now()->format(
+                            'Y-m-d H:i:s',
+                        ),
+                ]);
+
+            foreach (
+                $objectiveFiles as $file
+            ) {
+                $storedFiles[] =
+                    $this->storeStudentTaskFile(
+                        $db,
+                        $file,
+                        'objective',
+                        $personTaskId,
+                        (string) $personTask
+                            ->task_id,
+                        $studentId,
+                    );
+            }
+
+            foreach (
+                $proofFiles as $file
+            ) {
+                $storedFiles[] =
+                    $this->storeStudentTaskFile(
+                        $db,
+                        $file,
+                        'proof',
+                        $personTaskId,
+                        (string) $personTask
+                            ->task_id,
+                        $studentId,
+                    );
+            }
+
+            $db->commit();
+        } catch (Throwable $exception) {
+            $db->rollBack();
+
+            foreach (
+                $storedFiles as $storedFile
+            ) {
+                $this
+                    ->removeStudentStoredTaskFile(
+                        $storedFile[
+                            'filename'
+                        ] ?? null,
+                    );
+            }
+
+            throw $exception;
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' =>
+                'Training task updated successfully.',
+        ]);
+    }
+
+    public function adminRemoveObjectiveEvidence(
+        Request $request,
+        string $studentId,
+        string $fileId,
+    ): JsonResponse {
+        return $this->adminRemoveTaskFile(
+            $request,
+            $studentId,
+            $fileId,
+            'objective',
+        );
+    }
+
+    public function adminRemoveProofOfAssessment(
+        Request $request,
+        string $studentId,
+        string $fileId,
+    ): JsonResponse {
+        return $this->adminRemoveTaskFile(
+            $request,
+            $studentId,
+            $fileId,
+            'proof',
+        );
+    }
+
+    private function adminRemoveTaskFile(
+        Request $request,
+        string $studentId,
+        string $fileId,
+        string $type,
+    ): JsonResponse {
+        $db = $this->resolveSchoolConnection($request);
+
+        if ($db instanceof JsonResponse) {
+            return $db;
+        }
+
+        $table = $type === 'objective'
+            ? 'person_task_file'
+            : 'person_task_proof';
+
+        $file = $db
+            ->table($table)
+            ->join(
+                'person_task',
+                'person_task.id',
+                '=',
+                $table.'.person_task_id',
+            )
+            ->select([
+                $table.'.id',
+                $table.'.filename',
+            ])
+            ->where($table.'.id', $fileId)
+            ->where('person_task.person_id', $studentId)
+            ->first();
+
+        if (! $file) {
+            return response()->json([
+                'success' => false,
+                'message' => $type === 'objective'
+                    ? 'Objective evidence not found.'
+                    : 'Proof of assessment not found.',
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $db
+            ->table($table)
+            ->where('id', $fileId)
+            ->delete();
+
+        $this->removeStudentStoredTaskFile($file->filename);
+
+        return response()->json([
+            'success' => true,
+            'message' => $type === 'objective'
+                ? 'Objective evidence removed successfully.'
+                : 'Proof of assessment removed successfully.',
+        ]);
+    }
+
     private function resolveSchoolConnection(
         Request $request,
     ): ConnectionInterface|JsonResponse {

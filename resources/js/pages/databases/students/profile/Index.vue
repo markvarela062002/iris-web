@@ -23,8 +23,6 @@ import {
     onMounted,
     ref,
 } from 'vue';
-
-
 const props = withDefaults(
     defineProps<{
         studentId?: string | null;
@@ -33,10 +31,8 @@ const props = withDefaults(
         studentId: null,
     },
 );
-
 defineOptions({
     inheritAttrs: false,
-
     layout: {
         breadcrumbs: [
             {
@@ -54,12 +50,10 @@ defineOptions({
         ],
     },
 });
-
 type LookupOption = {
     value: string;
     label: string;
 };
-
 type StudentRecord = {
     id: string;
     code_person: string | null;
@@ -102,18 +96,15 @@ type StudentRecord = {
     photo_file: string | null;
     photo_url: string | null;
 };
-
 type StudentResponse = {
     data: StudentRecord;
 };
-
 type StudentOptionsResponse = {
     data: {
         cities: LookupOption[];
         provinces: LookupOption[];
     };
 };
-
 type PhotoResponse = {
     message: string;
     data: {
@@ -121,12 +112,10 @@ type PhotoResponse = {
         photo_url: string | null;
     };
 };
-
 type ResetCredentials = {
     loginName: string;
     password: string;
 };
-
 type StudentForm = {
     code_person: string;
     school_id_no: string;
@@ -170,24 +159,19 @@ type StudentForm = {
     photo_file: string;
     photo_url: string | null;
 };
-
 const toast = useToast();
-
 const loading = ref(false);
 const saving = ref(false);
 const emailSending = ref(false);
 const photoUploading = ref(false);
 const pageError = ref('');
-
 const cityOptions = ref<LookupOption[]>([]);
 const provinceOptions = ref<LookupOption[]>([]);
-
 const selectedPhoto = ref<File | null>(null);
 const photoInput = ref<HTMLInputElement | null>(null);
 const localPhotoPreview = ref<string | null>(null);
 const profilePhotoFailed = ref(false);
 const defaultAvatarFailed = ref(false);
-
 /*
 |--------------------------------------------------------------------------
 | Profile photo crop
@@ -198,7 +182,6 @@ const defaultAvatarFailed = ref(false);
 | Upload Photo.
 |
 */
-
 const cropDialogVisible = ref(false);
 const croppingPhoto = ref(false);
 const cropImageLoaded = ref(false);
@@ -206,7 +189,6 @@ const cropSourceFile = ref<File | null>(null);
 const cropSourceUrl = ref<string | null>(null);
 const cropImageElement = ref<HTMLImageElement | null>(null);
 const cropViewportElement = ref<HTMLDivElement | null>(null);
-
 const cropNaturalWidth = ref(0);
 const cropNaturalHeight = ref(0);
 const cropViewportSize = ref(0);
@@ -214,19 +196,15 @@ const cropBaseScale = ref(1);
 const cropZoom = ref(1);
 const cropOffsetX = ref(0);
 const cropOffsetY = ref(0);
-
 const cropDragging = ref(false);
 const cropPointerId = ref<number | null>(null);
 const cropDragStartX = ref(0);
 const cropDragStartY = ref(0);
 const cropDragOriginX = ref(0);
 const cropDragOriginY = ref(0);
-
 const resetCredentials =
     ref<ResetCredentials | null>(null);
-
 let requestController: AbortController | null = null;
-
 function emptyForm(): StudentForm {
     return {
         code_person: '',
@@ -272,23 +250,19 @@ function emptyForm(): StudentForm {
         photo_url: null,
     };
 }
-
 const form = ref<StudentForm>(
     emptyForm(),
 );
-
 const activeStudentAccount = computed({
     get(): boolean {
         return form.value.active === 'Y';
     },
-
     set(value: boolean): void {
         form.value.active = value
             ? 'Y'
             : 'N';
     },
 });
-
 const currentStudentId =
     ref<string | null>(
         props.studentId &&
@@ -296,13 +270,11 @@ const currentStudentId =
             ? props.studentId
             : null,
     );
-
 const isCreateMode = computed(
     () =>
         currentStudentId.value ===
         null,
 );
-
 const genderOptions: LookupOption[] = [
     {
         value: 'MALE',
@@ -313,7 +285,6 @@ const genderOptions: LookupOption[] = [
         label: 'FEMALE',
     },
 ];
-
 const civilStatusOptions: LookupOption[] = [
     {
         value: 'SINGLE',
@@ -332,7 +303,6 @@ const civilStatusOptions: LookupOption[] = [
         label: 'WIDOW/ER',
     },
 ];
-
 const departmentOptions: LookupOption[] = [
     {
         value: 'DECK',
@@ -347,7 +317,6 @@ const departmentOptions: LookupOption[] = [
         label: 'NON-MARITIME',
     },
 ];
-
 const etrbTypeOptions: LookupOption[] = [
     {
         value: 'GMET',
@@ -370,35 +339,28 @@ const etrbTypeOptions: LookupOption[] = [
         label: 'SCHOOL',
     },
 ];
-
 const cciYearOptions = computed<LookupOption[]>(
     () => {
         const startYear = 2015;
         const endYear =
             new Date().getFullYear() + 4;
-
         const options: LookupOption[] = [];
-
         for (
             let year = startYear;
             year <= endYear;
             year += 1
         ) {
             const value = String(year);
-
             options.push({
                 value,
                 label: value,
             });
         }
-
         return options;
     },
 );
-
 const studentName = computed(() => {
     const lastName = form.value.lname.trim();
-
     const otherNames = [
         form.value.fname,
         form.value.mname,
@@ -406,11 +368,9 @@ const studentName = computed(() => {
         .map((value) => value.trim())
         .filter(Boolean)
         .join(' ');
-
     if (lastName && otherNames) {
         return `${lastName}, ${otherNames}`.toUpperCase();
     }
-
     return (
         lastName ||
         otherNames ||
@@ -421,40 +381,33 @@ const studentName = computed(() => {
         )
     ).toUpperCase();
 });
-
 const studentInitials = computed(() => {
     const first =
         form.value.fname.trim().charAt(0);
-
     const last =
         form.value.lname.trim().charAt(0);
-
     return (
         `${first}${last}`.toUpperCase() ||
         'ST'
     );
 });
-
 function hasActualStudentPhoto(): boolean {
     const rawFile = String(
         form.value.photo_file ?? '',
     )
         .trim()
         .replace(/\\/g, '/');
-
     const filename =
         rawFile
             .split('/')
             .pop()
             ?.trim()
             .toLowerCase() ?? '';
-
     return (
         filename !== '' &&
         filename !== 'profile.jpg'
     );
 }
-
 const photoPreviewUrl = computed<string | null>(() => {
     /*
      * A newly cropped local image is always a real image chosen
@@ -463,7 +416,6 @@ const photoPreviewUrl = computed<string | null>(() => {
     if (localPhotoPreview.value) {
         return localPhotoPreview.value;
     }
-
     /*
      * Do not treat the legacy photos/profile.jpg silhouette as a
      * student photo. When there is no real photo, fall through to
@@ -475,40 +427,30 @@ const photoPreviewUrl = computed<string | null>(() => {
     ) {
         return null;
     }
-
     return form.value.photo_url || null;
 });
-
 const defaultAvatarUrl = computed<string | null>(() => {
     if (defaultAvatarFailed.value) {
         return null;
     }
-
     const gender = String(form.value.gender ?? '')
         .trim()
         .toUpperCase();
-
     if (gender === 'MALE' || gender === 'M') {
         return '/images/male-cadet.png';
     }
-
     if (gender === 'FEMALE' || gender === 'F') {
         return '/images/female-cadet.png';
     }
-
     return '/images/default-cadet.png';
 });
-
-
 const cropImageStyle = computed(() => {
     const width =
         cropNaturalWidth.value *
         cropBaseScale.value;
-
     const height =
         cropNaturalHeight.value *
         cropBaseScale.value;
-
     return {
         width: `${width}px`,
         height: `${height}px`,
@@ -518,7 +460,6 @@ const cropImageStyle = computed(() => {
             `scale(${cropZoom.value})`,
     };
 });
-
 function departmentSeverity():
     | 'success'
     | 'info'
@@ -526,33 +467,26 @@ function departmentSeverity():
     if (form.value.dept === 'DECK') {
         return 'success';
     }
-
     if (form.value.dept === 'ENGINE') {
         return 'info';
     }
-
     return 'secondary';
 }
-
 function departmentIcon(): string {
     if (form.value.dept === 'DECK') {
         return 'pi pi-compass';
     }
-
     if (form.value.dept === 'ENGINE') {
         return 'pi pi-cog';
     }
-
     return 'pi pi-building';
 }
-
 function parseDate(
     value: unknown,
 ): Date | null {
     const rawValue = String(
         value ?? '',
     ).trim();
-
     if (
         rawValue === '' ||
         rawValue === '1970-01-01' ||
@@ -561,38 +495,30 @@ function parseDate(
     ) {
         return null;
     }
-
     const date = new Date(
         `${rawValue.substring(0, 10)}T00:00:00`,
     );
-
     return Number.isNaN(
         date.getTime(),
     )
         ? null
         : date;
 }
-
 function formatDateParameter(
     value: Date | null,
 ): string | null {
     if (!value) {
         return null;
     }
-
     const year = value.getFullYear();
-
     const month = String(
         value.getMonth() + 1,
     ).padStart(2, '0');
-
     const day = String(
         value.getDate(),
     ).padStart(2, '0');
-
     return `${year}-${month}-${day}`;
 }
-
 function stringValue(
     value: unknown,
 ): string {
@@ -600,38 +526,32 @@ function stringValue(
         value ?? '',
     ).trim();
 }
-
 function genderFormValue(
     value: unknown,
 ): string | null {
     const gender = stringValue(
         value,
     ).toUpperCase();
-
     if (
         gender === 'M' ||
         gender === 'MALE'
     ) {
         return 'MALE';
     }
-
     if (
         gender === 'F' ||
         gender === 'FEMALE'
     ) {
         return 'FEMALE';
     }
-
     return null;
 }
-
 function loadStudentIntoForm(
     student: StudentRecord,
 ): void {
     resetCredentials.value = null;
     profilePhotoFailed.value = false;
     defaultAvatarFailed.value = false;
-
     form.value = {
         code_person:
             stringValue(student.code_person),
@@ -735,17 +655,13 @@ function loadStudentIntoForm(
             student.photo_url || null,
     };
 }
-
 async function loadProfile(): Promise<void> {
     requestController?.abort();
-
     const controller =
         new AbortController();
-
     requestController = controller;
     loading.value = true;
     pageError.value = '';
-
     try {
         const optionsRequest =
             axios.get<StudentOptionsResponse>(
@@ -761,30 +677,22 @@ async function loadProfile(): Promise<void> {
                     withCredentials: true,
                 },
             );
-
         if (isCreateMode.value) {
             const optionsResponse =
                 await optionsRequest;
-
             cityOptions.value =
                 optionsResponse.data.data.cities;
-
             provinceOptions.value =
                 optionsResponse.data.data.provinces;
-
             form.value =
                 emptyForm();
-
             return;
         }
-
         const studentId =
             currentStudentId.value;
-
         if (!studentId) {
             return;
         }
-
         const [
             studentResponse,
             optionsResponse,
@@ -806,14 +714,11 @@ async function loadProfile(): Promise<void> {
             ),
             optionsRequest,
         ]);
-
         loadStudentIntoForm(
             studentResponse.data.data,
         );
-
         cityOptions.value =
             optionsResponse.data.data.cities;
-
         provinceOptions.value =
             optionsResponse.data.data.provinces;
     } catch (error: unknown) {
@@ -827,7 +732,6 @@ async function loadProfile(): Promise<void> {
         ) {
             return;
         }
-
         pageError.value =
             getErrorMessage(
                 error,
@@ -842,15 +746,12 @@ async function loadProfile(): Promise<void> {
         }
     }
 }
-
 async function saveStudent(): Promise<void> {
     const submittedPassword =
         form.value.new_password.trim();
-
     saving.value = true;
     pageError.value = '';
     resetCredentials.value = null;
-
     const payload = {
         school_id_no:
             form.value.school_id_no.trim(),
@@ -937,7 +838,6 @@ async function saveStudent(): Promise<void> {
         active:
             form.value.active,
     };
-
     try {
         if (isCreateMode.value) {
             const response =
@@ -964,26 +864,20 @@ async function saveStudent(): Promise<void> {
                         withCredentials: true,
                     },
                 );
-
             currentStudentId.value =
                 response.data.data.id;
-
             form.value.code_person =
                 response.data.data.code_person;
-
             form.value.login_name =
                 response.data.data.login_name;
-
             form.value.new_password = '';
             form.value.new_password_confirmation = '';
-
             resetCredentials.value = {
                 loginName:
                     response.data.data.login_name,
                 password:
                     response.data.data.password,
             };
-
             toast.add({
                 severity:
                     response.data.data.email_sent
@@ -1002,7 +896,6 @@ async function saveStudent(): Promise<void> {
                     ),
                 life: 5000,
             });
-
             router.visit(
                 `/databases/students/profile/${encodeURIComponent(
                     response.data.data.id,
@@ -1013,20 +906,15 @@ async function saveStudent(): Promise<void> {
                     preserveScroll: true,
                 },
             );
-
             return;
         }
-
         const studentId =
             currentStudentId.value;
-
         if (!studentId) {
             pageError.value =
                 'The selected student ID is missing.';
-
             return;
         }
-
         const response =
             await axios.put<{
                 message: string;
@@ -1045,7 +933,6 @@ async function saveStudent(): Promise<void> {
                     withCredentials: true,
                 },
             );
-
         if (submittedPassword !== '') {
             resetCredentials.value = {
                 loginName:
@@ -1053,11 +940,9 @@ async function saveStudent(): Promise<void> {
                 password:
                     submittedPassword,
             };
-
             form.value.new_password = '';
             form.value.new_password_confirmation = '';
         }
-
         toast.add({
             severity: 'success',
             summary: 'Student Saved',
@@ -1078,22 +963,17 @@ async function saveStudent(): Promise<void> {
         saving.value = false;
     }
 }
-
 function clearResetCredentials(): void {
     resetCredentials.value = null;
 }
-
 function generatePassword(): void {
     const characters =
         'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
-
     const values =
         new Uint32Array(8);
-
     window.crypto.getRandomValues(
         values,
     );
-
     const password =
         Array.from(
             values,
@@ -1104,30 +984,23 @@ function generatePassword(): void {
                 ];
             },
         ).join('');
-
     form.value.new_password =
         password;
-
     form.value.new_password_confirmation =
         password;
-
     resetCredentials.value = null;
 }
-
 async function copyCredentials(): Promise<void> {
     if (!resetCredentials.value) {
         return;
     }
-
     const credentials =
         `Login Name: ${resetCredentials.value.loginName}\n` +
         `Password: ${resetCredentials.value.password}`;
-
     try {
         await navigator.clipboard.writeText(
             credentials,
         );
-
         toast.add({
             severity: 'success',
             summary: 'Credentials Copied',
@@ -1140,15 +1013,12 @@ async function copyCredentials(): Promise<void> {
             'Unable to copy the credentials automatically. Please copy them manually.';
     }
 }
-
 function handleProfilePhotoError(): void {
     profilePhotoFailed.value = true;
 }
-
 function handleDefaultAvatarError(): void {
     defaultAvatarFailed.value = true;
 }
-
 async function sendCredentialsEmail(): Promise<void> {
     if (
         isCreateMode.value ||
@@ -1156,17 +1026,13 @@ async function sendCredentialsEmail(): Promise<void> {
     ) {
         pageError.value =
             'Save the student account before sending credentials.';
-
         return;
     }
-
     if (emailSending.value) {
         return;
     }
-
     emailSending.value = true;
     pageError.value = '';
-
     try {
         const response =
             await axios.post<{
@@ -1186,7 +1052,6 @@ async function sendCredentialsEmail(): Promise<void> {
                     withCredentials: true,
                 },
             );
-
         toast.add({
             severity: 'success',
             summary: 'Credentials Email Sent',
@@ -1201,7 +1066,6 @@ async function sendCredentialsEmail(): Promise<void> {
                 error,
                 'Unable to send the student login credentials.',
             );
-
         toast.add({
             severity: 'error',
             summary: 'Email Not Sent',
@@ -1213,20 +1077,16 @@ async function sendCredentialsEmail(): Promise<void> {
         emailSending.value = false;
     }
 }
-
 function openPhotoPicker(): void {
     photoInput.value?.click();
 }
-
 function cleanupCropSource(): void {
     if (cropSourceUrl.value) {
         URL.revokeObjectURL(
             cropSourceUrl.value,
         );
-
         cropSourceUrl.value = null;
     }
-
     cropSourceFile.value = null;
     cropImageLoaded.value = false;
     cropNaturalWidth.value = 0;
@@ -1239,12 +1099,10 @@ function cleanupCropSource(): void {
     cropDragging.value = false;
     cropPointerId.value = null;
 }
-
 function cancelPhotoCrop(): void {
     cropDialogVisible.value = false;
     cleanupCropSource();
 }
-
 function clampCropOffsets(): void {
     if (
         cropViewportSize.value <= 0 ||
@@ -1253,17 +1111,14 @@ function clampCropOffsets(): void {
     ) {
         return;
     }
-
     const displayedWidth =
         cropNaturalWidth.value *
         cropBaseScale.value *
         cropZoom.value;
-
     const displayedHeight =
         cropNaturalHeight.value *
         cropBaseScale.value *
         cropZoom.value;
-
     const maximumX = Math.max(
         0,
         (
@@ -1271,7 +1126,6 @@ function clampCropOffsets(): void {
             cropViewportSize.value
         ) / 2,
     );
-
     const maximumY = Math.max(
         0,
         (
@@ -1279,7 +1133,6 @@ function clampCropOffsets(): void {
             cropViewportSize.value
         ) / 2,
     );
-
     cropOffsetX.value = Math.min(
         maximumX,
         Math.max(
@@ -1287,7 +1140,6 @@ function clampCropOffsets(): void {
             cropOffsetX.value,
         ),
     );
-
     cropOffsetY.value = Math.min(
         maximumY,
         Math.max(
@@ -1296,25 +1148,20 @@ function clampCropOffsets(): void {
         ),
     );
 }
-
 function resetCropPosition(): void {
     cropZoom.value = 1;
     cropOffsetX.value = 0;
     cropOffsetY.value = 0;
-
     clampCropOffsets();
 }
-
 function handleCropZoomInput(
     event: Event,
 ): void {
     const input =
         event.target as HTMLInputElement;
-
     const zoom = Number(
         input.value,
     );
-
     cropZoom.value =
         Number.isFinite(zoom)
             ? Math.min(
@@ -1325,40 +1172,30 @@ function handleCropZoomInput(
                   ),
               )
             : 1;
-
     clampCropOffsets();
 }
-
 function handleCropImageLoaded(
     event: Event,
 ): void {
     const image =
         event.target as HTMLImageElement;
-
     cropImageElement.value = image;
-
     const viewport =
         cropViewportElement.value;
-
     if (!viewport) {
         return;
     }
-
     const viewportSize =
         Math.min(
             viewport.clientWidth,
             viewport.clientHeight,
         );
-
     cropViewportSize.value =
         viewportSize;
-
     cropNaturalWidth.value =
         image.naturalWidth;
-
     cropNaturalHeight.value =
         image.naturalHeight;
-
     if (
         image.naturalWidth <= 0 ||
         image.naturalHeight <= 0 ||
@@ -1366,10 +1203,8 @@ function handleCropImageLoaded(
     ) {
         pageError.value =
             'Unable to read the selected image.';
-
         return;
     }
-
     /*
      * Minimum scale that completely covers the square crop viewport.
      */
@@ -1380,43 +1215,32 @@ function handleCropImageLoaded(
             viewportSize /
                 image.naturalHeight,
         );
-
     cropImageLoaded.value = true;
-
     resetCropPosition();
 }
-
 function beginCropDrag(
     event: PointerEvent,
 ): void {
     if (!cropImageLoaded.value) {
         return;
     }
-
     cropDragging.value = true;
     cropPointerId.value =
         event.pointerId;
-
     cropDragStartX.value =
         event.clientX;
-
     cropDragStartY.value =
         event.clientY;
-
     cropDragOriginX.value =
         cropOffsetX.value;
-
     cropDragOriginY.value =
         cropOffsetY.value;
-
     const target =
         event.currentTarget as HTMLElement;
-
     target.setPointerCapture(
         event.pointerId,
     );
 }
-
 function moveCropDrag(
     event: PointerEvent,
 ): void {
@@ -1427,24 +1251,20 @@ function moveCropDrag(
     ) {
         return;
     }
-
     cropOffsetX.value =
         cropDragOriginX.value +
         (
             event.clientX -
             cropDragStartX.value
         );
-
     cropOffsetY.value =
         cropDragOriginY.value +
         (
             event.clientY -
             cropDragStartY.value
         );
-
     clampCropOffsets();
 }
-
 function endCropDrag(
     event: PointerEvent,
 ): void {
@@ -1454,13 +1274,10 @@ function endCropDrag(
     ) {
         return;
     }
-
     cropDragging.value = false;
     cropPointerId.value = null;
-
     const target =
         event.currentTarget as HTMLElement;
-
     if (
         target.hasPointerCapture(
             event.pointerId,
@@ -1471,26 +1288,21 @@ function endCropDrag(
         );
     }
 }
-
 function handlePhotoSelected(
     event: Event,
 ): void {
     const input =
         event.target as HTMLInputElement;
-
     const file =
         input.files?.[0] ?? null;
-
     /*
      * Clear the native input so selecting the same file again
      * still triggers the change event.
      */
     input.value = '';
-
     if (!file) {
         return;
     }
-
     if (
         ![
             'image/jpeg',
@@ -1500,27 +1312,20 @@ function handlePhotoSelected(
     ) {
         pageError.value =
             'Select a JPG, PNG, or WEBP image.';
-
         return;
     }
-
     cleanupCropSource();
-
     cropSourceFile.value = file;
     cropSourceUrl.value =
         URL.createObjectURL(file);
-
     cropDialogVisible.value = true;
     pageError.value = '';
 }
-
 async function confirmPhotoCrop(): Promise<void> {
     const image =
         cropImageElement.value;
-
     const sourceFile =
         cropSourceFile.value;
-
     if (
         !image ||
         !sourceFile ||
@@ -1529,26 +1334,20 @@ async function confirmPhotoCrop(): Promise<void> {
     ) {
         pageError.value =
             'The image is not ready to crop.';
-
         return;
     }
-
     croppingPhoto.value = true;
     pageError.value = '';
-
     try {
         const effectiveScale =
             cropBaseScale.value *
             cropZoom.value;
-
         const displayedWidth =
             cropNaturalWidth.value *
             effectiveScale;
-
         const displayedHeight =
             cropNaturalHeight.value *
             effectiveScale;
-
         /*
          * Position of the scaled image inside the square viewport.
          */
@@ -1559,7 +1358,6 @@ async function confirmPhotoCrop(): Promise<void> {
             ) /
                 2 +
             cropOffsetX.value;
-
         const imageTop =
             (
                 cropViewportSize.value -
@@ -1567,7 +1365,6 @@ async function confirmPhotoCrop(): Promise<void> {
             ) /
                 2 +
             cropOffsetY.value;
-
         /*
          * Convert the visible viewport back into source-image pixels.
          */
@@ -1577,14 +1374,12 @@ async function confirmPhotoCrop(): Promise<void> {
                 -imageLeft /
                     effectiveScale,
             );
-
         const sourceY =
             Math.max(
                 0,
                 -imageTop /
                     effectiveScale,
             );
-
         const sourceSize =
             Math.min(
                 cropViewportSize.value /
@@ -1594,32 +1389,24 @@ async function confirmPhotoCrop(): Promise<void> {
                 cropNaturalHeight.value -
                     sourceY,
             );
-
         const outputSize = 1000;
-
         const canvas =
             document.createElement(
                 'canvas',
             );
-
         canvas.width = outputSize;
         canvas.height = outputSize;
-
         const context =
             canvas.getContext('2d');
-
         if (!context) {
             throw new Error(
                 'Canvas is unavailable.',
             );
         }
-
         context.imageSmoothingEnabled =
             true;
-
         context.imageSmoothingQuality =
             'high';
-
         context.drawImage(
             image,
             sourceX,
@@ -1631,7 +1418,6 @@ async function confirmPhotoCrop(): Promise<void> {
             outputSize,
             outputSize,
         );
-
         const outputType =
             sourceFile.type ===
             'image/png'
@@ -1640,7 +1426,6 @@ async function confirmPhotoCrop(): Promise<void> {
                     'image/webp'
                   ? 'image/webp'
                   : 'image/jpeg';
-
         const blob =
             await new Promise<Blob>(
                 (
@@ -1655,10 +1440,8 @@ async function confirmPhotoCrop(): Promise<void> {
                                         'Unable to create the cropped image.',
                                     ),
                                 );
-
                                 return;
                             }
-
                             resolve(
                                 result,
                             );
@@ -1668,15 +1451,12 @@ async function confirmPhotoCrop(): Promise<void> {
                     );
                 },
             );
-
         const originalName =
             sourceFile.name;
-
         const lastDot =
             originalName.lastIndexOf(
                 '.',
             );
-
         const baseName =
             (
                 lastDot > 0
@@ -1692,7 +1472,6 @@ async function confirmPhotoCrop(): Promise<void> {
                     '_',
                 ) ||
             'student_photo';
-
         const extension =
             outputType === 'image/png'
                 ? 'png'
@@ -1700,7 +1479,6 @@ async function confirmPhotoCrop(): Promise<void> {
                     'image/webp'
                   ? 'webp'
                   : 'jpg';
-
         const croppedFile =
             new File(
                 [
@@ -1713,13 +1491,10 @@ async function confirmPhotoCrop(): Promise<void> {
                         Date.now(),
                 },
             );
-
         selectedPhoto.value =
             croppedFile;
-
         profilePhotoFailed.value =
             false;
-
         if (
             localPhotoPreview.value
         ) {
@@ -1727,17 +1502,13 @@ async function confirmPhotoCrop(): Promise<void> {
                 localPhotoPreview.value,
             );
         }
-
         localPhotoPreview.value =
             URL.createObjectURL(
                 croppedFile,
             );
-
         cropDialogVisible.value =
             false;
-
         cleanupCropSource();
-
         toast.add({
             severity: 'success',
             summary: 'Photo Cropped',
@@ -1752,32 +1523,24 @@ async function confirmPhotoCrop(): Promise<void> {
         croppingPhoto.value = false;
     }
 }
-
 async function uploadPhoto(): Promise<void> {
     if (isCreateMode.value) {
         pageError.value =
             'Save the new student before uploading a profile photo.';
-
         return;
     }
-
     if (!selectedPhoto.value) {
         pageError.value =
             'Select a profile photo first.';
-
         return;
     }
-
     photoUploading.value = true;
     pageError.value = '';
-
     const formData = new FormData();
-
     formData.append(
         'photo',
         selectedPhoto.value,
     );
-
     try {
         const response =
             await axios.post<PhotoResponse>(
@@ -1795,29 +1558,21 @@ async function uploadPhoto(): Promise<void> {
                     withCredentials: true,
                 },
             );
-
         form.value.photo_file =
             response.data.data.photo_file;
-
         form.value.photo_url =
             response.data.data.photo_url;
-
         profilePhotoFailed.value = false;
-
         selectedPhoto.value = null;
-
         if (localPhotoPreview.value) {
             URL.revokeObjectURL(
                 localPhotoPreview.value,
             );
-
             localPhotoPreview.value = null;
         }
-
         if (photoInput.value) {
             photoInput.value.value = '';
         }
-
         toast.add({
             severity: 'success',
             summary: 'Photo Updated',
@@ -1836,13 +1591,11 @@ async function uploadPhoto(): Promise<void> {
         photoUploading.value = false;
     }
 }
-
 function goBack(): void {
     router.visit(
         '/databases/students/datatable',
     );
 }
-
 function getErrorMessage(
     error: unknown,
     fallback: string,
@@ -1850,7 +1603,6 @@ function getErrorMessage(
     if (!axios.isAxiosError(error)) {
         return fallback;
     }
-
     const responseData =
         error.response?.data as
             | {
@@ -1861,43 +1613,34 @@ function getErrorMessage(
                   >;
               }
             | undefined;
-
     const firstValidationError =
         responseData?.errors
             ? Object.values(
                   responseData.errors,
               )[0]?.[0]
             : undefined;
-
     return (
         firstValidationError ||
         responseData?.message ||
         fallback
     );
 }
-
 onMounted(() => {
     void loadProfile();
 });
-
 onBeforeUnmount(() => {
     requestController?.abort();
-
     if (localPhotoPreview.value) {
         URL.revokeObjectURL(
             localPhotoPreview.value,
         );
     }
-
     cleanupCropSource();
 });
 </script>
-
 <template>
     <Head title="Student Profile" />
-
     <Toast position="top-right" />
-
     <div
         class="flex h-full min-h-0 flex-1 flex-col gap-4 overflow-y-auto bg-[#F8FAFC] p-4 lg:p-5"
     >
@@ -1909,7 +1652,6 @@ onBeforeUnmount(() => {
         >
             {{ pageError }}
         </Message>
-
         <Card
             class="!rounded-2xl !border !border-slate-200 !shadow-sm [&_.p-card-body]:!p-5 [&_.p-card-content]:!p-0"
         >
@@ -1929,7 +1671,6 @@ onBeforeUnmount(() => {
                                 2. Gender default avatar
                                 3. Student initials
                             -->
-
                             <img
                                 v-if="photoPreviewUrl"
                                 :src="photoPreviewUrl"
@@ -1939,7 +1680,6 @@ onBeforeUnmount(() => {
                                     handleProfilePhotoError
                                 "
                             />
-
                             <img
                                 v-else-if="
                                     defaultAvatarUrl
@@ -1951,7 +1691,6 @@ onBeforeUnmount(() => {
                                     handleDefaultAvatarError
                                 "
                             />
-
                             <Avatar
                                 v-else
                                 :label="studentInitials"
@@ -1959,20 +1698,17 @@ onBeforeUnmount(() => {
                                 class="!h-full !w-full !bg-blue-50 !text-3xl !font-bold !text-blue-600"
                             />
                         </div>
-
                         <div class="min-w-0">
                             <p
                                 class="text-xs font-semibold tracking-wide text-slate-400 uppercase"
                             >
                                 Student Profile
                             </p>
-
                             <h1
                                 class="mt-1 truncate text-xl font-bold text-slate-800"
                             >
                                 {{ studentName }}
                             </h1>
-
                             <div
                                 class="mt-2 flex flex-wrap items-center gap-2"
                             >
@@ -1985,7 +1721,6 @@ onBeforeUnmount(() => {
                                     severity="info"
                                     rounded
                                 />
-
                                 <PrimeTag
                                     :value="
                                         form.dept ||
@@ -1997,7 +1732,6 @@ onBeforeUnmount(() => {
                                     :icon="departmentIcon()"
                                     rounded
                                 />
-
                                 <PrimeTag
                                     :value="
                                         form.batch_no ||
@@ -2008,7 +1742,6 @@ onBeforeUnmount(() => {
                                     rounded
                                 />
                             </div>
-
                             <div
                                 class="mt-3 flex flex-wrap gap-2"
                             >
@@ -2019,7 +1752,6 @@ onBeforeUnmount(() => {
                                     class="hidden"
                                     @change="handlePhotoSelected"
                                 />
-
                                 <Button
                                     type="button"
                                     label="Choose Photo"
@@ -2033,7 +1765,6 @@ onBeforeUnmount(() => {
                                     "
                                     @click="openPhotoPicker"
                                 />
-
                                 <Button
                                     v-if="selectedPhoto"
                                     type="button"
@@ -2048,7 +1779,6 @@ onBeforeUnmount(() => {
                             </div>
                         </div>
                     </div>
-
                     <div
                         class="flex flex-wrap items-center gap-2"
                     >
@@ -2061,7 +1791,6 @@ onBeforeUnmount(() => {
                             :disabled="saving"
                             @click="goBack"
                         />
-
                         <Button
                             type="button"
                             :label="
@@ -2085,7 +1814,6 @@ onBeforeUnmount(() => {
                 </div>
             </template>
         </Card>
-
         <div
             v-if="loading"
             class="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm font-medium text-slate-500 shadow-sm"
@@ -2095,7 +1823,6 @@ onBeforeUnmount(() => {
             ></i>
             Loading student profile...
         </div>
-
         <template v-else>
             <Card
                 class="!rounded-2xl !border !border-slate-200 !shadow-sm [&_.p-card-body]:!p-5 [&_.p-card-content]:!p-0"
@@ -2110,7 +1837,6 @@ onBeforeUnmount(() => {
                         Personal Information
                     </div>
                 </template>
-
                 <template #content>
                     <div
                         class="grid gap-4 md:grid-cols-2 xl:grid-cols-2"
@@ -2129,7 +1855,6 @@ onBeforeUnmount(() => {
                                     *
                                 </span>
                             </label>
-
                             <InputText
                                 id="student-school-id"
                                 v-model="form.school_id_no"
@@ -2150,7 +1875,6 @@ onBeforeUnmount(() => {
                                     *
                                 </span>
                             </label>
-
                             <Select
                                 id="student-cci-year"
                                 v-model="form.batch_no"
@@ -2165,7 +1889,6 @@ onBeforeUnmount(() => {
                         <div
                             class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3"
                         >
-
                         <div
                             class="flex flex-col gap-2"
                         >
@@ -2180,14 +1903,12 @@ onBeforeUnmount(() => {
                                     *
                                 </span>
                             </label>
-
                             <InputText
                                 id="student-first-name"
                                 v-model="form.fname"
                                 class="w-full"
                             />
                         </div>
-
                         <div
                             class="flex flex-col gap-2"
                         >
@@ -2197,14 +1918,12 @@ onBeforeUnmount(() => {
                             >
                                 Middle Name
                             </label>
-
                             <InputText
                                 id="student-middle-name"
                                 v-model="form.mname"
                                 class="w-full"
                             />
                         </div>
-
                         <div
                             class="flex flex-col gap-2"
                         >
@@ -2219,14 +1938,13 @@ onBeforeUnmount(() => {
                                     *
                                 </span>
                             </label>
-
                             <InputText
                                 id="student-last-name"
                                 v-model="form.lname"
                                 class="w-full"
                             />
                         </div>
-                    </div>  
+                    </div>
                         <div
                         class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4"
                     >
@@ -2239,7 +1957,6 @@ onBeforeUnmount(() => {
                             >
                                 Civil Status
                             </label>
-
                             <Select
                                 id="student-civil-status"
                                 v-model="form.civ_status"
@@ -2251,7 +1968,6 @@ onBeforeUnmount(() => {
                                 class="w-full"
                             />
                         </div>
-
                         <div
                             class="flex flex-col gap-2"
                         >
@@ -2261,7 +1977,6 @@ onBeforeUnmount(() => {
                             >
                                 Date of Birth
                             </label>
-
                             <DatePicker
                                 id="student-birth-date"
                                 v-model="form.birth_date"
@@ -2273,7 +1988,6 @@ onBeforeUnmount(() => {
                                 input-class="w-full"
                             />
                         </div>
-
                         <div
                             class="flex flex-col gap-2"
                         >
@@ -2283,7 +1997,6 @@ onBeforeUnmount(() => {
                             >
                                 Place of Birth
                             </label>
-
                             <InputText
                                 id="student-birth-place"
                                 v-model="form.birth_place"
@@ -2304,7 +2017,6 @@ onBeforeUnmount(() => {
                                     *
                                 </span>
                             </label>
-
                             <Select
                                 id="student-gender"
                                 v-model="form.gender"
@@ -2316,12 +2028,9 @@ onBeforeUnmount(() => {
                                 class="w-full"
                             />
                         </div>
-
-
                     </div>
                 </template>
             </Card>
-
             <Card
                 class="!rounded-2xl !border !border-slate-200 !shadow-sm [&_.p-card-body]:!p-5 [&_.p-card-content]:!p-0"
             >
@@ -2335,7 +2044,6 @@ onBeforeUnmount(() => {
                         Contact Information
                     </div>
                 </template>
-
                 <template #content>
                     <div
                         class="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
@@ -2349,14 +2057,12 @@ onBeforeUnmount(() => {
                             >
                                 Street Address
                             </label>
-
                             <InputText
                                 id="student-address"
                                 v-model="form.st_address"
                                 class="w-full"
                             />
                         </div>
-
                         <div
                             class="flex flex-col gap-2"
                         >
@@ -2366,7 +2072,6 @@ onBeforeUnmount(() => {
                             >
                                 City
                             </label>
-
                             <Select
                                 id="student-city"
                                 v-model="form.city_id"
@@ -2379,7 +2084,6 @@ onBeforeUnmount(() => {
                                 class="w-full"
                             />
                         </div>
-
                         <div
                             class="flex flex-col gap-2"
                         >
@@ -2389,7 +2093,6 @@ onBeforeUnmount(() => {
                             >
                                 Province
                             </label>
-
                             <Select
                                 id="student-province"
                                 v-model="form.province_id"
@@ -2402,7 +2105,6 @@ onBeforeUnmount(() => {
                                 class="w-full"
                             />
                         </div>
-
                         <div
                             class="flex flex-col gap-2"
                         >
@@ -2412,14 +2114,12 @@ onBeforeUnmount(() => {
                             >
                                 Mobile
                             </label>
-
                             <InputText
                                 id="student-mobile"
                                 v-model="form.mobile"
                                 class="w-full"
                             />
                         </div>
-
                         <div
                             class="flex flex-col gap-2"
                         >
@@ -2429,14 +2129,12 @@ onBeforeUnmount(() => {
                             >
                                 Phone
                             </label>
-
                             <InputText
                                 id="student-phone"
                                 v-model="form.phone"
                                 class="w-full"
                             />
                         </div>
-
                         <div
                             class="flex flex-col gap-2"
                         >
@@ -2451,7 +2149,6 @@ onBeforeUnmount(() => {
                                     *
                                 </span>
                             </label>
-
                             <InputText
                                 id="student-email"
                                 v-model="form.email"
@@ -2459,7 +2156,6 @@ onBeforeUnmount(() => {
                                 class="w-full"
                             />
                         </div>
-
                         <div
                             class="flex flex-col gap-2"
                         >
@@ -2469,14 +2165,12 @@ onBeforeUnmount(() => {
                             >
                                 Facebook Name
                             </label>
-
                             <InputText
                                 id="student-facebook"
                                 v-model="form.facebook"
                                 class="w-full"
                             />
                         </div>
-
                         <div
                             class="flex flex-col gap-2 md:col-span-2 xl:col-span-3"
                         >
@@ -2486,14 +2180,12 @@ onBeforeUnmount(() => {
                             >
                                 Province Address
                             </label>
-
                             <InputText
                                 id="student-province-address"
                                 v-model="form.st_address_province"
                                 class="w-full"
                             />
                         </div>
-
                         <div
                             class="flex flex-col gap-2"
                         >
@@ -2503,7 +2195,6 @@ onBeforeUnmount(() => {
                             >
                                 Province Contact No.
                             </label>
-
                             <InputText
                                 id="student-province-contact"
                                 v-model="form.phone_province"
@@ -2513,7 +2204,6 @@ onBeforeUnmount(() => {
                     </div>
                 </template>
             </Card>
-
             <Card
                 class="!rounded-2xl !border !border-slate-200 !shadow-sm [&_.p-card-body]:!p-5 [&_.p-card-content]:!p-0"
             >
@@ -2527,7 +2217,6 @@ onBeforeUnmount(() => {
                         Family Information
                     </div>
                 </template>
-
                 <template #content>
                     <div
                         class="grid gap-4 md:grid-cols-2 xl:grid-cols-2"
@@ -2541,14 +2230,12 @@ onBeforeUnmount(() => {
                             >
                                 Mother's Name
                             </label>
-
                             <InputText
                                 id="student-mother-name"
                                 v-model="form.mother_name"
                                 class="w-full"
                             />
                         </div>
-
                         <div
                             class="flex flex-col gap-2"
                         >
@@ -2558,14 +2245,12 @@ onBeforeUnmount(() => {
                             >
                                 Mother's Contact No.
                             </label>
-
                             <InputText
                                 id="student-mother-contact"
                                 v-model="form.mother_nos"
                                 class="w-full"
                             />
                         </div>
-
                         <div
                             class="hidden xl:block"
                         ></div>
@@ -2573,7 +2258,6 @@ onBeforeUnmount(() => {
                     <div
                         class="grid gap-4 md:grid-cols-2 xl:grid-cols-2"
                     >
-
                         <div
                             class="flex flex-col gap-2"
                         >
@@ -2583,14 +2267,12 @@ onBeforeUnmount(() => {
                             >
                                 Father's Name
                             </label>
-
                             <InputText
                                 id="student-father-name"
                                 v-model="form.father_name"
                                 class="w-full"
                             />
                         </div>
-
                         <div
                             class="flex flex-col gap-2"
                         >
@@ -2600,7 +2282,6 @@ onBeforeUnmount(() => {
                             >
                                 Father's Contact No.
                             </label>
-
                             <InputText
                                 id="student-father-contact"
                                 v-model="form.father_nos"
@@ -2611,7 +2292,6 @@ onBeforeUnmount(() => {
                         <div
                         class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-2"
                         >
-
                         <div
                             class="flex flex-col gap-2"
                         >
@@ -2621,14 +2301,12 @@ onBeforeUnmount(() => {
                             >
                                 Spouse's Name
                             </label>
-
                             <InputText
                                 id="student-spouse-name"
                                 v-model="form.spouse_name"
                                 class="w-full"
                             />
                         </div>
-
                         <div
                             class="flex flex-col gap-2"
                         >
@@ -2638,7 +2316,6 @@ onBeforeUnmount(() => {
                             >
                                 Spouse's Contact No.
                             </label>
-
                             <InputText
                                 id="student-spouse-contact"
                                 v-model="form.spouse_nos"
@@ -2648,7 +2325,6 @@ onBeforeUnmount(() => {
                     </div>
                 </template>
             </Card>
-
             <Card
                 class="!rounded-2xl !border !border-slate-200 !shadow-sm [&_.p-card-body]:!p-5 [&_.p-card-content]:!p-0"
             >
@@ -2662,7 +2338,6 @@ onBeforeUnmount(() => {
                         School Records
                     </div>
                 </template>
-
                 <template #content>
                     <div
                         class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
@@ -2676,7 +2351,6 @@ onBeforeUnmount(() => {
                             >
                                 Date Registered
                             </label>
-
                             <DatePicker
                                 id="student-date-registered"
                                 v-model="form.date_reg"
@@ -2688,7 +2362,6 @@ onBeforeUnmount(() => {
                                 input-class="w-full"
                             />
                         </div>
-
                         <div
                             class="flex flex-col gap-2"
                         >
@@ -2703,7 +2376,6 @@ onBeforeUnmount(() => {
                                     *
                                 </span>
                             </label>
-
                             <Select
                                 id="student-department"
                                 v-model="form.dept"
@@ -2714,7 +2386,6 @@ onBeforeUnmount(() => {
                                 class="w-full"
                             />
                         </div>
-
                         <div
                             class="flex flex-col gap-2"
                         >
@@ -2729,7 +2400,6 @@ onBeforeUnmount(() => {
                                     *
                                 </span>
                             </label>
-
                             <Select
                                 id="student-etrb-type"
                                 v-model="form.etrb_type"
@@ -2740,7 +2410,6 @@ onBeforeUnmount(() => {
                                 class="w-full"
                             />
                         </div>
-
                         <div
                             class="flex flex-col gap-2 md:col-span-2 xl:col-span-3"
                         >
@@ -2750,7 +2419,6 @@ onBeforeUnmount(() => {
                             >
                                 Notes
                             </label>
-
                             <Textarea
                                 id="student-notes"
                                 v-model="form.notes"
@@ -2762,7 +2430,6 @@ onBeforeUnmount(() => {
                     </div>
                 </template>
             </Card>
-
             <Card
                 class="!rounded-2xl !border !border-slate-200 !shadow-sm [&_.p-card-body]:!p-5 [&_.p-card-content]:!p-0"
             >
@@ -2776,7 +2443,6 @@ onBeforeUnmount(() => {
                         Insurance
                     </div>
                 </template>
-
                 <template #content>
                     <div
                         class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
@@ -2790,7 +2456,6 @@ onBeforeUnmount(() => {
                             >
                                 Insurance Company
                             </label>
-
                             <InputText
                                 id="student-insurance-company"
                                 v-model="form.ins_company"
@@ -2801,7 +2466,6 @@ onBeforeUnmount(() => {
                         <div
                         class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-5"
                         >
-
                         <div
                             class="flex flex-col gap-2"
                         >
@@ -2811,7 +2475,6 @@ onBeforeUnmount(() => {
                             >
                                 Insurance Amount
                             </label>
-
                             <InputText
                                 id="student-insurance-amount"
                                 v-model="form.ins_amt"
@@ -2829,7 +2492,6 @@ onBeforeUnmount(() => {
                             >
                                 Hospitalization Coverage
                             </label>
-
                             <InputText
                                 id="student-hospitalization"
                                 v-model="form.ins_hospital"
@@ -2864,7 +2526,6 @@ onBeforeUnmount(() => {
                             >
                                 Death Benefits
                             </label>
-
                             <InputText
                                 id="student-death-benefit"
                                 v-model="form.ins_death"
@@ -2873,7 +2534,6 @@ onBeforeUnmount(() => {
                                 class="w-full"
                             />
                         </div>
-
                         <div
                             class="flex flex-col gap-2"
                         >
@@ -2883,7 +2543,6 @@ onBeforeUnmount(() => {
                             >
                                 Stipend
                             </label>
-
                             <InputText
                                 id="student-stipend"
                                 v-model="form.stipend"
@@ -2895,7 +2554,6 @@ onBeforeUnmount(() => {
                     </div>
                 </template>
             </Card>
-
             <Card
                 class="!rounded-2xl !border !border-slate-200 !shadow-sm [&_.p-card-body]:!p-5 [&_.p-card-content]:!p-0"
             >
@@ -2906,17 +2564,14 @@ onBeforeUnmount(() => {
                         <i
                             class="pi pi-lock text-[#377EC0]"
                         ></i>
-
                         Access
                     </div>
                 </template>
-
                 <template #content>
                     <div
                         class="grid gap-4 md:grid-cols-2"
                     >
                         <!-- LOGIN NAME -->
-
                         <div
                             class="flex flex-col gap-2"
                         >
@@ -2926,7 +2581,6 @@ onBeforeUnmount(() => {
                             >
                                 Login Name
                             </label>
-
                             <InputText
                                 id="student-login-name"
                                 v-model="form.login_name"
@@ -2945,16 +2599,13 @@ onBeforeUnmount(() => {
                                     clearResetCredentials
                                 "
                             />
-
                             <small
                                 class="text-slate-500"
                             >
                                 Used by the student to sign in.
                             </small>
                         </div>
-
                         <!-- ACCOUNT STATUS -->
-
                         <div
                             class="flex flex-col gap-2"
                         >
@@ -2963,7 +2614,6 @@ onBeforeUnmount(() => {
                             >
                                 Account Status
                             </label>
-
                             <div
                                 class="flex min-h-[42px] items-center rounded-xl border border-slate-200 bg-slate-50 px-4"
                             >
@@ -2976,7 +2626,6 @@ onBeforeUnmount(() => {
                                         binary
                                         :disabled="saving"
                                     />
-
                                     <label
                                         for="student-active-account"
                                         class="cursor-pointer text-sm font-semibold text-slate-700"
@@ -2986,10 +2635,8 @@ onBeforeUnmount(() => {
                                 </div>
                             </div>
                         </div>
-
                         <template v-if="!isCreateMode">
                             <!-- NEW PASSWORD -->
-
                             <div
                                 class="flex flex-col gap-2"
                             >
@@ -2999,7 +2646,6 @@ onBeforeUnmount(() => {
                             >
                                 New Password
                             </label>
-
                             <div
                                 class="flex gap-2"
                             >
@@ -3017,7 +2663,6 @@ onBeforeUnmount(() => {
                                         clearResetCredentials
                                     "
                                 />
-
                                 <Button
                                     type="button"
                                     label="Generate"
@@ -3030,16 +2675,13 @@ onBeforeUnmount(() => {
                                     "
                                 />
                             </div>
-
                             <small
                                 class="text-slate-500"
                             >
                                 Leave blank to keep the current password.
                             </small>
                         </div>
-
                         <!-- CONFIRM PASSWORD -->
-
                         <div
                             class="flex flex-col gap-2"
                         >
@@ -3049,7 +2691,6 @@ onBeforeUnmount(() => {
                             >
                                 Confirm Password
                             </label>
-
                             <InputText
                                 id="student-new-password-confirmation"
                                 v-model="
@@ -3066,7 +2707,6 @@ onBeforeUnmount(() => {
                             />
                             </div>
                         </template>
-
                         <Message
                             severity="info"
                             :closable="false"
@@ -3076,7 +2716,6 @@ onBeforeUnmount(() => {
                                 The System ID, Login Name and initial password
                                 will be generated when the new student is saved.
                             </template>
-
                             <template v-else>
                                 The existing password is never displayed.
                                 Enter or generate a new password only when
@@ -3084,106 +2723,126 @@ onBeforeUnmount(() => {
                                 reset.
                             </template>
                         </Message>
-
+                        <!-- CREDENTIAL DELIVERY -->
                         <div
-                            v-if="!isCreateMode"
-                            class="md:col-span-2 flex justify-end"
-                        >
-                            <Button
-                                type="button"
-                                label="Send Email"
-                                icon="pi pi-envelope"
-                                severity="secondary"
-                                variant="outlined"
-                                :loading="emailSending"
-                                :disabled="saving || emailSending"
-                                @click="
-                                    sendCredentialsEmail
-                                "
-                            />
-                        </div>
-
-                        <!-- NEWLY RESET CREDENTIALS -->
-
-                        <div
-                            v-if="resetCredentials"
-                            class="md:col-span-2 rounded-xl border border-emerald-200 bg-emerald-50 p-4"
+                            v-if="!isCreateMode && !resetCredentials"
+                            class="md:col-span-2"
                         >
                             <div
-                                class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
+                                class="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:flex-row sm:items-center sm:justify-between"
                             >
-                                <div>
-                                    <p
-                                        class="font-semibold text-emerald-800"
-                                    >
-                                        Student credentials updated
+                                <div class="min-w-0">
+                                    <p class="font-semibold text-slate-700">
+                                        Credential Delivery
                                     </p>
-
-                                    <div
-                                        class="mt-2 space-y-1 text-sm text-slate-700"
-                                    >
-                                        <p>
-                                            Login Name:
-                                            <strong>
-                                                {{
-                                                    resetCredentials.loginName
-                                                }}
-                                            </strong>
-                                        </p>
-
-                                        <p>
-                                            Password:
-                                            <strong>
-                                                {{
-                                                    resetCredentials.password
-                                                }}
-                                            </strong>
-                                        </p>
-                                    </div>
-
-                                    <p
-                                        class="mt-2 text-xs text-slate-500"
-                                    >
-                                        Copy these credentials now and
-                                        send them to the rightful student.
-                                        They disappear when this page is
-                                        refreshed or closed.
+                                    <p class="mt-1 text-sm text-slate-500">
+                                        Send the student's currently saved login credentials
+                                        to their registered email address.
                                     </p>
                                 </div>
-
+                                <Button
+                                    type="button"
+                                    label="Send Credentials"
+                                    icon="pi pi-envelope"
+                                    :loading="emailSending"
+                                    :disabled="saving || emailSending"
+                                    class="!border-green-500 !bg-green-500 !text-white hover:!border-green-700 hover:!bg-green-700"
+                                    @click="sendCredentialsEmail"
+                                />
+                            </div>
+                        </div>
+                        <!-- NEWLY UPDATED CREDENTIALS -->
+                        <div
+                            v-if="resetCredentials"
+                            class="md:col-span-2"
+                        >
+                            <div
+                                class="rounded-2xl border border-blue-200 bg-blue-50/60 p-5"
+                            >
                                 <div
-                                    class="flex flex-wrap gap-2"
+                                    class="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between"
                                 >
-                                    <Button
-                                        type="button"
-                                        label="Copy Credentials"
-                                        icon="pi pi-copy"
-                                        severity="info"
-                                        :disabled="saving"
-                                        @click="
-                                            copyCredentials
-                                        "
-                                    />
-
-                                    <Button
-                                        type="button"
-                                        label="Send Email"
-                                        icon="pi pi-envelope"
-                                        severity="secondary"
-                                        variant="outlined"
-                                        :loading="emailSending"
-                                        :disabled="saving || emailSending"
-                                        @click="
-                                            sendCredentialsEmail
-                                        "
-                                    />
+                                    <div class="min-w-0">
+                                        <div class="flex items-center gap-2">
+                                            <div
+                                                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#377EC0]/10 text-[#377EC0]"
+                                            >
+                                                <i class="pi pi-key"></i>
+                                            </div>
+                                            <div>
+                                                <p class="font-semibold text-slate-800">
+                                                    Student Credentials Updated
+                                                </p>
+                                                <p class="mt-0.5 text-xs text-slate-500">
+                                                    These are the student's newly saved login credentials.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div
+                                            class="mt-4 grid gap-3 sm:grid-cols-2"
+                                        >
+                                            <div
+                                                class="rounded-xl border border-blue-100 bg-white px-4 py-3"
+                                            >
+                                                <p
+                                                    class="text-xs font-semibold tracking-wide text-slate-400 uppercase"
+                                                >
+                                                    Login Name
+                                                </p>
+                                                <p
+                                                    class="mt-1 font-semibold text-slate-800"
+                                                >
+                                                    {{ resetCredentials.loginName }}
+                                                </p>
+                                            </div>
+                                            <div
+                                                class="rounded-xl border border-blue-100 bg-white px-4 py-3"
+                                            >
+                                                <p
+                                                    class="text-xs font-semibold tracking-wide text-slate-400 uppercase"
+                                                >
+                                                    Password
+                                                </p>
+                                                <p
+                                                    class="mt-1 font-semibold text-slate-800"
+                                                >
+                                                    {{ resetCredentials.password }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <p class="mt-3 text-xs text-slate-500">
+                                            Copy or email these credentials now. They disappear
+                                            when this page is refreshed or closed.
+                                        </p>
+                                    </div>
+                                    <div
+                                        class="flex shrink-0 flex-wrap gap-2 lg:justify-end"
+                                    >
+                                        <Button
+                                            type="button"
+                                            label="Copy Credentials"
+                                            icon="pi pi-copy"
+                                            severity="secondary"
+                                            variant="outlined"
+                                            :disabled="saving"
+                                            @click="copyCredentials"
+                                        />
+                                        <Button
+                                            type="button"
+                                            label="Send Updated Credentials"
+                                            icon="pi pi-envelope"
+                                            :loading="emailSending"
+                                            :disabled="saving || emailSending"
+                                            class="!border-green-500 !bg-green-500 !text-white hover:!border-green-700 hover:!bg-green-700"
+                                            @click="sendCredentialsEmail"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </template>
             </Card>
-
             <div
                 class="flex justify-end gap-2 pb-2"
             >
@@ -3196,7 +2855,6 @@ onBeforeUnmount(() => {
                     :disabled="saving"
                     @click="goBack"
                 />
-
                 <Button
                     type="button"
                     :label="
@@ -3226,7 +2884,6 @@ onBeforeUnmount(() => {
     | cropped file; Upload Photo still performs the actual server upload.
     |
     -->
-
     <Dialog
         v-model:visible="cropDialogVisible"
         modal
@@ -3248,7 +2905,6 @@ onBeforeUnmount(() => {
                 Drag the image to choose the visible area.
                 Use the zoom control when needed.
             </Message>
-
             <div
                 ref="cropViewportElement"
                 class="relative mx-auto aspect-square w-full max-w-[460px] touch-none select-none overflow-hidden rounded-2xl bg-slate-950 shadow-inner"
@@ -3285,11 +2941,9 @@ onBeforeUnmount(() => {
                         handleCropImageLoaded
                     "
                 />
-
                 <div
                     class="pointer-events-none absolute inset-0 border-[3px] border-white/90"
                 ></div>
-
                 <div
                     class="pointer-events-none absolute inset-0 grid grid-cols-3 grid-rows-3"
                 >
@@ -3299,7 +2953,6 @@ onBeforeUnmount(() => {
                         class="border border-white/20"
                     ></div>
                 </div>
-
                 <div
                     v-if="
                         !cropImageLoaded
@@ -3309,7 +2962,6 @@ onBeforeUnmount(() => {
                     Loading image…
                 </div>
             </div>
-
             <div
                 class="rounded-xl border border-slate-200 bg-slate-50 p-4"
             >
@@ -3322,7 +2974,6 @@ onBeforeUnmount(() => {
                     >
                         Zoom
                     </label>
-
                     <span
                         class="text-xs font-semibold text-slate-500"
                     >
@@ -3333,7 +2984,6 @@ onBeforeUnmount(() => {
                         }}×
                     </span>
                 </div>
-
                 <input
                     id="profile-photo-zoom"
                     type="range"
@@ -3350,7 +3000,6 @@ onBeforeUnmount(() => {
                         handleCropZoomInput
                     "
                 />
-
                 <div
                     class="mt-3 flex justify-end"
                 >
@@ -3372,7 +3021,6 @@ onBeforeUnmount(() => {
                 </div>
             </div>
         </div>
-
         <template #footer>
             <div
                 class="flex w-full justify-end gap-2"
@@ -3390,7 +3038,6 @@ onBeforeUnmount(() => {
                         cancelPhotoCrop
                     "
                 />
-
                 <Button
                     type="button"
                     label="Use Photo"

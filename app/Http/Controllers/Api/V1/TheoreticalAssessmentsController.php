@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Student;
 use Carbon\CarbonImmutable;
 use App\Services\DatatableService;
+use App\Services\IrisEmailService;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,7 +19,6 @@ use Illuminate\View\View;
 use Mpdf\Mpdf;
 use Mpdf\Output\Destination;
 use Illuminate\Database\Query\Builder;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -29,6 +29,7 @@ class TheoreticalAssessmentsController extends Controller
 
     public function __construct(
         private readonly DatatableService $datatableService,
+        private readonly IrisEmailService $irisEmailService,
     ) {
     }
 
@@ -2407,16 +2408,20 @@ class TheoreticalAssessmentsController extends Controller
         $email = trim((string) ($student->email ?? ''));
         if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
             try {
-                Mail::html(
-                    $content,
-                    function ($message) use ($email, $studentName): void {
-                        $message->to($email, $studentName)
-                            ->subject(
-                                'You have a scheduled Theoretical Assessment on IRIS-SAM'
-                            );
-                    }
+                $this->irisEmailService->send(
+                    view: 'emails.theoretical-internal',
+                    email: $email,
+                    recipientName: $studentName,
+                    schoolCode: $this->resolveSchoolCode($request),
+                    subject: 'You have a scheduled Theoretical Assessment on IRIS-SAM',
+                    data: [
+                        'recipientName' => $studentName,
+                        'examName' => $courseName,
+                        'accessUntil' => trim(
+                            (string) $data['access_exp_date_to'].' '.(string) $data['access_exp_time_to'],
+                        ),
+                    ],
                 );
-                $emailSent = true;
             } catch (Throwable $exception) {
                 report($exception);
             }
@@ -2429,7 +2434,6 @@ class TheoreticalAssessmentsController extends Controller
             ],
         ], Response::HTTP_CREATED);
     }
-
 
     /**
      * Update an unstarted enrolled assessment and its topic assignments.

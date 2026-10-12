@@ -40,97 +40,99 @@ use App\Http\Controllers\Api\V1\AlertSetupController;
 use App\Http\Controllers\Api\V1\AlertCalendarController;
 use App\Http\Controllers\Api\V1\AnnouncementsController;
 use App\Http\Controllers\Api\V1\MessageController;
+use App\Http\Controllers\EmailPreviewController;
 use App\Http\Controllers\Api\V1\TrbOtgContentController;
 use App\Http\Controllers\Api\V1\TheoreticalExternalExamController;
 use Illuminate\Support\Facades\Route;
-Route::redirect( '/', '/login')->name('home');
+
+Route::redirect('/', '/login')->name('home');
 
 // Student Routes
-Route::middleware([ 'auth', 'account.type:student'])->group(function (): void {
-    Route::inertia( '/student-dashboard', 'StudentDashboard')->name('student.dashboard');
-    Route::get( '/api/v1/student-dashboard/activities', [ ActivitiesController::class, 'studentDashboard'])->name( 'api.v1.student-dashboard.activities');
-    Route::get( '/api/v1/student-dashboard/documents', [ DocumentsController::class, 'studentDashboard'])->name( 'api.v1.student-dashboard.documents');
-    Route::get( '/api/v1/student-dashboard/otg', [ OtgController::class, 'studentDashboard'])->name( 'api.v1.student-dashboard.otg');
-    Route::get( '/api/v1/student-dashboard/journals', [ JournalsController::class, 'studentDashboard'])->name( 'api.v1.student-dashboard.journals');
+Route::middleware(['auth', 'account.type:student'])->group(function (): void {
+    Route::inertia('/student-dashboard', 'StudentDashboard')->name('student.dashboard');
+    Route::get('/api/v1/student-dashboard/activities', [ActivitiesController::class, 'studentDashboard'])->name('api.v1.student-dashboard.activities');
+    Route::get('/api/v1/student-dashboard/documents', [DocumentsController::class, 'studentDashboard'])->name('api.v1.student-dashboard.documents');
+    Route::get('/api/v1/student-dashboard/otg', [OtgController::class, 'studentDashboard'])->name('api.v1.student-dashboard.otg');
+    Route::get('/api/v1/student-dashboard/journals', [JournalsController::class, 'studentDashboard'])->name('api.v1.student-dashboard.journals');
 
     // Alerts — Student Calendar
-    Route::inertia('/alerts/calendar/student/datatable','alerts/calendar/student/datatable/Index')->name('student.alerts.calendar');
-    Route::get('/api/v1/student/alerts/calendar/events',[AlertCalendarController::class,'events'])->name('api.v1.student.alerts.calendar.events');
-    Route::get('/api/v1/student/alerts/calendar/events/{type}/{date}',[AlertCalendarController::class,'details'])->whereIn('type',['person_activity','file_upload','person_task','person_journal'])->where('date','\d{4}-\d{2}-\d{2}')->name('api.v1.student.alerts.calendar.details');
+    Route::inertia('/alerts/calendar/student/datatable', 'alerts/calendar/student/datatable/Index')->name('student.alerts.calendar');
+    Route::get('/api/v1/student/alerts/calendar/events', [AlertCalendarController::class, 'events'])->name('api.v1.student.alerts.calendar.events');
+    Route::get('/api/v1/student/alerts/calendar/events/{type}/{date}', [AlertCalendarController::class, 'details'])->whereIn('type', ['person_activity', 'file_upload', 'person_task', 'person_journal'])->where('date', '\d{4}-\d{2}-\d{2}')->name('api.v1.student.alerts.calendar.details');
 
     // Alerts — Student Announcements
-    Route::inertia('/alerts/announcements/student/datatable','alerts/announcements/student/datatable/Index')->name('student.alerts.announcements');
-    Route::get('/api/v1/student/alerts/datatable/announcements',[AnnouncementsController::class,'studentIndex'])->name('api.v1.student.alerts.datatable.announcements');
+    Route::inertia('/alerts/announcements/student/datatable', 'alerts/announcements/student/datatable/Index')->name('student.alerts.announcements');
+    Route::get('/api/v1/student/alerts/datatable/announcements', [AnnouncementsController::class, 'studentIndex'])->name('api.v1.student.alerts.datatable.announcements');
 
     // Alerts — Student Messages
-    Route::inertia('/alerts/messages/student','alerts/messages/student/Index')->name('student.alerts.messages');
-    Route::get('/api/v1/student/alerts/messages',[MessageController::class,'studentFetchMessageModule'])->name('api.v1.student.alerts.messages.index');
-    Route::get('/api/v1/student/alerts/messages/administrators',[MessageController::class,'fetchAdministrators'])->name('api.v1.student.alerts.messages.administrators');
-    Route::get('/api/v1/student/alerts/messages/students',[MessageController::class,'fetchStudents'])->name('api.v1.student.alerts.messages.students');
-    Route::get('/api/v1/student/alerts/messages/{inboxId}/replies',[MessageController::class,'studentFetchMessageReplies'])->where('inboxId','[A-Za-z0-9-]+')->name('api.v1.student.alerts.messages.replies');
-    Route::post('/api/v1/student/alerts/messages',[MessageController::class,'studentStoreMessage'])->name('api.v1.student.alerts.messages.store');
-    Route::post('/api/v1/student/alerts/messages/{inboxId}/replies',[MessageController::class,'studentStoreMessageReply'])->where('inboxId','[A-Za-z0-9-]+')->name('api.v1.student.alerts.messages.replies.store');
+    Route::inertia('/alerts/messages/student', 'alerts/messages/student/Index')->name('student.alerts.messages');
+    Route::get('/api/v1/student/alerts/messages', [MessageController::class, 'studentFetchMessageModule'])->name('api.v1.student.alerts.messages.index');
+    Route::get('/api/v1/student/alerts/messages/administrators', [MessageController::class, 'fetchAdministrators'])->name('api.v1.student.alerts.messages.administrators');
+    Route::get('/api/v1/student/alerts/messages/students', [MessageController::class, 'fetchStudents'])->name('api.v1.student.alerts.messages.students');
+    Route::get('/api/v1/student/alerts/messages/{inboxId}/replies', [MessageController::class, 'studentFetchMessageReplies'])->where('inboxId', '[A-Za-z0-9-]+')->name('api.v1.student.alerts.messages.replies');
+    Route::post('/api/v1/student/alerts/messages', [MessageController::class, 'studentStoreMessage'])->name('api.v1.student.alerts.messages.store');
+    Route::post('/api/v1/student/alerts/messages/{inboxId}/replies', [MessageController::class, 'studentStoreMessageReply'])->where('inboxId', '[A-Za-z0-9-]+')->name('api.v1.student.alerts.messages.replies.store');
 
     // Updates — Student Activity Updates
-    Route::inertia('/monitoring/activity-updates/student/datatable','monitoring/activity-updates/student/datatable/Index')->name('student.monitoring.activity-updates');
-    Route::get('/api/v1/student/activity-updates',[ActivitiesController::class,'studentIndex'])->name('api.v1.student.activity-updates.index');
-    Route::get('/api/v1/student/activity-updates/options',[ActivitiesController::class,'studentOptions'])->name('api.v1.student.activity-updates.options');
-    Route::post('/api/v1/student/activity-updates',[ActivitiesController::class,'studentStore'])->name('api.v1.student.activity-updates.store');
-    Route::post('/api/v1/student/activity-updates/{activityRecordId}',[ActivitiesController::class,'studentUpdate'])->where('activityRecordId','[A-Za-z0-9-]+')->name('api.v1.student.activity-updates.update');
-    Route::delete('/api/v1/student/activity-updates/{activityRecordId}',[ActivitiesController::class,'studentDestroy'])->where('activityRecordId','[A-Za-z0-9-]+')->name('api.v1.student.activity-updates.destroy');
+    Route::inertia('/monitoring/activity-updates/student/datatable', 'monitoring/activity-updates/student/datatable/Index')->name('student.monitoring.activity-updates');
+    Route::get('/api/v1/student/activity-updates', [ActivitiesController::class, 'studentIndex'])->name('api.v1.student.activity-updates.index');
+    Route::get('/api/v1/student/activity-updates/options', [ActivitiesController::class, 'studentOptions'])->name('api.v1.student.activity-updates.options');
+    Route::post('/api/v1/student/activity-updates', [ActivitiesController::class, 'studentStore'])->name('api.v1.student.activity-updates.store');
+    Route::post('/api/v1/student/activity-updates/{activityRecordId}', [ActivitiesController::class, 'studentUpdate'])->where('activityRecordId', '[A-Za-z0-9-]+')->name('api.v1.student.activity-updates.update');
+    Route::delete('/api/v1/student/activity-updates/{activityRecordId}', [ActivitiesController::class, 'studentDestroy'])->where('activityRecordId', '[A-Za-z0-9-]+')->name('api.v1.student.activity-updates.destroy');
 
     // Updates — Student Documents Uploading
-    Route::inertia('/monitoring/uploaded-documents/student/datatable','monitoring/uploaded-documents/student/datatable/Index')->name('student.monitoring.uploaded-documents');
-    Route::get('/api/v1/student/uploaded-documents',[DocumentsController::class,'studentIndex'])->name('api.v1.student.uploaded-documents.index');
-    Route::get('/api/v1/student/uploaded-documents/options',[DocumentsController::class,'studentOptions'])->name('api.v1.student.uploaded-documents.options');
-    Route::post('/api/v1/student/uploaded-documents',[DocumentsController::class,'studentStore'])->name('api.v1.student.uploaded-documents.store');
-    Route::post('/api/v1/student/uploaded-documents/{fileUploadId}',[DocumentsController::class,'studentUpdate'])->where('fileUploadId','[A-Za-z0-9-]+')->name('api.v1.student.uploaded-documents.update');
-    Route::delete('/api/v1/student/uploaded-documents/{fileUploadId}',[DocumentsController::class,'studentDestroy'])->where('fileUploadId','[A-Za-z0-9-]+')->name('api.v1.student.uploaded-documents.destroy');
+    Route::inertia('/monitoring/uploaded-documents/student/datatable', 'monitoring/uploaded-documents/student/datatable/Index')->name('student.monitoring.uploaded-documents');
+    Route::get('/api/v1/student/uploaded-documents', [DocumentsController::class, 'studentIndex'])->name('api.v1.student.uploaded-documents.index');
+    Route::get('/api/v1/student/uploaded-documents/options', [DocumentsController::class, 'studentOptions'])->name('api.v1.student.uploaded-documents.options');
+    Route::post('/api/v1/student/uploaded-documents', [DocumentsController::class, 'studentStore'])->name('api.v1.student.uploaded-documents.store');
+    Route::post('/api/v1/student/uploaded-documents/{fileUploadId}', [DocumentsController::class, 'studentUpdate'])->where('fileUploadId', '[A-Za-z0-9-]+')->name('api.v1.student.uploaded-documents.update');
+    Route::delete('/api/v1/student/uploaded-documents/{fileUploadId}', [DocumentsController::class, 'studentDestroy'])->where('fileUploadId', '[A-Za-z0-9-]+')->name('api.v1.student.uploaded-documents.destroy');
 
     // Updates — Student Training Record Book (OTG)
-    Route::inertia('/monitoring/otg-updates/student/datatable','monitoring/otg-updates/student/datatable/Index')->name('student.monitoring.otg-updates');
-    Route::get('/api/v1/student/otg',[OtgController::class,'studentIndex'])->name('api.v1.student.otg.index');
-    Route::get('/api/v1/student/otg/vessel-options',[OtgController::class,'studentVesselOptions'])->name('api.v1.student.otg.vessel-options');
-    Route::post('/api/v1/student/otg/vessels',[OtgController::class,'studentStoreVessel'])->name('api.v1.student.otg.vessels.store');
-    Route::put('/api/v1/student/otg/vessels/{vesselId}',[OtgController::class,'studentUpdateVessel'])->whereUuid('vesselId')->name('api.v1.student.otg.vessels.update');
-    Route::delete('/api/v1/student/otg/vessels/{vesselId}',[OtgController::class,'studentDestroyVessel'])->whereUuid('vesselId')->name('api.v1.student.otg.vessels.destroy');
-    Route::get('/api/v1/student/otg/workbook-options',[OtgController::class,'studentWorkbookOptions'])->name('api.v1.student.otg.workbook-options');
-    Route::post('/api/v1/student/otg/workbooks',[OtgController::class,'studentStoreWorkbook'])->name('api.v1.student.otg.workbooks.store');
-    Route::delete('/api/v1/student/otg/workbooks/{workbookAssignmentId}',[OtgController::class,'studentDestroyWorkbook'])->whereUuid('workbookAssignmentId')->name('api.v1.student.otg.workbooks.destroy');
-    Route::get('/api/v1/student/otg/tasks/{personTaskId}',[OtgController::class,'studentTaskDetails'])->whereUuid('personTaskId')->name('api.v1.student.otg.tasks.show');
-    Route::post('/api/v1/student/otg/tasks/{personTaskId}',[OtgController::class,'studentUpdateTask'])->whereUuid('personTaskId')->name('api.v1.student.otg.tasks.update');
-    Route::delete('/api/v1/student/otg/tasks/objective-evidence/{fileId}',[OtgController::class,'studentRemoveObjectiveEvidence'])->whereUuid('fileId')->name('api.v1.student.otg.tasks.objective-evidence.destroy');
-    Route::delete('/api/v1/student/otg/tasks/proof-of-assessment/{fileId}',[OtgController::class,'studentRemoveProofOfAssessment'])->whereUuid('fileId')->name('api.v1.student.otg.tasks.proof-of-assessment.destroy');
-    Route::get('/monitoring/otg-updates/student/print',[OtgPrintController::class,'studentDownload'])->name('student.monitoring.otg-updates.print');
+    Route::inertia('/monitoring/otg-updates/student/datatable', 'monitoring/otg-updates/student/datatable/Index')->name('student.monitoring.otg-updates');
+    Route::get('/api/v1/student/otg', [OtgController::class, 'studentIndex'])->name('api.v1.student.otg.index');
+    Route::get('/api/v1/student/otg/vessel-options', [OtgController::class, 'studentVesselOptions'])->name('api.v1.student.otg.vessel-options');
+    Route::post('/api/v1/student/otg/vessels', [OtgController::class, 'studentStoreVessel'])->name('api.v1.student.otg.vessels.store');
+    Route::put('/api/v1/student/otg/vessels/{vesselId}', [OtgController::class, 'studentUpdateVessel'])->whereUuid('vesselId')->name('api.v1.student.otg.vessels.update');
+    Route::delete('/api/v1/student/otg/vessels/{vesselId}', [OtgController::class, 'studentDestroyVessel'])->whereUuid('vesselId')->name('api.v1.student.otg.vessels.destroy');
+    Route::get('/api/v1/student/otg/workbook-options', [OtgController::class, 'studentWorkbookOptions'])->name('api.v1.student.otg.workbook-options');
+    Route::post('/api/v1/student/otg/workbooks', [OtgController::class, 'studentStoreWorkbook'])->name('api.v1.student.otg.workbooks.store');
+    Route::delete('/api/v1/student/otg/workbooks/{workbookAssignmentId}', [OtgController::class, 'studentDestroyWorkbook'])->whereUuid('workbookAssignmentId')->name('api.v1.student.otg.workbooks.destroy');
+    Route::get('/api/v1/student/otg/tasks/{personTaskId}', [OtgController::class, 'studentTaskDetails'])->whereUuid('personTaskId')->name('api.v1.student.otg.tasks.show');
+    Route::post('/api/v1/student/otg/tasks/{personTaskId}', [OtgController::class, 'studentUpdateTask'])->whereUuid('personTaskId')->name('api.v1.student.otg.tasks.update');
+    Route::delete('/api/v1/student/otg/tasks/objective-evidence/{fileId}', [OtgController::class, 'studentRemoveObjectiveEvidence'])->whereUuid('fileId')->name('api.v1.student.otg.tasks.objective-evidence.destroy');
+    Route::delete('/api/v1/student/otg/tasks/proof-of-assessment/{fileId}', [OtgController::class, 'studentRemoveProofOfAssessment'])->whereUuid('fileId')->name('api.v1.student.otg.tasks.proof-of-assessment.destroy');
+    Route::get('/monitoring/otg-updates/student/print', [OtgPrintController::class, 'studentDownload'])->name('student.monitoring.otg-updates.print');
 
     // Updates — Student Daily Journals
-    Route::inertia('/monitoring/daily-journals/student/datatable','monitoring/daily-journals/student/datatable/Index')->name('student.monitoring.daily-journals');
-    Route::get('/api/v1/student/daily-journals',[JournalsController::class,'studentIndex'])->name('api.v1.student.daily-journals.index');
-    Route::post('/api/v1/student/daily-journals',[JournalsController::class,'studentStore'])->name('api.v1.student.daily-journals.store');
-    Route::get('/api/v1/student/daily-journals/{journalId}',[JournalsController::class,'studentShow'])->where('journalId', '[A-Za-z0-9-]+')->name('api.v1.student.daily-journals.show');
-    Route::put('/api/v1/student/daily-journals/{journalId}',[JournalsController::class,'studentUpdate'])->where('journalId', '[A-Za-z0-9-]+')->name('api.v1.student.daily-journals.update');
-    Route::post('/api/v1/student/daily-journals/{journalId}/evidence',[JournalsController::class,'studentUploadEvidence'])->where('journalId', '[A-Za-z0-9-]+')->name('api.v1.student.daily-journals.evidence');
-    Route::post('/api/v1/student/daily-journals/{journalId}/signature',[JournalsController::class,'studentUploadSignature'])->middleware('throttle:10,1')->where('journalId', '[A-Za-z0-9-]+')->name('api.v1.student.daily-journals.signature');
-    Route::delete('/api/v1/student/daily-journals/{journalId}',[JournalsController::class,'studentDestroy'])->where('journalId', '[A-Za-z0-9-]+')->name('api.v1.student.daily-journals.destroy');
-    Route::get('/monitoring/daily-journals/student/print',[JournalsController::class,'studentDownload'])->name('student.monitoring.daily-journals.print');
+    Route::inertia('/monitoring/daily-journals/student/datatable', 'monitoring/daily-journals/student/datatable/Index')->name('student.monitoring.daily-journals');
+    Route::get('/api/v1/student/daily-journals', [JournalsController::class, 'studentIndex'])->name('api.v1.student.daily-journals.index');
+    Route::post('/api/v1/student/daily-journals', [JournalsController::class, 'studentStore'])->name('api.v1.student.daily-journals.store');
+    Route::get('/api/v1/student/daily-journals/{journalId}', [JournalsController::class, 'studentShow'])->where('journalId', '[A-Za-z0-9-]+')->name('api.v1.student.daily-journals.show');
+    Route::put('/api/v1/student/daily-journals/{journalId}', [JournalsController::class, 'studentUpdate'])->where('journalId', '[A-Za-z0-9-]+')->name('api.v1.student.daily-journals.update');
+    Route::post('/api/v1/student/daily-journals/{journalId}/evidence', [JournalsController::class, 'studentUploadEvidence'])->where('journalId', '[A-Za-z0-9-]+')->name('api.v1.student.daily-journals.evidence');
+    Route::post('/api/v1/student/daily-journals/{journalId}/signature', [JournalsController::class, 'studentUploadSignature'])->middleware('throttle:10, 1')->where('journalId', '[A-Za-z0-9-]+')->name('api.v1.student.daily-journals.signature');
+    Route::delete('/api/v1/student/daily-journals/{journalId}', [JournalsController::class, 'studentDestroy'])->where('journalId', '[A-Za-z0-9-]+')->name('api.v1.student.daily-journals.destroy');
+    Route::get('/monitoring/daily-journals/student/print', [JournalsController::class, 'studentDownload'])->name('student.monitoring.daily-journals.print');
 
     // Assessments — Student Theoretical Internal
-    Route::inertia('/assessments/theoretical-internal/student/datatable','assessments/theoretical-internal/student/datatable/Index')->name('student.assessments.theoretical-internal');
-    Route::get('/api/v1/student/theoretical-assessments',[TheoreticalAssessmentsController::class,'studentIndex'])->name('api.v1.student.theoretical-assessments.index');
-    Route::get('/assessments/theoretical-internal/student/{assessmentId}/certificate',[TheoreticalAssessmentsController::class,'studentCertificate'])->whereUuid('assessmentId')->name('student.assessments.theoretical-internal.certificate');
-    Route::get('/assessments/theoretical-internal/student/{assessmentId}/exam',[TheoreticalAssessmentsController::class,'studentExamPage'])->whereUuid('assessmentId')->name('student.assessments.theoretical-internal.exam');
-    Route::get('/api/v1/student/theoretical-assessments/{assessmentId}/exam',[TheoreticalAssessmentsController::class,'studentExamState'])->whereUuid('assessmentId')->name('api.v1.student.theoretical-assessments.exam.state');
-    Route::post('/api/v1/student/theoretical-assessments/{assessmentId}/exam/start',[TheoreticalAssessmentsController::class,'studentStartExam'])->whereUuid('assessmentId')->name('api.v1.student.theoretical-assessments.exam.start');
-    Route::patch('/api/v1/student/theoretical-assessments/{assessmentId}/exam/questions/{questionAttemptId}',[TheoreticalAssessmentsController::class,'studentSaveExamAnswer'])->whereUuid('assessmentId')->whereUuid('questionAttemptId')->name('api.v1.student.theoretical-assessments.exam.answer');
-    Route::post('/api/v1/student/theoretical-assessments/{assessmentId}/exam/topics/{topicAttemptId}/submit',[TheoreticalAssessmentsController::class,'studentSubmitExamTopic'])->whereUuid('assessmentId')->whereUuid('topicAttemptId')->name('api.v1.student.theoretical-assessments.exam.topic.submit');
-    Route::post('/api/v1/student/theoretical-assessments/{assessmentId}/exam/timeout',[TheoreticalAssessmentsController::class,'studentTimeoutExam'])->whereUuid('assessmentId')->name('api.v1.student.theoretical-assessments.exam.timeout');
+    Route::inertia('/assessments/theoretical-internal/student/datatable', 'assessments/theoretical-internal/student/datatable/Index')->name('student.assessments.theoretical-internal');
+    Route::get('/api/v1/student/theoretical-assessments', [TheoreticalAssessmentsController::class, 'studentIndex'])->name('api.v1.student.theoretical-assessments.index');
+    Route::get('/assessments/theoretical-internal/student/{assessmentId}/certificate', [TheoreticalAssessmentsController::class, 'studentCertificate'])->whereUuid('assessmentId')->name('student.assessments.theoretical-internal.certificate');
+    Route::get('/assessments/theoretical-internal/student/{assessmentId}/exam', [TheoreticalAssessmentsController::class, 'studentExamPage'])->whereUuid('assessmentId')->name('student.assessments.theoretical-internal.exam');
+    Route::get('/api/v1/student/theoretical-assessments/{assessmentId}/exam', [TheoreticalAssessmentsController::class, 'studentExamState'])->whereUuid('assessmentId')->name('api.v1.student.theoretical-assessments.exam.state');
+    Route::post('/api/v1/student/theoretical-assessments/{assessmentId}/exam/start', [TheoreticalAssessmentsController::class, 'studentStartExam'])->whereUuid('assessmentId')->name('api.v1.student.theoretical-assessments.exam.start');
+    Route::patch('/api/v1/student/theoretical-assessments/{assessmentId}/exam/questions/{questionAttemptId}', [TheoreticalAssessmentsController::class, 'studentSaveExamAnswer'])->whereUuid('assessmentId')->whereUuid('questionAttemptId')->name('api.v1.student.theoretical-assessments.exam.answer');
+    Route::post('/api/v1/student/theoretical-assessments/{assessmentId}/exam/topics/{topicAttemptId}/submit', [TheoreticalAssessmentsController::class, 'studentSubmitExamTopic'])->whereUuid('assessmentId')->whereUuid('topicAttemptId')->name('api.v1.student.theoretical-assessments.exam.topic.submit');
+    Route::post('/api/v1/student/theoretical-assessments/{assessmentId}/exam/timeout', [TheoreticalAssessmentsController::class, 'studentTimeoutExam'])->whereUuid('assessmentId')->name('api.v1.student.theoretical-assessments.exam.timeout');
 
     // Assessments — Student Practical Internal
-    Route::inertia('/assessments/practical-internal/student/datatable','assessments/practical-internal/student/datatable/Index')->name('student.assessments.practical-internal');
-    Route::get('/api/v1/student/practical-internal',[PracticalInternalAssessmentsController::class,'studentIndex'])->name('api.v1.student.practical-internal.index');
-    Route::get('/api/v1/student/practical-internal/{assessmentId}',[PracticalInternalAssessmentsController::class,'studentShow'])->whereUuid('assessmentId')->name('api.v1.student.practical-internal.show');
-    Route::post('/api/v1/student/practical-internal/{assessmentId}/items/{itemId}',[PracticalInternalAssessmentsController::class,'studentSaveItem'])->whereUuid('assessmentId')->whereUuid('itemId')->name('api.v1.student.practical-internal.items.update');
-    Route::post('/api/v1/student/practical-internal/{assessmentId}/submit',[PracticalInternalAssessmentsController::class,'studentSubmit'])->whereUuid('assessmentId')->name('api.v1.student.practical-internal.submit');
+    Route::inertia('/assessments/practical-internal/student/datatable', 'assessments/practical-internal/student/datatable/Index')->name('student.assessments.practical-internal');
+    Route::get('/api/v1/student/practical-internal', [PracticalInternalAssessmentsController::class, 'studentIndex'])->name('api.v1.student.practical-internal.index');
+    Route::get('/api/v1/student/practical-internal/{assessmentId}', [PracticalInternalAssessmentsController::class, 'studentShow'])->whereUuid('assessmentId')->name('api.v1.student.practical-internal.show');
+    Route::post('/api/v1/student/practical-internal/{assessmentId}/items/{itemId}', [PracticalInternalAssessmentsController::class, 'studentSaveItem'])->whereUuid('assessmentId')->whereUuid('itemId')->name('api.v1.student.practical-internal.items.update');
+    Route::post('/api/v1/student/practical-internal/{assessmentId}/submit', [PracticalInternalAssessmentsController::class, 'studentSubmit'])->whereUuid('assessmentId')->name('api.v1.student.practical-internal.submit');
 });
 
 /*
@@ -153,10 +155,9 @@ Route::post('/api/v1/external/theoretical/{accessToken}/exam/topics/{topicAttemp
 Route::post('/api/v1/external/theoretical/{accessToken}/exam/timeout', [TheoreticalExternalExamController::class, 'timeout'])->where('accessToken', '[A-Za-z0-9_-]+')->name('api.v1.external.theoretical.exam.timeout');
 
 // Administrator and Staff Routes
-Route::middleware([ 'auth', 'account.type:administrator'])->group(function (): void {
+Route::middleware(['auth', 'account.type:administrator'])->group(function (): void {
 
     // Inertia pages
-
     // Dashboard
     Route::inertia('/dashboard', 'Dashboard')->name('dashboard');
     Route::inertia('/dashboard/activity-updates', 'dashboard/activity-updates/Index')->name('dashboard.activity-updates');
@@ -173,63 +174,64 @@ Route::middleware([ 'auth', 'account.type:administrator'])->group(function (): v
     Route::inertia('/dashboard/practical-external/batch', 'dashboard/practical-external/batch/Index')->name('dashboard.practical-external.batch');
 
     // Alerts — Calendar
-    Route::inertia('/alerts/calendar/datatable','alerts/calendar/datatable/Index')->name('alerts.calendar');
-    Route::get('/api/v1/alerts/calendar/events',[AlertCalendarController::class,'events'])->name('api.v1.alerts.calendar.events');
-    Route::get('/api/v1/alerts/calendar/events/{type}/{date}',[AlertCalendarController::class,'details'])->whereIn('type',['person_activity','file_upload','person_task','person_journal'])->where('date','\d{4}-\d{2}-\d{2}')->name('api.v1.alerts.calendar.details');
+    Route::inertia('/alerts/calendar/datatable', 'alerts/calendar/datatable/Index')->name('alerts.calendar');
+    Route::get('/api/v1/alerts/calendar/events', [AlertCalendarController::class, 'events'])->name('api.v1.alerts.calendar.events');
+    Route::get('/api/v1/alerts/calendar/events/{type}/{date}', [AlertCalendarController::class, 'details'])->whereIn('type', ['person_activity', 'file_upload', 'person_task', 'person_journal'])->where('date', '\d{4}-\d{2}-\d{2}')->name('api.v1.alerts.calendar.details');
 
     // Alerts — Announcements
-    Route::inertia('/alerts/announcements/datatable','alerts/announcements/datatable/Index')->name('alerts.announcements');
-    Route::get('/api/v1/alerts/datatable/announcements',[AnnouncementsController::class,'index'])->name('api.v1.alerts.datatable.announcements');
-    Route::post('/api/v1/alerts/announcements',[AnnouncementsController::class,'store'])->name('api.v1.alerts.announcements.store');
-    Route::put('/api/v1/alerts/announcements/{announcementId}',[AnnouncementsController::class,'update'])->whereUuid('announcementId')->name('api.v1.alerts.announcements.update');
-    Route::delete('/api/v1/alerts/announcements/{announcementId}',[AnnouncementsController::class,'destroy'])->whereUuid('announcementId')->name('api.v1.alerts.announcements.destroy');
+    Route::inertia('/alerts/announcements/datatable', 'alerts/announcements/datatable/Index')->name('alerts.announcements');
+    Route::get('/api/v1/alerts/datatable/announcements', [AnnouncementsController::class, 'index'])->name('api.v1.alerts.datatable.announcements');
+    Route::post('/api/v1/alerts/announcements', [AnnouncementsController::class, 'store'])->name('api.v1.alerts.announcements.store');
+    Route::put('/api/v1/alerts/announcements/{announcementId}', [AnnouncementsController::class, 'update'])->whereUuid('announcementId')->name('api.v1.alerts.announcements.update');
+    Route::delete('/api/v1/alerts/announcements/{announcementId}', [AnnouncementsController::class, 'destroy'])->whereUuid('announcementId')->name('api.v1.alerts.announcements.destroy');
 
     // Alerts — Messages
-    Route::inertia('/alerts/messages','alerts/messages/Index')->name('alerts.messages');
-    Route::get('/api/v1/alerts/messages',[MessageController::class,'fetchMessageModule'])->name('api.v1.alerts.messages.index');
-    Route::get('/api/v1/alerts/messages/administrators',[MessageController::class,'fetchAdministrators'])->name('api.v1.alerts.messages.administrators');
-    Route::get('/api/v1/alerts/messages/students',[MessageController::class,'fetchStudents'])->name('api.v1.alerts.messages.students');
-    Route::get('/api/v1/alerts/messages/{inboxId}/replies',[MessageController::class,'fetchMessageReplies'])->name('api.v1.alerts.messages.replies');
-    Route::post('/api/v1/alerts/messages',[MessageController::class,'storeMessage'])->name('api.v1.alerts.messages.store');
-    Route::post('/api/v1/alerts/messages/{inboxId}/replies',[MessageController::class,'storeMessageReply'])->name('api.v1.alerts.messages.replies.store');
-    Route::delete('/api/v1/alerts/messages/{inboxId}/history',[MessageController::class,'deleteConversationHistory'])->where('inboxId','[A-Za-z0-9-]+');
-    Route::delete('/api/v1/alerts/messages/{inboxId}/original',[MessageController::class,'deleteOriginalMessage'])->where('inboxId','[A-Za-z0-9-]+');
-    Route::delete('/api/v1/alerts/messages/{inboxId}/replies/{replyId}',[MessageController::class,'deleteMessageReply'])->where(['inboxId' =>'[A-Za-z0-9-]+','replyId' =>'[A-Za-z0-9-]+']);
+    Route::inertia('/alerts/messages', 'alerts/messages/Index')->name('alerts.messages');
+    Route::get('/api/v1/alerts/messages', [MessageController::class, 'fetchMessageModule'])->name('api.v1.alerts.messages.index');
+    Route::get('/api/v1/alerts/messages/administrators', [MessageController::class, 'fetchAdministrators'])->name('api.v1.alerts.messages.administrators');
+    Route::get('/api/v1/alerts/messages/students', [MessageController::class, 'fetchStudents'])->name('api.v1.alerts.messages.students');
+    Route::get('/api/v1/alerts/messages/{inboxId}/replies', [MessageController::class, 'fetchMessageReplies'])->name('api.v1.alerts.messages.replies');
+    Route::post('/api/v1/alerts/messages', [MessageController::class, 'storeMessage'])->name('api.v1.alerts.messages.store');
+    Route::post('/api/v1/alerts/messages/{inboxId}/replies', [MessageController::class, 'storeMessageReply'])->name('api.v1.alerts.messages.replies.store');
+    Route::delete('/api/v1/alerts/messages/{inboxId}/history', [MessageController::class, 'deleteConversationHistory'])->where('inboxId', '[A-Za-z0-9-]+');
+    Route::delete('/api/v1/alerts/messages/{inboxId}/original', [MessageController::class, 'deleteOriginalMessage'])->where('inboxId', '[A-Za-z0-9-]+');
+    Route::delete('/api/v1/alerts/messages/{inboxId}/replies/{replyId}', [MessageController::class, 'deleteMessageReply'])->where(['inboxId' =>'[A-Za-z0-9-]+', 'replyId' =>'[A-Za-z0-9-]+']);
 
     // Monitoring
     Route::inertia('/monitoring/activity-updates', 'monitoring/activity-updates/Index')->name('monitoring.activity-updates');
     Route::inertia('/monitoring/uploaded-documents', 'monitoring/uploaded-documents/Index')->name('monitoring.uploaded-documents');
     Route::inertia('/monitoring/otg-updates', 'monitoring/otg-updates/Index')->name('monitoring.otg-updates');
+    Route::inertia('/monitoring/otg-updates/{studentId}', 'monitoring/otg-updates/Show', ['studentId' => fn () => (string) request()->route('studentId'), ])->whereUuid('studentId')->name('monitoring.otg-updates.show');
     Route::inertia('/monitoring/daily-journals', 'dashboard/daily-journals/Index')->name('monitoring.daily-journals');
     Route::inertia('/monitoring/reports', 'monitoring/reports/Index')->name('monitoring.reports');
 
     // Setup — Activity Types
-    Route::inertia('/setup/activity-types/datatable','setup/activity-types/datatable/Index')->name('setup.activity-types');
-    Route::get('/api/v1/setup/activity-types/datatable',[ActivityTypesController::class,'index'])->name('api.v1.setup.datatable.activity-types');
-    Route::post('/api/v1/setup/activity-types',[ActivityTypesController::class,'store'])->name('api.v1.setup.activity-types.store');
-    Route::put('/api/v1/setup/activity-types/{activityId}',[ActivityTypesController::class,'update'])->whereUuid('activityId')->name('api.v1.setup.activity-types.update');
-    Route::delete('/api/v1/setup/activity-types/{activityId}',[ActivityTypesController::class,'destroy'])->whereUuid('activityId')->name('api.v1.setup.activity-types.destroy');
+    Route::inertia('/setup/activity-types/datatable', 'setup/activity-types/datatable/Index')->name('setup.activity-types');
+    Route::get('/api/v1/setup/activity-types/datatable', [ActivityTypesController::class, 'index'])->name('api.v1.setup.datatable.activity-types');
+    Route::post('/api/v1/setup/activity-types', [ActivityTypesController::class, 'store'])->name('api.v1.setup.activity-types.store');
+    Route::put('/api/v1/setup/activity-types/{activityId}', [ActivityTypesController::class, 'update'])->whereUuid('activityId')->name('api.v1.setup.activity-types.update');
+    Route::delete('/api/v1/setup/activity-types/{activityId}', [ActivityTypesController::class, 'destroy'])->whereUuid('activityId')->name('api.v1.setup.activity-types.destroy');
 
     // Setup — Requirement Types
-    Route::inertia('/setup/requirement-types/datatable','setup/requirement-types/datatable/Index')->name('setup.requirement-types');
-    Route::get('/api/v1/setup/requirement-types/datatable',[RequirementTypesController::class,'index'])->name('api.v1.setup.datatable.requirement-types');
-    Route::get('/api/v1/setup/requirement-types/options',[RequirementTypesController::class,'options'])->name('api.v1.setup.requirement-types.options');
-    Route::post('/api/v1/setup/requirement-types',[RequirementTypesController::class,'store'])->name('api.v1.setup.requirement-types.store');
-    Route::put('/api/v1/setup/requirement-types/{requirementId}',[RequirementTypesController::class,'update'])->whereUuid('requirementId')->name('api.v1.setup.requirement-types.update');
-    Route::delete('/api/v1/setup/requirement-types/{requirementId}',[RequirementTypesController::class,'destroy'])->whereUuid('requirementId')->name('api.v1.setup.requirement-types.destroy');
+    Route::inertia('/setup/requirement-types/datatable', 'setup/requirement-types/datatable/Index')->name('setup.requirement-types');
+    Route::get('/api/v1/setup/requirement-types/datatable', [RequirementTypesController::class, 'index'])->name('api.v1.setup.datatable.requirement-types');
+    Route::get('/api/v1/setup/requirement-types/options', [RequirementTypesController::class, 'options'])->name('api.v1.setup.requirement-types.options');
+    Route::post('/api/v1/setup/requirement-types', [RequirementTypesController::class, 'store'])->name('api.v1.setup.requirement-types.store');
+    Route::put('/api/v1/setup/requirement-types/{requirementId}', [RequirementTypesController::class, 'update'])->whereUuid('requirementId')->name('api.v1.setup.requirement-types.update');
+    Route::delete('/api/v1/setup/requirement-types/{requirementId}', [RequirementTypesController::class, 'destroy'])->whereUuid('requirementId')->name('api.v1.setup.requirement-types.destroy');
 
     // Setup - Alert Setup
-    Route::inertia('/setup/alert-setup/datatable','setup/alert-setup/datatable/Index')->name('setup.alert-setup');
-    Route::get('/api/v1/setup/alert-setup/datatable',[AlertSetupController::class,'index'])->name('api.v1.setup.alert-setup.datatable');
-    Route::put('/api/v1/setup/alert-setup/{alertSetupId}',[AlertSetupController::class,'update'])->whereUuid('alertSetupId')->name('api.v1.setup.alert-setup.update');
+    Route::inertia('/setup/alert-setup/datatable', 'setup/alert-setup/datatable/Index')->name('setup.alert-setup');
+    Route::get('/api/v1/setup/alert-setup/datatable', [AlertSetupController::class, 'index'])->name('api.v1.setup.alert-setup.datatable');
+    Route::put('/api/v1/setup/alert-setup/{alertSetupId}', [AlertSetupController::class, 'update'])->whereUuid('alertSetupId')->name('api.v1.setup.alert-setup.update');
 
     // Setup — TRB - OTG Content Setup
-    Route::inertia('/setup/trb-otg-content/datatable','setup/trb-otg-content/datatable/Index')->name('setup.trb-otg-content');
-    Route::get('/api/v1/setup/trb-otg-content/options',[TrbOtgContentController::class,'options'])->name('api.v1.setup.trb-otg-content.options');
-    Route::get('/api/v1/setup/trb-otg-content/template',[TrbOtgContentController::class,'template'])->name('api.v1.setup.trb-otg-content.template');
-    Route::get('/api/v1/setup/trb-otg-content/{trbTypeId}/content',[TrbOtgContentController::class,'show'])->whereUuid('trbTypeId')->name('api.v1.setup.trb-otg-content.show');
-    Route::post('/api/v1/setup/trb-otg-content/import',[TrbOtgContentController::class,'import'])->middleware('throttle:10,1')->name('api.v1.setup.trb-otg-content.import');
-    Route::delete('/api/v1/setup/trb-otg-content/{trbTypeId}',[TrbOtgContentController::class,'destroy'])->whereUuid('trbTypeId')->name('api.v1.setup.trb-otg-content.destroy');
+    Route::inertia('/setup/trb-otg-content/datatable', 'setup/trb-otg-content/datatable/Index')->name('setup.trb-otg-content');
+    Route::get('/api/v1/setup/trb-otg-content/options', [TrbOtgContentController::class, 'options'])->name('api.v1.setup.trb-otg-content.options');
+    Route::get('/api/v1/setup/trb-otg-content/template', [TrbOtgContentController::class, 'template'])->name('api.v1.setup.trb-otg-content.template');
+    Route::get('/api/v1/setup/trb-otg-content/{trbTypeId}/content', [TrbOtgContentController::class, 'show'])->whereUuid('trbTypeId')->name('api.v1.setup.trb-otg-content.show');
+    Route::post('/api/v1/setup/trb-otg-content/import', [TrbOtgContentController::class, 'import'])->middleware('throttle:10, 1')->name('api.v1.setup.trb-otg-content.import');
+    Route::delete('/api/v1/setup/trb-otg-content/{trbTypeId}', [TrbOtgContentController::class, 'destroy'])->whereUuid('trbTypeId')->name('api.v1.setup.trb-otg-content.destroy');
 
     // Assessment Setup
     Route::inertia('/assessment-setup/question-bank', 'assessment-setup/question-bank/datatable/Index')->name('assessment-setup.question-bank');
@@ -253,28 +255,28 @@ Route::middleware([ 'auth', 'account.type:administrator'])->group(function (): v
 
     // Databases — Students
     Route::inertia('/databases/students/datatable', 'databases/students/datatable/Index')->name('databases.students');
-    Route::inertia('/databases/students/profile/new','databases/students/profile/Index',['studentId' => null])->name('databases.students.profile.create');
-    Route::inertia('/databases/students/profile/{studentId}', 'databases/students/profile/Index',['studentId' => fn () =>(string) request()->route('studentId')])->whereUuid('studentId')->name('databases.students.edit');
-    Route::post('/api/v1/databases/students', [StudentsController::class,'store'])->name('api.v1.databases.students.store');
+    Route::inertia('/databases/students/profile/new', 'databases/students/profile/Index', ['studentId' => null])->name('databases.students.profile.create');
+    Route::inertia('/databases/students/profile/{studentId}', 'databases/students/profile/Index', ['studentId' => fn () =>(string) request()->route('studentId')])->whereUuid('studentId')->name('databases.students.edit');
+    Route::post('/api/v1/databases/students', [StudentsController::class, 'store'])->name('api.v1.databases.students.store');
     Route::get('/api/v1/databases/datatable/students', [StudentsController::class, 'index'])->name('api.v1.databases.datatable.students');
     Route::get('/api/v1/databases/students/options', [StudentsController::class, 'options'])->name('api.v1.databases.students.options');
     Route::get('/api/v1/databases/students/{studentId}', [StudentsController::class, 'show'])->whereUuid('studentId')->name('api.v1.databases.students.show');
     Route::put('/api/v1/databases/students/{studentId}', [StudentsController::class, 'update'])->whereUuid('studentId')->name('api.v1.databases.students.update');
-    Route::post('/api/v1/databases/students/{studentId}/send-credentials', [StudentsController::class, 'sendCredentials'])->middleware('throttle:5,1')->whereUuid('studentId')->name('api.v1.databases.students.send-credentials');
+    Route::post('/api/v1/databases/students/{studentId}/send-credentials', [StudentsController::class, 'sendCredentials'])->middleware('throttle:5, 1')->whereUuid('studentId')->name('api.v1.databases.students.send-credentials');
     Route::post('/api/v1/databases/students/{studentId}/photo', [StudentsController::class, 'uploadPhoto'])->whereUuid('studentId')->name('api.v1.databases.students.photo');
 
     // Databases — Batch Upload
     Route::inertia('/databases/batch-upload/datatable', 'databases/batch-upload/datatable/Index')->name('databases.batch-upload');
     Route::prefix('/api/v1/databases/students/batch-upload')->controller(StudentBatchUploadController::class)->group(function (): void {
         Route::get('/template', 'template')->name('api.v1.databases.students.batch-upload.template');
-        Route::post('/import', 'import')->middleware('throttle:10,1')->name('api.v1.databases.students.batch-upload.import');
+        Route::post('/import', 'import')->middleware('throttle:10, 1')->name('api.v1.databases.students.batch-upload.import');
     });
 
     // Databases - Student List Report
     Route::inertia('/databases/student-list-report/datatable', 'databases/student-list-report/datatable/Index')->name('databases.student-list-report');
     Route::prefix('/api/v1/databases/student-list-report')->controller(StudentListReportController::class)->group(function (): void {
         Route::get('/options', 'options')->name('api.v1.databases.student-list-report.options');
-        Route::get('/export', 'export')->middleware('throttle:10,1')->name('api.v1.databases.student-list-report.export');
+        Route::get('/export', 'export')->middleware('throttle:10, 1')->name('api.v1.databases.student-list-report.export');
         Route::get('/', 'index')->name('api.v1.databases.student-list-report.index');
     });
 
@@ -344,67 +346,72 @@ Route::middleware([ 'auth', 'account.type:administrator'])->group(function (): v
     Route::get('/api/v1/monitoring/datatable/activity-updates', [ActivitiesController::class, 'index'])->name('api.v1.monitoring.datatable.activity-updates');
     Route::get('/api/v1/monitoring/activity-updates/options', [ActivitiesController::class, 'activityOptions'])->name('api.v1.monitoring.activity-updates.options');
     Route::get('/api/v1/monitoring/datatable/uploaded-documents', [DocumentsController::class, 'index'])->name('api.v1.monitoring.datatable.uploaded-documents');
-    Route::get('/api/v1/monitoring/datatable/otg-updates', [OtgController::class, 'index'])->name('api.v1.monitoring.datatable.otg-updates');
+    Route::get('/api/v1/monitoring/datatable/otg-updates', [OtgController::class, 'monitoringStudents'])->name('api.v1.monitoring.datatable.otg-updates');
+    Route::get('/api/v1/monitoring/otg-updates/{studentId}', [OtgController::class, 'adminStudentIndex'])->whereUuid('studentId')->name('api.v1.monitoring.otg-updates.show');
+    Route::get('/api/v1/monitoring/otg-updates/{studentId}/tasks/{personTaskId}', [OtgController::class, 'adminTaskDetails'])->whereUuid('studentId')->whereUuid('personTaskId')->name('api.v1.monitoring.otg-updates.tasks.show');
+    Route::post('/api/v1/monitoring/otg-updates/{studentId}/tasks/{personTaskId}', [OtgController::class, 'adminUpdateTask'])->whereUuid('studentId')->whereUuid('personTaskId')->name('api.v1.monitoring.otg-updates.tasks.update');
+    Route::delete('/api/v1/monitoring/otg-updates/{studentId}/tasks/objective-evidence/{fileId}', [OtgController::class, 'adminRemoveObjectiveEvidence'])->whereUuid('studentId')->whereUuid('fileId')->name('api.v1.monitoring.otg-updates.tasks.objective-evidence.destroy');
+    Route::delete('/api/v1/monitoring/otg-updates/{studentId}/tasks/proof-of-assessment/{fileId}', [OtgController::class, 'adminRemoveProofOfAssessment'])->whereUuid('studentId')->whereUuid('fileId')->name('api.v1.monitoring.otg-updates.tasks.proof-of-assessment.destroy');
     Route::get('/api/v1/monitoring/reports/options', [ReportsController::class, 'options'])->name('api.v1.monitoring.reports.options');
     Route::get('/api/v1/monitoring/reports', [ReportsController::class, 'index'])->name('api.v1.monitoring.reports.index');
 
     // Monitoring — Daily Journals
-    Route::inertia('/monitoring/daily-journals/datatable/{journalId}','monitoring/daily-journals/datatable/Index',['journalId' => fn () => (string) request()->route('journalId')])->where('journalId', '[A-Za-z0-9-]+')->name('monitoring.daily-journals.edit');
+    Route::inertia('/monitoring/daily-journals/datatable/{journalId}', 'monitoring/daily-journals/datatable/Index', ['journalId' => fn () => (string) request()->route('journalId')])->where('journalId', '[A-Za-z0-9-]+')->name('monitoring.daily-journals.edit');
     Route::prefix('/api/v1/monitoring/daily-journals')->controller(JournalsController::class)->group(function (): void {
         Route::get('/{journalId}', 'show')->where('journalId', '[A-Za-z0-9-]+')->name('api.v1.monitoring.daily-journals.show');
         Route::put('/{journalId}', 'update')->where('journalId', '[A-Za-z0-9-]+')->name('api.v1.monitoring.daily-journals.update');
         Route::post('/{journalId}/evidence', 'uploadEvidence')->where('journalId', '[A-Za-z0-9-]+')->name('api.v1.monitoring.daily-journals.evidence');
-        Route::post('/{journalId}/signature', 'uploadSignature')->middleware('throttle:10,1')->where('journalId', '[A-Za-z0-9-]+')->name('api.v1.monitoring.daily-journals.signature');
+        Route::post('/{journalId}/signature', 'uploadSignature')->middleware('throttle:10, 1')->where('journalId', '[A-Za-z0-9-]+')->name('api.v1.monitoring.daily-journals.signature');
     });
 
     // Assessment Report — Item Analysis History API. Static routes precede {historyId}.
     Route::get('/api/v1/assessment-reports/item-analysis-history/options', [ItemAnalysisHistoryController::class, 'options'])->name('api.v1.assessment-reports.item-analysis-history.options');
     Route::get('/api/v1/assessment-reports/item-analysis-history/packages/{courseId}/subjects', [ItemAnalysisHistoryController::class, 'subjects'])->whereUuid('courseId')->name('api.v1.assessment-reports.item-analysis-history.subjects');
     Route::get('/api/v1/assessment-reports/item-analysis-history', [ItemAnalysisHistoryController::class, 'index'])->name('api.v1.assessment-reports.item-analysis-history.index');
-    Route::get('/api/v1/assessment-reports/item-analysis-history/{historyId}/export', [ItemAnalysisHistoryController::class, 'export'])->whereUuid('historyId')->middleware('throttle:10,1')->name('api.v1.assessment-reports.item-analysis-history.export');
-    Route::get('/api/v1/assessment-reports/item-analysis-history/{historyId}', [ItemAnalysisHistoryController::class, 'show'])->whereUuid('historyId')->middleware('throttle:30,1')->name('api.v1.assessment-reports.item-analysis-history.show');
+    Route::get('/api/v1/assessment-reports/item-analysis-history/{historyId}/export', [ItemAnalysisHistoryController::class, 'export'])->whereUuid('historyId')->middleware('throttle:10, 1')->name('api.v1.assessment-reports.item-analysis-history.export');
+    Route::get('/api/v1/assessment-reports/item-analysis-history/{historyId}', [ItemAnalysisHistoryController::class, 'show'])->whereUuid('historyId')->middleware('throttle:30, 1')->name('api.v1.assessment-reports.item-analysis-history.show');
     Route::delete('/api/v1/assessment-reports/item-analysis-history/{historyId}', [ItemAnalysisHistoryController::class, 'destroy'])->whereUuid('historyId')->name('api.v1.assessment-reports.item-analysis-history.destroy');
 
     // Assessment Report — Questions List API.
     Route::get('/api/v1/assessment-reports/question-list/options', [QuestionListController::class, 'options'])->name('api.v1.assessment-reports.question-list.options');
     Route::get('/api/v1/assessment-reports/question-list/packages/{courseId}/subjects', [QuestionListController::class, 'subjects'])->whereUuid('courseId')->name('api.v1.assessment-reports.question-list.subjects');
-    Route::get('/api/v1/assessment-reports/question-list/export', [QuestionListController::class, 'export'])->middleware('throttle:10,1')->name('api.v1.assessment-reports.question-list.export');
+    Route::get('/api/v1/assessment-reports/question-list/export', [QuestionListController::class, 'export'])->middleware('throttle:10, 1')->name('api.v1.assessment-reports.question-list.export');
     Route::get('/api/v1/assessment-reports/question-list', [QuestionListController::class, 'index'])->name('api.v1.assessment-reports.question-list.index');
 
     // Assessment Report — Questions List API.
     Route::get('/api/v1/assessment-reports/item-analysis/options', [ItemAnalysisController::class, 'options'])->name('api.v1.assessment-reports.item-analysis.options');
     Route::get('/api/v1/assessment-reports/item-analysis/packages/{courseId}/subjects', [ItemAnalysisController::class, 'subjects'])->whereUuid('courseId')->name('api.v1.assessment-reports.item-analysis.subjects');
-    Route::post('/api/v1/assessment-reports/item-analysis/preview', [ItemAnalysisController::class, 'preview'])->middleware('throttle:30,1')->name('api.v1.assessment-reports.item-analysis.preview');
-    Route::post('/api/v1/assessment-reports/item-analysis/generate', [ItemAnalysisController::class, 'generate'])->middleware('throttle:10,1')->name('api.v1.assessment-reports.item-analysis.generate');
+    Route::post('/api/v1/assessment-reports/item-analysis/preview', [ItemAnalysisController::class, 'preview'])->middleware('throttle:30, 1')->name('api.v1.assessment-reports.item-analysis.preview');
+    Route::post('/api/v1/assessment-reports/item-analysis/generate', [ItemAnalysisController::class, 'generate'])->middleware('throttle:10, 1')->name('api.v1.assessment-reports.item-analysis.generate');
 
     // Assessment Report: Discriminability Index.
     Route::get('/api/v1/assessment-reports/discriminability-index/options', [DiscriminabilityIndexController::class, 'options'])->name('api.v1.discriminability-index.options');
     Route::get('/api/v1/assessment-reports/discriminability-index/packages/{courseId}/subjects', [DiscriminabilityIndexController::class, 'subjects'])->whereUuid('courseId')->name('api.v1.discriminability-index.subjects');
-    Route::post('/api/v1/assessment-reports/discriminability-index/generate', [DiscriminabilityIndexController::class, 'generate'])->middleware('throttle:30,1')->name('api.v1.discriminability-index.generate');
+    Route::post('/api/v1/assessment-reports/discriminability-index/generate', [DiscriminabilityIndexController::class, 'generate'])->middleware('throttle:30, 1')->name('api.v1.discriminability-index.generate');
 
     // Assessment Report: Difficulty Level.
     Route::get('/api/v1/assessment-reports/difficulty-level/options', [DifficultyLevelController::class, 'options'])->name('api.v1.difficulty-level.options');
     Route::get('/api/v1/assessment-reports/difficulty-level/packages/{courseId}/subjects', [DifficultyLevelController::class, 'subjects'])->whereUuid('courseId')->name('api.v1.difficulty-level.subjects');
-    Route::post('/api/v1/assessment-reports/difficulty-level/generate', [DifficultyLevelController::class, 'generate'])->middleware('throttle:30,1')->name('api.v1.difficulty-level.generate');
+    Route::post('/api/v1/assessment-reports/difficulty-level/generate', [DifficultyLevelController::class, 'generate'])->middleware('throttle:30, 1')->name('api.v1.difficulty-level.generate');
 
     // Assessment Report: Frequency of Correct Answer.
     Route::get('/api/v1/assessment-reports/correct-answer-frequency/options', [CorrectAnswerFrequencyController::class, 'options'])->name('api.v1.correct-answer-frequency.options');
     Route::get('/api/v1/assessment-reports/correct-answer-frequency/packages/{courseId}/subjects', [CorrectAnswerFrequencyController::class, 'subjects'])->whereUuid('courseId')->name('api.v1.correct-answer-frequency.subjects');
-    Route::post('/api/v1/assessment-reports/correct-answer-frequency/generate', [CorrectAnswerFrequencyController::class, 'generate'])->middleware('throttle:30,1')->name('api.v1.correct-answer-frequency.generate');
+    Route::post('/api/v1/assessment-reports/correct-answer-frequency/generate', [CorrectAnswerFrequencyController::class, 'generate'])->middleware('throttle:30, 1')->name('api.v1.correct-answer-frequency.generate');
 
     // Assessment Report: Exam Results Summary.
     Route::get('/api/v1/assessment-reports/exam-results-summary/options', [ExamResultsSummaryController::class, 'options'])->name('api.v1.exam-results-summary.options');
-    Route::post('/api/v1/assessment-reports/exam-results-summary/generate', [ExamResultsSummaryController::class, 'generate'])->middleware('throttle:30,1')->name('api.v1.exam-results-summary.generate');
+    Route::post('/api/v1/assessment-reports/exam-results-summary/generate', [ExamResultsSummaryController::class, 'generate'])->middleware('throttle:30, 1')->name('api.v1.exam-results-summary.generate');
 
     // Assessment Report: Exam Packages Summary.
     Route::get('/api/v1/assessment-reports/exam-packages-summary/options', [ExamPackagesSummaryController::class, 'options'])->name('api.v1.exam-packages-summary.options');
     Route::get('/api/v1/assessment-reports/exam-packages-summary/subjects', [ExamPackagesSummaryController::class, 'subjects'])->name('api.v1.exam-packages-summary.subjects');
-    Route::post('/api/v1/assessment-reports/exam-packages-summary/generate', [ExamPackagesSummaryController::class, 'generate'])->middleware('throttle:30,1')->name('api.v1.exam-packages-summary.generate');
-    Route::put( '/api/v1/dashboard/theoretical-assessments/{assessmentId}', [TheoreticalAssessmentsController::class, 'update'])->name('api.v1.dashboard.theoretical-assessments.update');
-    Route::get('/api/v1/dashboard/theoretical-external/{assessmentId}/edit', [TheoreticalExternalAssessmentsController::class, 'edit']) ->name('api.v1.dashboard.theoretical-external.edit');
-    Route::put('/api/v1/dashboard/theoretical-external/{assessmentId}', [TheoreticalExternalAssessmentsController::class, 'update']) ->name('api.v1.dashboard.theoretical-external.update');
-    Route::get('/api/v1/dashboard/practical-external/{assessmentId}/edit', [PracticalExternalAssessmentsController::class, 'edit']) ->name('api.v1.dashboard.practical-external.edit');
-    Route::put('/api/v1/dashboard/practical-external/{assessmentId}', [PracticalExternalAssessmentsController::class, 'update']) ->name('api.v1.dashboard.practical-external.update');
+    Route::post('/api/v1/assessment-reports/exam-packages-summary/generate', [ExamPackagesSummaryController::class, 'generate'])->middleware('throttle:30, 1')->name('api.v1.exam-packages-summary.generate');
+    Route::put('/api/v1/dashboard/theoretical-assessments/{assessmentId}', [TheoreticalAssessmentsController::class, 'update'])->name('api.v1.dashboard.theoretical-assessments.update');
+    Route::get('/api/v1/dashboard/theoretical-external/{assessmentId}/edit', [TheoreticalExternalAssessmentsController::class, 'edit'])->name('api.v1.dashboard.theoretical-external.edit');
+    Route::put('/api/v1/dashboard/theoretical-external/{assessmentId}', [TheoreticalExternalAssessmentsController::class, 'update'])->name('api.v1.dashboard.theoretical-external.update');
+    Route::get('/api/v1/dashboard/practical-external/{assessmentId}/edit', [PracticalExternalAssessmentsController::class, 'edit'])->name('api.v1.dashboard.practical-external.edit');
+    Route::put('/api/v1/dashboard/practical-external/{assessmentId}', [PracticalExternalAssessmentsController::class, 'update'])->name('api.v1.dashboard.practical-external.update');
 });
 
 // Dashboard — existing routes outside the auth group
@@ -464,7 +471,7 @@ Route::prefix('/api/v1/assessment-setup/question-upload')->group(function (): vo
     Route::get('/options', [QuestionUploadController::class, 'options']);
     Route::get('/packages/{courseId}/subjects', [QuestionUploadController::class, 'subjects']);
     Route::get('/template', [QuestionUploadController::class, 'template']);
-    Route::post('/import', [QuestionUploadController::class, 'import'])->middleware('throttle:10,1');
+    Route::post('/import', [QuestionUploadController::class, 'import'])->middleware('throttle:10, 1');
 });
 Route::prefix('/api/v1/assessment-setup/question-activation')->group(function (): void {
     Route::get('/options', [QuestionActivationController::class, 'options']);
@@ -479,4 +486,11 @@ Route::prefix('/api/v1/assessment-setup/subject-batch')->group(function (): void
     Route::get('/packages/{courseId}/subjects', [SubjectBatchUpdateController::class, 'subjects']);
     Route::patch('/packages/{courseId}/subjects', [SubjectBatchUpdateController::class, 'update']);
 });
+if (app()->environment('local')) {
+    Route::middleware(['auth', 'account.type:administrator'])->group(function (): void {
+        Route::get('/email-preview', [EmailPreviewController::class, 'index'],)->name('email-preview\\.index');
+        Route::get('/email-preview/{template}', [EmailPreviewController::class, 'preview'],)->name('email-preview\\.preview');
+        Route::post('/email-preview/send', [EmailPreviewController::class, 'send'],)->middleware('throttle:10, 1')->name('email-preview\\.send');
+    });
+}
 require __DIR__.'/settings.php';
