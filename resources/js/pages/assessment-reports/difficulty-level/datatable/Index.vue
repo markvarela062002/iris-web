@@ -65,71 +65,141 @@ const columns = computed<DataTableColumn[]>(() => [
 const filteredItems = computed(() => {
     const query = search.value.trim().toLowerCase();
     const rows = (report.value?.items ?? []).filter(item => !query || [item.question, item.df_remarks].some(value => String(value ?? '').toLowerCase().includes(query)));
+
     return [...rows].sort((a, b) => {
         const x = a[sortField.value], y = b[sortField.value];
-        if (x === null || x === undefined) return y === null || y === undefined ? 0 : 1;
-        if (y === null || y === undefined) return -1;
+
+        if (x === null || x === undefined) {
+return y === null || y === undefined ? 0 : 1;
+}
+
+        if (y === null || y === undefined) {
+return -1;
+}
+
         const diff = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y));
+
         return diff * sortOrder.value || a.index - b.index;
     });
 });
 const pageItems = computed(() => filteredItems.value.slice(first.value, first.value + perPage.value));
-function number(value: unknown): string { return typeof value === 'number' ? value.toFixed(2) : '—'; }
+function number(value: unknown): string {
+ return typeof value === 'number' ? value.toFixed(2) : '—'; 
+}
 function message(error: unknown, fallback: string): string {
-    if (!axios.isAxiosError(error)) return fallback;
+    if (!axios.isAxiosError(error)) {
+return fallback;
+}
+
     const data = error.response?.data;
     const validation = data?.errors ? Object.values(data.errors).flat()[0] : null;
+
     return typeof validation === 'string' ? validation : data?.message || fallback;
 }
 async function loadOptions(): Promise<void> {
     optionsLoading.value = true;
+
     try {
         const { data } = await axios.get(base + '/options', { signal: lifetime.signal });
         sessions.value = data.sessions; packages.value = data.packages;
-    } catch (error) { if (!axios.isCancel(error)) errorMessage.value = message(error, 'Could not load options.'); }
-    finally { if (!disposed) optionsLoading.value = false; }
+    } catch (error) {
+ if (!axios.isCancel(error)) {
+errorMessage.value = message(error, 'Could not load options.');
+} 
+} finally {
+ if (!disposed) {
+optionsLoading.value = false;
+} 
+}
 }
 async function packageChanged(): Promise<void> {
     subjectRequest?.abort(); subjects.value = []; filters.value.bs_topic_id = null; subjectsLoading.value = false;
-    const id = filters.value.bs_course_id; if (!id) return;
+    const id = filters.value.bs_course_id;
+
+ if (!id) {
+return;
+}
+
     const controller = new AbortController(); subjectRequest = controller; subjectsLoading.value = true;
+
     try {
         const { data } = await axios.get(base + '/packages/' + encodeURIComponent(id) + '/subjects', { signal: controller.signal });
-        if (!controller.signal.aborted) subjects.value = data.data;
-    } catch (error) { if (!axios.isCancel(error)) errorMessage.value = message(error, 'Could not load subjects.'); }
-    finally { if (!controller.signal.aborted && !disposed) subjectsLoading.value = false; }
+
+        if (!controller.signal.aborted) {
+subjects.value = data.data;
+}
+    } catch (error) {
+ if (!axios.isCancel(error)) {
+errorMessage.value = message(error, 'Could not load subjects.');
+} 
+} finally {
+ if (!controller.signal.aborted && !disposed) {
+subjectsLoading.value = false;
+} 
+}
 }
 function valid(): boolean {
     const missing = !filters.value.bs_exam_session_id ? 'Exam Session' : !filters.value.bs_course_id ? 'Exam Package' : !filters.value.bs_topic_id ? 'Subject' : !filters.value.pct ? 'Group Percentage' : '';
-    if (missing) { errorMessage.value = missing + ' is required.'; return false; }
+
+    if (missing) {
+ errorMessage.value = missing + ' is required.';
+
+ return false; 
+}
+
     return true;
 }
 async function generate(): Promise<void> {
-    if (loading.value || !valid()) return;
+    if (loading.value || !valid()) {
+return;
+}
+
     previewRequest?.abort();
     const controller = new AbortController();
     previewRequest = controller;
     loading.value = true;
     errorMessage.value = '';
+
     try {
         const { data } = await axios.post<Report>(base + '/generate', { ...filters.value }, { signal: controller.signal });
-        if (!controller.signal.aborted) { report.value = data; first.value = 0; search.value = ''; }
+
+        if (!controller.signal.aborted) {
+ report.value = data; first.value = 0; search.value = ''; 
+}
     } catch (error) {
-        if (!axios.isCancel(error)) errorMessage.value = message(error, 'Report generation failed.');
+        if (!axios.isCancel(error)) {
+errorMessage.value = message(error, 'Report generation failed.');
+}
     } finally {
-        if (!controller.signal.aborted && !disposed) loading.value = false;
+        if (!controller.signal.aborted && !disposed) {
+loading.value = false;
+}
     }
 }
 function clear(): void {
-    if (loading.value) return;
+    if (loading.value) {
+return;
+}
+
     subjectRequest?.abort(); subjectsLoading.value = false; subjects.value = [];
     filters.value = emptyFilters(); report.value = null; first.value = 0; search.value = ''; errorMessage.value = '';
 }
-function pageChanged(event: PageEvent): void { first.value = event.first; perPage.value = event.rows; }
-function sortChanged(event: SortEvent): void { sortField.value = event.sortField || 'index'; sortOrder.value = event.sortOrder === -1 ? -1 : 1; first.value = 0; }
-function searchChanged(value: string): void { search.value = value; first.value = 0; }
+function pageChanged(event: PageEvent): void {
+ first.value = event.first; perPage.value = event.rows; 
+}
+function sortChanged(event: SortEvent): void {
+ sortField.value = event.sortField || 'index'; sortOrder.value = event.sortOrder === -1 ? -1 : 1; first.value = 0; 
+}
+function searchChanged(value: string): void {
+ search.value = value; first.value = 0; 
+}
 function download(): void {
-    const current = report.value; if (!current || loading.value) return;
+    const current = report.value;
+
+ if (!current || loading.value) {
+return;
+}
+
     const h = current.history;
     const lines: unknown[][] = [
         ['Difficulty Level', 'Read-only report'],
@@ -139,15 +209,21 @@ function download(): void {
         ...current.warnings.map(warning => ['Note', warning]),
         ['No.', 'Question', 'Appearances', 'Group', 'Correct', 'Percentage', 'Difficulty Level', 'Remarks', 'A', 'B', 'C', 'D'],
     ];
+
     for (const item of current.items) {
         for (const group of ['upper', 'lower'] as const) {
             lines.push([item.index, item.question, item.appearances, group, item[group + '_correct'], item[group + '_pct'], item.df, item.df_remarks,
                 ...letters.map(letter => current.summary.show_options ? item.options[letter][group] : '')]);
         }
     }
+
     const cell = (value: unknown): string => {
         let text = String(value ?? '');
-        if (typeof value === 'string' && /^[\s\x00-\x1f]*[=+@-]/u.test(text)) text = "'" + text;
+
+        if (typeof value === 'string' && /^[\s\x00-\x1f]*[=+@-]/u.test(text)) {
+text = "'" + text;
+}
+
         return '"' + text.replace(/"/g, '""') + '"';
     };
     const csv = '\uFEFF' + lines.map(row => row.map(cell).join(',')).join('\r\n');
@@ -155,8 +231,12 @@ function download(): void {
     const link = document.createElement('a'); link.href = url; link.download = 'difficulty-level-' + Date.now() + '.csv';
     document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
 }
-onMounted(() => { void loadOptions(); });
-onBeforeUnmount(() => { disposed = true; lifetime.abort(); subjectRequest?.abort(); previewRequest?.abort(); });
+onMounted(() => {
+ void loadOptions(); 
+});
+onBeforeUnmount(() => {
+ disposed = true; lifetime.abort(); subjectRequest?.abort(); previewRequest?.abort(); 
+});
 </script>
 
 <template>

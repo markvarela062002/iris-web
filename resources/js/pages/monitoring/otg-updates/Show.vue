@@ -1141,6 +1141,7 @@ async function loadTraining(): Promise<void> {
                         0,
                 ),
         };
+
         if (
             expandedWorkbookId.value &&
             !training.value

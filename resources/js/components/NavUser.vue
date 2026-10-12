@@ -3,7 +3,6 @@ import { usePage } from '@inertiajs/vue3';
 import { ChevronsUpDown } from '@lucide/vue';
 import { computed } from 'vue';
 
-import UserMenuContent from '@/components/UserMenuContent.vue';
 
 import {
     DropdownMenu,
@@ -17,6 +16,7 @@ import {
     SidebarMenuItem,
     useSidebar,
 } from '@/components/ui/sidebar';
+import UserMenuContent from '@/components/UserMenuContent.vue';
 
 import type { SharedData } from '@/types';
 
@@ -66,12 +66,6 @@ const displayName = computed(() => {
 
 const roleName = computed(() => {
     return user.value.role || 'CADET';
-});
-
-const accountType = computed(() => {
-    return user.value.account_type === 'student'
-        ? 'Student Account'
-        : 'Staff Account';
 });
 
 const profileImage = computed(() => {

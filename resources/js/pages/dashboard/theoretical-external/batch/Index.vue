@@ -14,9 +14,9 @@ import InputText from 'primevue/inputtext';
 
 import Message from 'primevue/message';
 
+import Select from 'primevue/select';
 import PrimeTag from 'primevue/tag';
 
-import Select from 'primevue/select';
 
 import {
     computed,
@@ -194,6 +194,7 @@ const timeOptions = ref<string[]>([]);
 const amPmTimeOptions = computed(() =>
     timeOptions.value.map((time) => {
         const [hour, minute] = time.split(':').map(Number);
+
         return {
             label: `${hour % 12 || 12}:${String(minute).padStart(2, '0')} ${hour >= 12 ? 'PM' : 'AM'}`,
             value: time,
@@ -203,11 +204,16 @@ const amPmTimeOptions = computed(() =>
 
 const dateRange = computed<Date[] | null>({
     get() {
-        if (!form.access_exp_date_from) return null;
+        if (!form.access_exp_date_from) {
+return null;
+}
+
         const parse = (value: string): Date => {
             const [year, month, day] = value.split('-').map(Number);
+
             return new Date(year, month - 1, day);
         };
+
         return [
             parse(form.access_exp_date_from),
             ...(form.access_exp_date_to

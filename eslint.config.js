@@ -84,6 +84,7 @@ export default defineConfigWithVueTs(
             'resources/js/components/ui/*',
             'resources/js/routes/**',
             'resources/js/wayfinder/**',
+            'disabled-frontend-files/**'
         ],
     },
     prettier,

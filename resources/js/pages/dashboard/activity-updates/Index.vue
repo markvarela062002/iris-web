@@ -395,10 +395,6 @@ function openUploadedFile(
     );
 }
 
-function navigateToDashboard(): void {
-    router.visit('/dashboard');
-}
-
 function navigateToActivityList(): void {
     router.visit(
         '/monitoring/activity-updates',

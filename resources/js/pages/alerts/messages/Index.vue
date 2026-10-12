@@ -5,9 +5,9 @@ import Avatar from 'primevue/avatar';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import FileUpload from 'primevue/fileupload';
+import PrimeImage from 'primevue/image';
 import InputText from 'primevue/inputtext';
 import Message from 'primevue/message';
-import PrimeImage from 'primevue/image';
 import Select from 'primevue/select';
 import Textarea from 'primevue/textarea';
 import {
@@ -274,28 +274,53 @@ function openCompose(): void {
 
 function initials(value: string | null | undefined): string {
     const parts = String(value ?? '').trim().split(/\s+/).filter(Boolean);
-    if (parts.length === 0) return 'US';
-    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+
+    if (parts.length === 0) {
+return 'US';
+}
+
+    if (parts.length === 1) {
+return parts[0].slice(0, 2).toUpperCase();
+}
+
     return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase();
 }
 
 function genderAvatar(gender: string | null | undefined): string | null {
     const value = String(gender ?? '').trim().toUpperCase();
-    if (value === 'M' || value === 'MALE') return '/images/male-cadet.png';
-    if (value === 'F' || value === 'FEMALE') return '/images/female-cadet.png';
+
+    if (value === 'M' || value === 'MALE') {
+return '/images/male-cadet.png';
+}
+
+    if (value === 'F' || value === 'FEMALE') {
+return '/images/female-cadet.png';
+}
+
     return null;
 }
 
 function avatarSource(recipient: Recipient): string | null {
     const photo = String(recipient.photo_url ?? '').trim();
-    if (photo && !failedAvatarSources.value.has(photo)) return photo;
+
+    if (photo && !failedAvatarSources.value.has(photo)) {
+return photo;
+}
+
     const fallback = genderAvatar(recipient.gender);
-    if (fallback && !failedAvatarSources.value.has(fallback)) return fallback;
+
+    if (fallback && !failedAvatarSources.value.has(fallback)) {
+return fallback;
+}
+
     return null;
 }
 
 function markAvatarFailed(source: string | null): void {
-    if (!source) return;
+    if (!source) {
+return;
+}
+
     const next = new Set(failedAvatarSources.value);
     next.add(source);
     failedAvatarSources.value = next;
@@ -304,8 +329,12 @@ function markAvatarFailed(source: string | null): void {
 function errorText(error: unknown, fallback: string): string {
     if (axios.isAxiosError(error)) {
         const message = error.response?.data?.message;
-        if (typeof message === 'string' && message.trim() !== '') return message;
+
+        if (typeof message === 'string' && message.trim() !== '') {
+return message;
+}
     }
+
     return error instanceof Error ? error.message : fallback;
 }
 
@@ -333,6 +362,7 @@ function attachmentKey(file: File): string {
 
 function createAttachment(file: File): SelectedAttachment {
     const isImage = file.type.toLowerCase().startsWith('image/') || /\.(jpg|jpeg|png|gif)$/i.test(file.name);
+
     return {
         key: attachmentKey(file),
         file,
@@ -343,14 +373,20 @@ function createAttachment(file: File): SelectedAttachment {
 
 function clearComposeFiles(): void {
     for (const attachment of composeFiles.value) {
-        if (attachment.previewUrl) URL.revokeObjectURL(attachment.previewUrl);
+        if (attachment.previewUrl) {
+URL.revokeObjectURL(attachment.previewUrl);
+}
     }
+
     composeFiles.value = [];
     composeFileUpload.value?.clear();
 }
 
 function removeComposeFile(attachment: SelectedAttachment): void {
-    if (attachment.previewUrl) URL.revokeObjectURL(attachment.previewUrl);
+    if (attachment.previewUrl) {
+URL.revokeObjectURL(attachment.previewUrl);
+}
+
     composeFiles.value = composeFiles.value.filter((item) => item.key !== attachment.key);
 }
 
@@ -360,40 +396,58 @@ function onComposeFilesSelected(event: FileUploadSelectEvent): void {
 
     for (const file of Array.from(event.files ?? [])) {
         const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
+
         if (!ACCEPTED_EXTENSIONS.has(extension)) {
             rejected.push(`${file.name}: unsupported file type`);
             continue;
         }
+
         if (file.size > MAX_ATTACHMENT_SIZE) {
             rejected.push(`${file.name}: exceeds 20 MB`);
             continue;
         }
 
         const attachment = createAttachment(file);
+
         if (existing.has(attachment.key)) {
-            if (attachment.previewUrl) URL.revokeObjectURL(attachment.previewUrl);
+            if (attachment.previewUrl) {
+URL.revokeObjectURL(attachment.previewUrl);
+}
+
             continue;
         }
+
         existing.add(attachment.key);
         composeFiles.value.push(attachment);
     }
 
     composeFileUpload.value?.clear();
-    if (rejected.length > 0) composeError.value = rejected.join('. ');
+
+    if (rejected.length > 0) {
+composeError.value = rejected.join('. ');
+}
 }
 
 async function sendNewMessage(): Promise<void> {
-    if (composing.value) return;
+    if (composing.value) {
+return;
+}
+
     if (!composeRecipient.value) {
         composeError.value = 'Select a recipient.';
+
         return;
     }
+
     if (!composeSubject.value.trim()) {
         composeError.value = 'Subject is required.';
+
         return;
     }
+
     if (!composeMessage.value.trim() && composeFiles.value.length === 0) {
         composeError.value = 'Message or attachment is required.';
+
         return;
     }
 
@@ -407,6 +461,7 @@ async function sendNewMessage(): Promise<void> {
         formData.append('recipient_type', composeRecipient.value.recipient_type);
         formData.append('subject', composeSubject.value.trim());
         formData.append('content', composeMessage.value.trim());
+
         for (const attachment of composeFiles.value) {
             formData.append('files[]', attachment.file);
         }
@@ -427,13 +482,17 @@ watch(composeRecipientType, (value) => {
     if (!value) {
         composeRecipient.value = null;
         composeRecipients.value = [];
+
         return;
     }
+
     void loadRecipients(value);
 });
 
 watch(composeVisible, (visible) => {
-    if (!visible && !composing.value) clearComposeFiles();
+    if (!visible && !composing.value) {
+clearComposeFiles();
+}
 });
 
 onMounted(async () => {

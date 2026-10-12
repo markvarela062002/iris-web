@@ -12,8 +12,8 @@ import DatePicker from 'primevue/datepicker';
 import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
 import Message from 'primevue/message';
-import PrimeTag from 'primevue/tag';
 import Select from 'primevue/select';
+import PrimeTag from 'primevue/tag';
 import Textarea from 'primevue/textarea';
 import Toast from 'primevue/toast';
 import { useToast } from 'primevue/usetoast';
@@ -345,6 +345,7 @@ const cciYearOptions = computed<LookupOption[]>(
         const endYear =
             new Date().getFullYear() + 4;
         const options: LookupOption[] = [];
+
         for (
             let year = startYear;
             year <= endYear;
@@ -356,6 +357,7 @@ const cciYearOptions = computed<LookupOption[]>(
                 label: value,
             });
         }
+
         return options;
     },
 );
@@ -368,9 +370,11 @@ const studentName = computed(() => {
         .map((value) => value.trim())
         .filter(Boolean)
         .join(' ');
+
     if (lastName && otherNames) {
         return `${lastName}, ${otherNames}`.toUpperCase();
     }
+
     return (
         lastName ||
         otherNames ||
@@ -386,6 +390,7 @@ const studentInitials = computed(() => {
         form.value.fname.trim().charAt(0);
     const last =
         form.value.lname.trim().charAt(0);
+
     return (
         `${first}${last}`.toUpperCase() ||
         'ST'
@@ -403,6 +408,7 @@ function hasActualStudentPhoto(): boolean {
             .pop()
             ?.trim()
             .toLowerCase() ?? '';
+
     return (
         filename !== '' &&
         filename !== 'profile.jpg'
@@ -416,6 +422,7 @@ const photoPreviewUrl = computed<string | null>(() => {
     if (localPhotoPreview.value) {
         return localPhotoPreview.value;
     }
+
     /*
      * Do not treat the legacy photos/profile.jpg silhouette as a
      * student photo. When there is no real photo, fall through to
@@ -427,21 +434,26 @@ const photoPreviewUrl = computed<string | null>(() => {
     ) {
         return null;
     }
+
     return form.value.photo_url || null;
 });
 const defaultAvatarUrl = computed<string | null>(() => {
     if (defaultAvatarFailed.value) {
         return null;
     }
+
     const gender = String(form.value.gender ?? '')
         .trim()
         .toUpperCase();
+
     if (gender === 'MALE' || gender === 'M') {
         return '/images/male-cadet.png';
     }
+
     if (gender === 'FEMALE' || gender === 'F') {
         return '/images/female-cadet.png';
     }
+
     return '/images/default-cadet.png';
 });
 const cropImageStyle = computed(() => {
@@ -451,6 +463,7 @@ const cropImageStyle = computed(() => {
     const height =
         cropNaturalHeight.value *
         cropBaseScale.value;
+
     return {
         width: `${width}px`,
         height: `${height}px`,
@@ -467,18 +480,22 @@ function departmentSeverity():
     if (form.value.dept === 'DECK') {
         return 'success';
     }
+
     if (form.value.dept === 'ENGINE') {
         return 'info';
     }
+
     return 'secondary';
 }
 function departmentIcon(): string {
     if (form.value.dept === 'DECK') {
         return 'pi pi-compass';
     }
+
     if (form.value.dept === 'ENGINE') {
         return 'pi pi-cog';
     }
+
     return 'pi pi-building';
 }
 function parseDate(
@@ -487,6 +504,7 @@ function parseDate(
     const rawValue = String(
         value ?? '',
     ).trim();
+
     if (
         rawValue === '' ||
         rawValue === '1970-01-01' ||
@@ -495,9 +513,11 @@ function parseDate(
     ) {
         return null;
     }
+
     const date = new Date(
         `${rawValue.substring(0, 10)}T00:00:00`,
     );
+
     return Number.isNaN(
         date.getTime(),
     )
@@ -510,6 +530,7 @@ function formatDateParameter(
     if (!value) {
         return null;
     }
+
     const year = value.getFullYear();
     const month = String(
         value.getMonth() + 1,
@@ -517,6 +538,7 @@ function formatDateParameter(
     const day = String(
         value.getDate(),
     ).padStart(2, '0');
+
     return `${year}-${month}-${day}`;
 }
 function stringValue(
@@ -532,18 +554,21 @@ function genderFormValue(
     const gender = stringValue(
         value,
     ).toUpperCase();
+
     if (
         gender === 'M' ||
         gender === 'MALE'
     ) {
         return 'MALE';
     }
+
     if (
         gender === 'F' ||
         gender === 'FEMALE'
     ) {
         return 'FEMALE';
     }
+
     return null;
 }
 function loadStudentIntoForm(
@@ -662,6 +687,7 @@ async function loadProfile(): Promise<void> {
     requestController = controller;
     loading.value = true;
     pageError.value = '';
+
     try {
         const optionsRequest =
             axios.get<StudentOptionsResponse>(
@@ -677,6 +703,7 @@ async function loadProfile(): Promise<void> {
                     withCredentials: true,
                 },
             );
+
         if (isCreateMode.value) {
             const optionsResponse =
                 await optionsRequest;
@@ -686,13 +713,17 @@ async function loadProfile(): Promise<void> {
                 optionsResponse.data.data.provinces;
             form.value =
                 emptyForm();
+
             return;
         }
+
         const studentId =
             currentStudentId.value;
+
         if (!studentId) {
             return;
         }
+
         const [
             studentResponse,
             optionsResponse,
@@ -732,6 +763,7 @@ async function loadProfile(): Promise<void> {
         ) {
             return;
         }
+
         pageError.value =
             getErrorMessage(
                 error,
@@ -838,6 +870,7 @@ async function saveStudent(): Promise<void> {
         active:
             form.value.active,
     };
+
     try {
         if (isCreateMode.value) {
             const response =
@@ -906,15 +939,20 @@ async function saveStudent(): Promise<void> {
                     preserveScroll: true,
                 },
             );
+
             return;
         }
+
         const studentId =
             currentStudentId.value;
+
         if (!studentId) {
             pageError.value =
                 'The selected student ID is missing.';
+
             return;
         }
+
         const response =
             await axios.put<{
                 message: string;
@@ -933,6 +971,7 @@ async function saveStudent(): Promise<void> {
                     withCredentials: true,
                 },
             );
+
         if (submittedPassword !== '') {
             resetCredentials.value = {
                 loginName:
@@ -943,6 +982,7 @@ async function saveStudent(): Promise<void> {
             form.value.new_password = '';
             form.value.new_password_confirmation = '';
         }
+
         toast.add({
             severity: 'success',
             summary: 'Student Saved',
@@ -994,9 +1034,11 @@ async function copyCredentials(): Promise<void> {
     if (!resetCredentials.value) {
         return;
     }
+
     const credentials =
         `Login Name: ${resetCredentials.value.loginName}\n` +
         `Password: ${resetCredentials.value.password}`;
+
     try {
         await navigator.clipboard.writeText(
             credentials,
@@ -1026,13 +1068,17 @@ async function sendCredentialsEmail(): Promise<void> {
     ) {
         pageError.value =
             'Save the student account before sending credentials.';
+
         return;
     }
+
     if (emailSending.value) {
         return;
     }
+
     emailSending.value = true;
     pageError.value = '';
+
     try {
         const response =
             await axios.post<{
@@ -1087,6 +1133,7 @@ function cleanupCropSource(): void {
         );
         cropSourceUrl.value = null;
     }
+
     cropSourceFile.value = null;
     cropImageLoaded.value = false;
     cropNaturalWidth.value = 0;
@@ -1111,6 +1158,7 @@ function clampCropOffsets(): void {
     ) {
         return;
     }
+
     const displayedWidth =
         cropNaturalWidth.value *
         cropBaseScale.value *
@@ -1182,9 +1230,11 @@ function handleCropImageLoaded(
     cropImageElement.value = image;
     const viewport =
         cropViewportElement.value;
+
     if (!viewport) {
         return;
     }
+
     const viewportSize =
         Math.min(
             viewport.clientWidth,
@@ -1196,6 +1246,7 @@ function handleCropImageLoaded(
         image.naturalWidth;
     cropNaturalHeight.value =
         image.naturalHeight;
+
     if (
         image.naturalWidth <= 0 ||
         image.naturalHeight <= 0 ||
@@ -1203,8 +1254,10 @@ function handleCropImageLoaded(
     ) {
         pageError.value =
             'Unable to read the selected image.';
+
         return;
     }
+
     /*
      * Minimum scale that completely covers the square crop viewport.
      */
@@ -1224,6 +1277,7 @@ function beginCropDrag(
     if (!cropImageLoaded.value) {
         return;
     }
+
     cropDragging.value = true;
     cropPointerId.value =
         event.pointerId;
@@ -1251,6 +1305,7 @@ function moveCropDrag(
     ) {
         return;
     }
+
     cropOffsetX.value =
         cropDragOriginX.value +
         (
@@ -1274,10 +1329,12 @@ function endCropDrag(
     ) {
         return;
     }
+
     cropDragging.value = false;
     cropPointerId.value = null;
     const target =
         event.currentTarget as HTMLElement;
+
     if (
         target.hasPointerCapture(
             event.pointerId,
@@ -1300,9 +1357,11 @@ function handlePhotoSelected(
      * still triggers the change event.
      */
     input.value = '';
+
     if (!file) {
         return;
     }
+
     if (
         ![
             'image/jpeg',
@@ -1312,8 +1371,10 @@ function handlePhotoSelected(
     ) {
         pageError.value =
             'Select a JPG, PNG, or WEBP image.';
+
         return;
     }
+
     cleanupCropSource();
     cropSourceFile.value = file;
     cropSourceUrl.value =
@@ -1326,6 +1387,7 @@ async function confirmPhotoCrop(): Promise<void> {
         cropImageElement.value;
     const sourceFile =
         cropSourceFile.value;
+
     if (
         !image ||
         !sourceFile ||
@@ -1334,10 +1396,13 @@ async function confirmPhotoCrop(): Promise<void> {
     ) {
         pageError.value =
             'The image is not ready to crop.';
+
         return;
     }
+
     croppingPhoto.value = true;
     pageError.value = '';
+
     try {
         const effectiveScale =
             cropBaseScale.value *
@@ -1398,11 +1463,13 @@ async function confirmPhotoCrop(): Promise<void> {
         canvas.height = outputSize;
         const context =
             canvas.getContext('2d');
+
         if (!context) {
             throw new Error(
                 'Canvas is unavailable.',
             );
         }
+
         context.imageSmoothingEnabled =
             true;
         context.imageSmoothingQuality =
@@ -1440,8 +1507,10 @@ async function confirmPhotoCrop(): Promise<void> {
                                         'Unable to create the cropped image.',
                                     ),
                                 );
+
                                 return;
                             }
+
                             resolve(
                                 result,
                             );
@@ -1495,6 +1564,7 @@ async function confirmPhotoCrop(): Promise<void> {
             croppedFile;
         profilePhotoFailed.value =
             false;
+
         if (
             localPhotoPreview.value
         ) {
@@ -1502,6 +1572,7 @@ async function confirmPhotoCrop(): Promise<void> {
                 localPhotoPreview.value,
             );
         }
+
         localPhotoPreview.value =
             URL.createObjectURL(
                 croppedFile,
@@ -1527,13 +1598,17 @@ async function uploadPhoto(): Promise<void> {
     if (isCreateMode.value) {
         pageError.value =
             'Save the new student before uploading a profile photo.';
+
         return;
     }
+
     if (!selectedPhoto.value) {
         pageError.value =
             'Select a profile photo first.';
+
         return;
     }
+
     photoUploading.value = true;
     pageError.value = '';
     const formData = new FormData();
@@ -1541,6 +1616,7 @@ async function uploadPhoto(): Promise<void> {
         'photo',
         selectedPhoto.value,
     );
+
     try {
         const response =
             await axios.post<PhotoResponse>(
@@ -1564,15 +1640,18 @@ async function uploadPhoto(): Promise<void> {
             response.data.data.photo_url;
         profilePhotoFailed.value = false;
         selectedPhoto.value = null;
+
         if (localPhotoPreview.value) {
             URL.revokeObjectURL(
                 localPhotoPreview.value,
             );
             localPhotoPreview.value = null;
         }
+
         if (photoInput.value) {
             photoInput.value.value = '';
         }
+
         toast.add({
             severity: 'success',
             summary: 'Photo Updated',
@@ -1603,6 +1682,7 @@ function getErrorMessage(
     if (!axios.isAxiosError(error)) {
         return fallback;
     }
+
     const responseData =
         error.response?.data as
             | {
@@ -1619,6 +1699,7 @@ function getErrorMessage(
                   responseData.errors,
               )[0]?.[0]
             : undefined;
+
     return (
         firstValidationError ||
         responseData?.message ||
@@ -1630,11 +1711,13 @@ onMounted(() => {
 });
 onBeforeUnmount(() => {
     requestController?.abort();
+
     if (localPhotoPreview.value) {
         URL.revokeObjectURL(
             localPhotoPreview.value,
         );
     }
+
     cleanupCropSource();
 });
 </script>

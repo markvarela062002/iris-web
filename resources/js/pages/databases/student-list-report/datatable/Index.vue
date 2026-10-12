@@ -7,8 +7,8 @@ import Card from 'primevue/card';
 import Checkbox from 'primevue/checkbox';
 import DatePicker from 'primevue/datepicker';
 import Message from 'primevue/message';
-import PrimeTag from 'primevue/tag';
 import Select from 'primevue/select';
+import PrimeTag from 'primevue/tag';
 import {
     computed,
     onBeforeUnmount,

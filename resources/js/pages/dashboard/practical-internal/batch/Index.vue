@@ -240,7 +240,9 @@ async function loadBatches(page = 1): Promise<void> {
 
     } catch (error: unknown) {
 
-        if (axios.isCancel(error) || (axios.isAxiosError(error) && error.code === 'ERR_CANCELED')) return;
+        if (axios.isCancel(error) || (axios.isAxiosError(error) && error.code === 'ERR_CANCELED')) {
+return;
+}
 
         batches.value = [];
 
@@ -250,7 +252,9 @@ async function loadBatches(page = 1): Promise<void> {
 
     } finally {
 
-        if (listController === controller) loading.value = false;
+        if (listController === controller) {
+loading.value = false;
+}
 
     }
 
@@ -260,7 +264,9 @@ async function loadBatches(page = 1): Promise<void> {
 
 async function loadOptions(): Promise<void> {
 
-    if (assessments.value.length > 0) return;
+    if (assessments.value.length > 0) {
+return;
+}
 
     optionsLoading.value = true;
 
@@ -326,13 +332,17 @@ async function searchStudents(): Promise<void> {
 
     } catch (error: unknown) {
 
-        if (axios.isCancel(error) || (axios.isAxiosError(error) && error.code === 'ERR_CANCELED')) return;
+        if (axios.isCancel(error) || (axios.isAxiosError(error) && error.code === 'ERR_CANCELED')) {
+return;
+}
 
         errorMessage.value = getError(error, 'Unable to search students.');
 
     } finally {
 
-        if (studentController === controller) studentLoading.value = false;
+        if (studentController === controller) {
+studentLoading.value = false;
+}
 
     }
 
@@ -342,7 +352,9 @@ async function searchStudents(): Promise<void> {
 
 watch(studentSearch, () => {
 
-    if (studentTimer) clearTimeout(studentTimer);
+    if (studentTimer) {
+clearTimeout(studentTimer);
+}
 
     studentTimer = setTimeout(() => void searchStudents(), 350);
 
@@ -404,7 +416,9 @@ async function openView(row: DataTableRow): Promise<void> {
 
 function addStudent(student: Student): void {
 
-    if (selectedIds.value.has(student.id)) return;
+    if (selectedIds.value.has(student.id)) {
+return;
+}
 
     if (selectedStudents.value.length >= 40) {
 
@@ -426,7 +440,9 @@ function addStudent(student: Student): void {
 
 function removeStudent(id: string): void {
 
-    if (viewMode.value) return;
+    if (viewMode.value) {
+return;
+}
 
     selectedStudents.value = selectedStudents.value.filter((student) => student.id !== id);
 
@@ -566,7 +582,9 @@ function handleSearch(value: string): void {
 
 function handleAction(action: string, row: DataTableRow): void {
 
-    if (action === 'view') void openView(row);
+    if (action === 'view') {
+void openView(row);
+}
 
 }
 
@@ -576,11 +594,15 @@ function formatDate(value: unknown): string {
 
     const text = String(value ?? '').trim();
 
-    if (!text) return '—';
+    if (!text) {
+return '—';
+}
 
     const date = new Date(`${text.slice(0, 10)}T00:00:00`);
 
-    if (Number.isNaN(date.getTime())) return text;
+    if (Number.isNaN(date.getTime())) {
+return text;
+}
 
     return new Intl.DateTimeFormat('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }).format(date);
 
@@ -592,11 +614,15 @@ function formatDateTime(value: unknown): string {
 
     const text = String(value ?? '').trim();
 
-    if (!text) return '—';
+    if (!text) {
+return '—';
+}
 
     const date = new Date(text.replace(' ', 'T'));
 
-    if (Number.isNaN(date.getTime())) return text;
+    if (Number.isNaN(date.getTime())) {
+return text;
+}
 
     return new Intl.DateTimeFormat('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
 
@@ -624,7 +650,9 @@ function firstError(field: string): string {
 
 function getError(error: unknown, fallback: string): string {
 
-    if (!axios.isAxiosError(error)) return fallback;
+    if (!axios.isAxiosError(error)) {
+return fallback;
+}
 
     return error.response?.data?.message || fallback;
 
@@ -640,7 +668,9 @@ onBeforeUnmount(() => {
 
     studentController?.abort();
 
-    if (studentTimer) clearTimeout(studentTimer);
+    if (studentTimer) {
+clearTimeout(studentTimer);
+}
 
 });
 </script>

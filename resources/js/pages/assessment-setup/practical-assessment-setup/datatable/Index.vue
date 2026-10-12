@@ -126,7 +126,10 @@ const itemDialogTitle = computed(() =>
 );
 
 function handleGradingSystemChange(): void {
-    if (form.grade_system !== 'Rubrics') form.rubrics_id = '';
+    if (form.grade_system !== 'Rubrics') {
+form.rubrics_id = '';
+}
+
     form.passing_mark = form.grade_system === 'Checklist' ? 100 : 75;
 }
 
@@ -136,6 +139,7 @@ async function loadAssessments(page = 1): Promise<void> {
     requestController = controller;
     loading.value = true;
     errorMessage.value = '';
+
     try {
         const response = await axios.get<ListResponse>(DATATABLE_URL, {
             signal: controller.signal,
@@ -154,12 +158,17 @@ async function loadAssessments(page = 1): Promise<void> {
         first.value =
             (response.data.meta.currentPage - 1) * response.data.meta.perPage;
     } catch (error: unknown) {
-        if (isCanceled(error)) return;
+        if (isCanceled(error)) {
+return;
+}
+
         assessments.value = [];
         totalRecords.value = 0;
         errorMessage.value = getErrorMessage(error, 'Unable to load practical assessments.');
     } finally {
-        if (requestController === controller) loading.value = false;
+        if (requestController === controller) {
+loading.value = false;
+}
     }
 }
 
@@ -192,7 +201,10 @@ function handleSearch(value: string): void {
     void loadAssessments(1);
 }
 function handleAction(action: string, row: DataTableRow): void {
-    if (action === 'edit') openEditAssessment(row);
+    if (action === 'edit') {
+openEditAssessment(row);
+}
+
     if (action === 'delete') {
         selectedAssessment.value = row;
         assessmentDeleteVisible.value = true;
@@ -219,14 +231,30 @@ function openEditAssessment(row: DataTableRow): void {
 
 async function saveAssessment(): Promise<void> {
     assessmentErrors.value = {};
-    if (!form.title_assess.trim()) assessmentErrors.value.title_assess = 'Title is required.';
-    if (!form.grade_system) assessmentErrors.value.grade_system = 'Grading system is required.';
-    if (form.grade_system === 'Rubrics' && !form.rubrics_id) assessmentErrors.value.rubrics_id = 'Rubric is required.';
-    if (form.passing_mark === null) assessmentErrors.value.passing_mark = 'Passing mark is required.';
-    if (Object.keys(assessmentErrors.value).length) return;
+
+    if (!form.title_assess.trim()) {
+assessmentErrors.value.title_assess = 'Title is required.';
+}
+
+    if (!form.grade_system) {
+assessmentErrors.value.grade_system = 'Grading system is required.';
+}
+
+    if (form.grade_system === 'Rubrics' && !form.rubrics_id) {
+assessmentErrors.value.rubrics_id = 'Rubric is required.';
+}
+
+    if (form.passing_mark === null) {
+assessmentErrors.value.passing_mark = 'Passing mark is required.';
+}
+
+    if (Object.keys(assessmentErrors.value).length) {
+return;
+}
 
     const wasNew = !form.id;
     saving.value = true;
+
     try {
         const payload = {
             title_assess: form.title_assess.trim(),
@@ -252,8 +280,13 @@ async function saveAssessment(): Promise<void> {
 
 async function deleteAssessment(): Promise<void> {
     const id = String(selectedAssessment.value?.id ?? '');
-    if (!id) return;
+
+    if (!id) {
+return;
+}
+
     saving.value = true;
+
     try {
         const response = await axios.delete<{ message: string }>(`${API_BASE}/${encodeURIComponent(id)}`, requestConfig());
         assessmentDeleteVisible.value = false;
@@ -268,8 +301,12 @@ async function deleteAssessment(): Promise<void> {
 }
 
 async function loadChildren(): Promise<void> {
-    if (!form.id) return;
+    if (!form.id) {
+return;
+}
+
     childLoading.value = true;
+
     try {
         const [itemsResponse, attachmentsResponse] = await Promise.all([
             axios.get<{ data: AssessmentItem[] }>(`${API_BASE}/${encodeURIComponent(form.id)}/items`, requestConfig()),
@@ -303,14 +340,30 @@ function openEditItem(item: AssessmentItem): void {
 }
 
 async function saveItem(): Promise<void> {
-    if (!form.id) return;
+    if (!form.id) {
+return;
+}
+
     itemErrors.value = {};
-    if (!itemForm.item_d.trim()) itemErrors.value.item_d = 'Description is required.';
-    if (itemForm.prio === null) itemErrors.value.prio = 'Order number is required.';
-    if (form.grade_system === 'Points' && itemForm.point_d === null) itemErrors.value.point_d = 'Maximum score is required.';
-    if (Object.keys(itemErrors.value).length) return;
+
+    if (!itemForm.item_d.trim()) {
+itemErrors.value.item_d = 'Description is required.';
+}
+
+    if (itemForm.prio === null) {
+itemErrors.value.prio = 'Order number is required.';
+}
+
+    if (form.grade_system === 'Points' && itemForm.point_d === null) {
+itemErrors.value.point_d = 'Maximum score is required.';
+}
+
+    if (Object.keys(itemErrors.value).length) {
+return;
+}
 
     childLoading.value = true;
+
     try {
         if (itemFile.value) {
             const upload = new FormData();
@@ -323,6 +376,7 @@ async function saveItem(): Promise<void> {
             itemForm.filename_d = uploaded.data.filename;
             itemForm.file_url = uploaded.data.file_url;
         }
+
         const base = `${API_BASE}/${encodeURIComponent(form.id)}/items`;
         const payload = {
             item_d: itemForm.item_d.trim(),
@@ -347,8 +401,12 @@ async function saveItem(): Promise<void> {
 }
 
 async function deleteItem(): Promise<void> {
-    if (!form.id || !selectedItem.value?.id) return;
+    if (!form.id || !selectedItem.value?.id) {
+return;
+}
+
     childLoading.value = true;
+
     try {
         const response = await axios.delete<{ message: string }>(
             `${API_BASE}/${encodeURIComponent(form.id)}/items/${encodeURIComponent(selectedItem.value.id)}`,
@@ -367,8 +425,12 @@ async function deleteItem(): Promise<void> {
 }
 
 async function uploadAttachment(): Promise<void> {
-    if (!form.id || !attachmentFile.value) return;
+    if (!form.id || !attachmentFile.value) {
+return;
+}
+
     childLoading.value = true;
+
     try {
         const data = new FormData();
         data.append('file', attachmentFile.value);
@@ -389,8 +451,12 @@ async function uploadAttachment(): Promise<void> {
 }
 
 async function deleteAttachment(): Promise<void> {
-    if (!form.id || !selectedAttachment.value?.id) return;
+    if (!form.id || !selectedAttachment.value?.id) {
+return;
+}
+
     childLoading.value = true;
+
     try {
         const response = await axios.delete<{ message: string }>(
             `${API_BASE}/${encodeURIComponent(form.id)}/attachments/${encodeURIComponent(selectedAttachment.value.id)}`,
@@ -425,7 +491,10 @@ function resetItem(): void {
 }
 async function reloadCurrentPage(): Promise<void> {
     await loadAssessments(currentPage.value);
-    if (!assessments.value.length && currentPage.value > 1) await loadAssessments(currentPage.value - 1);
+
+    if (!assessments.value.length && currentPage.value > 1) {
+await loadAssessments(currentPage.value - 1);
+}
 }
 function requestConfig() {
     return { headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, withCredentials: true };
@@ -437,12 +506,19 @@ function isCanceled(error: unknown): boolean {
     return axios.isCancel(error) || (axios.isAxiosError(error) && error.code === 'ERR_CANCELED');
 }
 function getErrorMessage(error: unknown, fallback: string): string {
-    if (!axios.isAxiosError(error)) return fallback;
+    if (!axios.isAxiosError(error)) {
+return fallback;
+}
+
     return (error.response?.data as { message?: string } | undefined)?.message || fallback;
 }
 function getValidationErrors(error: unknown): Errors {
-    if (!axios.isAxiosError(error)) return {};
+    if (!axios.isAxiosError(error)) {
+return {};
+}
+
     const errors = (error.response?.data as { errors?: Record<string, string[]> } | undefined)?.errors ?? {};
+
     return Object.fromEntries(Object.entries(errors).map(([key, value]) => [key, value[0] ?? 'Invalid value.']));
 }
 function notify(severity: 'success' | 'warn', summary: string, detail: string): void {

@@ -89,29 +89,44 @@ function message(error: unknown, fallback: string): string {
     if (axios.isAxiosError(error)) {
         const data = error.response?.data;
         const validation = data?.errors ? Object.values(data.errors).flat()[0] : null;
+
         return typeof validation === 'string' ? validation : data?.message || fallback;
     }
+
     return fallback;
 }
-function number(value: number | null): string { return value === null ? '—' : value.toFixed(2); }
+function number(value: number | null): string {
+ return value === null ? '—' : value.toFixed(2); 
+}
 function date(value: unknown): string {
     // Date analyzed is a school-local legacy date; don't introduce a browser timezone shift.
     const raw = String(value ?? '');
     const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (!match) return raw || '—';
+
+    if (!match) {
+return raw || '—';
+}
+
     return new Intl.DateTimeFormat('en-PH', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
         .format(new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]))));
 }
 async function loadOptions(): Promise<void> {
     optionsLoading.value = true;
+
     try {
         const { data } = await axios.get(base + '/options', { signal: lifetime.signal });
         sessions.value = data.sessions;
         packages.value = data.packages;
         canDelete.value = data.can_delete;
     } catch (error) {
-        if (!axios.isCancel(error)) errorMessage.value = message(error, 'Could not load filter options.');
-    } finally { if (!disposed) optionsLoading.value = false; }
+        if (!axios.isCancel(error)) {
+errorMessage.value = message(error, 'Could not load filter options.');
+}
+    } finally {
+ if (!disposed) {
+optionsLoading.value = false;
+} 
+}
 }
 async function packageChanged(): Promise<void> {
     subjectRequest?.abort();
@@ -119,16 +134,30 @@ async function packageChanged(): Promise<void> {
     subjects.value = [];
     subjectsLoading.value = false;
     const courseId = filters.value.bs_course_id;
-    if (!courseId) return;
+
+    if (!courseId) {
+return;
+}
+
     const controller = new AbortController();
     subjectRequest = controller;
     subjectsLoading.value = true;
+
     try {
         const { data } = await axios.get(base + '/packages/' + encodeURIComponent(courseId) + '/subjects', { signal: controller.signal });
-        if (!controller.signal.aborted) subjects.value = data.data;
+
+        if (!controller.signal.aborted) {
+subjects.value = data.data;
+}
     } catch (error) {
-        if (!axios.isCancel(error)) errorMessage.value = message(error, 'Could not load subjects.');
-    } finally { if (!controller.signal.aborted && !disposed) subjectsLoading.value = false; }
+        if (!axios.isCancel(error)) {
+errorMessage.value = message(error, 'Could not load subjects.');
+}
+    } finally {
+ if (!controller.signal.aborted && !disposed) {
+subjectsLoading.value = false;
+} 
+}
 }
 async function loadHistory(page = 1): Promise<void> {
     listRequest?.abort();
@@ -136,32 +165,49 @@ async function loadHistory(page = 1): Promise<void> {
     listRequest = controller;
     loading.value = true;
     errorMessage.value = '';
+
     try {
         const { data } = await axios.get(base, {
             signal: controller.signal,
             params: { ...appliedFilters, page, per_page: perPage.value, search: search.value, sort_field: sortField.value, sort_direction: sortDirection.value },
         });
-        if (controller.signal.aborted) return;
+
+        if (controller.signal.aborted) {
+return;
+}
+
         histories.value = data.data;
         total.value = data.meta.total;
         perPage.value = data.meta.perPage;
         first.value = (data.meta.currentPage - 1) * data.meta.perPage;
         canDelete.value = data.can_delete;
     } catch (error) {
-        if (!axios.isCancel(error)) { histories.value = []; total.value = 0; errorMessage.value = message(error, 'Could not load history.'); }
-    } finally { if (!controller.signal.aborted && !disposed) loading.value = false; }
+        if (!axios.isCancel(error)) {
+ histories.value = []; total.value = 0; errorMessage.value = message(error, 'Could not load history.'); 
 }
-function applyFilters(): void { appliedFilters = { ...filters.value }; first.value = 0; void loadHistory(); }
+    } finally {
+ if (!controller.signal.aborted && !disposed) {
+loading.value = false;
+} 
+}
+}
+function applyFilters(): void {
+ appliedFilters = { ...filters.value }; first.value = 0; void loadHistory(); 
+}
 function clearFilters(): void {
     subjectRequest?.abort(); subjectsLoading.value = false; subjects.value = [];
     filters.value = emptyFilters(); applyFilters();
 }
-function pageChanged(event: PageEvent): void { perPage.value = event.rows; void loadHistory(event.page + 1); }
+function pageChanged(event: PageEvent): void {
+ perPage.value = event.rows; void loadHistory(event.page + 1); 
+}
 function sortChanged(event: SortEvent): void {
     sortField.value = event.sortField || 'date_analyzed'; sortDirection.value = event.sortOrder === 1 ? 'asc' : 'desc';
     first.value = 0; void loadHistory();
 }
-function searchChanged(value: string): void { search.value = value; first.value = 0; void loadHistory(); }
+function searchChanged(value: string): void {
+ search.value = value; first.value = 0; void loadHistory(); 
+}
 function viewHistory(row: History): void {
     selectedId.value = row.id; metricMode.value = 'legacy'; reportVisible.value = true; void loadReport();
 }
@@ -169,18 +215,31 @@ async function loadReport(): Promise<void> {
     reportRequest?.abort();
     const controller = new AbortController(); reportRequest = controller;
     report.value = null; reportError.value = ''; reportLoading.value = true;
+
     try {
         const { data } = await axios.get<Report>(base + '/' + encodeURIComponent(selectedId.value), {
             signal: controller.signal, params: { metric_mode: metricMode.value },
         });
-        if (!controller.signal.aborted) report.value = data;
-    } catch (error) {
-        if (!axios.isCancel(error)) reportError.value = message(error, 'Could not calculate the report.');
-    } finally { if (!controller.signal.aborted && !disposed) reportLoading.value = false; }
+
+        if (!controller.signal.aborted) {
+report.value = data;
 }
-function reportClosed(): void { reportRequest?.abort(); report.value = null; }
+    } catch (error) {
+        if (!axios.isCancel(error)) {
+reportError.value = message(error, 'Could not calculate the report.');
+}
+    } finally {
+ if (!controller.signal.aborted && !disposed) {
+reportLoading.value = false;
+} 
+}
+}
+function reportClosed(): void {
+ reportRequest?.abort(); report.value = null; 
+}
 async function downloadReport(): Promise<void> {
     downloading.value = true; reportError.value = '';
+
     try {
         const { data } = await axios.get(base + '/' + encodeURIComponent(selectedId.value) + '/export', {
             responseType: 'blob', signal: lifetime.signal, params: { metric_mode: metricMode.value },
@@ -189,29 +248,62 @@ async function downloadReport(): Promise<void> {
         const link = document.createElement('a'); link.href = url; link.download = 'item-analysis-' + selectedId.value + '.csv';
         document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
     } catch (error) {
-        if (axios.isCancel(error)) return;
-        if (axios.isAxiosError(error) && error.response?.data instanceof Blob) {
-            try { const payload = JSON.parse(await error.response.data.text()); reportError.value = Object.values(payload.errors ?? {}).flat().join(' ') || payload.message || 'Export failed.'; }
-            catch { reportError.value = 'Export failed.'; }
-        } else reportError.value = message(error, 'Export failed.');
-    } finally { if (!disposed) downloading.value = false; }
+        if (axios.isCancel(error)) {
+return;
 }
-function requestDelete(row: History): void { deleteTarget.value = row; deleteError.value = ''; deleteVisible.value = true; }
+
+        if (axios.isAxiosError(error) && error.response?.data instanceof Blob) {
+            try {
+ const payload = JSON.parse(await error.response.data.text()); reportError.value = Object.values(payload.errors ?? {}).flat().join(' ') || payload.message || 'Export failed.'; 
+} catch {
+ reportError.value = 'Export failed.'; 
+}
+        } else {
+reportError.value = message(error, 'Export failed.');
+}
+    } finally {
+ if (!disposed) {
+downloading.value = false;
+} 
+}
+}
+function requestDelete(row: History): void {
+ deleteTarget.value = row; deleteError.value = ''; deleteVisible.value = true; 
+}
 async function deleteHistory(): Promise<void> {
-    if (!deleteTarget.value || deleting.value) return;
+    if (!deleteTarget.value || deleting.value) {
+return;
+}
+
     deleting.value = true; deleteError.value = '';
+
     try {
         const { data } = await axios.delete(base + '/' + encodeURIComponent(deleteTarget.value.id));
-        if (disposed) return;
+
+        if (disposed) {
+return;
+}
+
         deleteVisible.value = false; successMessage.value = data.message;
         const newTotal = Math.max(0, total.value - 1);
         const page = Math.max(1, Math.min(Math.floor(first.value / perPage.value) + 1, Math.ceil(newTotal / perPage.value)));
         await loadHistory(page);
-    } catch (error) { if (!disposed) deleteError.value = message(error, 'Could not delete history.'); }
-    finally { if (!disposed) deleting.value = false; }
+    } catch (error) {
+ if (!disposed) {
+deleteError.value = message(error, 'Could not delete history.');
+} 
+} finally {
+ if (!disposed) {
+deleting.value = false;
+} 
 }
-onMounted(() => { void loadOptions(); void loadHistory(); });
-onBeforeUnmount(() => { disposed = true; lifetime.abort(); listRequest?.abort(); subjectRequest?.abort(); reportRequest?.abort(); });
+}
+onMounted(() => {
+ void loadOptions(); void loadHistory(); 
+});
+onBeforeUnmount(() => {
+ disposed = true; lifetime.abort(); listRequest?.abort(); subjectRequest?.abort(); reportRequest?.abort(); 
+});
 </script>
 
 <template>

@@ -256,6 +256,7 @@ function syncServerClock(metadata: ExamMetadata): void {
 function updateRemainingTime(): void {
     if (!exam.value?.expires_at) {
         remainingSeconds.value = 0;
+
         return;
     }
 
@@ -263,6 +264,7 @@ function updateRemainingTime(): void {
 
     if (Number.isNaN(expiry)) {
         remainingSeconds.value = 0;
+
         return;
     }
 
@@ -376,6 +378,7 @@ async function startOrResumeExam(): Promise<void> {
             topic.value = null;
             questions.value = [];
             stopLocalTimer();
+
             return;
         }
 
@@ -386,6 +389,7 @@ async function startOrResumeExam(): Promise<void> {
             error.response?.data?.time_expired === true
         ) {
             await loadState();
+
             return;
         }
 
@@ -432,6 +436,7 @@ async function saveAnswer(
             error.response?.data?.time_expired === true
         ) {
             await finalizeTimeout();
+
             return;
         }
 
@@ -505,6 +510,7 @@ async function submitTopic(): Promise<void> {
             error.response?.data?.time_expired === true
         ) {
             await finalizeTimeout();
+
             return;
         }
 

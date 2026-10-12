@@ -42,6 +42,7 @@ let disposed = false;
 
 async function loadCourses(): Promise<void> {
     coursesLoading.value = true;
+
     try {
         const response = await axios.get<{ data: Course[] }>(`${API}/options`, { headers: { Accept: 'application/json' } });
         courses.value = response.data.data;
@@ -59,10 +60,15 @@ async function changeCourse(): Promise<void> {
     confirmed.value = false;
     resetFeedback();
     subjectsLoading.value = false;
-    if (!courseId.value) return;
+
+    if (!courseId.value) {
+return;
+}
+
     const controller = new AbortController();
     subjectRequest = controller;
     subjectsLoading.value = true;
+
     try {
         const response = await axios.get<{ data: Subject[] }>(
             `${API}/packages/${encodeURIComponent(courseId.value)}/subjects`,
@@ -70,9 +76,13 @@ async function changeCourse(): Promise<void> {
         );
         subjects.value = response.data.data;
     } catch (caught: unknown) {
-        if (!axios.isCancel(caught)) error.value = errorMessage(caught, 'Unable to load subjects.');
+        if (!axios.isCancel(caught)) {
+error.value = errorMessage(caught, 'Unable to load subjects.');
+}
     } finally {
-        if (subjectRequest === controller) subjectsLoading.value = false;
+        if (subjectRequest === controller) {
+subjectsLoading.value = false;
+}
     }
 }
 
@@ -82,48 +92,73 @@ function selectFile(event: Event): void {
     const input = event.target as HTMLInputElement;
     const selected = input.files?.[0] ?? null;
     file.value = null;
-    if (!selected) return;
+
+    if (!selected) {
+return;
+}
+
     if (!selected.name.toLowerCase().endsWith('.xlsx')) {
         error.value = 'Select an XLSX file.';
         input.value = '';
+
         return;
     }
+
     if (selected.size > 5 * 1024 * 1024) {
         error.value = 'The file must not exceed 5 MB.';
         input.value = '';
+
         return;
     }
+
     file.value = selected;
 }
 
 async function importQuestions(): Promise<void> {
     resetFeedback();
+
     if (!courseId.value || !subjectId.value || !file.value) {
         error.value = 'Select an exam package, subject, and XLSX file.';
+
         return;
     }
+
     if (!confirmed.value) {
         error.value = 'Confirm that matching questions may have their options replaced.';
+
         return;
     }
+
     importing.value = true;
     const body = new FormData();
     body.append('bs_course_id', courseId.value);
     body.append('bs_topic_id', subjectId.value);
     body.append('file', file.value);
     body.append('replace_existing', '1');
+
     try {
         const response = await axios.post<Result>(`${API}/import`, body, {
             headers: { Accept: 'application/json' },
         });
-        if (disposed) return;
+
+        if (disposed) {
+return;
+}
+
         result.value = response.data;
         file.value = null;
         confirmed.value = false;
-        if (fileInput.value) fileInput.value.value = '';
+
+        if (fileInput.value) {
+fileInput.value.value = '';
+}
     } catch (caught: unknown) {
-        if (disposed) return;
+        if (disposed) {
+return;
+}
+
         error.value = errorMessage(caught, 'Unable to import questions.');
+
         if (axios.isAxiosError(caught)) {
             issues.value = caught.response?.data?.issues ?? [];
             issueCount.value = Number(caught.response?.data?.issue_count ?? issues.value.length);
@@ -134,9 +169,13 @@ async function importQuestions(): Promise<void> {
 }
 
 function errorMessage(caught: unknown, fallback: string): string {
-    if (!axios.isAxiosError(caught)) return fallback;
+    if (!axios.isAxiosError(caught)) {
+return fallback;
+}
+
     const body = caught.response?.data;
     const first = Object.values(body?.errors ?? {})[0];
+
     return Array.isArray(first) ? String(first[0]) : String(body?.message ?? fallback);
 }
 function resetFeedback(): void {
@@ -153,7 +192,11 @@ function clearForm(): void {
     subjectsLoading.value = false;
     file.value = null;
     confirmed.value = false;
-    if (fileInput.value) fileInput.value.value = '';
+
+    if (fileInput.value) {
+fileInput.value.value = '';
+}
+
     resetFeedback();
 }
 

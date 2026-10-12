@@ -113,6 +113,7 @@ async function loadRubrics(page = 1): Promise<void> {
     requestController = controller;
     loading.value = true;
     errorMessage.value = '';
+
     try {
         const response = await axios.get<ListResponse>(DATATABLE_URL, {
             signal: controller.signal,
@@ -130,12 +131,17 @@ async function loadRubrics(page = 1): Promise<void> {
         perPage.value = response.data.meta.perPage;
         first.value = (response.data.meta.currentPage - 1) * response.data.meta.perPage;
     } catch (error: unknown) {
-        if (isCanceled(error)) return;
+        if (isCanceled(error)) {
+return;
+}
+
         rubrics.value = [];
         totalRecords.value = 0;
         errorMessage.value = getErrorMessage(error, 'Unable to load rubrics.');
     } finally {
-        if (requestController === controller) loading.value = false;
+        if (requestController === controller) {
+loading.value = false;
+}
     }
 }
 
@@ -156,7 +162,10 @@ function handleSearch(value: string): void {
     void loadRubrics(1);
 }
 function handleAction(action: string, row: DataTableRow): void {
-    if (action === 'edit') openEditRubric(row);
+    if (action === 'edit') {
+openEditRubric(row);
+}
+
     if (action === 'delete') {
         selectedRubric.value = row;
         rubricDeleteVisible.value = true;
@@ -179,10 +188,18 @@ function openEditRubric(row: DataTableRow): void {
 
 async function saveRubric(): Promise<void> {
     rubricErrors.value = {};
-    if (!rubricForm.rubrics_name.trim()) rubricErrors.value.rubrics_name = 'Name is required.';
-    if (Object.keys(rubricErrors.value).length) return;
+
+    if (!rubricForm.rubrics_name.trim()) {
+rubricErrors.value.rubrics_name = 'Name is required.';
+}
+
+    if (Object.keys(rubricErrors.value).length) {
+return;
+}
+
     const wasNew = !rubricForm.id;
     saving.value = true;
+
     try {
         const payload = {
             rubrics_name: rubricForm.rubrics_name.trim(),
@@ -205,8 +222,13 @@ async function saveRubric(): Promise<void> {
 
 async function deleteRubric(): Promise<void> {
     const id = String(selectedRubric.value?.id ?? '');
-    if (!id) return;
+
+    if (!id) {
+return;
+}
+
     saving.value = true;
+
     try {
         const response = await axios.delete<{ message: string }>(`${API_BASE}/${encodeURIComponent(id)}`, requestConfig());
         rubricDeleteVisible.value = false;
@@ -223,9 +245,12 @@ async function deleteRubric(): Promise<void> {
 async function loadCriteria(): Promise<void> {
     if (!rubricForm.id) {
         criteria.value = [];
+
         return;
     }
+
     childLoading.value = true;
+
     try {
         const response = await axios.get<{ data: Criterion[] }>(
             `${API_BASE}/${encodeURIComponent(rubricForm.id)}/criteria`,
@@ -251,11 +276,22 @@ function openEditCriterion(criterion: Criterion): void {
     criterionDialogVisible.value = true;
 }
 async function saveCriterion(): Promise<void> {
-    if (!rubricForm.id) return;
+    if (!rubricForm.id) {
+return;
+}
+
     criterionErrors.value = {};
-    if (!criterionForm.criterion_title.trim()) criterionErrors.value.criterion_title = 'Criterion title is required.';
-    if (Object.keys(criterionErrors.value).length) return;
+
+    if (!criterionForm.criterion_title.trim()) {
+criterionErrors.value.criterion_title = 'Criterion title is required.';
+}
+
+    if (Object.keys(criterionErrors.value).length) {
+return;
+}
+
     childLoading.value = true;
+
     try {
         const base = `${API_BASE}/${encodeURIComponent(rubricForm.id)}/criteria`;
         const payload = {
@@ -277,8 +313,12 @@ async function saveCriterion(): Promise<void> {
     }
 }
 async function deleteCriterion(): Promise<void> {
-    if (!rubricForm.id || !selectedCriterion.value?.id) return;
+    if (!rubricForm.id || !selectedCriterion.value?.id) {
+return;
+}
+
     childLoading.value = true;
+
     try {
         const response = await axios.delete<{ message: string }>(
             `${API_BASE}/${encodeURIComponent(rubricForm.id)}/criteria/${encodeURIComponent(selectedCriterion.value.id)}`,
@@ -312,12 +352,26 @@ function openEditLevel(criterion: Criterion, level: Level): void {
     levelDialogVisible.value = true;
 }
 async function saveLevel(): Promise<void> {
-    if (!rubricForm.id || !levelForm.criterion_id) return;
+    if (!rubricForm.id || !levelForm.criterion_id) {
+return;
+}
+
     levelErrors.value = {};
-    if (levelForm.item_point === null) levelErrors.value.item_point = 'Points are required.';
-    if (!levelForm.item_title.trim()) levelErrors.value.item_title = 'Level title is required.';
-    if (Object.keys(levelErrors.value).length) return;
+
+    if (levelForm.item_point === null) {
+levelErrors.value.item_point = 'Points are required.';
+}
+
+    if (!levelForm.item_title.trim()) {
+levelErrors.value.item_title = 'Level title is required.';
+}
+
+    if (Object.keys(levelErrors.value).length) {
+return;
+}
+
     childLoading.value = true;
+
     try {
         const base = `${API_BASE}/${encodeURIComponent(rubricForm.id)}/criteria/${encodeURIComponent(levelForm.criterion_id)}/levels`;
         const payload = {
@@ -340,8 +394,12 @@ async function saveLevel(): Promise<void> {
     }
 }
 async function deleteLevel(): Promise<void> {
-    if (!rubricForm.id || !selectedCriterion.value?.id || !selectedLevel.value?.id) return;
+    if (!rubricForm.id || !selectedCriterion.value?.id || !selectedLevel.value?.id) {
+return;
+}
+
     childLoading.value = true;
+
     try {
         const response = await axios.delete<{ message: string }>(
             `${API_BASE}/${encodeURIComponent(rubricForm.id)}/criteria/${encodeURIComponent(selectedCriterion.value.id)}/levels/${encodeURIComponent(selectedLevel.value.id)}`,
@@ -375,7 +433,10 @@ function resetLevel(): void {
 }
 async function reloadCurrentPage(): Promise<void> {
     await loadRubrics(currentPage.value);
-    if (!rubrics.value.length && currentPage.value > 1) await loadRubrics(currentPage.value - 1);
+
+    if (!rubrics.value.length && currentPage.value > 1) {
+await loadRubrics(currentPage.value - 1);
+}
 }
 function requestConfig() {
     return { headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, withCredentials: true };
@@ -384,12 +445,19 @@ function isCanceled(error: unknown): boolean {
     return axios.isCancel(error) || (axios.isAxiosError(error) && error.code === 'ERR_CANCELED');
 }
 function getErrorMessage(error: unknown, fallback: string): string {
-    if (!axios.isAxiosError(error)) return fallback;
+    if (!axios.isAxiosError(error)) {
+return fallback;
+}
+
     return (error.response?.data as { message?: string } | undefined)?.message || fallback;
 }
 function getValidationErrors(error: unknown): Errors {
-    if (!axios.isAxiosError(error)) return {};
+    if (!axios.isAxiosError(error)) {
+return {};
+}
+
     const errors = (error.response?.data as { errors?: Record<string, string[]> } | undefined)?.errors ?? {};
+
     return Object.fromEntries(Object.entries(errors).map(([key, messages]) => [key, messages[0] ?? 'Invalid value.']));
 }
 function notify(summary: string, detail: string): void {
@@ -397,6 +465,7 @@ function notify(summary: string, detail: string): void {
 }
 function formatPoints(value: unknown): string {
     const number = Number(value ?? 0);
+
     return Number.isInteger(number) ? String(number) : number.toFixed(2);
 }
 

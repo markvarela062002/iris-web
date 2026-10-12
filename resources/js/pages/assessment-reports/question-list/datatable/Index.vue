@@ -67,52 +67,101 @@ const lifetime = new AbortController();
 let disposed = false;
 
 function message(error: unknown, fallback: string): string {
-    if (!axios.isAxiosError(error)) return fallback;
+    if (!axios.isAxiosError(error)) {
+return fallback;
+}
+
     const payload = error.response?.data;
     const validation = payload?.errors ? Object.values(payload.errors).flat()[0] : null;
+
     return typeof validation === 'string' ? validation : payload?.message || fallback;
 }
 async function loadOptions(): Promise<void> {
     optionsLoading.value = true;
+
     try {
         const { data } = await axios.get<{ packages: { id: string; name_course: string }[] }>(base + '/options', { signal: lifetime.signal });
         packages.value = data.packages;
     } catch (error) {
-        if (!axios.isCancel(error)) errorMessage.value = message(error, 'Could not load exam packages.');
-    } finally { if (!disposed) optionsLoading.value = false; }
+        if (!axios.isCancel(error)) {
+errorMessage.value = message(error, 'Could not load exam packages.');
+}
+    } finally {
+ if (!disposed) {
+optionsLoading.value = false;
+} 
+}
 }
 async function packageChanged(): Promise<void> {
     subjectRequest?.abort(); subjects.value = []; filters.value.bs_topic_id = null; subjectsLoading.value = false;
     const courseId = filters.value.bs_course_id;
-    if (!courseId) return;
+
+    if (!courseId) {
+return;
+}
+
     const controller = new AbortController(); subjectRequest = controller; subjectsLoading.value = true;
+
     try {
         const { data } = await axios.get<{ data: { id: string; desc_topic: string }[] }>(base + '/packages/' + encodeURIComponent(courseId) + '/subjects', { signal: controller.signal });
-        if (!controller.signal.aborted) subjects.value = data.data;
+
+        if (!controller.signal.aborted) {
+subjects.value = data.data;
+}
     } catch (error) {
-        if (!axios.isCancel(error)) errorMessage.value = message(error, 'Could not load subjects.');
-    } finally { if (!controller.signal.aborted && !disposed) subjectsLoading.value = false; }
+        if (!axios.isCancel(error)) {
+errorMessage.value = message(error, 'Could not load subjects.');
+}
+    } finally {
+ if (!controller.signal.aborted && !disposed) {
+subjectsLoading.value = false;
+} 
+}
 }
 async function loadQuestions(page = 1): Promise<void> {
-    if (!appliedFilters) return;
+    if (!appliedFilters) {
+return;
+}
+
     listRequest?.abort(); exportRequest?.abort(); downloading.value = false;
     const controller = new AbortController(); listRequest = controller;
     loading.value = true; hasReport.value = false; errorMessage.value = '';
+
     try {
         const { data } = await axios.get<ApiResponse>(base, {
             signal: controller.signal,
             params: { ...appliedFilters, page, per_page: perPage.value, search: search.value, sort_field: sortField.value, sort_direction: sortDirection.value },
         });
-        if (controller.signal.aborted) return;
+
+        if (controller.signal.aborted) {
+return;
+}
+
         questions.value = data.data; context.value = data.context; total.value = data.meta.total;
         first.value = (data.meta.currentPage - 1) * data.meta.perPage; perPage.value = data.meta.perPage; hasReport.value = true;
     } catch (error) {
-        if (!axios.isCancel(error)) { questions.value = []; context.value = null; total.value = 0; errorMessage.value = message(error, 'Could not generate the questions list.'); }
-    } finally { if (!controller.signal.aborted && !disposed) loading.value = false; }
+        if (!axios.isCancel(error)) {
+ questions.value = []; context.value = null; total.value = 0; errorMessage.value = message(error, 'Could not generate the questions list.'); 
+}
+    } finally {
+ if (!controller.signal.aborted && !disposed) {
+loading.value = false;
+} 
+}
 }
 function generate(): void {
-    if (!filters.value.bs_course_id) { errorMessage.value = 'Exam Package is required.'; return; }
-    if (!filters.value.bs_topic_id) { errorMessage.value = 'Subject is required.'; return; }
+    if (!filters.value.bs_course_id) {
+ errorMessage.value = 'Exam Package is required.';
+
+ return; 
+}
+
+    if (!filters.value.bs_topic_id) {
+ errorMessage.value = 'Subject is required.';
+
+ return; 
+}
+
     appliedFilters = { ...filters.value }; first.value = 0; void loadQuestions();
 }
 function clearFilters(): void {
@@ -122,34 +171,62 @@ function clearFilters(): void {
     loading.value = false; subjectsLoading.value = false; downloading.value = false;
     // Preserve the Datatable's current search/sort state; the next generation uses it.
 }
-function pageChanged(event: PageEvent): void { perPage.value = event.rows; void loadQuestions(event.page + 1); }
+function pageChanged(event: PageEvent): void {
+ perPage.value = event.rows; void loadQuestions(event.page + 1); 
+}
 function sortChanged(event: SortEvent): void {
     sortField.value = event.sortField || 'quest_text'; sortDirection.value = event.sortOrder === 1 ? 'asc' : 'desc';
     first.value = 0; void loadQuestions();
 }
-function searchChanged(value: string): void { search.value = value; first.value = 0; void loadQuestions(); }
+function searchChanged(value: string): void {
+ search.value = value; first.value = 0; void loadQuestions(); 
+}
 async function download(): Promise<void> {
-    if (!appliedFilters || !hasReport.value || downloading.value) return;
+    if (!appliedFilters || !hasReport.value || downloading.value) {
+return;
+}
+
     exportRequest?.abort(); const controller = new AbortController(); exportRequest = controller;
     downloading.value = true; errorMessage.value = '';
+
     try {
         const { data } = await axios.get(base + '/export', {
             responseType: 'blob', signal: controller.signal,
             params: { ...appliedFilters, search: search.value, sort_field: sortField.value, sort_direction: sortDirection.value },
         });
-        if (controller.signal.aborted) return;
+
+        if (controller.signal.aborted) {
+return;
+}
+
         const url = URL.createObjectURL(data); const link = document.createElement('a');
         link.href = url; link.download = 'questions-list.csv'; document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
     } catch (error) {
-        if (axios.isCancel(error)) return;
-        if (axios.isAxiosError(error) && error.response?.data instanceof Blob) {
-            try { const payload = JSON.parse(await error.response.data.text()); errorMessage.value = Object.values(payload.errors ?? {}).flat().join(' ') || payload.message || 'Export failed.'; }
-            catch { errorMessage.value = 'Export failed.'; }
-        } else errorMessage.value = message(error, 'Export failed.');
-    } finally { if (!controller.signal.aborted && !disposed) downloading.value = false; }
+        if (axios.isCancel(error)) {
+return;
 }
-onMounted(() => { void loadOptions(); });
-onBeforeUnmount(() => { disposed = true; lifetime.abort(); listRequest?.abort(); subjectRequest?.abort(); exportRequest?.abort(); });
+
+        if (axios.isAxiosError(error) && error.response?.data instanceof Blob) {
+            try {
+ const payload = JSON.parse(await error.response.data.text()); errorMessage.value = Object.values(payload.errors ?? {}).flat().join(' ') || payload.message || 'Export failed.'; 
+} catch {
+ errorMessage.value = 'Export failed.'; 
+}
+        } else {
+errorMessage.value = message(error, 'Export failed.');
+}
+    } finally {
+ if (!controller.signal.aborted && !disposed) {
+downloading.value = false;
+} 
+}
+}
+onMounted(() => {
+ void loadOptions(); 
+});
+onBeforeUnmount(() => {
+ disposed = true; lifetime.abort(); listRequest?.abort(); subjectRequest?.abort(); exportRequest?.abort(); 
+});
 </script>
 
 <template>

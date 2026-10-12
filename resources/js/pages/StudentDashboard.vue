@@ -175,8 +175,13 @@ const profileImage = computed(() => {
 
     const gender = String(student.value.gender ?? '').trim().toUpperCase();
 
-    if (gender === 'F') return '/images/female.png';
-    if (gender === 'M') return '/images/male.png';
+    if (gender === 'F') {
+return '/images/female.png';
+}
+
+    if (gender === 'M') {
+return '/images/male.png';
+}
 
     return '/images/default-user.png';
 });
@@ -417,19 +422,26 @@ async function loadActivities(): Promise<void> {
             { signal: controller.signal, withCredentials: true },
         );
 
-        if (activitiesController !== controller) return;
+        if (activitiesController !== controller) {
+return;
+}
 
         activitiesTotal.value = Number(response.data.total) || 0;
         activities.value = Array.isArray(response.data.data)
             ? response.data.data.slice(0, 10)
             : [];
     } catch (error: unknown) {
-        if (isCancelled(error) || activitiesController !== controller) return;
+        if (isCancelled(error) || activitiesController !== controller) {
+return;
+}
+
         activities.value = [];
         activitiesTotal.value = null;
         activitiesError.value = errorMessage(error, 'Unable to load activities.');
     } finally {
-        if (activitiesController === controller) activitiesLoading.value = false;
+        if (activitiesController === controller) {
+activitiesLoading.value = false;
+}
     }
 }
 
@@ -446,14 +458,19 @@ async function loadDocuments(): Promise<void> {
             { signal: controller.signal, withCredentials: true },
         );
 
-        if (documentsController !== controller) return;
+        if (documentsController !== controller) {
+return;
+}
 
         documentsTotal.value = Number(response.data.total) || 0;
         documents.value = Array.isArray(response.data.data)
             ? response.data.data.slice(0, 10)
             : [];
     } catch (error: unknown) {
-        if (isCancelled(error) || documentsController !== controller) return;
+        if (isCancelled(error) || documentsController !== controller) {
+return;
+}
+
         documents.value = [];
         documentsTotal.value = null;
         documentsError.value = errorMessage(
@@ -461,7 +478,9 @@ async function loadDocuments(): Promise<void> {
             'Unable to load uploaded documents.',
         );
     } finally {
-        if (documentsController === controller) documentsLoading.value = false;
+        if (documentsController === controller) {
+documentsLoading.value = false;
+}
     }
 }
 
@@ -478,7 +497,9 @@ async function loadOtg(): Promise<void> {
             { signal: controller.signal, withCredentials: true },
         );
 
-        if (otgController !== controller) return;
+        if (otgController !== controller) {
+return;
+}
 
         otgPercentage.value = Math.min(
             100,
@@ -490,14 +511,19 @@ async function loadOtg(): Promise<void> {
             ? response.data.data.slice(0, 10)
             : [];
     } catch (error: unknown) {
-        if (isCancelled(error) || otgController !== controller) return;
+        if (isCancelled(error) || otgController !== controller) {
+return;
+}
+
         otgTasks.value = [];
         otgPercentage.value = null;
         otgCompleted.value = null;
         otgTotal.value = null;
         otgError.value = errorMessage(error, 'Unable to load OTG progress.');
     } finally {
-        if (otgController === controller) otgLoading.value = false;
+        if (otgController === controller) {
+otgLoading.value = false;
+}
     }
 }
 
@@ -514,26 +540,39 @@ async function loadJournals(): Promise<void> {
             { signal: controller.signal, withCredentials: true },
         );
 
-        if (journalsController !== controller) return;
+        if (journalsController !== controller) {
+return;
+}
 
         journalsTotal.value = Number(response.data.total) || 0;
         journals.value = Array.isArray(response.data.data)
             ? response.data.data.slice(0, 10)
             : [];
     } catch (error: unknown) {
-        if (isCancelled(error) || journalsController !== controller) return;
+        if (isCancelled(error) || journalsController !== controller) {
+return;
+}
+
         journals.value = [];
         journalsTotal.value = null;
         journalsError.value = errorMessage(error, 'Unable to load journals.');
     } finally {
-        if (journalsController === controller) journalsLoading.value = false;
+        if (journalsController === controller) {
+journalsLoading.value = false;
+}
     }
 }
 
 function formatDate(value: string | null): string {
-    if (!value) return '—';
+    if (!value) {
+return '—';
+}
+
     const date = new Date(value.includes('T') ? value : value.replace(' ', 'T'));
-    if (Number.isNaN(date.getTime())) return value;
+
+    if (Number.isNaN(date.getTime())) {
+return value;
+}
 
     return new Intl.DateTimeFormat('en-PH', {
         timeZone: 'Asia/Manila',
@@ -544,9 +583,15 @@ function formatDate(value: string | null): string {
 }
 
 function formatDateTime(value: string | null): string {
-    if (!value) return '—';
+    if (!value) {
+return '—';
+}
+
     const date = new Date(value.includes('T') ? value : value.replace(' ', 'T'));
-    if (Number.isNaN(date.getTime())) return value;
+
+    if (Number.isNaN(date.getTime())) {
+return value;
+}
 
     return new Intl.DateTimeFormat('en-PH', {
         timeZone: 'Asia/Manila',
@@ -562,7 +607,11 @@ function formatDateTime(value: string | null): string {
 function formatActivityPeriod(activity: StudentActivity): string {
     const start = formatDate(activity.start_date);
     const end = formatDate(activity.end_date);
-    if (start === '—' && end === '—') return '—';
+
+    if (start === '—' && end === '—') {
+return '—';
+}
+
     return start === end ? start : `${start} – ${end}`;
 }
 
@@ -592,7 +641,9 @@ function otgReference(task: StudentOtgTask): string {
 function otgDescription(task: StudentOtgTask): string {
     const value = task.description || task.desc_task || '';
 
-    if (!value) return '—';
+    if (!value) {
+return '—';
+}
 
     try {
         return decodeURIComponent(value.replace(/\+/g, ' '));
@@ -603,6 +654,7 @@ function otgDescription(task: StudentOtgTask): string {
 
 function otgMonth(task: StudentOtgTask): string {
     const value = task.month_number ?? task.month_no;
+
     return value === null || value === '' ? '—' : String(value);
 }
 
@@ -613,13 +665,22 @@ function otgCompletedAt(task: StudentOtgTask): string {
 function journalTime(journal: StudentJournal): string {
     const start = journal.journal_time?.trim();
     const end = journal.journal_time_to?.trim();
-    if (!start && !end) return '—';
-    if (!end) return start || '—';
+
+    if (!start && !end) {
+return '—';
+}
+
+    if (!end) {
+return start || '—';
+}
+
     return `${start || '—'} – ${end}`;
 }
 
 function openDownload(url: unknown): void {
-    if (typeof url !== 'string' || url.trim() === '') return;
+    if (typeof url !== 'string' || url.trim() === '') {
+return;
+}
 
     window.open(url, '_blank', 'noopener,noreferrer');
 }
@@ -655,7 +716,10 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-    if (clockInterval) clearInterval(clockInterval);
+    if (clockInterval) {
+clearInterval(clockInterval);
+}
+
     activitiesController?.abort();
     documentsController?.abort();
     otgController?.abort();

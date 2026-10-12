@@ -403,9 +403,6 @@ function handleSearch(
 |--------------------------------------------------------------------------
 */
 
-function navigateToDashboard(): void {
-    router.visit('/dashboard');
-}
 
 function navigateToDocumentList(): void {
     router.visit('/monitoring/uploaded-documents');
@@ -775,16 +772,6 @@ function getStudentAvatar(
     }
 
     return null;
-}
-
-function getSystemIdLabel(
-    value: unknown,
-): string {
-    const systemId = String(
-        value ?? '',
-    ).trim();
-
-    return systemId || 'No System ID';
 }
 
 function getSchoolIdLabel(

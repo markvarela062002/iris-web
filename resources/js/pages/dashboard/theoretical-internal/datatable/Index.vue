@@ -5,11 +5,11 @@ import AutoComplete from 'primevue/autocomplete';
 import Avatar from 'primevue/avatar';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
+import InputNumber from 'primevue/inputnumber';
 import InputText from 'primevue/inputtext';
 import Message from 'primevue/message';
 import Select from 'primevue/select';
 import PrimeTag from 'primevue/tag';
-import InputNumber from 'primevue/inputnumber';
 import { onMounted, ref } from 'vue';
 import Datatable from '@/components/Datatable.vue';
 import type {
@@ -221,6 +221,7 @@ function formatDateTime(
     const raw = String(
         value ?? '',
     ).trim();
+
     if (
         !raw ||
         raw.startsWith('1970-01-01') ||
@@ -228,12 +229,15 @@ function formatDateTime(
     ) {
         return 'Not taken';
     }
+
     const date = new Date(
         raw.replace(' ', 'T'),
     );
+
     if (Number.isNaN(date.getTime())) {
         return raw;
     }
+
     return new Intl.DateTimeFormat(
         'en-US',
         {
@@ -253,6 +257,7 @@ function uppercaseValue(
     const normalized = String(
         value ?? '',
     ).trim();
+
     return normalized
         ? normalized.toUpperCase()
         : fallback;
@@ -269,18 +274,22 @@ function getInitials(
     const initials =
         `${firstName.charAt(0)}${lastName.charAt(0)}`
             .toUpperCase();
+
     return initials || 'NA';
 }
 function getAvatarImage(
     row: DataTableRow | StudentOption,
 ): string {
     const gender = String(row.gender ?? '').trim().toUpperCase();
+
     if (gender === 'M' || gender === 'MALE') {
         return '/images/male-cadet.png';
     }
+
     if (gender === 'F' || gender === 'FEMALE') {
         return '/images/female-cadet.png';
     }
+
     return '/images/default-cadet.png';
 }
 /*
@@ -303,12 +312,15 @@ function getDepartmentSeverity(
     const value = normalizeDepartment(
         department,
     );
+
     if (value === 'DECK') {
         return 'success';
     }
+
     if (value === 'ENGINE') {
         return 'info';
     }
+
     return 'secondary';
 }
 function getDepartmentIcon(
@@ -317,12 +329,15 @@ function getDepartmentIcon(
     const value = normalizeDepartment(
         department,
     );
+
     if (value === 'DECK') {
         return 'pi pi-compass';
     }
+
     if (value === 'ENGINE') {
         return 'pi pi-cog';
     }
+
     return 'pi pi-building';
 }
 /*
@@ -345,12 +360,15 @@ function getExamTypeSeverity(
     const value = normalizeExamType(
         examType,
     );
+
     if (value === 'NEW') {
         return 'success';
     }
+
     if (value === 'RESIT') {
         return 'info';
     }
+
     return 'secondary';
 }
 function getExamTypeIcon(
@@ -359,12 +377,15 @@ function getExamTypeIcon(
     const value = normalizeExamType(
         examType,
     );
+
     if (value === 'NEW') {
         return 'pi pi-check-circle';
     }
+
     if (value === 'RESIT') {
         return 'pi pi-refresh';
     }
+
     return 'pi pi-question-circle';
 }
 /*
@@ -391,6 +412,7 @@ async function loadAssessments(
 ): Promise<void> {
     loading.value = true;
     pageError.value = '';
+
     try {
         const response = await axios.get(
             '/api/v1/dashboard/datatable/theoretical-assessments',
@@ -418,6 +440,7 @@ async function loadAssessments(
     } catch (error: unknown) {
         assessments.value = [];
         totalRecords.value = 0;
+
         if (axios.isAxiosError(error)) {
             pageError.value =
                 error.response?.data
@@ -463,6 +486,7 @@ async function viewAnswers(
     selectedAssessment.value = null;
     answers.value = [];
     pageError.value = '';
+
     try {
         const response = await axios.get(
             `/api/v1/dashboard/theoretical-assessments/${assessment.id}`,
@@ -476,6 +500,7 @@ async function viewAnswers(
             response.data.answers ?? [];
     } catch (error: unknown) {
         detailsVisible.value = false;
+
         if (axios.isAxiosError(error)) {
             pageError.value =
                 error.response?.data
@@ -516,6 +541,7 @@ function handleSort(
         sortField.value =
             event.sortField;
     }
+
     sortDirection.value =
         event.sortOrder === -1
             ? 'desc'
@@ -546,6 +572,7 @@ function handleAction(
     ) {
         return;
     }
+
     if (action === 'certificate') {
         if (
             assessment.is_completed !==
@@ -553,13 +580,16 @@ function handleAction(
         ) {
             return;
         }
+
         window.open(
             `/dashboard/theoretical-assessments/${assessment.id}/certificate`,
             '_blank',
             'noopener,noreferrer',
         );
+
         return;
     }
+
     if (action === 'answers') {
         if (
             assessment.is_completed !==
@@ -567,9 +597,12 @@ function handleAction(
         ) {
             return;
         }
+
         void viewAnswers(assessment);
+
         return;
     }
+
     if (action === 'edit') {
         void openEdit(assessment);
     }
@@ -660,7 +693,9 @@ function openCreate(): void {
     createVisible.value = true;
 }
 async function openEdit(assessment: DataTableRow): Promise<void> {
-    if (createSaving.value) return;
+    if (createSaving.value) {
+return;
+}
 
     openCreate();
     const id = String(assessment.id);
@@ -671,11 +706,16 @@ async function openEdit(assessment: DataTableRow): Promise<void> {
         if (!courses.value.length || !sessions.value.length) {
             await loadOptions();
         }
+
         const response = await axios.get<{ assessment: EditableAssessment }>(
             `/api/v1/dashboard/theoretical-assessments/${encodeURIComponent(id)}`,
             { withCredentials: true },
         );
-        if (!createVisible.value || editingId.value !== id) return;
+
+        if (!createVisible.value || editingId.value !== id) {
+return;
+}
+
         const record = response.data.assessment;
 
         createForm.value = {
@@ -696,22 +736,30 @@ async function openEdit(assessment: DataTableRow): Promise<void> {
             accessTimeTo: (record.access_exp_time_to ?? '').slice(0, 5),
         };
     } catch (error: unknown) {
-        if (!createVisible.value || editingId.value !== id) return;
+        if (!createVisible.value || editingId.value !== id) {
+return;
+}
+
         editLoadFailed.value = true;
         createError.value = axios.isAxiosError(error)
             ? error.response?.data?.message ?? 'The assessment could not be loaded.'
             : error instanceof Error ? error.message : 'The assessment could not be loaded.';
     } finally {
-        if (editingId.value === id) editLoading.value = false;
+        if (editingId.value === id) {
+editLoading.value = false;
+}
     }
 }
 
 async function searchCreateStudents(event: { query: string }): Promise<void> {
     const query = event.query.trim();
+
     if (query.length < 2) {
         createStudentSuggestions.value = [];
+
         return;
     }
+
     try {
         const response = await axios.get(
             '/api/v1/dashboard/theoretical-assessments/students',
@@ -726,38 +774,52 @@ async function searchCreateStudents(event: { query: string }): Promise<void> {
     }
 }
 async function saveAssessment(): Promise<void> {
-    if (createSaving.value || editLoading.value || editLoadFailed.value) return;
+    if (createSaving.value || editLoading.value || editLoadFailed.value) {
+return;
+}
+
     createError.value = '';
     createErrors.value = {};
     const form = createForm.value;
+
     if (!form.student?.id) {
         createErrors.value.person_id = 'Student Name is required.';
     }
+
     if (!form.course?.id) {
         createErrors.value.bs_course_id = 'Exam Package is required.';
     }
+
     if (!form.session?.id) {
         createErrors.value.bs_exam_session_id = 'Session is required.';
     }
+
     if (!form.examType) {
         createErrors.value.exam_type = 'Exam Type is required.';
     }
+
     if (!form.accessDate) {
         createErrors.value.access_exp_date = 'Access Date From is required.';
     }
+
     if (!form.accessTime) {
         createErrors.value.access_exp_time = 'Access Start Time is required.';
     }
+
     if (!form.accessDateTo) {
         createErrors.value.access_exp_date_to = 'Access Until Date is required.';
     }
+
     if (!form.accessTimeTo) {
         createErrors.value.access_exp_time_to = 'Access End Time is required.';
     }
+
     if (Object.keys(createErrors.value).length > 0) {
         return;
     }
+
     createSaving.value = true;
+
     try {
         const response = await axios.request({
             method: editingId.value ? 'put' : 'post',
@@ -786,6 +848,7 @@ async function saveAssessment(): Promise<void> {
     } catch (error: unknown) {
         if (axios.isAxiosError(error)) {
             const errors = error.response?.data?.errors;
+
             if (errors && typeof errors === 'object') {
                 createErrors.value = Object.fromEntries(
                     Object.entries(errors).map(([key, value]) => [
@@ -796,6 +859,7 @@ async function saveAssessment(): Promise<void> {
                     ]),
                 );
             }
+
             createError.value =
                 error.response?.data?.message ??
                 'The assessment could not be saved.';

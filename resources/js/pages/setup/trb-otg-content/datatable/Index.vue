@@ -178,6 +178,7 @@ async function viewContent(): Promise<void> {
 
     if (!selectedTrbTypeId.value) {
         errorMessage.value = 'TRB Type is required.';
+
         return;
     }
 
@@ -217,11 +218,13 @@ async function uploadContent(): Promise<void> {
 
     if (!selectedTrbTypeId.value) {
         errorMessage.value = 'TRB Type is required.';
+
         return;
     }
 
     if (!selectedFile.value) {
         errorMessage.value = 'Choose an XLS or XLSX file to upload.';
+
         return;
     }
 
@@ -296,6 +299,7 @@ function requestDelete(): void {
 
     if (!selectedTrbTypeId.value) {
         errorMessage.value = 'TRB Type is required.';
+
         return;
     }
 
@@ -347,24 +351,6 @@ function clearPage(): void {
     errorMessage.value = '';
     importIssues.value = [];
     clearFile();
-}
-
-function typeTagSeverity(
-    type: TrbType | null,
-): 'success' | 'info' | 'secondary' {
-    if (!type) {
-        return 'secondary';
-    }
-
-    if (type.trb.toUpperCase() === 'ISF') {
-        return 'success';
-    }
-
-    if (type.trb.toUpperCase() === 'GMET') {
-        return 'info';
-    }
-
-    return 'secondary';
 }
 
 function getValidationPayload(error: unknown): ValidationPayload {

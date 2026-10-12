@@ -1,5 +1,26 @@
 <script setup lang="ts">
 
+
+import Button from 'primevue/button';
+
+import Column from 'primevue/column';
+
+import PrimeDataTable from 'primevue/datatable';
+
+import type { DataTableSortEvent } from 'primevue/datatable';
+import IconField from 'primevue/iconfield';
+
+import InputIcon from 'primevue/inputicon';
+
+import InputText from 'primevue/inputtext';
+
+import Paginator from 'primevue/paginator';
+
+import Popover from 'primevue/popover';
+import ProgressSpinner from 'primevue/progressspinner';
+
+import Select from 'primevue/select';
+
 import {
 
     computed,
@@ -11,27 +32,6 @@ import {
     watch,
 
 } from 'vue';
-
-import Button from 'primevue/button';
-
-import Column from 'primevue/column';
-
-import PrimeDataTable from 'primevue/datatable';
-
-import IconField from 'primevue/iconfield';
-
-import InputIcon from 'primevue/inputicon';
-
-import InputText from 'primevue/inputtext';
-
-import Paginator from 'primevue/paginator';
-
-import ProgressSpinner from 'primevue/progressspinner';
-
-import Select from 'primevue/select';
-import Popover from 'primevue/popover';
-
-import type { DataTableSortEvent } from 'primevue/datatable';
 
 import type {
 
@@ -282,6 +282,7 @@ const activeColumnFilter = computed(
 function toggleColumnFilter(event: Event, field: string): void {
     if (activeFilterField.value === field) {
         filterPopover.value?.toggle(event);
+
         return;
     }
 
@@ -291,6 +292,7 @@ function toggleColumnFilter(event: Event, field: string): void {
 
 function selectColumnFilter(value: string): void {
     filterPopover.value?.hide();
+
     if (activeColumnFilter.value?.value !== value) {
         emit('filter', activeFilterField.value, value);
     }

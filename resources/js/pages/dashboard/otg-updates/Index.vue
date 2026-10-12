@@ -480,16 +480,6 @@ function getDepartmentLabel(
         : '—';
 }
 
-function getSystemIdLabel(
-    value: unknown,
-): string {
-    const systemId = String(
-        value ?? '',
-    ).trim();
-
-    return systemId || 'No System ID';
-}
-
 function getSchoolIdLabel(
     value: unknown,
 ): string {

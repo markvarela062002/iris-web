@@ -60,18 +60,25 @@ const columns: DataTableColumn[] = [
 async function initialize(): Promise<void> {
     loading.value = true;
     error.value = '';
+
     try {
         const response = await axios.get<{ is_administrator: boolean; companies: Company[] }>(`${API}/options`, config());
         isAdministrator.value = response.data.is_administrator;
         companies.value = [{ id: '', company: 'Unassigned packages' }, ...response.data.companies];
         initialized.value = true;
         await loadPackages();
-    } catch (caught: unknown) { error.value = message(caught, 'Unable to load batch update options.'); }
-    finally { loading.value = false; }
+    } catch (caught: unknown) {
+ error.value = message(caught, 'Unable to load batch update options.'); 
+} finally {
+ loading.value = false; 
+}
 }
 
 async function loadPackages(): Promise<void> {
-    if (dirty.value || saving.value) return;
+    if (dirty.value || saving.value) {
+return;
+}
+
     packageRequest?.abort();
     subjectRequest?.abort();
     resetSubjects();
@@ -80,14 +87,21 @@ async function loadPackages(): Promise<void> {
     const controller = new AbortController();
     packageRequest = controller;
     packagesLoading.value = true;
+
     try {
         const response = await axios.get<{ data: Course[] }>(`${API}/packages`, {
             ...config(), signal: controller.signal, params: { company_id: companyId.value },
         });
         courses.value = response.data.data;
     } catch (caught: unknown) {
-        if (!axios.isCancel(caught)) error.value = message(caught, 'Unable to load exam packages.');
-    } finally { if (packageRequest === controller) packagesLoading.value = false; }
+        if (!axios.isCancel(caught)) {
+error.value = message(caught, 'Unable to load exam packages.');
+}
+    } finally {
+ if (packageRequest === controller) {
+packagesLoading.value = false;
+} 
+}
 }
 
 function resetSubjects(): void {
@@ -101,13 +115,17 @@ function changePackage(): void {
     resetSubjects();
 }
 async function showSubjects(): Promise<void> {
-    if (!courseId.value || dirty.value || saving.value) return;
+    if (!courseId.value || dirty.value || saving.value) {
+return;
+}
+
     subjectRequest?.abort();
     const controller = new AbortController();
     subjectRequest = controller;
     loading.value = true;
     error.value = '';
     const selected = { company_id: companyId.value, course_id: courseId.value };
+
     try {
         const response = await axios.get<{ data: Array<Values & { id: string; desc_topic: string }> }>(
             `${API}/packages/${encodeURIComponent(selected.course_id)}/subjects`,
@@ -118,30 +136,55 @@ async function showSubjects(): Promise<void> {
         } }));
         scope.value = selected;
     } catch (caught: unknown) {
-        if (!axios.isCancel(caught)) error.value = message(caught, 'Unable to load subjects.');
-    } finally { if (subjectRequest === controller) loading.value = false; }
+        if (!axios.isCancel(caught)) {
+error.value = message(caught, 'Unable to load subjects.');
+}
+    } finally {
+ if (subjectRequest === controller) {
+loading.value = false;
+} 
+}
 }
 
 function percentage(mark: unknown, count: unknown): string {
     return Number(count) > 0 ? `${Math.round((Number(mark) / Number(count)) * 100)}%` : '—';
 }
 function rowIssue(row: Subject): string {
-    if (row.order_no === null || !Number.isInteger(row.order_no) || row.order_no < 0 || row.order_no > 1000000) return 'Enter a non-negative integer order number (maximum 1,000,000).';
-    if (row.no_quest === null || !Number.isInteger(row.no_quest) || row.no_quest < 0 || row.no_quest > 100000) return 'Enter a non-negative integer question count (maximum 100,000).';
-    if (row.passing_mark === null || !Number.isFinite(row.passing_mark) || row.passing_mark < 0 || row.passing_mark > row.no_quest) return 'Passing mark must be between zero and the question count.';
+    if (row.order_no === null || !Number.isInteger(row.order_no) || row.order_no < 0 || row.order_no > 1000000) {
+return 'Enter a non-negative integer order number (maximum 1,000,000).';
+}
+
+    if (row.no_quest === null || !Number.isInteger(row.no_quest) || row.no_quest < 0 || row.no_quest > 100000) {
+return 'Enter a non-negative integer question count (maximum 100,000).';
+}
+
+    if (row.passing_mark === null || !Number.isFinite(row.passing_mark) || row.passing_mark < 0 || row.passing_mark > row.no_quest) {
+return 'Passing mark must be between zero and the question count.';
+}
+
     return '';
 }
 function confirmUpdate(): void {
     error.value = '';
     const invalid = subjects.value.find(row => rowIssue(row));
-    if (invalid) { error.value = `${invalid.desc_topic}: ${rowIssue(invalid)}`; return; }
+
+    if (invalid) {
+ error.value = `${invalid.desc_topic}: ${rowIssue(invalid)}`;
+
+ return; 
+}
+
     confirmVisible.value = true;
 }
 async function saveBatch(): Promise<void> {
-    if (!scope.value || saving.value) return;
+    if (!scope.value || saving.value) {
+return;
+}
+
     saving.value = true;
     error.value = '';
     success.value = '';
+
     try {
         const response = await axios.patch<{ message: string }>(
             `${API}/packages/${encodeURIComponent(scope.value.course_id)}/subjects`,
@@ -149,37 +192,57 @@ async function saveBatch(): Promise<void> {
                 subjects: subjects.value.map(row => ({ id: row.id, order_no: row.order_no,
                     no_quest: row.no_quest, passing_mark: row.passing_mark, original: row.original })) }, config(),
         );
-        subjects.value.forEach(row => { row.original = {
+        subjects.value.forEach(row => {
+ row.original = {
             order_no: row.order_no, no_quest: row.no_quest, passing_mark: row.passing_mark,
-        }; });
+        }; 
+});
         success.value = response.data.message;
         subjects.value.sort((a, b) => Number(a.order_no) - Number(b.order_no));
     } catch (caught: unknown) {
         error.value = message(caught, 'Unable to save the batch. Reload to verify the database state before retrying if the request status is uncertain.');
-    } finally { saving.value = false; confirmVisible.value = false; }
+    } finally {
+ saving.value = false; confirmVisible.value = false; 
 }
-function requestClear(): void { if (dirty.value) clearVisible.value = true; else clear(); }
+}
+function requestClear(): void {
+ if (dirty.value) {
+clearVisible.value = true;
+} else {
+clear();
+} 
+}
 function clear(): void {
     subjectRequest?.abort();
     resetSubjects();
     courseId.value = null;
     clearVisible.value = false;
 }
-function config(): { headers: Record<string, string> } { return { headers: { Accept: 'application/json' } }; }
+function config(): { headers: Record<string, string> } {
+ return { headers: { Accept: 'application/json' } }; 
+}
 function message(caught: unknown, fallback: string): string {
-    if (!axios.isAxiosError(caught)) return fallback;
+    if (!axios.isAxiosError(caught)) {
+return fallback;
+}
+
     const body = caught.response?.data;
     const first = Object.values(body?.errors ?? {})[0];
+
     return Array.isArray(first) ? String(first[0]) : String(body?.message ?? fallback);
 }
 function beforeUnload(event: BeforeUnloadEvent): void {
-    if (dirty.value || saving.value) { event.preventDefault(); event.returnValue = ''; }
+    if (dirty.value || saving.value) {
+ event.preventDefault(); event.returnValue = ''; 
+}
 }
 onMounted(() => {
     void initialize();
     window.addEventListener('beforeunload', beforeUnload);
     removeNavigationGuard = router.on('before', event => {
-        if ((dirty.value || saving.value) && !window.confirm('This batch has unsaved edits or a save in progress. Leave this page?')) event.preventDefault();
+        if ((dirty.value || saving.value) && !window.confirm('This batch has unsaved edits or a save in progress. Leave this page?')) {
+event.preventDefault();
+}
     });
 });
 onBeforeUnmount(() => {

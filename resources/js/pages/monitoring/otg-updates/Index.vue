@@ -196,6 +196,7 @@ function handleAction(action: string, student: DataTableRow): void {
 
     if (action === 'manage-training-record') {
         manageTrainingRecord(student);
+
         return;
     }
 
@@ -209,6 +210,7 @@ function manageTrainingRecord(student: DataTableRow): void {
 
     if (!personId) {
         errorMessage.value = 'The selected student ID is missing.';
+
         return;
     }
 
@@ -222,6 +224,7 @@ function viewEtrb(student: DataTableRow): void {
 
     if (!personId) {
         errorMessage.value = 'The selected student ID is missing.';
+
         return;
     }
 
@@ -314,11 +317,13 @@ function getDepartmentIcon(department: unknown): string {
 
 function getDepartmentLabel(department: unknown): string {
     const value = String(department ?? '').trim();
+
     return value ? value.toUpperCase() : '—';
 }
 
 function getSchoolIdLabel(value: unknown): string {
     const schoolId = String(value ?? '').trim();
+
     return schoolId || 'No School ID';
 }
 

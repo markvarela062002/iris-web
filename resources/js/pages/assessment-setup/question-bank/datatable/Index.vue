@@ -116,6 +116,7 @@ async function loadQuestions(page = 1): Promise<void> {
     requestController = controller;
     loading.value = true;
     errorMessage.value = '';
+
     try {
         const response = await axios.get<ListResponse>(DATATABLE_URL, {
             signal: controller.signal,
@@ -135,12 +136,17 @@ async function loadQuestions(page = 1): Promise<void> {
         perPage.value = response.data.meta.perPage;
         first.value = (response.data.meta.currentPage - 1) * response.data.meta.perPage;
     } catch (error: unknown) {
-        if (isCanceled(error)) return;
+        if (isCanceled(error)) {
+return;
+}
+
         rows.value = [];
         totalRecords.value = 0;
         errorMessage.value = getErrorMessage(error, 'Unable to load questions.');
     } finally {
-        if (requestController === controller) loading.value = false;
+        if (requestController === controller) {
+loading.value = false;
+}
     }
 }
 
@@ -156,7 +162,11 @@ async function loadOptions(): Promise<void> {
 async function loadSubjects(courseId: string | null, target: 'filter' | 'form'): Promise<void> {
     const destination = target === 'filter' ? filterSubjects : formSubjects;
     destination.value = [];
-    if (!courseId) return;
+
+    if (!courseId) {
+return;
+}
+
     try {
         const response = await axios.get<{ data: Subject[] }>(
             `${API_BASE}/packages/${encodeURIComponent(courseId)}/subjects`,
@@ -200,7 +210,10 @@ function handleSearch(value: string): void {
     void loadQuestions(1);
 }
 function handleAction(action: string, row: DataTableRow): void {
-    if (action === 'edit') void openEditQuestion(row);
+    if (action === 'edit') {
+void openEditQuestion(row);
+}
+
     if (action === 'delete') {
         selectedQuestion.value = row;
         questionDeleteVisible.value = true;
@@ -228,13 +241,26 @@ async function openEditQuestion(row: DataTableRow): Promise<void> {
 
 async function saveQuestion(): Promise<void> {
     questionErrors.value = {};
-    if (!questionForm.quest_text.trim()) questionErrors.value.quest_text = 'Question is required.';
-    if (!questionForm.bs_course_id) questionErrors.value.bs_course_id = 'Exam package is required.';
-    if (!questionForm.bs_topic_id) questionErrors.value.bs_topic_id = 'Subject is required.';
-    if (Object.keys(questionErrors.value).length) return;
+
+    if (!questionForm.quest_text.trim()) {
+questionErrors.value.quest_text = 'Question is required.';
+}
+
+    if (!questionForm.bs_course_id) {
+questionErrors.value.bs_course_id = 'Exam package is required.';
+}
+
+    if (!questionForm.bs_topic_id) {
+questionErrors.value.bs_topic_id = 'Subject is required.';
+}
+
+    if (Object.keys(questionErrors.value).length) {
+return;
+}
 
     const wasNew = !questionForm.id;
     saving.value = true;
+
     try {
         const payload = {
             quest_text: questionForm.quest_text.trim(),
@@ -260,8 +286,13 @@ async function saveQuestion(): Promise<void> {
 
 async function deleteQuestion(): Promise<void> {
     const id = String(selectedQuestion.value?.id ?? '');
-    if (!id) return;
+
+    if (!id) {
+return;
+}
+
     saving.value = true;
+
     try {
         const response = await axios.delete<{ message: string }>(`${API_BASE}/${encodeURIComponent(id)}`, requestConfig());
         questionDeleteVisible.value = false;
@@ -278,14 +309,20 @@ async function deleteQuestion(): Promise<void> {
 async function uploadImage(event: Event, target: 'question' | 'answer'): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
-    if (!file) return;
+
+    if (!file) {
+return;
+}
+
     uploading.value = true;
+
     try {
         const body = new FormData();
         body.append('image', file);
         const response = await axios.post<{ filename: string; url: string | null }>(`${API_BASE}/images`, body, {
             headers: { Accept: 'application/json', 'Content-Type': 'multipart/form-data' },
         });
+
         if (target === 'question') {
             questionForm.quest_img = response.data.filename;
             questionForm.question_image_url = response.data.url;
@@ -293,6 +330,7 @@ async function uploadImage(event: Event, target: 'question' | 'answer'): Promise
             answerForm.filename = response.data.filename;
             answerForm.image_url = response.data.url;
         }
+
         notify('Image Uploaded', 'The image is ready to be saved.');
     } catch (error: unknown) {
         errorMessage.value = getErrorMessage(error, 'Unable to upload the image.');
@@ -305,9 +343,12 @@ async function uploadImage(event: Event, target: 'question' | 'answer'): Promise
 async function loadAnswers(): Promise<void> {
     if (!questionForm.id) {
         answers.value = [];
+
         return;
     }
+
     childLoading.value = true;
+
     try {
         const response = await axios.get<{ data: Choice[] }>(
             `${API_BASE}/${encodeURIComponent(questionForm.id)}/answers`,
@@ -324,12 +365,16 @@ async function loadAnswers(): Promise<void> {
 function openCreateAnswer(): void {
     if (!questionForm.id) {
         errorMessage.value = 'Save the question before adding options.';
+
         return;
     }
+
     if (answers.value.length >= 5) {
         errorMessage.value = 'A question can have a maximum of five options.';
+
         return;
     }
+
     resetAnswer();
     answerDialogVisible.value = true;
 }
@@ -344,11 +389,15 @@ function openEditAnswer(answer: Choice): void {
 }
 async function saveAnswer(): Promise<void> {
     answerErrors.value = {};
+
     if (!answerForm.answer_text.trim() && !answerForm.filename) {
         answerErrors.value.answer_text = 'Enter option text or upload an option image.';
+
         return;
     }
+
     saving.value = true;
+
     try {
         const payload = {
             answer_text: answerForm.answer_text.trim(),
@@ -376,8 +425,12 @@ function confirmDeleteAnswer(answer: Choice): void {
     answerDeleteVisible.value = true;
 }
 async function deleteAnswer(): Promise<void> {
-    if (!selectedAnswer.value) return;
+    if (!selectedAnswer.value) {
+return;
+}
+
     saving.value = true;
+
     try {
         const response = await axios.delete<{ message: string }>(
             `${API_BASE}/${encodeURIComponent(questionForm.id)}/answers/${encodeURIComponent(selectedAnswer.value.id)}`,
@@ -421,12 +474,19 @@ function isCanceled(error: unknown): boolean {
     return axios.isCancel(error) || (error instanceof DOMException && error.name === 'AbortError');
 }
 function getValidationErrors(error: unknown): Errors {
-    if (!axios.isAxiosError(error) || error.response?.status !== 422) return {};
+    if (!axios.isAxiosError(error) || error.response?.status !== 422) {
+return {};
+}
+
     const errors = error.response.data?.errors ?? {};
+
     return Object.fromEntries(Object.entries(errors).map(([key, value]) => [key, Array.isArray(value) ? String(value[0]) : String(value)]));
 }
 function getErrorMessage(error: unknown, fallback: string): string {
-    if (axios.isAxiosError(error)) return String(error.response?.data?.message ?? fallback);
+    if (axios.isAxiosError(error)) {
+return String(error.response?.data?.message ?? fallback);
+}
+
     return fallback;
 }
 

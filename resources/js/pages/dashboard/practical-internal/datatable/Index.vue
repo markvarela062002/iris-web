@@ -15,9 +15,9 @@ import InputText from 'primevue/inputtext';
 
 import Message from 'primevue/message';
 
+import Select from 'primevue/select';
 import PrimeTag from 'primevue/tag';
 
-import Select from 'primevue/select';
 
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 
@@ -228,7 +228,10 @@ async function loadAddOptions(studentSearch = ''): Promise<void> {
     }
 }
 function searchStudents(event: { value: string }): void {
-    if (studentSearchTimer) clearTimeout(studentSearchTimer);
+    if (studentSearchTimer) {
+clearTimeout(studentSearchTimer);
+}
+
     studentSearchTimer = setTimeout(
         () => void loadAddOptions(event.value),
         250,
@@ -242,6 +245,7 @@ function openAdd(): void {
 async function saveAdd(): Promise<void> {
     addError.value = '';
     addSaving.value = true;
+
     try {
         const response = await axios.post(
             '/api/v1/dashboard/practical-internal',
@@ -884,12 +888,15 @@ function getAvatarImage(
     row: DataTableRow,
 ): string {
     const gender = String(row.gender ?? '').trim().toUpperCase();
+
     if (gender === 'M' || gender === 'MALE') {
         return '/images/male-cadet.png';
     }
+
     if (gender === 'F' || gender === 'FEMALE') {
         return '/images/female-cadet.png';
     }
+
     return '/images/default-cadet.png';
 }
 

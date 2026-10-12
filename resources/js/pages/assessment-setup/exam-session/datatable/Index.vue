@@ -230,6 +230,7 @@ function handleSearch(value: string): void {
 function handleAction(action: string, row: DataTableRow): void {
     if (action === 'edit') {
         openEditDialog(row);
+
         return;
     }
 
@@ -354,6 +355,7 @@ async function deleteExamSession(): Promise<void> {
 
     if (!id) {
         errorMessage.value = 'The selected exam session ID is missing.';
+
         return;
     }
 
@@ -406,6 +408,7 @@ function requestConfig() {
 
 function normalizeDate(value: unknown): string {
     const raw = String(value ?? '').trim();
+
     return raw ? raw.slice(0, 10) : '';
 }
 
@@ -444,6 +447,7 @@ function getErrorMessage(error: unknown, fallback: string): string {
     }
 
     const data = error.response?.data as { message?: string } | undefined;
+
     return data?.message || fallback;
 }
 
@@ -460,6 +464,7 @@ function getValidationErrors(error: unknown): FormErrors {
 
     for (const field of ['session_code', 'date_from', 'date_to'] as const) {
         const message = data?.errors?.[field]?.[0];
+
         if (message) {
             errors[field] = message;
         }

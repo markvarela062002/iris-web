@@ -8,11 +8,11 @@ import { computed, onMounted, ref } from 'vue';
 import Calendar from '@/components/Calendar.vue';
 import Datatable from '@/components/Datatable.vue';
 
-import type { CalendarEvent } from '@/types/calendar';
 import type {
     DataTableColumn,
     DataTableRow,
 } from '@/types';
+import type { CalendarEvent } from '@/types/calendar';
 
 defineOptions({
     inheritAttrs: false,

@@ -7,8 +7,8 @@ import Avatar from 'primevue/avatar';
 
 import Button from 'primevue/button';
 
-import Dialog from 'primevue/dialog';
 import DatePicker from 'primevue/datepicker';
+import Dialog from 'primevue/dialog';
 
 import InputText from 'primevue/inputtext';
 
@@ -319,6 +319,7 @@ const createForm = ref({
 });
 const timeOptions = Array.from({ length: 32 }, (_, index) => {
     const hour = 8 + Math.floor(index / 2);
+
     return `${String(hour).padStart(2, '0')}:${index % 2 ? '30' : '00'}`;
 }).filter((value) => value <= '23:30');
 function resetForm(): void {
@@ -342,25 +343,35 @@ createForm.value = {
 function parseAccessDate(value: unknown): Date {
     const parts = String(value ?? '').slice(0, 10).split('-').map(Number);
     const date = new Date(parts[0], parts[1] - 1, parts[2]);
+
     if (!parts[0] || Number.isNaN(date.getTime())) {
         throw new Error('This assessment has an invalid access date.');
     }
+
     return date;
 }
 
 async function openEdit(row: DataTableRow): Promise<void> {
-    if (creating.value) return;
+    if (creating.value) {
+return;
+}
+
     const requestId = ++editRequestId;
     editingId.value = String(row.id);
     resetForm();
     createError.value = '';
     createVisible.value = true;
     editLoading.value = true;
+
     try {
         const { data } = await axios.get(
             `/api/v1/dashboard/theoretical-external/${encodeURIComponent(String(row.id))}/edit`,
         );
-        if (requestId !== editRequestId || !createVisible.value) return;
+
+        if (requestId !== editRequestId || !createVisible.value) {
+return;
+}
+
         const record = data.assessment;
         createForm.value = {
             email: String(record.email ?? ''),
@@ -378,7 +389,10 @@ async function openEdit(row: DataTableRow): Promise<void> {
             access_exp_time_to: String(record.access_exp_time_to ?? '').slice(0, 5),
         };
     } catch (error: unknown) {
-        if (requestId !== editRequestId) return;
+        if (requestId !== editRequestId) {
+return;
+}
+
         createError.value = axios.isAxiosError(error)
             ? (error.response?.data?.message ?? 'Unable to load the assessment.')
             : (error instanceof Error ? error.message : 'Unable to load the assessment.');
@@ -386,12 +400,17 @@ async function openEdit(row: DataTableRow): Promise<void> {
         createSuccess.value = '';
         window.alert(createError.value);
     } finally {
-        if (requestId === editRequestId) editLoading.value = false;
+        if (requestId === editRequestId) {
+editLoading.value = false;
+}
     }
 }
 
 function openCreate(): void {
-    if (creating.value) return;
+    if (creating.value) {
+return;
+}
+
     editRequestId++;
     editingId.value = null;
     editLoading.value = false;
@@ -400,9 +419,13 @@ function openCreate(): void {
     createVisible.value = true;
 }
 async function saveCreate(): Promise<void> {
-    if (editLoading.value || creating.value) return;
+    if (editLoading.value || creating.value) {
+return;
+}
+
     createError.value = '';
     creating.value = true;
+
     try {
         const { data } = await axios.request({
             method: editingId.value ? 'put' : 'post',

@@ -3,8 +3,8 @@ import axios from 'axios';
 import Avatar from 'primevue/avatar';
 import Button from 'primevue/button';
 import FileUpload from 'primevue/fileupload';
-import Message from 'primevue/message';
 import PrimeImage from 'primevue/image';
+import Message from 'primevue/message';
 import Textarea from 'primevue/textarea';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
@@ -188,6 +188,7 @@ function participantFallbackName(conversation: MessageListItem): string {
         conversation.recipient_account_type || conversation.recipient_type || 'User',
     ).trim();
     const id = String(conversation.recipient_id ?? '').trim();
+
     return id ? `${type || 'User'} ${id.slice(0, 8)}` : type || 'User';
 }
 
@@ -206,51 +207,83 @@ function cleanLegacyText(value: string | null | undefined): string {
 
 function initials(value: string | null | undefined): string {
     const parts = String(value ?? '').trim().split(/\s+/).filter(Boolean);
-    if (parts.length === 0) return 'US';
-    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+
+    if (parts.length === 0) {
+return 'US';
+}
+
+    if (parts.length === 1) {
+return parts[0].slice(0, 2).toUpperCase();
+}
+
     return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase();
 }
 
 function genderAvatar(gender: string | null | undefined): string | null {
     const value = String(gender ?? '').trim().toUpperCase();
-    if (value === 'M' || value === 'MALE') return '/images/male-cadet.png';
-    if (value === 'F' || value === 'FEMALE') return '/images/female-cadet.png';
+
+    if (value === 'M' || value === 'MALE') {
+return '/images/male-cadet.png';
+}
+
+    if (value === 'F' || value === 'FEMALE') {
+return '/images/female-cadet.png';
+}
+
     return null;
 }
 
 function avatarSource(): string | null {
     const photo = String(props.conversation.recipient_photo_url ?? '').trim();
-    if (photo && !failedAvatarSources.value.has(photo)) return photo;
+
+    if (photo && !failedAvatarSources.value.has(photo)) {
+return photo;
+}
 
     const fallback = genderAvatar(props.conversation.recipient_gender);
-    if (fallback && !failedAvatarSources.value.has(fallback)) return fallback;
+
+    if (fallback && !failedAvatarSources.value.has(fallback)) {
+return fallback;
+}
 
     return null;
 }
 
 function markAvatarFailed(source: string | null): void {
-    if (!source) return;
+    if (!source) {
+return;
+}
+
     const next = new Set(failedAvatarSources.value);
     next.add(source);
     failedAvatarSources.value = next;
 }
 
 function timestampValue(value: string | null): number {
-    if (!value) return 0;
+    if (!value) {
+return 0;
+}
+
     const normalized = value.length === 10 ? `${value}T00:00:00` : value.replace(' ', 'T');
     const parsed = new Date(normalized);
+
     return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
 }
 
 function parseDate(value: string | null): Date | null {
-    if (!value) return null;
+    if (!value) {
+return null;
+}
+
     const normalized = value.length === 10 ? `${value}T00:00:00` : value.replace(' ', 'T');
     const parsed = new Date(normalized);
+
     return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 function formatTime(value: string | null): string {
     const date = parseDate(value);
+
     return date
         ? date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
         : value ?? '';
@@ -258,22 +291,31 @@ function formatTime(value: string | null): string {
 
 function formatDate(value: string | null): string {
     const date = parseDate(value);
-    if (!date) return '';
+
+    if (!date) {
+return '';
+}
 
     const today = new Date();
+
     if (
         date.getFullYear() === today.getFullYear() &&
         date.getMonth() === today.getMonth() &&
         date.getDate() === today.getDate()
-    ) return 'Today';
+    ) {
+return 'Today';
+}
 
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 1);
+
     if (
         date.getFullYear() === yesterday.getFullYear() &&
         date.getMonth() === yesterday.getMonth() &&
         date.getDate() === yesterday.getDate()
-    ) return 'Yesterday';
+    ) {
+return 'Yesterday';
+}
 
     return date.toLocaleDateString('en-US', {
         month: 'long', day: 'numeric', year: 'numeric',
@@ -281,7 +323,10 @@ function formatDate(value: string | null): string {
 }
 
 function shouldShowDate(index: number): boolean {
-    if (index === 0) return true;
+    if (index === 0) {
+return true;
+}
+
     return formatDate(threadItems.value[index].date) !== formatDate(threadItems.value[index - 1].date);
 }
 
@@ -291,6 +336,7 @@ function isMine(item: ThreadItem): boolean {
 
 function isImageAttachment(attachment: MessageAttachment): boolean {
     const name = String(attachment.file_desc || attachment.filename || '').trim().toLowerCase();
+
     return /\.(jpg|jpeg|png|gif|webp)$/i.test(name);
 }
 
@@ -321,24 +367,38 @@ function currentSignature(): string {
 function errorText(error: unknown): string {
     if (axios.isAxiosError(error)) {
         const message = error.response?.data?.message;
-        if (typeof message === 'string' && message.trim() !== '') return message;
+
+        if (typeof message === 'string' && message.trim() !== '') {
+return message;
+}
     }
+
     return error instanceof Error ? error.message : 'Unable to load the conversation.';
 }
 
 async function scrollToBottom(): Promise<void> {
     await nextTick();
-    if (!messageScroller.value) return;
+
+    if (!messageScroller.value) {
+return;
+}
+
     messageScroller.value.scrollTop = messageScroller.value.scrollHeight;
 }
 
 async function loadConversation(initial = false): Promise<void> {
-    if (!props.conversation.inbox_id || !props.currentUserId || requestRunning) return;
+    if (!props.conversation.inbox_id || !props.currentUserId || requestRunning) {
+return;
+}
 
     const requestInboxId = props.conversation.inbox_id;
     requestRunning = true;
-    if (initial) initialLoading.value = true;
-    else backgroundRefreshing.value = true;
+
+    if (initial) {
+initialLoading.value = true;
+} else {
+backgroundRefreshing.value = true;
+}
 
     try {
         const response = await axios.get<ThreadResponse>(
@@ -374,10 +434,13 @@ async function loadConversation(initial = false): Promise<void> {
         ) {
             emit('back');
             emit('conversationUpdated');
+
             return;
         }
 
-        if (initial || !inbox.value) errorMessage.value = errorText(error);
+        if (initial || !inbox.value) {
+errorMessage.value = errorText(error);
+}
     } finally {
         requestRunning = false;
         initialLoading.value = false;
@@ -395,6 +458,7 @@ function attachmentKey(file: File): string {
 
 function createAttachment(file: File): SelectedAttachment {
     const isImage = file.type.toLowerCase().startsWith('image/') || /\.(jpg|jpeg|png|gif)$/i.test(file.name);
+
     return {
         key: attachmentKey(file),
         file,
@@ -405,14 +469,20 @@ function createAttachment(file: File): SelectedAttachment {
 
 function clearReplyFiles(): void {
     for (const attachment of replyFiles.value) {
-        if (attachment.previewUrl) URL.revokeObjectURL(attachment.previewUrl);
+        if (attachment.previewUrl) {
+URL.revokeObjectURL(attachment.previewUrl);
+}
     }
+
     replyFiles.value = [];
     replyFileUpload.value?.clear();
 }
 
 function removeReplyFile(attachment: SelectedAttachment): void {
-    if (attachment.previewUrl) URL.revokeObjectURL(attachment.previewUrl);
+    if (attachment.previewUrl) {
+URL.revokeObjectURL(attachment.previewUrl);
+}
+
     replyFiles.value = replyFiles.value.filter((item) => item.key !== attachment.key);
 }
 
@@ -422,34 +492,48 @@ function onReplyFilesSelected(event: FileUploadSelectEvent): void {
 
     for (const file of Array.from(event.files ?? [])) {
         const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
+
         if (!ACCEPTED_EXTENSIONS.has(extension)) {
             rejected.push(`${file.name}: unsupported file type`);
             continue;
         }
+
         if (file.size > MAX_ATTACHMENT_SIZE) {
             rejected.push(`${file.name}: exceeds 20 MB`);
             continue;
         }
 
         const attachment = createAttachment(file);
+
         if (existing.has(attachment.key)) {
-            if (attachment.previewUrl) URL.revokeObjectURL(attachment.previewUrl);
+            if (attachment.previewUrl) {
+URL.revokeObjectURL(attachment.previewUrl);
+}
+
             continue;
         }
+
         existing.add(attachment.key);
         replyFiles.value.push(attachment);
     }
 
     replyFileUpload.value?.clear();
-    if (rejected.length > 0) errorMessage.value = rejected.join('. ');
+
+    if (rejected.length > 0) {
+errorMessage.value = rejected.join('. ');
+}
 }
 
 async function sendReply(): Promise<void> {
     const content = replyMessage.value.trim();
-    if (sending.value || isBlocked.value) return;
+
+    if (sending.value || isBlocked.value) {
+return;
+}
 
     if (!content && replyFiles.value.length === 0) {
         errorMessage.value = 'Enter a reply or attach a file.';
+
         return;
     }
 
@@ -460,6 +544,7 @@ async function sendReply(): Promise<void> {
         const formData = new FormData();
         formData.append('user_id', props.currentUserId);
         formData.append('reply_msg', content);
+
         for (const attachment of replyFiles.value) {
             formData.append('files[]', attachment.file);
         }
@@ -481,7 +566,10 @@ async function sendReply(): Promise<void> {
 
 
 function askToDeleteMessage(item: ThreadItem): void {
-    if (!isMine(item) || item.is_deleted || deletingMessageId.value) return;
+    if (!isMine(item) || item.is_deleted || deletingMessageId.value) {
+return;
+}
+
     confirmDeleteMessageId.value = item.id;
 }
 
@@ -495,7 +583,9 @@ function applyDeletedMessageState(item: ThreadItem): void {
             inbox.value.content = 'This message was deleted';
             inbox.value.is_deleted = true;
         }
+
         threadAttachments.value = [];
+
         return;
     }
 
@@ -503,7 +593,9 @@ function applyDeletedMessageState(item: ThreadItem): void {
         (candidate) => candidate.reply_id === item.id,
     );
 
-    if (!reply) return;
+    if (!reply) {
+return;
+}
 
     reply.reply_msg = 'This message was deleted';
     reply.is_deleted = true;
@@ -549,28 +641,40 @@ async function deleteThreadMessage(item: ThreadItem): Promise<void> {
 
 function openAttachment(attachment: MessageAttachment): void {
     const url = attachment.url?.trim();
+
     if (!url) {
         errorMessage.value = 'The attachment is unavailable.';
+
         return;
     }
+
     window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 function handleVisibilityChange(): void {
-    if (document.visibilityState === 'visible') void loadConversation(false);
+    if (document.visibilityState === 'visible') {
+void loadConversation(false);
+}
 }
 
 function startPolling(): void {
-    if (pollTimer !== null) window.clearInterval(pollTimer);
+    if (pollTimer !== null) {
+window.clearInterval(pollTimer);
+}
+
     pollTimer = window.setInterval(() => {
-        if (document.visibilityState === 'visible') void loadConversation(false);
+        if (document.visibilityState === 'visible') {
+void loadConversation(false);
+}
     }, POLL_INTERVAL_MS);
 }
 
 watch(
     () => props.conversation.inbox_id,
     async (nextInboxId) => {
-        if (!nextInboxId || nextInboxId === loadedInboxId) return;
+        if (!nextInboxId || nextInboxId === loadedInboxId) {
+return;
+}
 
         inbox.value = null;
         threadAttachments.value = [];
@@ -592,7 +696,10 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-    if (pollTimer !== null) window.clearInterval(pollTimer);
+    if (pollTimer !== null) {
+window.clearInterval(pollTimer);
+}
+
     document.removeEventListener('visibilitychange', handleVisibilityChange);
     clearReplyFiles();
 });

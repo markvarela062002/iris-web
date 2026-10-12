@@ -224,6 +224,7 @@ const studentInitials = computed(() => {
     )
         .trim()
         .charAt(0);
+
     return (
         `${first}${last}`.toUpperCase() ||
         'ST'
@@ -234,12 +235,15 @@ const defaultAvatarUrl = computed<string>(() => {
     const gender = String(journal.value?.gender ?? '')
         .trim()
         .toUpperCase();
+
     if (gender === 'MALE' || gender === 'M') {
         return '/images/male-cadet.png';
     }
+
     if (gender === 'FEMALE' || gender === 'F') {
         return '/images/female-cadet.png';
     }
+
     return '/images/default-cadet.png';
 });
 
@@ -255,6 +259,7 @@ const isEvidenceImage = computed(() => {
     )
         .trim()
         .toLowerCase();
+
     return /\.(jpg|jpeg|png|gif|webp)$/i.test(
         filename,
     );
@@ -266,12 +271,15 @@ function departmentSeverity(): DepartmentSeverity {
     )
         .trim()
         .toUpperCase();
+
     if (department === 'DECK') {
         return 'success';
     }
+
     if (department === 'ENGINE') {
         return 'info';
     }
+
     return 'secondary';
 }
 
@@ -281,12 +289,15 @@ function departmentIcon(): string {
     )
         .trim()
         .toUpperCase();
+
     if (department === 'DECK') {
         return 'pi pi-compass';
     }
+
     if (department === 'ENGINE') {
         return 'pi pi-cog';
     }
+
     return 'pi pi-building';
 }
 
@@ -300,12 +311,15 @@ function parseDate(
     value: unknown,
 ): Date | null {
     const text = stringValue(value);
+
     if (!text) {
         return null;
     }
+
     const date = new Date(
         `${text.substring(0, 10)}T00:00:00`,
     );
+
     return Number.isNaN(date.getTime())
         ? null
         : date;
@@ -315,19 +329,24 @@ function parseTime(
     value: unknown,
 ): Date | null {
     const text = stringValue(value);
+
     if (!text) {
         return null;
     }
+
     const [hours, minutes] =
         text.split(':').map(Number);
+
     if (
         !Number.isFinite(hours) ||
         !Number.isFinite(minutes)
     ) {
         return null;
     }
+
     const date = new Date();
     date.setHours(hours, minutes, 0, 0);
+
     return date;
 }
 
@@ -337,6 +356,7 @@ function formatDateParameter(
     if (!value) {
         return null;
     }
+
     const year = value.getFullYear();
     const month = String(
         value.getMonth() + 1,
@@ -344,6 +364,7 @@ function formatDateParameter(
     const day = String(
         value.getDate(),
     ).padStart(2, '0');
+
     return `${year}-${month}-${day}`;
 }
 
@@ -353,12 +374,14 @@ function formatTimeParameter(
     if (!value) {
         return null;
     }
+
     const hours = String(
         value.getHours(),
     ).padStart(2, '0');
     const minutes = String(
         value.getMinutes(),
     ).padStart(2, '0');
+
     return `${hours}:${minutes}`;
 }
 
@@ -418,6 +441,7 @@ async function loadJournal(): Promise<void> {
     requestController = controller;
     loading.value = true;
     pageError.value = '';
+
     try {
         const response =
             await axios.get<JournalResponse>(
@@ -455,6 +479,7 @@ async function loadJournal(): Promise<void> {
         ) {
             return;
         }
+
         pageError.value =
             getErrorMessage(
                 error,
@@ -529,8 +554,10 @@ async function saveJournal(
     if (!journal.value) {
         return false;
     }
+
     saving.value = true;
     pageError.value = '';
+
     try {
         const response =
             await axios.put<JournalResponse>(
@@ -553,6 +580,7 @@ async function saveJournal(
         loadIntoForm(
             response.data.data,
         );
+
         if (showSuccessToast) {
             toast.add({
                 severity: 'success',
@@ -563,6 +591,7 @@ async function saveJournal(
                 life: 3500,
             });
         }
+
         return true;
     } catch (error: unknown) {
         pageError.value =
@@ -570,6 +599,7 @@ async function saveJournal(
                 error,
                 'Unable to save the daily journal.',
             );
+
         return false;
     } finally {
         saving.value = false;
@@ -587,6 +617,7 @@ async function uploadEvidence(): Promise<void> {
     if (!selectedEvidence.value) {
         return;
     }
+
     evidenceUploading.value = true;
     pageError.value = '';
     const formData = new FormData();
@@ -594,6 +625,7 @@ async function uploadEvidence(): Promise<void> {
         'evidence',
         selectedEvidence.value,
     );
+
     try {
         const response =
             await axios.post<JournalResponse>(
@@ -641,9 +673,11 @@ function openEvidence(): void {
     const url = String(
         journal.value?.evidence_url ?? '',
     ).trim();
+
     if (!url) {
         return;
     }
+
     window.open(
         url,
         '_blank',
@@ -655,9 +689,11 @@ function openOfficerSignature(): void {
     const url = String(
         journal.value?.officer_signature_url ?? '',
     ).trim();
+
     if (!url) {
         return;
     }
+
     window.open(
         url,
         '_blank',
@@ -673,11 +709,14 @@ function pointerPosition(
 } | null {
     const canvas =
         signatureCanvas.value;
+
     if (!canvas) {
         return null;
     }
+
     const rectangle =
         canvas.getBoundingClientRect();
+
     return {
         x:
             (event.clientX -
@@ -698,13 +737,16 @@ function beginSignature(
     if (isValidated.value) {
         return;
     }
+
     const canvas =
         signatureCanvas.value;
     const position =
         pointerPosition(event);
+
     if (!canvas || !position) {
         return;
     }
+
     signatureDrawing.value = true;
     signaturePointerId.value =
         event.pointerId;
@@ -713,9 +755,11 @@ function beginSignature(
     );
     const context =
         canvas.getContext('2d');
+
     if (!context) {
         return;
     }
+
     context.beginPath();
     context.moveTo(
         position.x,
@@ -733,18 +777,23 @@ function drawSignature(
     ) {
         return;
     }
+
     const canvas =
         signatureCanvas.value;
     const position =
         pointerPosition(event);
+
     if (!canvas || !position) {
         return;
     }
+
     const context =
         canvas.getContext('2d');
+
     if (!context) {
         return;
     }
+
     context.lineWidth = 4;
     context.lineCap = 'round';
     context.lineJoin = 'round';
@@ -766,10 +815,12 @@ function endSignature(
     ) {
         return;
     }
+
     const canvas =
         signatureCanvas.value;
     signatureDrawing.value = false;
     signaturePointerId.value = null;
+
     if (
         canvas?.hasPointerCapture(
             event.pointerId,
@@ -784,6 +835,7 @@ function endSignature(
 function clearSignature(): void {
     const canvas =
         signatureCanvas.value;
+
     if (canvas) {
         const context =
             canvas.getContext('2d');
@@ -794,6 +846,7 @@ function clearSignature(): void {
             canvas.height,
         );
     }
+
     signatureHasInk.value = false;
     signatureDrawing.value = false;
     signaturePointerId.value = null;
@@ -807,14 +860,17 @@ function signatureBlob(): Promise<Blob> {
         ) => {
             const canvas =
                 signatureCanvas.value;
+
             if (!canvas) {
                 reject(
                     new Error(
                         'Signature canvas is unavailable.',
                     ),
                 );
+
                 return;
             }
+
             canvas.toBlob(
                 (blob) => {
                     if (!blob) {
@@ -823,8 +879,10 @@ function signatureBlob(): Promise<Blob> {
                                 'Unable to create the STO signature image.',
                             ),
                         );
+
                         return;
                     }
+
                     resolve(blob);
                 },
                 'image/png',
@@ -841,24 +899,32 @@ async function signJournal(): Promise<void> {
     ) {
         return;
     }
+
     if (!form.value.sto_name.trim()) {
         pageError.value =
             'Enter the Supervising Officer name before signing.';
+
         return;
     }
+
     if (!signatureHasInk.value) {
         pageError.value =
             'The Supervising Officer signature is required.';
+
         return;
     }
+
     pageError.value = '';
     signing.value = true;
+
     try {
         const saved =
             await saveJournal(false);
+
         if (!saved) {
             return;
         }
+
         const blob =
             await signatureBlob();
         const signatureFile =
@@ -935,6 +1001,7 @@ function getErrorMessage(
     if (!axios.isAxiosError(error)) {
         return fallback;
     }
+
     const responseData =
         error.response?.data as
             | {
@@ -951,6 +1018,7 @@ function getErrorMessage(
                   responseData.errors,
               )[0]?.[0]
             : undefined;
+
     return (
         firstValidationError ||
         responseData?.message ||

@@ -912,7 +912,7 @@ onBeforeUnmount(() => requestController?.abort());
                             icon="pi pi-save"
                             severity="success"
                             :loading="saving"
-                            @click="saveAnnouncement"
+                            @click="saveAnnouncement" 
                         />
                     </div>
                 </div>

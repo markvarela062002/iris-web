@@ -312,6 +312,7 @@ function handleAction(
 ): void {
     if (action === 'edit') {
         openEdit(row);
+
         return;
     }
 

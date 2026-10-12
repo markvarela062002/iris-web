@@ -2,9 +2,9 @@
 import axios from 'axios';
 import Avatar from 'primevue/avatar';
 import Button from 'primevue/button';
+import PrimeImage from 'primevue/image';
 import InputText from 'primevue/inputtext';
 import Message from 'primevue/message';
-import PrimeImage from 'primevue/image';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 type MessageListItem = {
@@ -58,7 +58,10 @@ let requestRunning = false;
 
 const filteredConversations = computed(() => {
     const keyword = search.value.trim().toLowerCase();
-    if (!keyword) return conversations.value;
+
+    if (!keyword) {
+return conversations.value;
+}
 
     return conversations.value.filter((conversation) =>
         [
@@ -89,6 +92,7 @@ function participantFallbackName(conversation: MessageListItem): string {
         conversation.recipient_account_type || conversation.recipient_type || 'User',
     ).trim();
     const id = String(conversation.recipient_id ?? '').trim();
+
     return id ? `${type || 'User'} ${id.slice(0, 8)}` : type || 'User';
 }
 
@@ -98,47 +102,78 @@ function displayName(conversation: MessageListItem): string {
 
 function initials(value: string | null | undefined): string {
     const parts = String(value ?? '').trim().split(/\s+/).filter(Boolean);
-    if (parts.length === 0) return 'US';
-    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+
+    if (parts.length === 0) {
+return 'US';
+}
+
+    if (parts.length === 1) {
+return parts[0].slice(0, 2).toUpperCase();
+}
+
     return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase();
 }
 
 function genderAvatar(gender: string | null | undefined): string | null {
     const value = String(gender ?? '').trim().toUpperCase();
-    if (value === 'M' || value === 'MALE') return '/images/male-cadet.png';
-    if (value === 'F' || value === 'FEMALE') return '/images/female-cadet.png';
+
+    if (value === 'M' || value === 'MALE') {
+return '/images/male-cadet.png';
+}
+
+    if (value === 'F' || value === 'FEMALE') {
+return '/images/female-cadet.png';
+}
+
     return null;
 }
 
 function avatarSource(conversation: MessageListItem): string | null {
     const photo = String(conversation.recipient_photo_url ?? '').trim();
-    if (photo && !failedAvatarSources.value.has(photo)) return photo;
+
+    if (photo && !failedAvatarSources.value.has(photo)) {
+return photo;
+}
 
     const fallback = genderAvatar(conversation.recipient_gender);
-    if (fallback && !failedAvatarSources.value.has(fallback)) return fallback;
+
+    if (fallback && !failedAvatarSources.value.has(fallback)) {
+return fallback;
+}
 
     return null;
 }
 
 function markAvatarFailed(source: string | null): void {
-    if (!source) return;
+    if (!source) {
+return;
+}
+
     const next = new Set(failedAvatarSources.value);
     next.add(source);
     failedAvatarSources.value = next;
 }
 
 function parseDate(value: string | null | undefined): Date | null {
-    if (!value) return null;
+    if (!value) {
+return null;
+}
+
     const normalized = value.length === 10 ? `${value}T00:00:00` : value.replace(' ', 'T');
     const date = new Date(normalized);
+
     return Number.isNaN(date.getTime()) ? null : date;
 }
 
 function formatListDate(value: string | null | undefined): string {
     const date = parseDate(value);
-    if (!date) return value ?? '';
+
+    if (!date) {
+return value ?? '';
+}
 
     const today = new Date();
+
     if (
         date.getFullYear() === today.getFullYear() &&
         date.getMonth() === today.getMonth() &&
@@ -149,6 +184,7 @@ function formatListDate(value: string | null | undefined): string {
 
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 1);
+
     if (
         date.getFullYear() === yesterday.getFullYear() &&
         date.getMonth() === yesterday.getMonth() &&
@@ -196,29 +232,45 @@ function conversationSignature(items: MessageListItem[]): string {
 function errorText(error: unknown): string {
     if (axios.isAxiosError(error)) {
         const message = error.response?.data?.message;
-        if (typeof message === 'string' && message.trim() !== '') return message;
+
+        if (typeof message === 'string' && message.trim() !== '') {
+return message;
+}
     }
+
     return error instanceof Error ? error.message : 'Unable to load messages.';
 }
 
 function resolveRequestedSelection(): void {
     const requestedInboxId = props.selectInboxId?.trim();
-    if (!requestedInboxId) return;
+
+    if (!requestedInboxId) {
+return;
+}
 
     const conversation = conversations.value.find(
         (item) => item.inbox_id === requestedInboxId,
     );
 
-    if (conversation) emit('select', conversation);
+    if (conversation) {
+emit('select', conversation);
+}
+
     emit('selectionResolved');
 }
 
 async function loadConversations(initial = false): Promise<void> {
-    if (!props.currentUserId || requestRunning) return;
+    if (!props.currentUserId || requestRunning) {
+return;
+}
 
     requestRunning = true;
-    if (initial) initialLoading.value = true;
-    else backgroundRefreshing.value = true;
+
+    if (initial) {
+initialLoading.value = true;
+} else {
+backgroundRefreshing.value = true;
+}
 
     try {
         const response = await axios.get<ConversationResponse>(API, {
@@ -254,19 +306,28 @@ async function loadConversations(initial = false): Promise<void> {
 }
 
 function handleVisibilityChange(): void {
-    if (document.visibilityState === 'visible') void loadConversations(false);
+    if (document.visibilityState === 'visible') {
+void loadConversations(false);
+}
 }
 
 function startPolling(): void {
-    if (pollTimer !== null) window.clearInterval(pollTimer);
+    if (pollTimer !== null) {
+window.clearInterval(pollTimer);
+}
+
     pollTimer = window.setInterval(() => {
-        if (document.visibilityState === 'visible') void loadConversations(false);
+        if (document.visibilityState === 'visible') {
+void loadConversations(false);
+}
     }, POLL_INTERVAL_MS);
 }
 
 watch(() => props.refreshToken, () => void loadConversations(false));
 watch(() => props.selectInboxId, (value) => {
-    if (value) void loadConversations(false);
+    if (value) {
+void loadConversations(false);
+}
 });
 
 onMounted(() => {
@@ -276,7 +337,10 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-    if (pollTimer !== null) window.clearInterval(pollTimer);
+    if (pollTimer !== null) {
+window.clearInterval(pollTimer);
+}
+
     document.removeEventListener('visibilitychange', handleVisibilityChange);
 });
 </script>

@@ -7,8 +7,8 @@ import FileUpload from 'primevue/fileupload';
 import InputNumber from 'primevue/inputnumber';
 import InputText from 'primevue/inputtext';
 import Message from 'primevue/message';
-import PrimeTag from 'primevue/tag';
 import Select from 'primevue/select';
+import PrimeTag from 'primevue/tag';
 import Toast from 'primevue/toast';
 import ToggleSwitch from 'primevue/toggleswitch';
 import { useToast } from 'primevue/usetoast';
@@ -431,6 +431,7 @@ function handleAction(
 ): void {
     if (action === 'edit') {
         openEdit(row);
+
         return;
     }
 

@@ -377,7 +377,9 @@ const submitDisabled = computed(
 function statusLabel(row: DataTableRow): string {
     const status = String(row.status ?? '').trim();
 
-    if (status) return status;
+    if (status) {
+return status;
+}
 
     if (
         String(row.sto_validated ?? '')
@@ -399,7 +401,9 @@ function statusLabel(row: DataTableRow): string {
         return 'For Revision';
     }
 
-    if (forApp === 'Y') return 'Pending';
+    if (forApp === 'Y') {
+return 'Pending';
+}
 
     return 'Draft';
 }
@@ -409,11 +413,17 @@ function statusSeverity(
 ): 'success' | 'danger' | 'warn' | 'secondary' {
     const status = statusLabel(row);
 
-    if (status === 'Verified') return 'success';
+    if (status === 'Verified') {
+return 'success';
+}
 
-    if (status === 'For Revision') return 'danger';
+    if (status === 'For Revision') {
+return 'danger';
+}
 
-    if (status === 'Pending') return 'warn';
+    if (status === 'Pending') {
+return 'warn';
+}
 
     return 'secondary';
 }
@@ -421,17 +431,25 @@ function statusSeverity(
 function statusIcon(row: DataTableRow): string {
     const status = statusLabel(row);
 
-    if (status === 'Verified') return 'pi pi-check-circle';
+    if (status === 'Verified') {
+return 'pi pi-check-circle';
+}
 
-    if (status === 'For Revision') return 'pi pi-undo';
+    if (status === 'For Revision') {
+return 'pi pi-undo';
+}
 
-    if (status === 'Pending') return 'pi pi-clock';
+    if (status === 'Pending') {
+return 'pi pi-clock';
+}
 
     return 'pi pi-file-edit';
 }
 
 function canEdit(row: DataTableRow): boolean {
-    if (typeof row.can_edit === 'boolean') return row.can_edit;
+    if (typeof row.can_edit === 'boolean') {
+return row.can_edit;
+}
 
     return (
         String(row.sto_validated ?? '')
@@ -442,7 +460,9 @@ function canEdit(row: DataTableRow): boolean {
 }
 
 function canDelete(row: DataTableRow): boolean {
-    if (typeof row.can_delete === 'boolean') return row.can_delete;
+    if (typeof row.can_delete === 'boolean') {
+return row.can_delete;
+}
 
     return canEdit(row);
 }
@@ -456,13 +476,17 @@ function isImageFilename(filename: string): boolean {
 }
 
 function formatDate(value: unknown): string {
-    if (!value || value === '1970-01-01') return '—';
+    if (!value || value === '1970-01-01') {
+return '—';
+}
 
     const raw = String(value).trim();
 
     const parsed = new Date(`${raw}T00:00:00`);
 
-    if (Number.isNaN(parsed.getTime())) return raw;
+    if (Number.isNaN(parsed.getTime())) {
+return raw;
+}
 
     return new Intl.DateTimeFormat('en-PH', {
         timeZone: 'Asia/Manila',
@@ -519,16 +543,6 @@ function dateForApi(value: Date): string {
     return `${year}-${month}-${day}`;
 }
 
-function parseApiDate(value: unknown): Date | null {
-    const raw = String(value ?? '').trim();
-
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return null;
-
-    const [year, month, day] = raw.split('-').map(Number);
-
-    return new Date(year, month - 1, day);
-}
-
 function currentPageNumber(): number {
     return Math.floor(first.value / Math.max(perPage.value, 1)) + 1;
 }
@@ -546,7 +560,9 @@ function errorText(error: unknown, fallback: string): string {
         if (responseData?.errors) {
             const firstError = Object.values(responseData.errors).flat()[0];
 
-            if (firstError) return firstError;
+            if (firstError) {
+return firstError;
+}
         }
 
         if (
@@ -718,7 +734,9 @@ function handleColumnFilter(field: string, value: string): void {
 function handleAction(action: string, row: DataTableRow): void {
     errorMessage.value = '';
 
-    if (action === 'no-file') return;
+    if (action === 'no-file') {
+return;
+}
 
     if (action === 'view-file') {
         openUploadedFile(row);
@@ -758,7 +776,9 @@ function openUploadedFile(row: DataTableRow): void {
 }
 
 function openExistingEvidence(): void {
-    if (!existingFileUrl.value) return;
+    if (!existingFileUrl.value) {
+return;
+}
 
     window.open(
         existingFileUrl.value,
@@ -806,7 +826,9 @@ async function openCreateDialog(): Promise<void> {
 }
 
 async function openEditDialog(row: DataTableRow): Promise<void> {
-    if (!canEdit(row)) return;
+    if (!canEdit(row)) {
+return;
+}
 
     selectedActivity.value = row;
 
@@ -822,7 +844,9 @@ async function openEditDialog(row: DataTableRow): Promise<void> {
 }
 
 function closeActivityDialog(): void {
-    if (saving.value) return;
+    if (saving.value) {
+return;
+}
 
     activityDialogVisible.value = false;
 
@@ -836,7 +860,9 @@ function onFileSelected(event: FileUploadSelectEvent): void {
 
     fileUpload.value?.clear();
 
-    if (!file) return;
+    if (!file) {
+return;
+}
 
     const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
 
@@ -896,7 +922,9 @@ async function submitActivity(): Promise<void> {
         return;
     }
 
-    if (!selectedStartDate.value || !selectedEndDate.value) return;
+    if (!selectedStartDate.value || !selectedEndDate.value) {
+return;
+}
 
     if (selectedEndDate.value < selectedStartDate.value) {
         formError.value =
@@ -1001,11 +1029,15 @@ async function submitActivity(): Promise<void> {
 }
 
 async function deleteActivity(): Promise<void> {
-    if (deleting.value || !selectedActivity.value) return;
+    if (deleting.value || !selectedActivity.value) {
+return;
+}
 
     const id = String(selectedActivity.value.id ?? '').trim();
 
-    if (!id) return;
+    if (!id) {
+return;
+}
 
     deleting.value = true;
 

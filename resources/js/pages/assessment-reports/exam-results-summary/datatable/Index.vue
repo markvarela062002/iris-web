@@ -77,77 +77,153 @@ const columns = computed<DataTableColumn[]>(() => packageReport.value ? [
 const filteredItems = computed(() => {
     const keyword = search.value.trim().toLowerCase();
     const items = (report.value?.items ?? []).filter(item => !keyword || [item.code_person, item.student_name, item.name_course, item.exam_type, item.remarks].some(value => String(value ?? '').toLowerCase().includes(keyword)));
+
     return [...items].sort((a, b) => {
         const x = a[sortField.value], y = b[sortField.value];
-        if (x == null) return y == null ? a.index - b.index : 1;
-        if (y == null) return -1;
+
+        if (x == null) {
+return y == null ? a.index - b.index : 1;
+}
+
+        if (y == null) {
+return -1;
+}
+
         const difference = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y));
+
         return difference * sortOrder.value || a.index - b.index;
     });
 });
 const pageItems = computed(() => filteredItems.value.slice(first.value, first.value + perPage.value));
-function percentage(value: unknown, precision = 1): string { return typeof value === 'number' ? value.toFixed(precision) + '%' : '—'; }
+function percentage(value: unknown, precision = 1): string {
+ return typeof value === 'number' ? value.toFixed(precision) + '%' : '—'; 
+}
 function date(value: unknown): string {
     // Avoid browser timezone shifts for legacy local DATETIME values.
     const match = String(value ?? '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+
     return match ? `${match[2]}/${match[3]}/${match[1]}` : '—';
 }
 function failure(error: unknown, fallback: string): string {
-    if (!axios.isAxiosError(error)) return fallback;
+    if (!axios.isAxiosError(error)) {
+return fallback;
+}
+
     const body = error.response?.data;
     const validation = body?.errors ? Object.values(body.errors).flat()[0] : null;
+
     return typeof validation === 'string' ? validation : body?.message || fallback;
 }
 async function loadOptions(): Promise<void> {
     optionsLoading.value = true;
+
     try {
         const { data } = await axios.get(base + '/options', { signal: lifetime.signal });
         packages.value = data.packages;
-    } catch (error) { if (!axios.isCancel(error)) errorMessage.value = failure(error, 'Could not load exam packages.'); }
-    finally { if (!disposed) optionsLoading.value = false; }
+    } catch (error) {
+ if (!axios.isCancel(error)) {
+errorMessage.value = failure(error, 'Could not load exam packages.');
+} 
+} finally {
+ if (!disposed) {
+optionsLoading.value = false;
+} 
+}
 }
 async function generate(): Promise<void> {
-    if (loading.value) return;
-    if (!filters.value.date_from || !filters.value.date_to) { errorMessage.value = 'Date From and Date To are required.'; return; }
-    if (filters.value.date_to < filters.value.date_from) { errorMessage.value = 'Date To must be on or after Date From.'; return; }
+    if (loading.value) {
+return;
+}
+
+    if (!filters.value.date_from || !filters.value.date_to) {
+ errorMessage.value = 'Date From and Date To are required.';
+
+ return; 
+}
+
+    if (filters.value.date_to < filters.value.date_from) {
+ errorMessage.value = 'Date To must be on or after Date From.';
+
+ return; 
+}
+
     reportRequest?.abort();
     const controller = new AbortController(); reportRequest = controller;
     loading.value = true; errorMessage.value = '';
+
     try {
         const { data } = await axios.post<Report>(base + '/generate', { ...filters.value }, { signal: controller.signal });
-        if (!controller.signal.aborted && !disposed) { report.value = data; first.value = 0; search.value = ''; sortField.value = 'index'; sortOrder.value = 1; }
-    } catch (error) { if (!axios.isCancel(error)) errorMessage.value = failure(error, 'Report generation failed.'); }
-    finally { if (!controller.signal.aborted && !disposed) loading.value = false; }
+
+        if (!controller.signal.aborted && !disposed) {
+ report.value = data; first.value = 0; search.value = ''; sortField.value = 'index'; sortOrder.value = 1; 
+}
+    } catch (error) {
+ if (!axios.isCancel(error)) {
+errorMessage.value = failure(error, 'Report generation failed.');
+} 
+} finally {
+ if (!controller.signal.aborted && !disposed) {
+loading.value = false;
+} 
+}
 }
 function clear(): void {
-    if (loading.value) return;
+    if (loading.value) {
+return;
+}
+
     filters.value = blank(); report.value = null; first.value = 0; search.value = ''; errorMessage.value = '';
 }
-function pageChanged(event: PageEvent): void { first.value = event.first; perPage.value = event.rows; }
-function sortChanged(event: SortEvent): void { sortField.value = event.sortField || 'index'; sortOrder.value = event.sortOrder === -1 ? -1 : 1; first.value = 0; }
-function searchChanged(value: string): void { search.value = value; first.value = 0; }
+function pageChanged(event: PageEvent): void {
+ first.value = event.first; perPage.value = event.rows; 
+}
+function sortChanged(event: SortEvent): void {
+ sortField.value = event.sortField || 'index'; sortOrder.value = event.sortOrder === -1 ? -1 : 1; first.value = 0; 
+}
+function searchChanged(value: string): void {
+ search.value = value; first.value = 0; 
+}
 function download(): void {
-    const current = report.value; if (!current || loading.value) return;
+    const current = report.value;
+
+ if (!current || loading.value) {
+return;
+}
+
     const c = current.context;
     const lines: unknown[][] = [
         ['Exam Results Summary', c.rep_type === 1 ? 'Student List' : 'Per Exam Package'],
         ['Date From', c.date_from, 'Date To', c.date_to, 'Package', c.package_name],
         ['Generated At', c.generated_at], ...current.warnings.map(warning => ['Note', warning]),
     ];
+
     if (c.rep_type === 1) {
         lines.push(['No.', 'School ID No. (code_person)', 'Student Name', 'Exam Taken', 'Date Taken', 'Exam Type', 'Remarks', 'Passing Mark %', 'Grade %']);
+
         for (const item of current.items) {
             lines.push([item.index, item.code_person ? "'" + item.code_person : '', item.student_name, item.name_course, date(item.started), item.exam_type, item.remarks, item.passing_pct, item.grade_pct]);
         }
     } else {
         lines.push(['No.', 'Exam Package', 'Completed Attempts', 'Passed', 'Failed', 'No Confirmation', 'Passed %', 'Failed %', 'No Confirmation %']);
-        for (const item of current.items) lines.push([item.index, item.name_course, item.attempt_count, item.passed_count, item.failed_count, item.no_confirmation_count, item.passed_pct, item.failed_pct, item.no_confirmation_pct]);
+
+        for (const item of current.items) {
+lines.push([item.index, item.name_course, item.attempt_count, item.passed_count, item.failed_count, item.no_confirmation_count, item.passed_pct, item.failed_pct, item.no_confirmation_pct]);
+}
+
         const t = current.totals;
-        if (t) lines.push(['', 'TOTAL', t.attempt_count, t.passed_count, t.failed_count, t.no_confirmation_count, t.passed_pct, t.failed_pct, t.no_confirmation_pct]);
+
+        if (t) {
+lines.push(['', 'TOTAL', t.attempt_count, t.passed_count, t.failed_count, t.no_confirmation_count, t.passed_pct, t.failed_pct, t.no_confirmation_pct]);
+}
     }
+
     const cell = (value: unknown): string => {
         let text = String(value ?? '');
-        if (typeof value === 'string' && /^[\s\x00-\x1f]*[=+@-]/u.test(text)) text = "'" + text;
+
+        if (typeof value === 'string' && /^[\s\x00-\x1f]*[=+@-]/u.test(text)) {
+text = "'" + text;
+}
+
         return '"' + text.replace(/"/g, '""') + '"';
     };
     const csv = '\uFEFF' + lines.map(row => row.map(cell).join(',')).join('\r\n');
@@ -155,8 +231,12 @@ function download(): void {
     const link = document.createElement('a'); link.href = url; link.download = 'exam-results-summary-' + Date.now() + '.csv';
     document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
 }
-onMounted(() => { void loadOptions(); });
-onBeforeUnmount(() => { disposed = true; lifetime.abort(); reportRequest?.abort(); });
+onMounted(() => {
+ void loadOptions(); 
+});
+onBeforeUnmount(() => {
+ disposed = true; lifetime.abort(); reportRequest?.abort(); 
+});
 </script>
 
 <template>

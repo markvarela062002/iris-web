@@ -73,11 +73,15 @@ const columns: DataTableColumn[] = [
 
 async function loadCourses(): Promise<void> {
     optionsLoading.value = true;
+
     try {
         const response = await axios.get<{ data: Course[] }>(`${API}/options`, config());
         courses.value = response.data.data;
-    } catch (caught: unknown) { error.value = message(caught, 'Unable to load exam packages.'); }
-    finally { optionsLoading.value = false; }
+    } catch (caught: unknown) {
+ error.value = message(caught, 'Unable to load exam packages.'); 
+} finally {
+ optionsLoading.value = false; 
+}
 }
 
 function resetList(): void {
@@ -99,25 +103,38 @@ async function changeCourse(): Promise<void> {
     subjectId.value = null;
     subjects.value = [];
     subjectsLoading.value = false;
-    if (!courseId.value) return;
+
+    if (!courseId.value) {
+return;
+}
+
     const controller = new AbortController();
     subjectRequest = controller;
     subjectsLoading.value = true;
+
     try {
         const response = await axios.get<{ data: Subject[] }>(`${API}/packages/${encodeURIComponent(courseId.value)}/subjects`, {
             ...config(), signal: controller.signal,
         });
         subjects.value = response.data.data;
     } catch (caught: unknown) {
-        if (!axios.isCancel(caught)) error.value = message(caught, 'Unable to load subjects.');
-    } finally { if (subjectRequest === controller) subjectsLoading.value = false; }
+        if (!axios.isCancel(caught)) {
+error.value = message(caught, 'Unable to load subjects.');
+}
+    } finally {
+ if (subjectRequest === controller) {
+subjectsLoading.value = false;
+} 
+}
 }
 
 function showQuestions(): void {
     if (!courseId.value || !subjectId.value) {
         error.value = 'Select an exam package and subject first.';
+
         return;
     }
+
     scope.value = { bs_course_id: courseId.value, bs_topic_id: subjectId.value };
     first.value = 0;
     success.value = '';
@@ -125,67 +142,103 @@ function showQuestions(): void {
 }
 
 async function loadQuestions(page = 1): Promise<void> {
-    if (!scope.value) return;
+    if (!scope.value) {
+return;
+}
+
     listRequest?.abort();
     const controller = new AbortController();
     listRequest = controller;
     loading.value = true;
     error.value = '';
+
     try {
         const response = await axios.get<Report>(`${API}/questions`, {
             ...config(), signal: controller.signal,
             params: { ...scope.value, page, per_page: perPage.value, search: search.value,
                 sort_field: sortField.value, sort_direction: sortDirection.value },
         });
-        if (controller.signal.aborted || disposed) return;
+
+        if (controller.signal.aborted || disposed) {
+return;
+}
+
         rows.value = response.data.data;
         totalRecords.value = response.data.meta.total;
         perPage.value = response.data.meta.perPage;
         first.value = (response.data.meta.currentPage - 1) * perPage.value;
         summary.value = response.data.summary;
     } catch (caught: unknown) {
-        if (axios.isCancel(caught) || controller.signal.aborted) return;
+        if (axios.isCancel(caught) || controller.signal.aborted) {
+return;
+}
+
         rows.value = [];
         totalRecords.value = 0;
         error.value = message(caught, 'Unable to load questions.');
-    } finally { if (listRequest === controller) loading.value = false; }
+    } finally {
+ if (listRequest === controller) {
+loading.value = false;
+} 
+}
 }
 
 function handlePage(event: PageEvent): void {
-    if (saving.value) return;
+    if (saving.value) {
+return;
+}
+
     perPage.value = event.rows;
     first.value = event.first;
     void loadQuestions(event.page + 1);
 }
 function handleSort(event: SortEvent): void {
-    if (saving.value) return;
+    if (saving.value) {
+return;
+}
+
     sortField.value = event.sortField || 'quest_text';
     sortDirection.value = event.sortOrder === -1 ? 'desc' : 'asc';
     void loadQuestions(1);
 }
 function handleSearch(value: string): void {
     search.value = value;
-    if (!saving.value) void loadQuestions(1);
+
+    if (!saving.value) {
+void loadQuestions(1);
+}
 }
 
 async function setFlag(row: DataTableRow, field: Flag, value: boolean): Promise<void> {
-    if (!scope.value || saving.value || loading.value) return;
+    if (!scope.value || saving.value || loading.value) {
+return;
+}
+
     saving.value = true;
     error.value = '';
     success.value = '';
+
     try {
         const response = await axios.patch<{ message: string; summary: Summary }>(
             `${API}/questions/${encodeURIComponent(String(row.id))}`,
             { ...scope.value, field, value: value ? 'Y' : 'N' }, config(),
         );
-        if (disposed) return;
+
+        if (disposed) {
+return;
+}
+
         row[field] = value ? 'Y' : 'N';
         summary.value = response.data.summary;
         success.value = response.data.message;
         await loadQuestions(currentPage.value);
     } catch (caught: unknown) {
-        if (!disposed) error.value = message(caught, 'Unable to update the question. Refresh before retrying if the request status is uncertain.');
-    } finally { saving.value = false; }
+        if (!disposed) {
+error.value = message(caught, 'Unable to update the question. Refresh before retrying if the request status is uncertain.');
+}
+    } finally {
+ saving.value = false; 
+}
 }
 
 function openBulk(field: Flag, value: 'Y' | 'N'): void {
@@ -194,22 +247,34 @@ function openBulk(field: Flag, value: 'Y' | 'N'): void {
     bulkVisible.value = true;
 }
 async function saveBulk(): Promise<void> {
-    if (!scope.value || saving.value) return;
+    if (!scope.value || saving.value) {
+return;
+}
+
     saving.value = true;
     error.value = '';
     success.value = '';
+
     try {
         const response = await axios.patch<{ message: string; summary: Summary }>(`${API}/bulk`, {
             ...scope.value, field: bulkField.value, value: bulkValue.value, confirmed: true,
         }, config());
-        if (disposed) return;
+
+        if (disposed) {
+return;
+}
+
         bulkVisible.value = false;
         summary.value = response.data.summary;
         success.value = response.data.message;
         await loadQuestions(currentPage.value);
     } catch (caught: unknown) {
-        if (!disposed) { bulkVisible.value = false; error.value = message(caught, 'Unable to apply the bulk update. Refresh before retrying if the request status is uncertain.'); }
-    } finally { saving.value = false; }
+        if (!disposed) {
+ bulkVisible.value = false; error.value = message(caught, 'Unable to apply the bulk update. Refresh before retrying if the request status is uncertain.'); 
+}
+    } finally {
+ saving.value = false; 
+}
 }
 
 function clear(): void {
@@ -221,18 +286,32 @@ function clear(): void {
     search.value = '';
     resetList();
 }
-function rowOptions(row: DataTableRow): Option[] { return (row.options ?? []) as Option[]; }
-function answerLetters(row: DataTableRow): string { return ((row.correct_answers ?? []) as string[]).join(', ') || '—'; }
-function levelLabel(value: unknown): string { return ({ 1: 'Easy', 2: 'Moderate', 3: 'Difficult' } as Record<number, string>)[Number(value)] ?? 'Unspecified'; }
-function config(): { headers: Record<string, string> } { return { headers: { Accept: 'application/json' } }; }
+function rowOptions(row: DataTableRow): Option[] {
+ return (row.options ?? []) as Option[]; 
+}
+function answerLetters(row: DataTableRow): string {
+ return ((row.correct_answers ?? []) as string[]).join(', ') || '—'; 
+}
+function levelLabel(value: unknown): string {
+ return ({ 1: 'Easy', 2: 'Moderate', 3: 'Difficult' } as Record<number, string>)[Number(value)] ?? 'Unspecified'; 
+}
+function config(): { headers: Record<string, string> } {
+ return { headers: { Accept: 'application/json' } }; 
+}
 function message(caught: unknown, fallback: string): string {
-    if (!axios.isAxiosError(caught)) return fallback;
+    if (!axios.isAxiosError(caught)) {
+return fallback;
+}
+
     const body = caught.response?.data;
     const firstError = Object.values(body?.errors ?? {})[0];
+
     return Array.isArray(firstError) ? String(firstError[0]) : String(body?.message ?? fallback);
 }
 onMounted(() => void loadCourses());
-onBeforeUnmount(() => { disposed = true; listRequest?.abort(); subjectRequest?.abort(); });
+onBeforeUnmount(() => {
+ disposed = true; listRequest?.abort(); subjectRequest?.abort(); 
+});
 </script>
 
 <template>

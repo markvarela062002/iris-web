@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { Head, router, usePage } from '@inertiajs/vue3';
 import axios from 'axios';
+import type { ChartData, ChartOptions } from 'chart.js';
 import Avatar from 'primevue/avatar';
 import Button from 'primevue/button';
 import Card from 'primevue/card';
+import Chart from 'primevue/chart';
 import ProgressBar from 'primevue/progressbar';
 import Select from 'primevue/select';
 import Tag from 'primevue/tag';
@@ -18,8 +20,6 @@ import type {
     SharedData,
 } from '@/types';
 
-import Chart from 'primevue/chart';
-import type { ChartData, ChartOptions } from 'chart.js';
 
 defineOptions({
     inheritAttrs: false,
@@ -159,7 +159,9 @@ async function loadYearlyReport(): Promise<void> {
 
         yearlyChartData.value = response.data.chart;
     } catch (error: unknown) {
-        if (axios.isCancel(error)) return;
+        if (axios.isCancel(error)) {
+return;
+}
 
         reportError.value = axios.isAxiosError(error)
             ? String(

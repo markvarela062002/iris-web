@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 
 import Button from 'primevue/button';
 
 import ProgressSpinner from 'primevue/progressspinner';
+import { computed } from 'vue';
 
 import type { CalendarEvent, CalendarDay } from '@/types/calendar';
 

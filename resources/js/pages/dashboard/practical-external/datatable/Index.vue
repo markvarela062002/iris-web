@@ -15,9 +15,9 @@ import InputText from 'primevue/inputtext';
 
 import Message from 'primevue/message';
 
+import Select from 'primevue/select';
 import PrimeTag from 'primevue/tag';
 
-import Select from 'primevue/select';
 
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 
@@ -226,23 +226,32 @@ addForm.value = {
 
 function editableDate(value: unknown): string {
     const date = String(value ?? '').slice(0, 10);
+
     return !date || date === '1970-01-01' || date === '0000-00-00' ? '' : date;
 }
 
 async function openEdit(assessmentId: string): Promise<void> {
-    if (addSaving.value) return;
+    if (addSaving.value) {
+return;
+}
+
     const requestId = ++formRequestId;
     editingId.value = assessmentId;
     resetAddForm();
     addError.value = '';
     addVisible.value = true;
     editLoading.value = true;
+
     try {
         const [options, response] = await Promise.all([
             axios.get('/api/v1/dashboard/practical-external/options'),
             axios.get(`/api/v1/dashboard/practical-external/${encodeURIComponent(assessmentId)}/edit`),
         ]);
-        if (requestId !== formRequestId || !addVisible.value) return;
+
+        if (requestId !== formRequestId || !addVisible.value) {
+return;
+}
+
         const record = response.data.assessment;
         assessmentChoices.value = options.data.assessments ?? [];
         addForm.value = {
@@ -256,27 +265,40 @@ async function openEdit(assessmentId: string): Promise<void> {
             assessor: String(record.assessor ?? ''),
         };
     } catch (error: unknown) {
-        if (requestId !== formRequestId) return;
+        if (requestId !== formRequestId) {
+return;
+}
+
         errorMessage.value = getErrorMessage(error, 'Unable to load the assessment for editing.');
         addVisible.value = false;
     } finally {
-        if (requestId === formRequestId) editLoading.value = false;
+        if (requestId === formRequestId) {
+editLoading.value = false;
+}
     }
 }
 
 async function openAdd(): Promise<void> {
-    if (addSaving.value) return;
+    if (addSaving.value) {
+return;
+}
+
     const requestId = ++formRequestId;
     editingId.value = null;
     editLoading.value = false;
     resetAddForm();
     addError.value = '';
     addVisible.value = true;
+
     try {
         const response = await axios.get(
             '/api/v1/dashboard/practical-external/options',
         );
-        if (requestId !== formRequestId) return;
+
+        if (requestId !== formRequestId) {
+return;
+}
+
         assessmentChoices.value = response.data.assessments ?? [];
     } catch (error: unknown) {
         addError.value = getErrorMessage(
@@ -286,9 +308,13 @@ async function openAdd(): Promise<void> {
     }
 }
 async function saveAdd(): Promise<void> {
-    if (editLoading.value || addSaving.value) return;
+    if (editLoading.value || addSaving.value) {
+return;
+}
+
     addError.value = '';
     addSaving.value = true;
+
     try {
         const response = await axios.request({
             method: editingId.value ? 'put' : 'post',
@@ -696,9 +722,14 @@ function handleAction(
 ): void {
     if (action === 'edit') {
         const assessmentId = String(assessment.id ?? '').trim();
-        if (assessmentId) void openEdit(assessmentId);
+
+        if (assessmentId) {
+void openEdit(assessmentId);
+}
+
         return;
     }
+
     if (action !== 'grade') {
         return;
     }

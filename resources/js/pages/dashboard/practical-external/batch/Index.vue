@@ -233,8 +233,9 @@ async function loadBatches(page = 1): Promise<void> {
         if (
             axios.isCancel(error) ||
             (axios.isAxiosError(error) && error.code === 'ERR_CANCELED')
-        )
-            return;
+        ) {
+return;
+}
 
         batches.value = [];
 
@@ -245,12 +246,16 @@ async function loadBatches(page = 1): Promise<void> {
             'Unable to load Practical External batches.',
         );
     } finally {
-        if (requestController === controller) loading.value = false;
+        if (requestController === controller) {
+loading.value = false;
+}
     }
 }
 
 async function loadOptions(): Promise<void> {
-    if (assessments.value.length) return;
+    if (assessments.value.length) {
+return;
+}
 
     optionsLoading.value = true;
 
@@ -359,7 +364,9 @@ function addExaminee(): void {
 }
 
 function removeExaminee(email: string): void {
-    if (viewMode.value) return;
+    if (viewMode.value) {
+return;
+}
 
     examinees.value = examinees.value.filter((item) => item.email !== email);
 }
@@ -422,7 +429,9 @@ async function importExcel(): Promise<void> {
             ...(response.data.meta.errors ?? []),
         ];
 
-        if (added > 0) uploadDialogVisible.value = false;
+        if (added > 0) {
+uploadDialogVisible.value = false;
+}
     } catch (error: unknown) {
         importMessages.value = [
             getError(error, 'Unable to import the Excel file.'),
@@ -547,7 +556,9 @@ function handleSearch(value: string): void {
 }
 
 function handleAction(action: string, row: DataTableRow): void {
-    if (action === 'view') void openView(row);
+    if (action === 'view') {
+void openView(row);
+}
 }
 
 function cleanName(value: string): string {
@@ -583,8 +594,13 @@ function getError(error: unknown, fallback: string): string {
 
 function formatDate(value: unknown): string {
     const text = String(value ?? '');
-    if (!text) return '';
+
+    if (!text) {
+return '';
+}
+
     const date = new Date(`${text.slice(0, 10)}T00:00:00`);
+
     return Number.isNaN(date.getTime())
         ? text
         : new Intl.DateTimeFormat('en-PH', {
@@ -596,8 +612,13 @@ function formatDate(value: unknown): string {
 
 function formatDateTime(value: unknown): string {
     const text = String(value ?? '');
-    if (!text) return '—';
+
+    if (!text) {
+return '—';
+}
+
     const date = new Date(text.replace(' ', 'T'));
+
     return Number.isNaN(date.getTime())
         ? text
         : new Intl.DateTimeFormat('en-PH', {
@@ -612,9 +633,19 @@ function formatDateTime(value: unknown): string {
 function validity(data: DataTableRow): string {
     const from = formatDate(data.from_date);
     const due = formatDate(data.due_date);
-    if (from && due) return `${from} until ${due}`;
-    if (from) return `Starts on ${from}`;
-    if (due) return `Due on ${due}`;
+
+    if (from && due) {
+return `${from} until ${due}`;
+}
+
+    if (from) {
+return `Starts on ${from}`;
+}
+
+    if (due) {
+return `Due on ${due}`;
+}
+
     return 'Anytime';
 }
 

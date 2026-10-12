@@ -185,7 +185,10 @@ async function loadPackages(page = 1): Promise<void> {
             (response.data.meta.currentPage - 1) *
             response.data.meta.perPage;
     } catch (error: unknown) {
-        if (isCanceled(error)) return;
+        if (isCanceled(error)) {
+return;
+}
+
         packages.value = [];
         totalRecords.value = 0;
         errorMessage.value = getErrorMessage(
@@ -193,7 +196,9 @@ async function loadPackages(page = 1): Promise<void> {
             'Unable to load exam packages.',
         );
     } finally {
-        if (requestController === controller) loading.value = false;
+        if (requestController === controller) {
+loading.value = false;
+}
     }
 }
 
@@ -247,10 +252,14 @@ async function savePackage(): Promise<void> {
     if (!packageForm.code_course.trim()) {
         packageErrors.value.code_course = 'Code is required.';
     }
+
     if (!packageForm.name_course.trim()) {
         packageErrors.value.name_course = 'Exam name is required.';
     }
-    if (Object.keys(packageErrors.value).length) return;
+
+    if (Object.keys(packageErrors.value).length) {
+return;
+}
 
     saving.value = true;
     const wasNew = !packageForm.id;
@@ -292,7 +301,11 @@ async function savePackage(): Promise<void> {
 
 async function deletePackage(): Promise<void> {
     const id = String(selectedPackage.value?.id ?? '');
-    if (!id) return;
+
+    if (!id) {
+return;
+}
+
     deleting.value = true;
 
     try {
@@ -319,9 +332,12 @@ async function deletePackage(): Promise<void> {
 async function loadSubjects(): Promise<void> {
     if (!packageForm.id) {
         subjects.value = [];
+
         return;
     }
+
     subjectLoading.value = true;
+
     try {
         const response = await axios.get<{ data: Subject[] }>(
             `${API_BASE}/${encodeURIComponent(packageForm.id)}/subjects`,
@@ -351,15 +367,34 @@ function openEditSubject(subject: Subject): void {
 }
 
 async function saveSubject(): Promise<void> {
-    if (!packageForm.id) return;
+    if (!packageForm.id) {
+return;
+}
+
     subjectErrors.value = {};
-    if (!subjectForm.desc_topic.trim()) subjectErrors.value.desc_topic = 'Description is required.';
-    if (subjectForm.no_quest === null) subjectErrors.value.no_quest = 'Number of items is required.';
-    if (subjectForm.passing_mark === null) subjectErrors.value.passing_mark = 'Passing mark is required.';
-    if (subjectForm.order_no === null) subjectErrors.value.order_no = 'Order number is required.';
-    if (Object.keys(subjectErrors.value).length) return;
+
+    if (!subjectForm.desc_topic.trim()) {
+subjectErrors.value.desc_topic = 'Description is required.';
+}
+
+    if (subjectForm.no_quest === null) {
+subjectErrors.value.no_quest = 'Number of items is required.';
+}
+
+    if (subjectForm.passing_mark === null) {
+subjectErrors.value.passing_mark = 'Passing mark is required.';
+}
+
+    if (subjectForm.order_no === null) {
+subjectErrors.value.order_no = 'Order number is required.';
+}
+
+    if (Object.keys(subjectErrors.value).length) {
+return;
+}
 
     subjectLoading.value = true;
+
     try {
         const base = `${API_BASE}/${encodeURIComponent(packageForm.id)}/subjects`;
         const payload = {
@@ -395,8 +430,12 @@ async function saveSubject(): Promise<void> {
 }
 
 async function deleteSubject(): Promise<void> {
-    if (!packageForm.id || !selectedSubject.value?.id) return;
+    if (!packageForm.id || !selectedSubject.value?.id) {
+return;
+}
+
     subjectLoading.value = true;
+
     try {
         const response = await axios.delete<{ message: string }>(
             `${API_BASE}/${encodeURIComponent(packageForm.id)}/subjects/${encodeURIComponent(selectedSubject.value.id)}`,
@@ -442,6 +481,7 @@ function resetSubjectForm(): void {
 
 async function reloadCurrentPage(): Promise<void> {
     await loadPackages(currentPage.value);
+
     if (!packages.value.length && currentPage.value > 1) {
         await loadPackages(currentPage.value - 1);
     }
@@ -463,13 +503,20 @@ function isCanceled(error: unknown): boolean {
 }
 
 function getErrorMessage(error: unknown, fallback: string): string {
-    if (!axios.isAxiosError(error)) return fallback;
+    if (!axios.isAxiosError(error)) {
+return fallback;
+}
+
     return (error.response?.data as { message?: string } | undefined)?.message || fallback;
 }
 
 function getValidationErrors(error: unknown): Errors {
-    if (!axios.isAxiosError(error)) return {};
+    if (!axios.isAxiosError(error)) {
+return {};
+}
+
     const source = (error.response?.data as { errors?: Record<string, string[]> } | undefined)?.errors ?? {};
+
     return Object.fromEntries(
         Object.entries(source).map(([key, messages]) => [key, messages[0] ?? 'Invalid value.']),
     );

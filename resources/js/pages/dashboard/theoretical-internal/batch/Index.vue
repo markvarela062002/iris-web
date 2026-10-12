@@ -14,9 +14,9 @@ import InputText from 'primevue/inputtext';
 
 import Message from 'primevue/message';
 
+import Select from 'primevue/select';
 import PrimeTag from 'primevue/tag';
 
-import Select from 'primevue/select';
 
 import {
     computed,
@@ -314,16 +314,15 @@ const selectedCourse = computed(() => {
     return courses.value.find((course) => course.id === form.bs_course_id);
 });
 
-const currentPage = computed(() => {
-    return Math.floor(first.value / rows.value) + 1;
-});
-
 const dateRange = computed<Date[] | null>({
     get() {
-        if (!form.access_exp_date_from) return null;
+        if (!form.access_exp_date_from) {
+return null;
+}
 
         const parseLocalDate = (value: string): Date => {
             const [year, month, day] = value.split('-').map(Number);
+
             return new Date(year, month - 1, day);
         };
 
