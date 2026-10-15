@@ -141,6 +141,32 @@ type SortEvent = {
     sortOrder: number;
 };
 
+function normalizedFileUrl(value: unknown): string {
+    const raw = String(value ?? '').trim();
+
+    if (!raw) {
+        return '';
+    }
+
+    if (/^https?:\/\//i.test(raw)) {
+        return raw;
+    }
+
+    if (raw.startsWith('//')) {
+        return `https:${raw}`;
+    }
+
+    // Handle an absolute school hostname returned without its URL scheme.
+    const candidate = raw.replace(/^\/+/, '');
+
+    if (/^[a-z0-9-]+(?:\.[a-z0-9-]+)+(?::\d+)?(?:\/|$)/i.test(candidate)) {
+        return `https://${candidate}`;
+    }
+
+    // Do not guess a school host from a filename or a local route.
+    return raw;
+}
+
 const API = '/api/v1/student/daily-journals';
 
 const PRINT_URL = '/monitoring/daily-journals/student/print';
@@ -822,7 +848,7 @@ async function uploadEvidence(): Promise<void> {
 }
 
 function openEvidence(): void {
-    const url = stringValue(journal.value?.evidence_url);
+    const url = normalizedFileUrl(journal.value?.evidence_url);
 
     if (!url) {
         return;
@@ -832,7 +858,7 @@ function openEvidence(): void {
 }
 
 function openOfficerSignature(): void {
-    const url = stringValue(journal.value?.officer_signature_url);
+    const url = normalizedFileUrl(journal.value?.officer_signature_url);
 
     if (!url) {
         return;
@@ -1897,7 +1923,7 @@ onBeforeUnmount(() => {
                             <template v-if="journal?.evidence_url">
                                 <PrimeImage
                                     v-if="isEvidenceImage"
-                                    :src="journal.evidence_url ?? undefined"
+                                    :src="normalizedFileUrl(journal.evidence_url) || undefined"
                                     :alt="
                                         journal.file_name || 'Journal evidence'
                                     "
@@ -2087,10 +2113,7 @@ onBeforeUnmount(() => {
                             >
                                 <PrimeImage
                                     v-if="journal?.officer_signature_url"
-                                    :src="
-                                        journal.officer_signature_url ??
-                                        undefined
-                                    "
+                                    :src="normalizedFileUrl(journal.officer_signature_url) || undefined"
                                     :alt="`${
                                         form.sto_name || 'Supervising Officer'
                                     } signature`"

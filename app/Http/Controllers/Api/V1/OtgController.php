@@ -2378,18 +2378,10 @@ return response()->json($result);
             return null;
         }
 
-        $configured = trim($configured);
+        $configured = $this->normalizeSchoolFileBaseUrl($configured);
 
-        if (
-            ! str_starts_with($configured, 'http://') &&
-            ! str_starts_with($configured, 'https://')
-        ) {
-            $configured =
-                'https://'.
-                ltrim(
-                    $configured,
-                    '/',
-                );
+        if ($configured === '') {
+            return null;
         }
 
         return rtrim(
@@ -3973,7 +3965,11 @@ private function buildStudentPhotoUrl(
         return null;
     }
 
-    return $photosUrl.'/'.rawurlencode($filename);
+    $baseUrl = $this->normalizeSchoolFileBaseUrl($photosUrl);
+
+    return $baseUrl !== ''
+        ? $baseUrl.'/'.rawurlencode($filename)
+        : null;
 }
 
     private function resolveSchoolConnection(
@@ -4051,4 +4047,30 @@ private function buildStudentPhotoUrl(
 
         return DB::connection($connection);
     }
+    /** Normalize a configured school file URL into an absolute HTTP URL. */
+    private function normalizeSchoolFileBaseUrl(string $value): string
+    {
+        $value = trim($value);
+
+        if ($value === '') {
+            return '';
+        }
+
+        if (! preg_match('~^https?://~i', $value)) {
+            $value = 'https://'.ltrim($value, '/');
+        }
+
+        $parts = parse_url($value);
+
+        if (
+            $parts === false ||
+            ! isset($parts['host']) ||
+            ! in_array(strtolower($parts['scheme'] ?? ''), ['http', 'https'], true)
+        ) {
+            return '';
+        }
+
+        return rtrim($value, '/');
+    }
+
 }

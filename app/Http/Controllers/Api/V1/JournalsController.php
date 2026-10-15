@@ -38,16 +38,7 @@ class JournalsController extends Controller
          * Journal objective evidence is stored in the same public
          * person_task directory as activity files.
          */
-        $evidenceBaseUrl = rtrim(
-            trim(
-                (string) data_get(
-                    $school,
-                    'files.activity_url',
-                    '',
-                ),
-            ),
-            '/',
-        );
+        $evidenceBaseUrl = $this->personTaskBaseUrl($school);
 
         $validated = $request->validate([
             'date_from' => [
@@ -273,16 +264,7 @@ $records = collect(
         $studentId = (string) $account
             ->getAuthIdentifier();
 
-        $evidenceBaseUrl = rtrim(
-            trim(
-                (string) data_get(
-                    $school,
-                    'files.activity_url',
-                    '',
-                ),
-            ),
-            '/',
-        );
+        $evidenceBaseUrl = $this->personTaskBaseUrl($school);
 
         /*
          * Count all journals belonging to the logged-in
@@ -2138,19 +2120,48 @@ $records = collect(
      * This is the same location used by the legacy daily-journal STO
      * signatures and by the existing activity-file configuration.
      */
-    private function personTaskBaseUrl(
-        array $school,
-    ): string {
-        return rtrim(
-            trim(
-                (string) data_get(
-                    $school,
-                    'files.activity_url',
-                    '',
-                ),
-            ),
-            '/',
+    private function personTaskBaseUrl(array $school): string
+    {
+        $configuredUrl = (string) data_get(
+            $school,
+            'files.activity_url',
+            '',
         );
+
+        return $this->normalizeSchoolFileBaseUrl($configuredUrl);
+    }
+
+    private function normalizeSchoolFileBaseUrl(string $value): string
+    {
+        $value = trim($value);
+
+        if ($value === '') {
+            return '';
+        }
+
+        if (str_starts_with($value, '//')) {
+            $value = 'https:'.$value;
+        } elseif (! preg_match('~^https?://~i', $value)) {
+            // A school domain without a scheme is not a relative IRIS URL.
+            $value = 'https://'.ltrim($value, '/');
+        }
+
+        $parts = parse_url($value);
+
+        if (
+            $parts === false
+            || ! isset($parts['host'], $parts['scheme'])
+            || ! in_array(strtolower($parts['scheme']), ['http', 'https'], true)
+            || filter_var($parts['host'], FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME) === false
+            || isset($parts['user'])
+            || isset($parts['pass'])
+            || isset($parts['query'])
+            || isset($parts['fragment'])
+        ) {
+            return '';
+        }
+
+        return rtrim($value, '/');
     }
 
     private function personTaskFileUrl(
@@ -2572,52 +2583,37 @@ $records = collect(
      * }
      */
 
-private function buildStudentPhotoUrl(
-    Request $request,
-    ?string $photoFile,
-): ?string {
-    $schoolCode = strtoupper(
-        trim(
-            (string) $request->session()->get(
-                'school_code',
-                '',
-            ),
-        ),
-    );
+    private function buildStudentPhotoUrl(
+        Request $request,
+        ?string $photoFile,
+    ): ?string {
+        $schoolCode = strtoupper(trim((string) $request
+            ->session()
+            ->get('school_code', '')));
 
-    if ($schoolCode === '') {
-        return null;
-    }
+        if ($schoolCode === '') {
+            return null;
+        }
 
-    $photosUrl = rtrim(
-        trim(
+        $photosUrl = $this->normalizeSchoolFileBaseUrl(
             (string) config(
                 "schools.schools.{$schoolCode}.files.photos_url",
                 '',
             ),
-        ),
-        '/',
-    );
+        );
 
-    if ($photosUrl === '') {
-        return null;
+        $filename = $this->safeFilename($photoFile);
+
+        if (
+            $photosUrl === ''
+            || $filename === ''
+            || in_array(strtolower($filename), ['profile.jpg', 'null'], true)
+        ) {
+            return null;
+        }
+
+        return $photosUrl.'/'.rawurlencode($filename);
     }
-
-    $filename = $this->safeFilename($photoFile);
-
-    if (
-        $filename === '' ||
-        in_array(
-            strtolower($filename),
-            ['profile.jpg', 'null'],
-            true,
-        )
-    ) {
-        return null;
-    }
-
-    return $photosUrl.'/'.rawurlencode($filename);
-}
 
     private function resolveSchoolConnection(
         Request $request,
