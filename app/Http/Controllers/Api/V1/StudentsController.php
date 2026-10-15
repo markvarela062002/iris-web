@@ -55,11 +55,11 @@ class StudentsController extends Controller
                 'person.fname',
                 'person.mname',
                 'person.gender',
+                'person.photo_file',
                 'person.dept',
                 'person.batch_no',
                 'person.etrb_type',
                 'person.active',
-                'person.photo_file',
             ]);
         /*
         |--------------------------------------------------------------------------
@@ -144,6 +144,7 @@ class StudentsController extends Controller
                     'person.dept',
                     'person.batch_no',
                     'person.etrb_type',
+                    'person.photo_file',
                 ],
                 sortableColumns: [
                     'code_person' => 'person.code_person',
@@ -297,9 +298,10 @@ class StudentsController extends Controller
         */
         $result['data'] = $records
             ->map(
-                static function (
+                function (
                     array $student,
                 ) use (
+                    $request,
                     $activities,
                     $uploadedFiles,
                 ): array {
@@ -307,6 +309,14 @@ class StudentsController extends Controller
                         $student['id'] ??
                         ''
                     );
+
+                    $student['photo_url'] = $this->buildStudentPhotoUrl(
+                        $request,
+                        isset($student['photo_file'])
+                            ? (string) $student['photo_file']
+                            : null,
+                    );
+
                     $student[
                         'activities'
                     ] = collect(
@@ -331,6 +341,7 @@ class StudentsController extends Controller
                         )
                         ->values()
                         ->all();
+
                     $student[
                         'uploaded_files'
                     ] = collect(
@@ -363,10 +374,10 @@ class StudentsController extends Controller
             ->values()
             ->all();
 
-        return response()->json(
-            $result,
-        );
-    }
+            return response()->json(
+                $result,
+            );
+        }
 
     /**
      * Create a student in the selected school database.
@@ -1504,59 +1515,53 @@ class StudentsController extends Controller
         );
     }
 
-    private function buildStudentPhotoUrl(
-        Request $request,
-        ?string $photoFile,
-    ): ?string {
-        $schoolCode = $this
-            ->selectedSchoolCode(
-                $request,
-            );
-        if ($schoolCode === '') {
-            return null;
-        }
-        $photosUrl = rtrim(
-            trim(
-                (string) config(
-                    "schools.schools.{$schoolCode}.files.photos_url",
-                    '',
-                ),
-            ),
-            '/',
-        );
-        if ($photosUrl === '') {
-            return null;
-        }
-        $filename = basename(
-            str_replace(
-                '\\\\\\\\',
-                '/',
-                trim(
-                    (string) $photoFile,
-                ),
-            ),
-        );
-        /*
-         * The legacy application uses profile.jpg as a generic
-         * silhouette. It is not an actual student profile photo.
-         *
-         * Returning null here allows the Vue profile page to use
-         * the MALE/FEMALE cadet avatar, then initials as the final
-         * fallback.
-         */
-        if (
-            $filename === '' ||
-            strtolower($filename) === 'profile.jpg'
-        ) {
-            return null;
-        }
+private function buildStudentPhotoUrl(
+    Request $request,
+    ?string $photoFile,
+): ?string {
+    $schoolCode = $this->selectedSchoolCode(
+        $request,
+    );
 
-        return $photosUrl.
-            '/'.
-            rawurlencode(
-                $filename,
-            );
+    if ($schoolCode === '') {
+        return null;
     }
+
+    $photosUrl = rtrim(
+        trim(
+            (string) config(
+                "schools.schools.{$schoolCode}.files.photos_url",
+                '',
+            ),
+        ),
+        '/',
+    );
+
+    if ($photosUrl === '') {
+        return null;
+    }
+
+    $filename = basename(
+        str_replace(
+            '\\',
+            '/',
+            trim((string) $photoFile),
+        ),
+    );
+
+    if (
+        $filename === '' ||
+        in_array(
+            strtolower($filename),
+            ['profile.jpg', 'null'],
+            true,
+        )
+    ) {
+        return null;
+    }
+
+    return $photosUrl.'/'.rawurlencode($filename);
+}
 
     /**
      * Resolve the database selected during login.

@@ -883,20 +883,52 @@ async function reloadCurrentPage(): Promise<void> {
     }
 }
 
-function getAvatarImage(row: DataTableRow): string {
-    const gender = String(row.gender ?? '')
+const failedStudentPhotos = ref<Record<string, string>>({});
+
+function getStudentPhotoUrl(row: DataTableRow): string {
+    return String(row.photo_url ?? '').trim();
+}
+
+function getFallbackAvatar(gender: unknown): string {
+    const value = String(gender ?? '')
         .trim()
         .toUpperCase();
 
-    if (gender === 'M' || gender === 'MALE') {
+    if (value === 'M' || value === 'MALE') {
         return '/images/male-cadet.png';
     }
 
-    if (gender === 'F' || gender === 'FEMALE') {
+    if (value === 'F' || value === 'FEMALE') {
         return '/images/female-cadet.png';
     }
 
     return '/images/default-cadet.png';
+}
+
+function getAvatarImage(row: DataTableRow): string {
+    const photoUrl = getStudentPhotoUrl(row);
+    const studentId = String(row.person_id ?? row.id ?? '');
+
+    if (
+        photoUrl &&
+        failedStudentPhotos.value[studentId] !== photoUrl
+    ) {
+        return photoUrl;
+    }
+
+    return getFallbackAvatar(row.gender);
+}
+
+function handleStudentPhotoError(row: DataTableRow): void {
+    const photoUrl = getStudentPhotoUrl(row);
+    const studentId = String(row.person_id ?? row.id ?? '');
+
+    if (
+        photoUrl &&
+        failedStudentPhotos.value[studentId] !== photoUrl
+    ) {
+        failedStudentPhotos.value[studentId] = photoUrl;
+    }
 }
 
 function getInitials(row: DataTableRow): string {
@@ -1150,15 +1182,20 @@ onBeforeUnmount(() => {
 
             <template #cell-student_name="{ data }">
                 <div class="flex items-center gap-3">
-                    <Avatar
-                        :image="getAvatarImage(data)"
-                        :label="
-                            getAvatarImage(data) ? undefined : getInitials(data)
-                        "
-                        shape="circle"
-                        size="large"
-                        class="shrink-0 bg-blue-50 font-semibold text-blue-600"
-                    />
+<Avatar
+    :key="`${data.id}-${getAvatarImage(data)}`"
+    :image="getAvatarImage(data)"
+    :aria-label="String(data.student_name ?? 'Student')"
+    shape="circle"
+    size="large"
+    class="shrink-0 bg-blue-50 font-semibold text-blue-600"
+    :pt="{
+        image: {
+            class: 'h-full w-full object-cover',
+        },
+    }"
+    @error="handleStudentPhotoError(data)"
+/>
 
                     <div class="min-w-0">
                         <p

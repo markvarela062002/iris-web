@@ -252,7 +252,13 @@ function getStudentFullName(student: DataTableRow): string {
     return (lastName || otherNames).toUpperCase();
 }
 
-function getStudentAvatar(gender: unknown): string {
+const failedStudentPhotos = ref<Record<string, string>>({});
+
+function getStudentPhotoUrl(student: DataTableRow): string {
+    return String(student.photo_url ?? '').trim();
+}
+
+function getStudentFallbackAvatar(gender: unknown): string {
     const normalizedGender = String(gender ?? '')
         .trim()
         .toUpperCase();
@@ -266,6 +272,32 @@ function getStudentAvatar(gender: unknown): string {
     }
 
     return '/images/default-cadet.png';
+}
+
+function getStudentAvatar(student: DataTableRow): string {
+    const photoUrl = getStudentPhotoUrl(student);
+    const personId = getPersonId(student);
+
+    if (
+        photoUrl &&
+        failedStudentPhotos.value[personId] !== photoUrl
+    ) {
+        return photoUrl;
+    }
+
+    return getStudentFallbackAvatar(student.gender);
+}
+
+function handleStudentPhotoError(student: DataTableRow): void {
+    const photoUrl = getStudentPhotoUrl(student);
+    const personId = getPersonId(student);
+
+    if (
+        photoUrl &&
+        failedStudentPhotos.value[personId] !== photoUrl
+    ) {
+        failedStudentPhotos.value[personId] = photoUrl;
+    }
 }
 
 function getDepartmentSeverity(department: unknown): DepartmentSeverity {
@@ -417,13 +449,20 @@ onBeforeUnmount(() => {
 
             <template #cell-fname="{ data }">
                 <div class="flex items-center gap-3">
-                    <Avatar
-                        :image="getStudentAvatar(data.gender)"
-                        :aria-label="getStudentFullName(data)"
-                        shape="circle"
-                        size="large"
-                        class="shrink-0"
-                    />
+<Avatar
+    :key="`${getPersonId(data)}-${getStudentAvatar(data)}`"
+    :image="getStudentAvatar(data)"
+    :aria-label="getStudentFullName(data)"
+    shape="circle"
+    size="large"
+    class="shrink-0"
+    :pt="{
+        image: {
+            class: 'h-full w-full object-cover',
+        },
+    }"
+    @error="handleStudentPhotoError(data)"
+/>
 
                     <div class="min-w-0">
                         <p class="truncate font-semibold text-slate-700">

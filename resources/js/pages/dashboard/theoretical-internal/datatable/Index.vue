@@ -42,6 +42,8 @@ type StudentOption = {
     lname?: string | null;
     gender?: string | null;
     dept?: string | null;
+person_id?: string | null;
+photo_url?: string | null;
 };
 type AnswerRow = {
     index: number;
@@ -225,28 +227,56 @@ function uppercaseValue(value: unknown, fallback = 'N/A'): string {
 
     return normalized ? normalized.toUpperCase() : fallback;
 }
-function getInitials(row: DataTableRow | StudentOption): string {
-    const firstName = String(row.fname ?? '').trim();
-    const lastName = String(row.lname ?? '').trim();
-    const initials =
-        `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+const failedStudentPhotos = ref<Record<string, string>>({});
 
-    return initials || 'NA';
+function getStudentPhotoUrl(
+    row: DataTableRow | StudentOption,
+): string {
+    return String(row.photo_url ?? '').trim();
 }
-function getAvatarImage(row: DataTableRow | StudentOption): string {
-    const gender = String(row.gender ?? '')
-        .trim()
-        .toUpperCase();
 
-    if (gender === 'M' || gender === 'MALE') {
+function getFallbackAvatar(gender: unknown): string {
+    const value = String(gender ?? '').trim().toUpperCase();
+
+    if (value === 'M' || value === 'MALE') {
         return '/images/male-cadet.png';
     }
 
-    if (gender === 'F' || gender === 'FEMALE') {
+    if (value === 'F' || value === 'FEMALE') {
         return '/images/female-cadet.png';
     }
 
     return '/images/default-cadet.png';
+}
+
+function getAvatarImage(
+    row: DataTableRow | StudentOption,
+): string {
+    const photoUrl = getStudentPhotoUrl(row);
+    const studentId = String(row.person_id ?? row.id ?? '');
+
+    if (
+        photoUrl &&
+        failedStudentPhotos.value[studentId] !== photoUrl
+    ) {
+        return photoUrl;
+    }
+
+    return getFallbackAvatar(row.gender);
+}
+
+function handleStudentPhotoError(
+    row: DataTableRow | StudentOption,
+): void {
+    const photoUrl = getStudentPhotoUrl(row);
+    const studentId = String(row.person_id ?? row.id ?? '');
+
+    if (
+        photoUrl &&
+        failedStudentPhotos.value[studentId] !== photoUrl
+    ) {
+        failedStudentPhotos.value[studentId] = photoUrl;
+    }
 }
 /*
 |--------------------------------------------------------------------------
@@ -819,25 +849,19 @@ onMounted(() => {
             <template #cell-student_name="{ data }">
                 <div class="flex items-center gap-3">
                     <Avatar
-                        v-if="getAvatarImage(data)"
-                        :image="getAvatarImage(data)"
-                        :aria-label="
-                            uppercaseValue(data.student_name, 'Student')
-                        "
-                        shape="circle"
-                        size="large"
-                        class="shrink-0"
-                    />
-                    <Avatar
-                        v-else
-                        :label="getInitials(data)"
-                        :aria-label="
-                            uppercaseValue(data.student_name, 'Student')
-                        "
-                        shape="circle"
-                        size="large"
-                        class="shrink-0 bg-blue-50 text-blue-600"
-                    />
+    :key="`${data.id}-${getAvatarImage(data)}`"
+    :image="getAvatarImage(data)"
+    :aria-label="uppercaseValue(data.student_name, 'Student')"
+    shape="circle"
+    size="large"
+    class="shrink-0"
+    :pt="{
+        image: {
+            class: 'h-full w-full object-cover',
+        },
+    }"
+    @error="handleStudentPhotoError(data)"
+/>
                     <div class="min-w-0">
                         <p
                             class="truncate font-semibold text-slate-700 uppercase"

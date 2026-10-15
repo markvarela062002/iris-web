@@ -521,20 +521,15 @@ function getStudentFullName(document: DataTableRow): string {
     return (lastName || otherNames).toUpperCase();
 }
 
-function getStudentInitials(document: DataTableRow): string {
-    const firstName = String(document.fname ?? '').trim();
+const failedStudentPhotos = ref<Record<string, string>>({});
 
-    const lastName = String(document.lname ?? '').trim();
-
-    const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`;
-
-    return initials.toUpperCase() || 'ST';
+function getStudentPhotoUrl(document: DataTableRow): string {
+    return String(document.photo_url ?? '').trim();
 }
 
-function getStudentAvatar(gender: unknown): string {
+function getStudentFallbackAvatar(gender: unknown): string {
     const normalizedGender = String(gender ?? '')
         .trim()
-
         .toUpperCase();
 
     if (normalizedGender === 'M' || normalizedGender === 'MALE') {
@@ -546,6 +541,32 @@ function getStudentAvatar(gender: unknown): string {
     }
 
     return '/images/default-cadet.png';
+}
+
+function getStudentAvatar(document: DataTableRow): string {
+    const photoUrl = getStudentPhotoUrl(document);
+    const studentId = String(document.owner_id ?? document.id ?? '');
+
+    if (
+        photoUrl &&
+        failedStudentPhotos.value[studentId] !== photoUrl
+    ) {
+        return photoUrl;
+    }
+
+    return getStudentFallbackAvatar(document.gender);
+}
+
+function handleStudentPhotoError(document: DataTableRow): void {
+    const photoUrl = getStudentPhotoUrl(document);
+    const studentId = String(document.owner_id ?? document.id ?? '');
+
+    if (
+        photoUrl &&
+        failedStudentPhotos.value[studentId] !== photoUrl
+    ) {
+        failedStudentPhotos.value[studentId] = photoUrl;
+    }
 }
 
 function getSchoolIdLabel(value: unknown): string {
@@ -807,20 +828,18 @@ onBeforeUnmount(() => {
             <template #cell-fname="{ data }">
                 <div class="flex items-center gap-3">
                     <Avatar
-                        v-if="getStudentAvatar(data.gender)"
-                        :image="getStudentAvatar(data.gender) ?? undefined"
+                        :key="`${data.id}-${getStudentAvatar(data)}`"
+                        :image="getStudentAvatar(data)"
                         :aria-label="getStudentFullName(data)"
                         shape="circle"
                         size="large"
                         class="shrink-0"
-                    />
-
-                    <Avatar
-                        v-else
-                        :label="getStudentInitials(data)"
-                        shape="circle"
-                        size="large"
-                        class="shrink-0 !bg-[#377EC0]/10 !text-xs !font-bold !text-[#377EC0]"
+                        :pt="{
+                            image: {
+                                class: 'h-full w-full object-cover',
+                            },
+                        }"
+                        @error="handleStudentPhotoError(data)"
                     />
 
                     <div class="min-w-0">

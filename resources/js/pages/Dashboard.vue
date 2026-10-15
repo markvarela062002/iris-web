@@ -598,37 +598,46 @@ function getStudentFullName(student: DataTableRow): string {
         .toUpperCase();
 }
 
-function getStudentInitials(student: DataTableRow): string {
-    const firstName = String(student.fname ?? '').trim();
-    const lastName = String(student.lname ?? '').trim();
+const failedStudentPhotos = ref<Record<string, string>>({});
 
-    const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`;
+function getFallbackAvatar(gender: unknown): string {
+    const value = String(gender ?? '').trim().toUpperCase();
 
-    return initials.toUpperCase() || 'ST';
-}
-
-function getStudentAvatar(gender: unknown): string | undefined {
-    const normalizedGender = String(gender ?? '')
-        .trim()
-        .toUpperCase();
-
-    if (normalizedGender === 'M' || normalizedGender === 'MALE') {
+    if (value === 'M' || value === 'MALE') {
         return '/images/male-cadet.png';
     }
 
-    if (normalizedGender === 'F' || normalizedGender === 'FEMALE') {
+    if (value === 'F' || value === 'FEMALE') {
         return '/images/female-cadet.png';
     }
 
+    return '/images/default-cadet.png';
+}
+
+function getStudentAvatar(student: DataTableRow): string {
+    const photoUrl = String(student.photo_url ?? '').trim();
+    const studentId = String(student.id ?? '');
+
     if (
-        normalizedGender === '' ||
-        normalizedGender === null ||
-        normalizedGender === undefined
+        photoUrl &&
+        failedStudentPhotos.value[studentId] !== photoUrl
     ) {
-        return '/images/default-cadet.png';
+        return photoUrl;
     }
 
-    return undefined;
+    return getFallbackAvatar(student.gender);
+}
+
+function handleStudentPhotoError(student: DataTableRow): void {
+    const photoUrl = String(student.photo_url ?? '').trim();
+    const studentId = String(student.id ?? '');
+
+    if (
+        photoUrl &&
+        failedStudentPhotos.value[studentId] !== photoUrl
+    ) {
+        failedStudentPhotos.value[studentId] = photoUrl;
+    }
 }
 
 function getDepartmentSeverity(department: unknown): DepartmentSeverity {
@@ -1153,20 +1162,18 @@ function handleStudentAction(action: string, student: DataTableRow): void {
             <template #cell-fname="{ data }">
                 <div class="flex items-center gap-3">
                     <Avatar
-                        v-if="getStudentAvatar(data.gender)"
-                        :image="getStudentAvatar(data.gender)"
+                        :key="`${data.id}-${getStudentAvatar(data)}`"
+                        :image="getStudentAvatar(data)"
                         :aria-label="getStudentFullName(data)"
                         shape="circle"
                         size="large"
                         class="shrink-0"
-                    />
-
-                    <Avatar
-                        v-else
-                        :label="getStudentInitials(data)"
-                        shape="circle"
-                        size="large"
-                        class="shrink-0 !bg-[#377EC0]/10 !font-bold !text-[#377EC0]"
+                        :pt="{
+                            image: {
+                                class: 'h-full w-full object-cover',
+                            },
+                        }"
+                        @error="handleStudentPhotoError(data)"
                     />
 
                     <div class="min-w-0">

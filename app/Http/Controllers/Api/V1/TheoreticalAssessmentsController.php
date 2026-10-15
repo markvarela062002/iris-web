@@ -136,6 +136,7 @@ class TheoreticalAssessmentsController extends Controller
                 'person.mname',
                 'person.lname',
                 'person.gender',
+                'person.photo_file',
                 'person.dept',
                 'bs_course.name_course',
                 'bs_exam_session.session_code',
@@ -175,26 +176,39 @@ class TheoreticalAssessmentsController extends Controller
             response: $result,
             key: 'index',
         );
-        $result['data'] = collect($result['data'] ?? [])
-            ->map(function ($row): array {
-                $record = is_object($row)
-                    ? get_object_vars($row)
-                    : (array) $row;
-                $score = (float) ($record['score'] ?? 0);
-                $totalItems = (int) ($record['total_items'] ?? 0);
-                $record['score_percentage'] = $totalItems > 0
-                    ? round(($score / $totalItems) * 100, 1)
-                    : 0;
-                $record['student_name'] = $this->formatStudentName(
-                    $record,
-                );
-                $record['is_completed'] =
-                    ($record['done'] ?? '') === 'Y';
+        $result['data'] = collect(
+    $result['data'] ?? [],
+)
+    ->map(function ($row) use ($request): array {
+        $record = is_object($row)
+            ? get_object_vars($row)
+            : (array) $row;
 
-                return $record;
-            })
-            ->values()
-            ->all();
+        $record['photo_url'] = $this->buildStudentPhotoUrl(
+            $request,
+            isset($record['photo_file'])
+                ? (string) $record['photo_file']
+                : null,
+        );
+
+        $score = (float) ($record['score'] ?? 0);
+        $totalItems = (int) ($record['total_items'] ?? 0);
+
+        $record['score_percentage'] = $totalItems > 0
+            ? round(($score / $totalItems) * 100, 1)
+            : 0;
+
+        $record['student_name'] = $this->formatStudentName(
+            $record,
+        );
+
+        $record['is_completed'] =
+            ($record['done'] ?? '') === 'Y';
+
+        return $record;
+    })
+    ->values()
+    ->all();
 
         return response()->json($result);
     }
@@ -2637,6 +2651,59 @@ class TheoreticalAssessmentsController extends Controller
             ),
         );
     }
+
+    private function buildStudentPhotoUrl(
+    Request $request,
+    ?string $photoFile,
+): ?string {
+    $schoolCode = strtoupper(
+        trim(
+            (string) $request->session()->get(
+                'school_code',
+                '',
+            ),
+        ),
+    );
+
+    if ($schoolCode === '') {
+        return null;
+    }
+
+    $photosUrl = rtrim(
+        trim(
+            (string) config(
+                "schools.schools.{$schoolCode}.files.photos_url",
+                '',
+            ),
+        ),
+        '/',
+    );
+
+    if ($photosUrl === '') {
+        return null;
+    }
+
+    $filename = basename(
+        str_replace(
+            '\\',
+            '/',
+            trim((string) $photoFile),
+        ),
+    );
+
+    if (
+        $filename === '' ||
+        in_array(
+            strtolower($filename),
+            ['profile.jpg', 'null'],
+            true,
+        )
+    ) {
+        return null;
+    }
+
+    return $photosUrl.'/'.rawurlencode($filename);
+}
 
     private function resolveSchoolConnection(
         Request $request,

@@ -254,6 +254,8 @@ class DashboardController extends Controller
                 'person.mname',
                 'person.lname',
                 'person.gender',
+'person.photo_file',
+
                 'person.dept',
                 'person.batch_no',
                 'latest_setup.ship_company as company',
@@ -562,6 +564,23 @@ class DashboardController extends Controller
                 ->all();
         }
 
+$result['data'] = collect($result['data'] ?? [])
+    ->map(function ($row) use ($request): object {
+        $student = is_object($row)
+            ? $row
+            : (object) $row;
+
+        $student->photo_url = $this->buildStudentPhotoUrl(
+            $request,
+            isset($student->photo_file)
+                ? (string) $student->photo_file
+                : null,
+        );
+
+        return $student;
+    })
+    ->all();
+
         /*
         |--------------------------------------------------------------------------
         | Add sequential row numbers
@@ -797,6 +816,58 @@ class DashboardController extends Controller
             ],
         ]);
     }
+
+    private function buildStudentPhotoUrl(
+    Request $request,
+    ?string $photoFile,
+): ?string {
+    $schoolCode = strtoupper(
+        trim(
+            (string) $request
+                ->session()
+                ->get('school_code', ''),
+        ),
+    );
+
+    if ($schoolCode === '') {
+        return null;
+    }
+
+    $photosUrl = rtrim(
+        trim(
+            (string) config(
+                "schools.schools.{$schoolCode}.files.photos_url",
+                '',
+            ),
+        ),
+        '/',
+    );
+
+    if ($photosUrl === '') {
+        return null;
+    }
+
+    $filename = basename(
+        str_replace(
+            '\\',
+            '/',
+            trim((string) $photoFile),
+        ),
+    );
+
+    if (
+        $filename === ''
+        || in_array(
+            strtolower($filename),
+            ['profile.jpg', 'null'],
+            true,
+        )
+    ) {
+        return null;
+    }
+
+    return $photosUrl.'/'.rawurlencode($filename);
+}
 
     /**
      * Table and date-column names are supplied only by this controller.

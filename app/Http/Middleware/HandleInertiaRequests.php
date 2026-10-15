@@ -31,8 +31,7 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         /*
-         * The school code exists only after a successful login.
-         * There is intentionally no default school.
+         * Resolve the school selected during login.
          */
         $schoolCode = strtoupper(
             trim(
@@ -47,8 +46,8 @@ class HandleInertiaRequests extends Middleware
         $school = null;
 
         if (
-            $schoolCode !== '' &&
-            is_array($schools)
+            $schoolCode !== ''
+            && is_array($schools)
         ) {
             $configuredSchool = $schools[$schoolCode] ?? null;
 
@@ -59,27 +58,23 @@ class HandleInertiaRequests extends Middleware
 
         /*
          * Guests receive neutral application branding.
-         * This does not represent a default school or database.
          */
         $schoolIdentity = $school
             ? [
                 'code' => strtoupper(
                     trim(
                         (string) (
-                            $school['code'] ??
-                            $schoolCode
+                            $school['code'] ?? $schoolCode
                         ),
                     ),
                 ),
 
                 'name' => (string) (
-                    $school['name'] ??
-                    config('app.name')
+                    $school['name'] ?? config('app.name')
                 ),
 
                 'logo' => (string) (
-                    $school['logo'] ??
-                    '/images/iris.png'
+                    $school['logo'] ?? '/images/iris.png'
                 ),
             ]
             : [
@@ -99,12 +94,12 @@ class HandleInertiaRequests extends Middleware
         $authenticatedAccount = $request->user();
 
         $account = (
-            $authenticatedAccount instanceof User ||
-            $authenticatedAccount instanceof Student
+            $authenticatedAccount instanceof User
+            || $authenticatedAccount instanceof Student
         ) ? $authenticatedAccount : null;
 
         /*
-         * Load the role assigned through login_type.
+         * Load the assigned role.
          */
         $role = null;
 
@@ -119,12 +114,23 @@ class HandleInertiaRequests extends Middleware
         }
 
         /*
-         * Normalize both User and Student models into the
-         * same structure for the Vue application.
+         * Build the uploaded student photo URL.
+         */
+        $photoUrl = $account instanceof Student
+            ? $this->buildStudentPhotoUrl(
+                $school,
+                $account->getAttribute('photo_file'),
+            )
+            : null;
+
+        /*
+         * Normalize both account models for Vue.
          */
         $authenticatedUser = $account !== null
             ? [
                 ...$account->toArray(),
+
+                'photo_url' => $photoUrl,
 
                 'account_type' => (string) (
                     $account->getAttribute('account_type') ?? 'unknown'
@@ -165,5 +171,55 @@ class HandleInertiaRequests extends Middleware
             'sidebarOpen' => ! $request->hasCookie('sidebar_state')
                 || $request->cookie('sidebar_state') === 'true',
         ];
+    }
+
+    /**
+     * Build the selected school's public student photo URL.
+     *
+     * @param array<string, mixed>|null $school
+     */
+    private function buildStudentPhotoUrl(
+        ?array $school,
+        mixed $photoFile,
+    ): ?string {
+        if ($school === null) {
+            return null;
+        }
+
+        $photosUrl = rtrim(
+            trim(
+                (string) data_get(
+                    $school,
+                    'files.photos_url',
+                    '',
+                ),
+            ),
+            '/',
+        );
+
+        if ($photosUrl === '') {
+            return null;
+        }
+
+        $filename = basename(
+            str_replace(
+                '\\',
+                '/',
+                trim((string) $photoFile),
+            ),
+        );
+
+        if (
+            $filename === ''
+            || in_array(
+                strtolower($filename),
+                ['profile.jpg', 'null'],
+                true,
+            )
+        ) {
+            return null;
+        }
+
+        return $photosUrl.'/'.rawurlencode($filename);
     }
 }

@@ -355,17 +355,13 @@ function getStudentFullName(activity: DataTableRow): string {
     return (lastName || otherNames).toUpperCase();
 }
 
-function getStudentInitials(activity: DataTableRow): string {
-    const firstName = String(activity.fname ?? '').trim();
+const failedStudentPhotos = ref<Record<string, string>>({});
 
-    const lastName = String(activity.lname ?? '').trim();
-
-    const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`;
-
-    return initials.toUpperCase() || 'ST';
+function getStudentPhotoUrl(activity: DataTableRow): string {
+    return String(activity.photo_url ?? '').trim();
 }
 
-function getStudentAvatar(gender: unknown): string {
+function getStudentFallbackAvatar(gender: unknown): string {
     const normalizedGender = String(gender ?? '')
         .trim()
         .toUpperCase();
@@ -379,6 +375,32 @@ function getStudentAvatar(gender: unknown): string {
     }
 
     return '/images/default-cadet.png';
+}
+
+function getStudentAvatar(activity: DataTableRow): string {
+    const photoUrl = getStudentPhotoUrl(activity);
+    const personId = String(activity.person_id ?? activity.id ?? '');
+
+    if (
+        photoUrl &&
+        failedStudentPhotos.value[personId] !== photoUrl
+    ) {
+        return photoUrl;
+    }
+
+    return getStudentFallbackAvatar(activity.gender);
+}
+
+function handleStudentPhotoError(activity: DataTableRow): void {
+    const photoUrl = getStudentPhotoUrl(activity);
+    const personId = String(activity.person_id ?? activity.id ?? '');
+
+    if (
+        photoUrl &&
+        failedStudentPhotos.value[personId] !== photoUrl
+    ) {
+        failedStudentPhotos.value[personId] = photoUrl;
+    }
 }
 
 function getSchoolIdLabel(value: unknown): string {
@@ -513,21 +535,19 @@ onBeforeUnmount(() => {
             <template #cell-fname="{ data }">
                 <div class="flex items-center gap-3">
                     <Avatar
-                        v-if="getStudentAvatar(data.gender)"
-                        :image="getStudentAvatar(data.gender) ?? undefined"
-                        :aria-label="getStudentFullName(data)"
-                        shape="circle"
-                        size="large"
-                        class="shrink-0"
-                    />
-
-                    <Avatar
-                        v-else
-                        :label="getStudentInitials(data)"
-                        shape="circle"
-                        size="large"
-                        class="shrink-0 !bg-[#377EC0]/10 !text-xs !font-bold !text-[#377EC0]"
-                    />
+    :key="`${data.id}-${getStudentAvatar(data)}`"
+    :image="getStudentAvatar(data)"
+    :aria-label="getStudentFullName(data)"
+    shape="circle"
+    size="large"
+    class="shrink-0"
+    :pt="{
+        image: {
+            class: 'h-full w-full object-cover',
+        },
+    }"
+    @error="handleStudentPhotoError(data)"
+/>
 
                     <div class="min-w-0">
                         <p class="truncate font-semibold text-slate-700">

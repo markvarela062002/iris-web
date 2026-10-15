@@ -45,6 +45,8 @@ type JournalRecord = {
     fname: string | null;
     mname: string | null;
     lname: string | null;
+    photo_file: string | null;
+    photo_url: string | null;
     gender: string | null;
     department: string | null;
     student_name: string;
@@ -186,16 +188,7 @@ const studentName = computed(() => {
     return journal.value?.student_name || 'DAILY JOURNAL';
 });
 
-const studentInitials = computed(() => {
-    const first = String(journal.value?.fname ?? '')
-        .trim()
-        .charAt(0);
-    const last = String(journal.value?.lname ?? '')
-        .trim()
-        .charAt(0);
-
-    return `${first}${last}`.toUpperCase() || 'ST';
-});
+const failedStudentPhotoUrl = ref<string | null>(null);
 
 const defaultAvatarUrl = computed<string>(() => {
     const gender = String(journal.value?.gender ?? '')
@@ -212,6 +205,27 @@ const defaultAvatarUrl = computed<string>(() => {
 
     return '/images/default-cadet.png';
 });
+
+const studentAvatarUrl = computed<string>(() => {
+    const photoUrl = String(journal.value?.photo_url ?? '').trim();
+
+    if (
+        photoUrl &&
+        failedStudentPhotoUrl.value !== photoUrl
+    ) {
+        return photoUrl;
+    }
+
+    return defaultAvatarUrl.value;
+});
+
+function handleStudentPhotoError(): void {
+    const photoUrl = String(journal.value?.photo_url ?? '').trim();
+
+    if (photoUrl && failedStudentPhotoUrl.value !== photoUrl) {
+        failedStudentPhotoUrl.value = photoUrl;
+    }
+}
 
 const activityLabel = computed(() => {
     return isDeck.value
@@ -779,19 +793,18 @@ onBeforeUnmount(() => {
                 >
                     <div class="flex items-center gap-4">
                         <Avatar
-                            v-if="defaultAvatarUrl"
-                            :image="defaultAvatarUrl"
+                            :key="`${journal?.person_id}-${studentAvatarUrl}`"
+                            :image="studentAvatarUrl"
                             :aria-label="studentName"
                             shape="circle"
                             size="xlarge"
                             class="shrink-0"
-                        />
-                        <Avatar
-                            v-else
-                            :label="studentInitials"
-                            shape="circle"
-                            size="xlarge"
-                            class="shrink-0 !bg-blue-50 !font-bold !text-blue-600"
+                            :pt="{
+                                image: {
+                                    class: 'h-full w-full object-cover',
+                                },
+                            }"
+                            @error="handleStudentPhotoError"
                         />
                         <div class="min-w-0">
                             <p

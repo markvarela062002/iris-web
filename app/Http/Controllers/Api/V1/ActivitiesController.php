@@ -25,351 +25,170 @@ class ActivitiesController extends Controller
 
     ) {}
 
+
+
+
     /**
      * Return activities waiting for verification.
      */
     public function index(Request $request): JsonResponse
-    {
+{
+    $db = $this->resolveSchoolConnection($request);
 
-        $db = $this->resolveSchoolConnection(
+    if ($db instanceof JsonResponse) {
+        return $db;
+    }
 
-            $request,
-
-        );
-
-        if ($db instanceof JsonResponse) {
-
-            return $db;
-
-        }
-
-        /*
-
-         * Resolve the school selected during login.
-
-         */
-
-        $schoolCode = strtoupper(
-
-            trim(
-
-                (string) $request
-
-                    ->session()
-
-                    ->get('school_code', ''),
-
+    $schoolCode = strtoupper(
+        trim(
+            (string) $request->session()->get(
+                'school_code',
+                '',
             ),
+        ),
+    );
 
-        );
-
-        /*
-
-         * Get the school's public activity-file URL.
-
-         *
-
-         * Example:
-
-         * https://igcfi-iris.com/person_task
-
-         */
-
-        $activityFileBaseUrl = rtrim(
-
-            trim(
-
-                (string) config(
-
-                    "schools.schools.{$schoolCode}.files.activity_url",
-
-                    '',
-
-                ),
-
+    $activityFileBaseUrl = rtrim(
+        trim(
+            (string) config(
+                "schools.schools.{$schoolCode}.files.activity_url",
+                '',
             ),
+        ),
+        '/',
+    );
 
-            '/',
+    $query = $db
+        ->table('person_activity')
+        ->leftJoin(
+            'person',
+            'person_activity.person_id',
+            '=',
+            'person.id',
+        )
+        ->leftJoin(
+            'activity',
+            'person_activity.activity_id',
+            '=',
+            'activity.id',
+        )
+        ->select([
+            'person_activity.id',
+            'person_activity.person_id',
+            'person_activity.activity_id',
+            'person_activity.filename',
+            'person_activity.start_date',
+            'person_activity.end_date',
+            'person_activity.last_update',
+            'person_activity.sto_validated',
+            'person_activity.for_app',
+            'person_activity.revise_remarks',
+            'person.code_person',
+            'person.school_id_no',
+            'person.fname',
+            'person.mname',
+            'person.lname',
+            'person.gender',
+            'person.photo_file',
+            'activity.desc_activity',
+        ]);
 
-        );
-
-        /*
-
-         * Legacy administrator filter:
-
-         *
-
-         * sto_validated != 'Y'
-
-         * for_app = 'Y'
-
-         * ORDER BY last_update DESC
-
-         */
-
-        $query = $db
-
-            ->table('person_activity')
-
-            ->leftJoin(
-
-                'person',
-
-                'person_activity.person_id',
-
-                '=',
-
-                'person.id',
-
-            )
-
-            ->leftJoin(
-
-                'activity',
-
-                'person_activity.activity_id',
-
-                '=',
-
-                'activity.id',
-
-            )
-
-            ->select([
-
-                'person_activity.id',
-
-                'person_activity.person_id',
-
-                'person_activity.activity_id',
-
-                'person_activity.filename',
-
-                'person_activity.start_date',
-
-                'person_activity.end_date',
-
-                'person_activity.last_update',
-
+    if (! $request->boolean('monitoring')) {
+        $query
+            ->where(
                 'person_activity.sto_validated',
-
+                '!=',
+                'Y',
+            )
+            ->where(
                 'person_activity.for_app',
+                '=',
+                'Y',
+            );
+    }
 
-                'person_activity.revise_remarks',
+    $result = $this->datatableService->paginate(
+        query: $query,
+        request: $request,
+        searchableColumns: [
+            'person.code_person',
+            'person.school_id_no',
+            'person.fname',
+            'person.mname',
+            'person.lname',
+            'activity.desc_activity',
+            'person_activity.filename',
+            'person_activity.start_date',
+            'person_activity.end_date',
+            'person_activity.last_update',
+        ],
+        sortableColumns: [
+            'last_update' => 'person_activity.last_update',
+            'code_person' => 'person.code_person',
+            'school_id_no' => 'person.school_id_no',
+            'fname' => 'person.fname',
+            'lname' => 'person.lname',
+            'desc_activity' => 'activity.desc_activity',
+            'filename' => 'person_activity.filename',
+            'start_date' => 'person_activity.start_date',
+            'end_date' => 'person_activity.end_date',
+        ],
+        defaultSortColumn: 'last_update',
+        defaultSortDirection: 'desc',
+    );
 
-                'person.code_person',
+    $result = $this->datatableService->addRowNumbers(
+        response: $result,
+        key: 'index',
+    );
 
-                'person.school_id_no',
+    $result['data'] = collect(
+        $result['data'] ?? [],
+    )
+        ->map(
+            function ($row) use (
+                $request,
+                $activityFileBaseUrl,
+            ): array {
+                $record = is_object($row)
+                    ? get_object_vars($row)
+                    : (array) $row;
 
-                'person.fname',
-
-                'person.mname',
-
-                'person.lname',
-
-                'person.gender',
-
-                'activity.desc_activity',
-
-            ]);
-
-        if (! $request->boolean('monitoring')) {
-
-            $query
-
-                ->where(
-
-                    'person_activity.sto_validated',
-
-                    '!=',
-
-                    'Y',
-
-                )
-
-                ->where(
-
-                    'person_activity.for_app',
-
-                    '=',
-
-                    'Y',
-
+                $record['photo_url'] = $this->buildStudentPhotoUrl(
+                    $request,
+                    isset($record['photo_file'])
+                        ? (string) $record['photo_file']
+                        : null,
                 );
 
-        }
-
-        $result = $this->datatableService->paginate(
-
-            query: $query,
-
-            request: $request,
-
-            searchableColumns: [
-
-                'person.code_person',
-
-                'person.school_id_no',
-
-                'person.fname',
-
-                'person.mname',
-
-                'person.lname',
-
-                'activity.desc_activity',
-
-                'person_activity.filename',
-
-                'person_activity.start_date',
-
-                'person_activity.end_date',
-
-                'person_activity.last_update',
-
-            ],
-
-            sortableColumns: [
-
-                'last_update' => 'person_activity.last_update',
-
-                'code_person' => 'person.code_person',
-
-                'school_id_no' => 'person.school_id_no',
-
-                'fname' => 'person.fname',
-
-                'lname' => 'person.lname',
-
-                'desc_activity' => 'activity.desc_activity',
-
-                'filename' => 'person_activity.filename',
-
-                'start_date' => 'person_activity.start_date',
-
-                'end_date' => 'person_activity.end_date',
-
-            ],
-
-            defaultSortColumn: 'last_update',
-
-            defaultSortDirection: 'desc',
-
-        );
-
-        $result = $this->datatableService->addRowNumbers(
-
-            response: $result,
-
-            key: 'index',
-
-        );
-
-        /*
-
-         * Generate a direct public HTTPS URL for every
-
-         * activity attachment.
-
-         *
-
-         * The browser requests the public file directly,
-
-         * so Laravel does not need to proxy it through FTP.
-
-         */
-
-        $result['data'] = collect(
-
-            $result['data'] ?? [],
-
-        )
-
-            ->map(
-
-                function ($row) use (
-
-                    $activityFileBaseUrl,
-
-                ): array {
-
-                    $record = is_object($row)
-
-                        ? get_object_vars($row)
-
-                        : (array) $row;
-
-                    /*
-
-                     * Remove accidental directory components
-
-                     * stored in the database.
-
-                     */
-
-                    $filename = basename(
-
-                        str_replace(
-
-                            '\\\\',
-
-                            '/',
-
-                            trim(
-
-                                (string) (
-
-                                    $record['filename']
-
-                                    ?? ''
-
-                                ),
-
+                $filename = basename(
+                    str_replace(
+                        '\\',
+                        '/',
+                        trim(
+                            (string) (
+                                $record['filename'] ?? ''
                             ),
-
                         ),
+                    ),
+                );
 
-                    );
+                $record['filename'] = $filename;
 
-                    $record['filename'] =
+                $record['file_url'] =
+                    $filename !== '' &&
+                    $activityFileBaseUrl !== ''
+                        ? $activityFileBaseUrl.'/'.rawurlencode($filename)
+                        : null;
 
-                        $filename;
+                return $record;
+            },
+        )
+        ->values()
+        ->all();
 
-                    $record['file_url'] =
-
-                        $filename !== '' &&
-
-                        $activityFileBaseUrl !== ''
-
-                            ? $activityFileBaseUrl.
-
-                                '/'.
-
-                                rawurlencode(
-
-                                    $filename,
-
-                                )
-
-                            : null;
-
-                    return $record;
-
-                },
-
-            )
-
-            ->values()
-
-            ->all();
-
-        return response()->json(
-
-            $result,
-
-        );
-
-    }
+    return response()->json($result);
+}
 
     /**
      * Return the authenticated student's activity summary.
@@ -2942,6 +2761,59 @@ class ActivitiesController extends Controller
         }
 
     }
+
+private function buildStudentPhotoUrl(
+    Request $request,
+    ?string $photoFile,
+): ?string {
+    $schoolCode = strtoupper(
+        trim(
+            (string) $request->session()->get(
+                'school_code',
+                '',
+            ),
+        ),
+    );
+
+    if ($schoolCode === '') {
+        return null;
+    }
+
+    $photosUrl = rtrim(
+        trim(
+            (string) config(
+                "schools.schools.{$schoolCode}.files.photos_url",
+                '',
+            ),
+        ),
+        '/',
+    );
+
+    if ($photosUrl === '') {
+        return null;
+    }
+
+    $filename = basename(
+        str_replace(
+            '\\',
+            '/',
+            trim((string) $photoFile),
+        ),
+    );
+
+    if (
+        $filename === '' ||
+        in_array(
+            strtolower($filename),
+            ['profile.jpg', 'null'],
+            true,
+        )
+    ) {
+        return null;
+    }
+
+    return $photosUrl.'/'.rawurlencode($filename);
+}
 
     private function resolveSchoolConnection(
 

@@ -156,6 +156,7 @@ class PracticalInternalAssessmentsController extends Controller
                 'person.lname',
 
                 'person.gender',
+                'person.photo_file',
 
                 'person.dept',
 
@@ -283,7 +284,7 @@ class PracticalInternalAssessmentsController extends Controller
 
         )->map(
 
-            function (object $row): array {
+            function (object $row) use ($request): array {
 
                 return [
 
@@ -295,6 +296,14 @@ class PracticalInternalAssessmentsController extends Controller
 
                         $row,
 
+                    ),
+                    'photo_file' => $row->photo_file ?? null,
+
+                    'photo_url' => $this->buildStudentPhotoUrl(
+                        $request,
+                        isset($row->photo_file)
+                            ? (string) $row->photo_file
+                            : null,
                     ),
 
                     'school_id_no' => $row->school_id_no
@@ -1517,6 +1526,12 @@ class PracticalInternalAssessmentsController extends Controller
         $query = $database->table('person_assess_h')
 
             ->leftJoin('p_assess_h', 'p_assess_h.id', '=', 'person_assess_h.p_assess_h_id')
+            ->leftJoin(
+    'person',
+    'person.id',
+    '=',
+    'person_assess_h.person_id',
+)
 
             ->where('person_assess_h.person_id', $personId)
 
@@ -1529,6 +1544,7 @@ class PracticalInternalAssessmentsController extends Controller
                 'person_assess_h.due_date',
 
                 'person_assess_h.date_taken',
+                'person.photo_file',
 
                 'person_assess_h.date_assessed',
 
@@ -1566,49 +1582,59 @@ class PracticalInternalAssessmentsController extends Controller
 
             ->paginate($perPage)->withQueryString();
 
-        $records = collect($paginator->items())->map(function (object $row): array {
+$records = collect($paginator->items())
+    ->map(function (object $row) use ($request): array {
+        $done = strtoupper((string) $row->done) === 'Y';
 
-            $done = strtoupper((string) $row->done) === 'Y';
+        $pending = strtoupper((string) $row->for_assess) === 'Y';
 
-            $pending = strtoupper((string) $row->for_assess) === 'Y';
+        $status = $done
+            ? 'Completed'
+            : ($pending ? 'For Assessment' : 'Assigned');
 
-            $status = $done ? 'Completed' : ($pending ? 'For Assessment' : 'Assigned');
+        return [
+            'id' => (string) $row->id,
 
-            return [
+            'photo_file' => $row->photo_file ?? null,
 
-                'id' => (string) $row->id,
+            'photo_url' => $this->buildStudentPhotoUrl(
+                $request,
+                isset($row->photo_file)
+                    ? (string) $row->photo_file
+                    : null,
+            ),
 
-                'title_assess' => $this->decodeLegacyText($row->title_assess) ?: 'Untitled Practical Assessment',
+            'title_assess' => $this->decodeLegacyText(
+                $row->title_assess,
+            ) ?: 'Untitled Practical Assessment',
 
-                'grade_system' => $row->grade_system ?: 'Checklist',
+            'grade_system' => $row->grade_system ?: 'Checklist',
 
-                'from_date' => $this->normalDate($row->from_date),
+            'from_date' => $this->normalDate($row->from_date),
 
-                'due_date' => $this->normalDate($row->due_date),
+            'due_date' => $this->normalDate($row->due_date),
 
-                'date_taken' => $this->normalDate($row->date_taken),
+            'date_taken' => $this->normalDate($row->date_taken),
 
-                'date_assessed' => $this->normalDate($row->date_assessed),
+            'date_assessed' => $this->normalDate($row->date_assessed),
 
-                'assessor' => trim((string) ($row->assessor ?? '')),
+            'assessor' => trim((string) ($row->assessor ?? '')),
 
-                'status' => $status,
+            'status' => $status,
 
-                'is_completed' => $done,
+            'is_completed' => $done,
 
-                'is_pending' => $pending,
+            'is_pending' => $pending,
 
-                'result' => $done ? [
-
+            'result' => $done
+                ? [
                     'earned_points' => (float) ($row->total_pts ?? 0),
-
                     'passing_mark' => (float) ($row->passing_mark ?? 0),
-
-                ] : null,
-
-            ];
-
-        })->values();
+                ]
+                : null,
+        ];
+    })
+    ->values();
 
         return response()->json([
 
@@ -2269,6 +2295,58 @@ class PracticalInternalAssessmentsController extends Controller
         );
 
     }
+
+    private function buildStudentPhotoUrl(
+    Request $request,
+    ?string $photoFile,
+): ?string {
+    $schoolCode = strtoupper(
+        trim(
+            (string) $request
+                ->session()
+                ->get('school_code', ''),
+        ),
+    );
+
+    if ($schoolCode === '') {
+        return null;
+    }
+
+    $photosUrl = rtrim(
+        trim(
+            (string) config(
+                "schools.schools.{$schoolCode}.files.photos_url",
+                '',
+            ),
+        ),
+        '/',
+    );
+
+    if ($photosUrl === '') {
+        return null;
+    }
+
+    $filename = basename(
+        str_replace(
+            '\\',
+            '/',
+            trim((string) $photoFile),
+        ),
+    );
+
+    if (
+        $filename === ''
+        || in_array(
+            strtolower($filename),
+            ['profile.jpg', 'null'],
+            true,
+        )
+    ) {
+        return null;
+    }
+
+    return $photosUrl.'/'.rawurlencode($filename);
+}
 
     private function fileData(
 

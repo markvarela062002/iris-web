@@ -41,6 +41,7 @@ type StudentAccount = SharedData['auth']['user'] & {
     avatar?: string | null;
     profile_image?: string | null;
     role?: string | null;
+    photo_url?: string | null;
 };
 
 type StudentActivity = DataTableRow & {
@@ -168,25 +169,49 @@ const displayName = computed(() => {
     );
 });
 
-const profileImage = computed(() => {
-    if (student.value.avatar || student.value.profile_image) {
-        return student.value.avatar || student.value.profile_image;
-    }
+const failedProfileImages = ref<Record<string, boolean>>({});
 
+const fallbackProfileImage = computed<string>(() => {
     const gender = String(student.value.gender ?? '')
         .trim()
         .toUpperCase();
 
-    if (gender === 'F') {
-        return '/images/female.png';
+    if (gender === 'F' || gender === 'FEMALE') {
+        return '/images/female-cadet.png';
     }
 
-    if (gender === 'M') {
-        return '/images/male.png';
+    if (gender === 'M' || gender === 'MALE') {
+        return '/images/male-cadet.png';
     }
 
-    return '/images/default-user.png';
+    return '/images/default-cadet.png';
 });
+
+const profileImage = computed<string>(() => {
+    const candidates = [
+        student.value.photo_url,
+        student.value.avatar,
+        student.value.profile_image,
+    ];
+
+    for (const candidate of candidates) {
+        const url = String(candidate ?? '').trim();
+
+        if (url && !failedProfileImages.value[url]) {
+            return url;
+        }
+    }
+
+    return fallbackProfileImage.value;
+});
+
+function handleProfileImageError(): void {
+    const url = profileImage.value;
+
+    if (url !== fallbackProfileImage.value) {
+        failedProfileImages.value[url] = true;
+    }
+}
 
 const studentInformation = computed(() => [
     {
@@ -750,14 +775,16 @@ onBeforeUnmount(() => {
                 class="relative z-10 flex flex-col gap-6 px-6 py-7 lg:flex-row lg:items-center lg:justify-between lg:px-9 lg:py-8"
             >
                 <div class="flex min-w-0 items-center gap-5">
-                    <div
-                        class="flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/20 bg-white p-1 shadow-xl"
-                    >
-                        <img
-                            :src="profileImage ?? undefined"
-                            :alt="displayName"
-                            class="h-full w-full rounded-xl object-cover"
-                        />
+<div
+    class="flex size-32 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/20 bg-white p-1 shadow-xl sm:size-40"
+>
+    <img
+        :key="profileImage"
+        :src="profileImage"
+        :alt="displayName"
+        class="h-full w-full rounded-xl object-cover"
+        @error="handleProfileImageError"
+    />
                     </div>
 
                     <div class="min-w-0">

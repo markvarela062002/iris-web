@@ -116,6 +116,7 @@ class DocumentsController extends Controller
                 'person.mname',
                 'person.lname',
                 'person.gender',
+                'person.photo_file',
 
                 'requirement.desc_requirement',
 
@@ -220,29 +221,35 @@ class DocumentsController extends Controller
             );
 
         $result['data'] = collect(
-            $result['data'] ?? [],
-        )
-            ->map(
-                function ($row) use (
-                    $documentsBaseUrl,
-                ): array {
-                    $record = is_object($row)
-                        ? get_object_vars($row)
-                        : (array) $row;
+    $result['data'] ?? [],
+)
+    ->map(
+        function ($row) use (
+            $request,
+            $documentsBaseUrl,
+        ): array {
+            $record = is_object($row)
+                ? get_object_vars($row)
+                : (array) $row;
 
-                    $record['files'] =
-                        $this->buildFileList(
-                            filenames: $record['filenames']
-                                ?? null,
+            $record['photo_url'] = $this->buildStudentPhotoUrl(
+                $request,
+                isset($record['photo_file'])
+                    ? (string) $record['photo_file']
+                    : null,
+            );
 
-                            documentsBaseUrl: $documentsBaseUrl,
-                        );
+            $record['files'] = $this->buildFileList(
+                filenames: $record['filenames'] ?? null,
+                documentsBaseUrl: $documentsBaseUrl,
+            );
 
-                    return $record;
-                },
-            )
-            ->values()
-            ->all();
+            return $record;
+        },
+    )
+    ->values()
+    ->all();
+
 
         return response()->json(
             $result,
@@ -2186,6 +2193,55 @@ class DocumentsController extends Controller
             ),
         ) === 'Y';
     }
+
+
+private function buildStudentPhotoUrl(
+    Request $request,
+    ?string $photoFile,
+): ?string {
+    $schoolCode = $this->resolveSchoolCode(
+        $request,
+    );
+
+    if ($schoolCode === '') {
+        return null;
+    }
+
+    $photosUrl = rtrim(
+        trim(
+            (string) config(
+                "schools.schools.{$schoolCode}.files.photos_url",
+                '',
+            ),
+        ),
+        '/',
+    );
+
+    if ($photosUrl === '') {
+        return null;
+    }
+
+    $filename = basename(
+        str_replace(
+            '\\',
+            '/',
+            trim((string) $photoFile),
+        ),
+    );
+
+    if (
+        $filename === '' ||
+        in_array(
+            strtolower($filename),
+            ['profile.jpg', 'null'],
+            true,
+        )
+    ) {
+        return null;
+    }
+
+    return $photosUrl.'/'.rawurlencode($filename);
+}
 
     /**
      * Read the school code selected during login.

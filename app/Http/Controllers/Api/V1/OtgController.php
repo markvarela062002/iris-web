@@ -160,6 +160,7 @@ class OtgController extends Controller
                 'person.mname',
                 'person.lname',
                 'person.gender',
+                'person.photo_file',
                 'person.dept',
 
                 'task.ref_no',
@@ -254,6 +255,26 @@ class OtgController extends Controller
             ),
         ];
 
+        $result['data'] = collect(
+    $result['data'] ?? [],
+)
+    ->map(function ($row) use ($request): array {
+        $record = is_object($row)
+            ? get_object_vars($row)
+            : (array) $row;
+
+        $record['photo_url'] = $this->buildStudentPhotoUrl(
+            $request,
+            isset($record['photo_file'])
+                ? (string) $record['photo_file']
+                : null,
+        );
+
+        return $record;
+    })
+    ->values()
+    ->all();
+
         return response()->json(
             $result,
         );
@@ -271,21 +292,22 @@ class OtgController extends Controller
             return $db;
         }
 
-        $query = $db
-            ->table('person')
-            ->select([
-                'person.id',
-                'person.id as person_id',
-                'person.code_person',
-                'person.school_id_no',
-                'person.fname',
-                'person.mname',
-                'person.lname',
-                'person.gender',
-                'person.dept',
-                'person.etrb_type',
-                'person.active',
-            ]);
+       $query = $db
+    ->table('person')
+    ->select([
+        'person.id',
+        'person.id as person_id',
+        'person.code_person',
+        'person.school_id_no',
+        'person.fname',
+        'person.mname',
+        'person.lname',
+        'person.gender',
+        'person.photo_file',
+        'person.dept',
+        'person.etrb_type',
+        'person.active',
+    ]);
 
         $result = $this->datatableService->paginate(
             query: $query,
@@ -394,34 +416,46 @@ class OtgController extends Controller
             ->pluck('total', 'person_id');
 
         $result['data'] = $records
-            ->map(static function (array $student) use (
-                $workbookCounts,
-                $assignedTaskCounts,
-                $completedTaskCounts,
-                $completedNaTaskCounts,
-            ): array {
-                $personId = (string) ($student['person_id'] ?? '');
-                $assigned = (int) ($assignedTaskCounts->get($personId, 0));
-                $completedNa = (int) ($completedNaTaskCounts->get($personId, 0));
-                $effective = max(0, $assigned - $completedNa);
-                $completed = (int) ($completedTaskCounts->get($personId, 0));
-                $percentage = $effective > 0
-                    ? ($completed / $effective) * 100
-                    : 0;
+    ->map(function (array $student) use (
+        $request,
+        $workbookCounts,
+        $assignedTaskCounts,
+        $completedTaskCounts,
+        $completedNaTaskCounts,
+    ): array {
+        $personId = (string) ($student['person_id'] ?? '');
 
-                $student['workbook_count'] =
-                    (int) ($workbookCounts->get($personId, 0));
-                $student['effective_task_count'] = $effective;
-                $student['completed_task_count'] = $completed;
-                $student['completed_na_task_count'] = $completedNa;
-                $student['completion_percentage'] = round($percentage, 2);
+        $student['photo_url'] = $this->buildStudentPhotoUrl(
+            $request,
+            isset($student['photo_file'])
+                ? (string) $student['photo_file']
+                : null,
+        );
 
-                return $student;
-            })
-            ->values()
-            ->all();
+        $assigned = (int) $assignedTaskCounts->get($personId, 0);
+        $completedNa = (int) $completedNaTaskCounts->get($personId, 0);
+        $effective = max(0, $assigned - $completedNa);
+        $completed = (int) $completedTaskCounts->get($personId, 0);
 
-        return response()->json($result);
+        $percentage = $effective > 0
+            ? ($completed / $effective) * 100
+            : 0;
+
+        $student['workbook_count'] = (int) $workbookCounts->get(
+            $personId,
+            0,
+        );
+        $student['effective_task_count'] = $effective;
+        $student['completed_task_count'] = $completed;
+        $student['completed_na_task_count'] = $completedNa;
+        $student['completion_percentage'] = round($percentage, 2);
+
+        return $student;
+    })
+    ->values()
+    ->all();
+
+return response()->json($result);
     }
 
     /**
@@ -3888,6 +3922,59 @@ class OtgController extends Controller
                 : 'Proof of assessment removed successfully.',
         ]);
     }
+
+private function buildStudentPhotoUrl(
+    Request $request,
+    ?string $photoFile,
+): ?string {
+    $schoolCode = strtoupper(
+        trim(
+            (string) $request->session()->get(
+                'school_code',
+                '',
+            ),
+        ),
+    );
+
+    if ($schoolCode === '') {
+        return null;
+    }
+
+    $photosUrl = rtrim(
+        trim(
+            (string) config(
+                "schools.schools.{$schoolCode}.files.photos_url",
+                '',
+            ),
+        ),
+        '/',
+    );
+
+    if ($photosUrl === '') {
+        return null;
+    }
+
+    $filename = basename(
+        str_replace(
+            '\\',
+            '/',
+            trim((string) $photoFile),
+        ),
+    );
+
+    if (
+        $filename === '' ||
+        in_array(
+            strtolower($filename),
+            ['profile.jpg', 'null'],
+            true,
+        )
+    ) {
+        return null;
+    }
+
+    return $photosUrl.'/'.rawurlencode($filename);
+}
 
     private function resolveSchoolConnection(
         Request $request,

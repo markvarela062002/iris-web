@@ -184,16 +184,32 @@ class JournalsController extends Controller
             ->paginate($perPage)
             ->withQueryString();
 
-        $records = collect(
-            $paginator->items(),
-        )
-            ->map(
-                fn (object $journal): array => $this->transformJournal(
-                    journal: $journal,
-                    evidenceBaseUrl: $evidenceBaseUrl,
-                ),
-            )
-            ->values();
+$records = collect(
+    $paginator->items(),
+)
+    ->map(
+        function (object $journal) use (
+            $request,
+            $evidenceBaseUrl,
+        ): array {
+            $record = $this->transformJournal(
+                journal: $journal,
+                evidenceBaseUrl: $evidenceBaseUrl,
+            );
+
+            $record['photo_file'] = $journal->photo_file ?? null;
+
+            $record['photo_url'] = $this->buildStudentPhotoUrl(
+                $request,
+                isset($journal->photo_file)
+                    ? (string) $journal->photo_file
+                    : null,
+            );
+
+            return $record;
+        },
+    )
+    ->values();
 
         return response()->json([
             'data' => $records,
@@ -298,12 +314,28 @@ class JournalsController extends Controller
             ->limit(10)
             ->get()
             ->map(
-                fn (object $journal): array => $this->transformJournal(
-                    journal: $journal,
-                    evidenceBaseUrl: $evidenceBaseUrl,
-                ),
-            )
-            ->values();
+    function (object $journal) use (
+        $request,
+        $evidenceBaseUrl,
+    ): array {
+        $record = $this->transformJournal(
+            journal: $journal,
+            evidenceBaseUrl: $evidenceBaseUrl,
+        );
+
+        $record['photo_file'] = $journal->photo_file ?? null;
+
+        $record['photo_url'] = $this->buildStudentPhotoUrl(
+            $request,
+            isset($journal->photo_file)
+                ? (string) $journal->photo_file
+                : null,
+        );
+
+        return $record;
+    },
+)
+->values();
 
         return response()->json([
             'total' => $total,
@@ -1707,28 +1739,28 @@ class JournalsController extends Controller
      * Build the shared daily-journal query.
      */
     private function journalQuery(
-        ConnectionInterface $database,
-    ): Builder {
-        return $database
-            ->table('person_journal')
-            ->leftJoin(
-                'person',
-                'person_journal.person_id',
-                '=',
-                'person.id',
-            )
-            ->select([
-                'person_journal.*',
-                'person.school_id_no',
-                'person.fname',
-                'person.mname',
-                'person.lname',
-                'person.gender',
-                'person.dept',
-                'person.dig_signature',
-            ]);
-    }
-
+    ConnectionInterface $database,
+): Builder {
+    return $database
+        ->table('person_journal')
+        ->leftJoin(
+            'person',
+            'person_journal.person_id',
+            '=',
+            'person.id',
+        )
+        ->select([
+            'person_journal.*',
+            'person.school_id_no',
+            'person.fname',
+            'person.mname',
+            'person.lname',
+            'person.gender',
+            'person.photo_file',
+            'person.dept',
+            'person.dig_signature',
+        ]);
+}
     /**
      * Apply the same filters to the table and PDF queries.
      */
@@ -1982,110 +2014,124 @@ class JournalsController extends Controller
      * @return array<string, mixed>
      */
     private function transformJournalForEdit(
-        object $journal,
-        string $personTaskBaseUrl = '',
-    ): array {
-        $fileName = $this->safeFilename(
-            $journal->file_name ?? null,
+    object $journal,
+    string $personTaskBaseUrl = '',
+    ?Request $request = null,
+): array {
+    $fileName = $this->safeFilename(
+        $journal->file_name ?? null,
+    );
+
+    $officerSignature = $this->safeFilename(
+        $journal->esig_file ?? null,
+    );
+
+    $photoFile = isset($journal->photo_file)
+        ? (string) $journal->photo_file
+        : null;
+
+    $photoUrl = $request !== null
+        ? $this->buildStudentPhotoUrl(
+            $request,
+            $photoFile,
+        )
+        : null;
+
+    $googleDriveId = trim(
+        (string) (
+            $journal->gdrive_link ?? ''
+        ),
+    );
+
+    $evidenceUrl = null;
+    $evidenceSource = null;
+
+    if (
+        $fileName !== ''
+        && $googleDriveId !== ''
+    ) {
+        $evidenceUrl = Str::startsWith(
+            $googleDriveId,
+            ['http://', 'https://'],
+        )
+            ? $googleDriveId
+            : 'https://drive.google.com/file/d/'.
+                rawurlencode($googleDriveId).
+                '/view';
+
+        $evidenceSource = 'google-drive';
+    } elseif ($fileName !== '') {
+        $evidenceUrl = $this->personTaskFileUrl(
+            filename: $fileName,
+            personTaskBaseUrl: $personTaskBaseUrl,
         );
 
-        $officerSignature = $this->safeFilename(
-            $journal->esig_file ?? null,
-        );
-
-        $googleDriveId = trim(
-            (string) (
-                $journal->gdrive_link ?? ''
-            ),
-        );
-
-        $evidenceUrl = null;
-        $evidenceSource = null;
-
-        if (
-            $fileName !== ''
-            && $googleDriveId !== ''
-        ) {
-            $evidenceUrl = Str::startsWith(
-                $googleDriveId,
-                ['http://', 'https://'],
-            )
-                ? $googleDriveId
-                : 'https://drive.google.com/file/d/'.
-                    rawurlencode($googleDriveId).
-                    '/view';
-
-            $evidenceSource = 'google-drive';
-        } elseif ($fileName !== '') {
-            $evidenceUrl = $this->personTaskFileUrl(
-                filename: $fileName,
-                personTaskBaseUrl: $personTaskBaseUrl,
-            );
-
-            $evidenceSource = 'school-server';
-        }
-
-        $validated = $this->isValidated(
-            $journal->esig_file ?? null,
-        );
-
-        return [
-            'id' => (string) $journal->id,
-            'person_id' => (string) $journal->person_id,
-            'school_id_no' => $journal->school_id_no,
-            'fname' => $journal->fname,
-            'mname' => $journal->mname,
-            'lname' => $journal->lname,
-            'gender' => $journal->gender,
-            'department' => $journal->dept,
-            'student_name' => $this->studentName($journal),
-            'date_journal' => $journal->date_journal,
-            'journal_time' => $journal->journal_time,
-            'journal_time_to' => $journal->journal_time_to,
-            'duty_hours' => $this->calculateDutyHours(
-                $journal->date_journal,
-                $journal->journal_time,
-                $journal->journal_time_to,
-            ),
-            'vessel_name' => $journal->vessel_name,
-            'ship_lat' => $journal->ship_lat,
-            'ship_long' => $journal->ship_long,
-            'ship_vicinity' => $journal->ship_vicinity,
-            'port_depart' => $journal->port_depart,
-            'port_dest' => $journal->port_dest,
-            'pos_fix' => $journal->pos_fix,
-            'course_speed' => $journal->course_speed,
-            'fo_rob' => $journal->fo_rob,
-            'fo_dob' => $journal->fo_dob,
-            'fo_lob' => $journal->fo_lob,
-            'fo_cons' => $journal->fo_cons,
-            'do_cons' => $journal->do_cons,
-            'average_rpm' => $journal->average_rpm,
-            'average_speed' => $journal->average_speed,
-            'activities' => $this->decodeLegacyText(
-                $journal->activities ?? null,
-            ),
-            'key_areas' => $this->decodeLegacyText(
-                $journal->key_areas ?? null,
-            ),
-            'sto_name' => $journal->sto_name,
-            'file_name' => $fileName,
-            'gdrive_link' => $journal->gdrive_link ?? null,
-            'evidence_url' => $evidenceUrl,
-            'evidence_source' => $evidenceSource,
-            'officer_signature_file' => $officerSignature,
-            'officer_signature_url' => $officerSignature !== ''
-                    ? $this->personTaskFileUrl(
-                        filename: $officerSignature,
-                        personTaskBaseUrl: $personTaskBaseUrl,
-                    )
-                    : null,
-            'validated' => $validated,
-            'status' => $validated
-                ? 'Validated'
-                : 'Pending',
-        ];
+        $evidenceSource = 'school-server';
     }
+
+    $validated = $this->isValidated(
+        $journal->esig_file ?? null,
+    );
+
+    return [
+        'id' => (string) $journal->id,
+        'person_id' => (string) $journal->person_id,
+        'school_id_no' => $journal->school_id_no,
+        'fname' => $journal->fname,
+        'mname' => $journal->mname,
+        'lname' => $journal->lname,
+        'gender' => $journal->gender,
+        'photo_file' => $photoFile,
+        'photo_url' => $photoUrl,
+        'department' => $journal->dept,
+        'student_name' => $this->studentName($journal),
+        'date_journal' => $journal->date_journal,
+        'journal_time' => $journal->journal_time,
+        'journal_time_to' => $journal->journal_time_to,
+        'duty_hours' => $this->calculateDutyHours(
+            $journal->date_journal,
+            $journal->journal_time,
+            $journal->journal_time_to,
+        ),
+        'vessel_name' => $journal->vessel_name,
+        'ship_lat' => $journal->ship_lat,
+        'ship_long' => $journal->ship_long,
+        'ship_vicinity' => $journal->ship_vicinity,
+        'port_depart' => $journal->port_depart,
+        'port_dest' => $journal->port_dest,
+        'pos_fix' => $journal->pos_fix,
+        'course_speed' => $journal->course_speed,
+        'fo_rob' => $journal->fo_rob,
+        'fo_dob' => $journal->fo_dob,
+        'fo_lob' => $journal->fo_lob,
+        'fo_cons' => $journal->fo_cons,
+        'do_cons' => $journal->do_cons,
+        'average_rpm' => $journal->average_rpm,
+        'average_speed' => $journal->average_speed,
+        'activities' => $this->decodeLegacyText(
+            $journal->activities ?? null,
+        ),
+        'key_areas' => $this->decodeLegacyText(
+            $journal->key_areas ?? null,
+        ),
+        'sto_name' => $journal->sto_name,
+        'file_name' => $fileName,
+        'gdrive_link' => $journal->gdrive_link ?? null,
+        'evidence_url' => $evidenceUrl,
+        'evidence_source' => $evidenceSource,
+        'officer_signature_file' => $officerSignature,
+        'officer_signature_url' => $officerSignature !== ''
+            ? $this->personTaskFileUrl(
+                filename: $officerSignature,
+                personTaskBaseUrl: $personTaskBaseUrl,
+            )
+            : null,
+        'validated' => $validated,
+        'status' => $validated
+            ? 'Validated'
+            : 'Pending',
+    ];
+}
 
     /**
      * Return the selected school's existing public person_task URL.
@@ -2525,6 +2571,54 @@ class JournalsController extends Controller
      *     1: array<string, mixed>
      * }
      */
+
+private function buildStudentPhotoUrl(
+    Request $request,
+    ?string $photoFile,
+): ?string {
+    $schoolCode = strtoupper(
+        trim(
+            (string) $request->session()->get(
+                'school_code',
+                '',
+            ),
+        ),
+    );
+
+    if ($schoolCode === '') {
+        return null;
+    }
+
+    $photosUrl = rtrim(
+        trim(
+            (string) config(
+                "schools.schools.{$schoolCode}.files.photos_url",
+                '',
+            ),
+        ),
+        '/',
+    );
+
+    if ($photosUrl === '') {
+        return null;
+    }
+
+    $filename = $this->safeFilename($photoFile);
+
+    if (
+        $filename === '' ||
+        in_array(
+            strtolower($filename),
+            ['profile.jpg', 'null'],
+            true,
+        )
+    ) {
+        return null;
+    }
+
+    return $photosUrl.'/'.rawurlencode($filename);
+}
+
     private function resolveSchoolConnection(
         Request $request,
     ): array {
