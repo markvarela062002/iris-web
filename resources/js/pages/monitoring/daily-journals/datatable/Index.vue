@@ -14,6 +14,27 @@ import Textarea from 'primevue/textarea';
 import Toast from 'primevue/toast';
 import { useToast } from 'primevue/usetoast';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+
+function normalizedFileUrl(value: unknown): string {
+    const raw = String(value ?? '').trim();
+    if (!raw) {
+        return '';
+    }
+    if (/^https?:\/\//i.test(raw)) {
+        return raw;
+    }
+    if (raw.startsWith('//')) {
+        return `https:${raw}`;
+    }
+    // Handle an absolute school hostname returned without its URL scheme.
+    const candidate = raw.replace(/^\/+/, '');
+    if (/^[a-z0-9-]+(?:\.[a-z0-9-]+)+(?::\d+)?(?:\/|$)/i.test(candidate)) {
+        return `https://${candidate}`;
+    }
+    // Do not guess a school host from a filename or a local route.
+    return raw;
+}
+
 const props = defineProps<{
     journalId: string;
 }>();
@@ -136,7 +157,6 @@ const journal = ref<JournalRecord | null>(null);
 const selectedEvidence = ref<File | null>(null);
 
 const evidenceUploadKey = ref(0);
-
 let requestController: AbortController | null = null;
 
 const signatureCanvas = ref<HTMLCanvasElement | null>(null);
@@ -194,34 +214,28 @@ const defaultAvatarUrl = computed<string>(() => {
     const gender = String(journal.value?.gender ?? '')
         .trim()
         .toUpperCase();
-
     if (gender === 'MALE' || gender === 'M') {
         return '/images/male-cadet.png';
     }
-
     if (gender === 'FEMALE' || gender === 'F') {
         return '/images/female-cadet.png';
     }
-
     return '/images/default-cadet.png';
 });
 
 const studentAvatarUrl = computed<string>(() => {
     const photoUrl = String(journal.value?.photo_url ?? '').trim();
-
     if (
         photoUrl &&
         failedStudentPhotoUrl.value !== photoUrl
     ) {
         return photoUrl;
     }
-
     return defaultAvatarUrl.value;
 });
 
 function handleStudentPhotoError(): void {
     const photoUrl = String(journal.value?.photo_url ?? '').trim();
-
     if (photoUrl && failedStudentPhotoUrl.value !== photoUrl) {
         failedStudentPhotoUrl.value = photoUrl;
     }
@@ -237,7 +251,6 @@ const isEvidenceImage = computed(() => {
     const filename = String(journal.value?.file_name ?? '')
         .trim()
         .toLowerCase();
-
     return /\.(jpg|jpeg|png|gif|webp)$/i.test(filename);
 });
 
@@ -245,15 +258,12 @@ function departmentSeverity(): DepartmentSeverity {
     const department = String(journal.value?.department ?? '')
         .trim()
         .toUpperCase();
-
     if (department === 'DECK') {
         return 'success';
     }
-
     if (department === 'ENGINE') {
         return 'info';
     }
-
     return 'secondary';
 }
 
@@ -261,15 +271,12 @@ function departmentIcon(): string {
     const department = String(journal.value?.department ?? '')
         .trim()
         .toUpperCase();
-
     if (department === 'DECK') {
         return 'pi pi-compass';
     }
-
     if (department === 'ENGINE') {
         return 'pi pi-cog';
     }
-
     return 'pi pi-building';
 }
 
@@ -279,32 +286,24 @@ function stringValue(value: unknown): string {
 
 function parseDate(value: unknown): Date | null {
     const text = stringValue(value);
-
     if (!text) {
         return null;
     }
-
     const date = new Date(`${text.substring(0, 10)}T00:00:00`);
-
     return Number.isNaN(date.getTime()) ? null : date;
 }
 
 function parseTime(value: unknown): Date | null {
     const text = stringValue(value);
-
     if (!text) {
         return null;
     }
-
     const [hours, minutes] = text.split(':').map(Number);
-
     if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
         return null;
     }
-
     const date = new Date();
     date.setHours(hours, minutes, 0, 0);
-
     return date;
 }
 
@@ -312,11 +311,9 @@ function formatDateParameter(value: Date | null): string | null {
     if (!value) {
         return null;
     }
-
     const year = value.getFullYear();
     const month = String(value.getMonth() + 1).padStart(2, '0');
     const day = String(value.getDate()).padStart(2, '0');
-
     return `${year}-${month}-${day}`;
 }
 
@@ -324,10 +321,8 @@ function formatTimeParameter(value: Date | null): string | null {
     if (!value) {
         return null;
     }
-
     const hours = String(value.getHours()).padStart(2, '0');
     const minutes = String(value.getMinutes()).padStart(2, '0');
-
     return `${hours}:${minutes}`;
 }
 
@@ -356,14 +351,12 @@ function loadIntoForm(record: JournalRecord): void {
         sto_name: stringValue(record.sto_name),
     };
 }
-
 async function loadJournal(): Promise<void> {
     requestController?.abort();
     const controller = new AbortController();
     requestController = controller;
     loading.value = true;
     pageError.value = '';
-
     try {
         const response = await axios.get<JournalResponse>(
             `${API}/${encodeURIComponent(props.journalId)}`,
@@ -388,7 +381,6 @@ async function loadJournal(): Promise<void> {
         ) {
             return;
         }
-
         pageError.value = getErrorMessage(
             error,
             'Unable to load the daily journal.',
@@ -425,15 +417,12 @@ function buildPayload() {
         sto_name: form.value.sto_name.trim(),
     };
 }
-
 async function saveJournal(showSuccessToast = true): Promise<boolean> {
     if (!journal.value) {
         return false;
     }
-
     saving.value = true;
     pageError.value = '';
-
     try {
         const response = await axios.put<JournalResponse>(
             `${API}/${encodeURIComponent(props.journalId)}`,
@@ -448,7 +437,6 @@ async function saveJournal(showSuccessToast = true): Promise<boolean> {
         );
         journal.value = response.data.data;
         loadIntoForm(response.data.data);
-
         if (showSuccessToast) {
             toast.add({
                 severity: 'success',
@@ -459,14 +447,12 @@ async function saveJournal(showSuccessToast = true): Promise<boolean> {
                 life: 3500,
             });
         }
-
         return true;
     } catch (error: unknown) {
         pageError.value = getErrorMessage(
             error,
             'Unable to save the daily journal.',
         );
-
         return false;
     } finally {
         saving.value = false;
@@ -476,17 +462,14 @@ async function saveJournal(showSuccessToast = true): Promise<boolean> {
 function handleEvidenceSelect(event: FileUploadSelectEvent): void {
     selectedEvidence.value = event.files?.[0] ?? null;
 }
-
 async function uploadEvidence(): Promise<void> {
     if (!selectedEvidence.value) {
         return;
     }
-
     evidenceUploading.value = true;
     pageError.value = '';
     const formData = new FormData();
     formData.append('evidence', selectedEvidence.value);
-
     try {
         const response = await axios.post<JournalResponse>(
             `${API}/${encodeURIComponent(props.journalId)}/evidence`,
@@ -522,22 +505,18 @@ async function uploadEvidence(): Promise<void> {
 }
 
 function openEvidence(): void {
-    const url = String(journal.value?.evidence_url ?? '').trim();
-
+    const url = normalizedFileUrl(journal.value?.evidence_url);
     if (!url) {
         return;
     }
-
     window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 function openOfficerSignature(): void {
-    const url = String(journal.value?.officer_signature_url ?? '').trim();
-
+    const url = normalizedFileUrl(journal.value?.officer_signature_url);
     if (!url) {
         return;
     }
-
     window.open(url, '_blank', 'noopener,noreferrer');
 }
 
@@ -546,13 +525,10 @@ function pointerPosition(event: PointerEvent): {
     y: number;
 } | null {
     const canvas = signatureCanvas.value;
-
     if (!canvas) {
         return null;
     }
-
     const rectangle = canvas.getBoundingClientRect();
-
     return {
         x: (event.clientX - rectangle.left) * (canvas.width / rectangle.width),
         y: (event.clientY - rectangle.top) * (canvas.height / rectangle.height),
@@ -563,23 +539,18 @@ function beginSignature(event: PointerEvent): void {
     if (isValidated.value) {
         return;
     }
-
     const canvas = signatureCanvas.value;
     const position = pointerPosition(event);
-
     if (!canvas || !position) {
         return;
     }
-
     signatureDrawing.value = true;
     signaturePointerId.value = event.pointerId;
     canvas.setPointerCapture(event.pointerId);
     const context = canvas.getContext('2d');
-
     if (!context) {
         return;
     }
-
     context.beginPath();
     context.moveTo(position.x, position.y);
 }
@@ -591,20 +562,15 @@ function drawSignature(event: PointerEvent): void {
     ) {
         return;
     }
-
     const canvas = signatureCanvas.value;
     const position = pointerPosition(event);
-
     if (!canvas || !position) {
         return;
     }
-
     const context = canvas.getContext('2d');
-
     if (!context) {
         return;
     }
-
     context.lineWidth = 4;
     context.lineCap = 'round';
     context.lineJoin = 'round';
@@ -618,11 +584,9 @@ function endSignature(event: PointerEvent): void {
     if (signaturePointerId.value !== event.pointerId) {
         return;
     }
-
     const canvas = signatureCanvas.value;
     signatureDrawing.value = false;
     signaturePointerId.value = null;
-
     if (canvas?.hasPointerCapture(event.pointerId)) {
         canvas.releasePointerCapture(event.pointerId);
     }
@@ -630,12 +594,10 @@ function endSignature(event: PointerEvent): void {
 
 function clearSignature(): void {
     const canvas = signatureCanvas.value;
-
     if (canvas) {
         const context = canvas.getContext('2d');
         context?.clearRect(0, 0, canvas.width, canvas.height);
     }
-
     signatureHasInk.value = false;
     signatureDrawing.value = false;
     signaturePointerId.value = null;
@@ -644,23 +606,18 @@ function clearSignature(): void {
 function signatureBlob(): Promise<Blob> {
     return new Promise((resolve, reject) => {
         const canvas = signatureCanvas.value;
-
         if (!canvas) {
             reject(new Error('Signature canvas is unavailable.'));
-
             return;
         }
-
         canvas.toBlob(
             (blob) => {
                 if (!blob) {
                     reject(
                         new Error('Unable to create the STO signature image.'),
                     );
-
                     return;
                 }
-
                 resolve(blob);
             },
             'image/png',
@@ -668,34 +625,25 @@ function signatureBlob(): Promise<Blob> {
         );
     });
 }
-
 async function signJournal(): Promise<void> {
     if (isValidated.value || signing.value) {
         return;
     }
-
     if (!form.value.sto_name.trim()) {
         pageError.value = 'Enter the Supervising Officer name before signing.';
-
         return;
     }
-
     if (!signatureHasInk.value) {
         pageError.value = 'The Supervising Officer signature is required.';
-
         return;
     }
-
     pageError.value = '';
     signing.value = true;
-
     try {
         const saved = await saveJournal(false);
-
         if (!saved) {
             return;
         }
-
         const blob = await signatureBlob();
         const signatureFile = new File(
             [blob],
@@ -747,7 +695,6 @@ function getErrorMessage(error: unknown, fallback: string): string {
     if (!axios.isAxiosError(error)) {
         return fallback;
     }
-
     const responseData = error.response?.data as
         | {
               message?: string;
@@ -757,7 +704,6 @@ function getErrorMessage(error: unknown, fallback: string): string {
     const firstValidationError = responseData?.errors
         ? Object.values(responseData.errors)[0]?.[0]
         : undefined;
-
     return firstValidationError || responseData?.message || fallback;
 }
 
@@ -768,6 +714,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
     requestController?.abort();
 });
+
 </script>
 
 <template>
@@ -1233,7 +1180,7 @@ onBeforeUnmount(() => {
                             <template v-if="journal.evidence_url">
                                 <PrimeImage
                                     v-if="isEvidenceImage"
-                                    :src="journal.evidence_url"
+                                    :src="normalizedFileUrl(journal.evidence_url)"
                                     :alt="
                                         journal.file_name || 'Journal evidence'
                                     "
@@ -1402,7 +1349,7 @@ onBeforeUnmount(() => {
                             >
                                 <PrimeImage
                                     v-if="journal.officer_signature_url"
-                                    :src="journal.officer_signature_url"
+                                    :src="normalizedFileUrl(journal.officer_signature_url)"
                                     :alt="`${form.sto_name || 'Supervising Officer'} signature`"
                                     preview
                                     image-class="max-h-[140px] max-w-full object-contain"
